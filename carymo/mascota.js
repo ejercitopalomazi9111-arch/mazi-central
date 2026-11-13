@@ -385,6 +385,9 @@ export function crearMascota(caja, op = {}){
     clearTimeout(globoT);
     if(!texto){ globo.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 150, fill: 'forwards' }); return; }
     globo.textContent = texto;
+    /* que el globo no se salga de la pantalla cuando la mascota está en la orilla (Luna, 13 nov) */
+    globo.style.marginLeft = '0px';
+    try{ const g = globo.getBoundingClientRect(), mx = 8; if(g.width){ const dx = g.left < mx ? mx - g.left : g.right > innerWidth - mx ? innerWidth - mx - g.right : 0; if(dx) globo.style.marginLeft = dx + 'px'; } }catch{}
     op.alDecir && op.alDecir(texto, quien);   /* carymo.js lo dice en voz alta con la voz que elegiste para esta mascota */
     globo.animate([{ opacity: 0, transform: 'translateY(6px) scale(.8)' }, { opacity: 1, transform: 'translateY(0) scale(1.04)', offset: .7 }, { opacity: 1, transform: 'none' }],
       { duration: 260, easing: 'cubic-bezier(.3,1.5,.4,1)', fill: 'forwards' });

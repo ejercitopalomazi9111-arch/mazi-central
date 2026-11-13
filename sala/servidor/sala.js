@@ -382,7 +382,7 @@ import { atenderBanco } from './banco.js';
 import { atenderElementos } from './elementos.js';
 import { atenderPizarron } from './pizarron.js';
 import { RESPALDOS, ORDEN_RESPALDO, respaldosVivos, respaldosApagados, preguntarRespaldo, probarLlaveRespaldo } from './respaldos.js';
-import { atenderEstudio } from './estudio.js';
+import { atenderEstudio, diaMexico } from './estudio.js';
 import { atenderSecre } from './secre.js';
 import { MOTORES, preguntar, motoresVivos, motoresApagados, motorDe,
          PAPEL_SILLA, PAPEL_RESUMEN, PAPEL_LIGUE, generarImagen, generarVoz } from './modelos.js';
@@ -1790,9 +1790,42 @@ export class Sala {
 
     if(ruta === 'ws') return this.conectar(pedido);
 
-    const llave = pedido.headers.get('X-Llave') || url.searchParams.get('llave') || '';
-    const cuenta = this.cuentaDe(llave);
-    if(!cuenta) return Response.json({ error:'Llave que no reconozco.' }, { status:401 });
+    /* ── CARYMO SIN LA LLAVE DE LA SALA (Carlos, 13 nov) ──────────────────────
+       «que no requiera de la llave de la sala, porque estarla dando es darle acceso a la gente a la sala».
+       index.js comprueba el token de la cuenta (la de la comunidad: usuario y contraseña) y arma por
+       dentro una petición a https://interno/carymo/<ruta> con el usuario ya comprobado. De fuera nadie
+       llega con el host «interno», así que esa cabecera no se puede falsificar.
+       Con eso SÓLO se abre CARYMO: estudio, ia-texto e ia-voz (con tope por día). Nada del chat, ni de
+       las llaves, ni del banco. */
+    let cuenta, llave = '';
+    const deCarymo = url.hostname === 'interno' && url.pathname.startsWith('/carymo/');
+    if(deCarymo){
+      const usuario = String(pedido.headers.get('X-Carymo-Usuario') || '');
+      if(!/^[a-z0-9_]{3,20}$/.test(usuario)) return Response.json({ error: 'Entra a tu cuenta.' }, { status: 401 });
+      const kVinculo = 'carymo:vinculo:' + usuario;
+      /* vincular: quien ya tenía la llave (Carlos, Luis) pasa su usuario nuevo a su cuenta de siempre */
+      if(ruta === 'vincular'){
+        const suya = this.cuentaDe(pedido.headers.get('X-Llave') || '');
+        if(!suya || suya === 'invitado') return Response.json({ error: 'Esa llave no sirve.' }, { status: 401 });
+        await this.ctx.storage.put(kVinculo, suya);
+        return Response.json({ bien: true, cuenta: suya });
+      }
+      if(!['estudio', 'ia-texto', 'ia-voz'].includes(ruta)) return Response.json({ error: 'Eso no es de CARYMO.' }, { status: 403 });
+      const vinculo = await this.ctx.storage.get(kVinculo);
+      /* nadie se queda con el avance de «carlos» por registrarse con ese nombre: los nombres de las
+         cuentas de la sala se apartan (u_carlos) salvo que se vinculen con su llave */
+      const deLaSala = new Set([...Object.values(this.llaves || {}), ...String(this.env.LLAVES || '').split(',').map((x) => x.split(':')[0].trim()).filter(Boolean)]);
+      cuenta = vinculo || (deLaSala.has(usuario) ? 'u_' + usuario : usuario);
+      if(ruta !== 'estudio' && !vinculo){
+        const k = `carymo:uso:${diaMexico(Date.now())}:${usuario}`, n = (await this.ctx.storage.get(k)) || 0, tope = ruta === 'ia-voz' ? 200 : 80;
+        if(n >= tope) return Response.json({ error: ruta === 'ia-voz' ? 'Por hoy ya se acabó la voz de tu cuenta. Mañana vuelve.' : 'Por hoy ya usaste toda la IA de tu cuenta. Mañana vuelve, o sigue con lo que ya está preparado.' }, { status: 429 });
+        await this.ctx.storage.put(k, n + 1);
+      }
+    } else {
+      llave = pedido.headers.get('X-Llave') || url.searchParams.get('llave') || '';
+      cuenta = this.cuentaDe(llave);
+      if(!cuenta) return Response.json({ error:'Llave que no reconozco.' }, { status:401 });
+    }
 
     /* ── fundar: la sala se cierra y te da tu llave ───────────────────────
        Como Zoom: el primero que funda es el dueño. De ahí en adelante, quien

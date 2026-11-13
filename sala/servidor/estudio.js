@@ -33,6 +33,8 @@ const kPlan = (c, id) => `est:plan:${c}:${id}`;
 const idValido = (x) => typeof x === 'string' && /^[a-z0-9_-]{1,40}$/i.test(x);
 const limpio = (v, max) => String(v ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, max);
 const DIA_MS = 864e5;
+/* los códigos para compartir: sin O, 0, I, 1 ni L, que en un teléfono se confunden */
+const LETRAS_COD = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
 /* el día de México (UTC−6, sin horario de verano desde 2022) */
 export const diaMexico = (ms) => new Date(ms - 6 * 36e5).toISOString().slice(0, 10);
@@ -352,6 +354,33 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
     perfil.t = ahora;
     await storage.put(kPerfil(cuenta), perfil);
     return Response.json({ bien: true, sumado: suma, premios, eventos: [...new Set(dijo)], perfil: publico(perfil), ranking: await ranking(storage, semanaDe(hoy), { [cuenta]: perfil.nombre }) });
+  }
+
+  /* ── COMPARTIR UN PLAN (Carlos, 13 nov) ──
+     «si yo copio ese link o el código y lo mando a mi grupo, ellos lo ponen en "añadir curso por link" y ya
+     les pone exactamente lo mismo… y así ya no se gastan tokens». Se guarda una COPIA del plan (sin tu avance
+     ni tus notas) bajo un código de 6 letras; el mismo plan da siempre el mismo código y la copia se pone
+     al día cada vez que lo vuelves a compartir. Quien lo recibe se lo trae entero: camino, lecciones,
+     preguntas y cátedras ya hechas. */
+  if(c.accion === 'compartir'){
+    if(!idValido(c.id)) return Response.json({ error: 'Ese plan no trae id.' }, { status: 400 });
+    const plan = await storage.get(kPlan(cuenta, c.id));
+    if(!plan || indice[c.id]?.borrado) return Response.json({ error: 'Ese plan ya no existe.' }, { status: 404 });
+    const { progreso, notas, fotos, cambio, t, ...copia } = plan;
+    const kYa = `est:comp:i:${cuenta}:${c.id}`;
+    let codigo = await storage.get(kYa);
+    if(!codigo){ for(let k = 0; k < 8; k++){ const n = crypto.getRandomValues(new Uint8Array(6)); const x = [...n].map((b) => LETRAS_COD[b % LETRAS_COD.length]).join(''); if(!(await storage.get('est:comp:' + x))){ codigo = x; break; } } }
+    if(!codigo) return Response.json({ error: 'No se pudo sacar un código. Intenta otra vez.' }, { status: 503 });
+    const viejo = await storage.get('est:comp:' + codigo);
+    await storage.put({ ['est:comp:' + codigo]: { plan: copia, de: perfil.nombre, cuenta, t: ahora, usos: (viejo && viejo.usos) || 0 }, [kYa]: codigo });
+    return Response.json({ bien: true, codigo });
+  }
+  if(c.accion === 'traerPlan'){
+    const codigo = limpio(c.codigo, 12).toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const x = codigo.length === 6 && await storage.get('est:comp:' + codigo);
+    if(!x) return Response.json({ error: 'Ese código no existe. Revisa que sean las 6 letras.' }, { status: 404 });
+    x.usos = (x.usos || 0) + 1; await storage.put('est:comp:' + codigo, x);
+    return Response.json({ bien: true, plan: x.plan, de: x.de, usos: x.usos });
   }
 
   /* ── la tienda y el cuarto de la mascota (palomium.js) ── */

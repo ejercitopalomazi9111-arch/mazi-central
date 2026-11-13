@@ -67,6 +67,21 @@ const LARGO = 6;
 const esCodigo = (c) => typeof c === 'string' && c.length === LARGO
                      && [...c].every(x => LETRAS.includes(x));
 
+/* quién es el dueño de un token de cuenta (comunidad.js, acción «yo»). Se recuerda 5 minutos por
+   máquina para no preguntarle a la comunidad en cada pedido. */
+const tokens = new Map();
+async function usuarioDeToken(env, tok){
+  if(!tok || tok.length > 100) return '';
+  const ya = tokens.get(tok); if(ya && ya.hasta > Date.now()) return ya.usuario;
+  try{
+    const r = await env.COMUNIDAD.get(env.COMUNIDAD.idFromName('inkwell')).fetch(new Request('https://interno/api/sala/comunidad/yo', { headers: { 'x-token': tok } }));
+    const j = await r.json(); const usuario = (j && j.yo && j.yo.usuario) || '';
+    if(tokens.size > 2000) tokens.clear();
+    tokens.set(tok, { usuario, hasta: Date.now() + (usuario ? 300_000 : 30_000) });
+    return usuario;
+  }catch{ return ''; }
+}
+
 export default {
   async fetch(pedido, env, ctx){
     const url = new URL(pedido.url);
@@ -131,6 +146,22 @@ export default {
       }catch(e){
         return conCORS(Response.json({ bien:false, error:'Urban Pest tuvo un error: ' + String((e && e.message) || e).slice(0, 160) }, { status:503 }), pedido);
       }
+    }
+
+    /* ── CARYMO con cuenta propia, sin la llave de La Sala (Carlos, 13 nov) ──
+       El token es el de la cuenta de la comunidad (usuario y contraseña: /api/sala/comunidad/registro).
+       Aquí se comprueba y se pasa a la sala GRUPAZ por dentro, con el usuario ya comprobado; la sala
+       sólo deja usar estudio, ia-texto e ia-voz (sala.js, «CARYMO SIN LA LLAVE»). */
+    const cy = url.pathname.match(/^\/api\/carymo\/(estudio|ia-texto|ia-voz|vincular)$/);
+    if(cy){
+      if(!env.COMUNIDAD) return conCORS(Response.json({ bien:false, error:'Las cuentas todavía no están encendidas.' }, { status:503 }), pedido);
+      const usuario = await usuarioDeToken(env, pedido.headers.get('x-token') || '');
+      if(!usuario) return conCORS(Response.json({ bien:false, error:'Entra a tu cuenta de CARYMO.', cuenta:true }, { status:401 }), pedido);
+      const h = new Headers({ 'Content-Type': pedido.headers.get('content-type') || 'application/json', 'X-Carymo-Usuario': usuario });
+      if(cy[1] === 'vincular' && pedido.headers.get('x-llave')) h.set('X-Llave', pedido.headers.get('x-llave'));
+      const interna = new Request('https://interno/carymo/' + cy[1] + url.search, { method: pedido.method, headers: h, body: ['GET', 'HEAD'].includes(pedido.method) ? undefined : await pedido.arrayBuffer() });
+      try{ return conCORS(await env.SALA.get(env.SALA.idFromName('GRUPAZ')).fetch(interna), pedido); }
+      catch(e){ return conCORS(Response.json({ bien:false, error:'CARYMO tuvo un error: ' + String((e && e.message) || e).slice(0, 160) }, { status:503 }), pedido); }
     }
 
     const com = url.pathname.match(/^\/api\/sala\/comunidad\/([a-z]+)$/);
