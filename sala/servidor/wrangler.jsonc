@@ -26,6 +26,9 @@
   // como «Text». Las llaves van como «Secret», que nunca se borran solas.
   "keep_vars": true,
 
+  // Cloudflare Workers AI: el respaldo de las IAs SIN llave (sala/servidor/respaldos.js).
+  "ai": { "binding": "AI" },
+
   // SQLite porque es lo que está incluido en el plan gratis; los de
   // key-value no. Igual que la Cooperativa de Fadori y que Puercos.
   "durable_objects": {

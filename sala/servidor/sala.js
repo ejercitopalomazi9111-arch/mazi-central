@@ -381,6 +381,7 @@ import { generarVapid, empujarATodos } from './push.mjs';
 import { atenderBanco } from './banco.js';
 import { atenderElementos } from './elementos.js';
 import { atenderPizarron } from './pizarron.js';
+import { RESPALDOS, ORDEN_RESPALDO, respaldosVivos, respaldosApagados, preguntarRespaldo, probarLlaveRespaldo } from './respaldos.js';
 import { atenderEstudio } from './estudio.js';
 import { atenderSecre } from './secre.js';
 import { MOTORES, preguntar, motoresVivos, motoresApagados, motorDe,
@@ -408,12 +409,13 @@ function nuevaLlave(){
 }
 
 /* Las llaves de modelo que se pueden pegar desde la app, por motor. */
-const LLAVES_IA = { gemini: 'GEMINI_API_KEY', groq: 'GROQ_API_KEY' };
+const LLAVES_IA = { gemini: 'GEMINI_API_KEY', groq: 'GROQ_API_KEY', openrouter: 'OPENROUTER_API_KEY', cerebras: 'CEREBRAS_API_KEY', mistral: 'MISTRAL_API_KEY' };
 const NOMBRES_LLAVE_IA = Object.values(LLAVES_IA);
 
 /* Una pregunta que no cuesta nada: la lista de modelos. Contesta 200 con una
    llave buena y 400/401/403 con una mala. Se prueba ANTES de guardar. */
 async function probarLlaveIA(id, k){
+  if(RESPALDOS[id]) return probarLlaveRespaldo(id, k);
   const quien = id === 'gemini' ? 'Google' : 'Groq';
   /* El formato sólo sirve de PISTA cuando la prueba falla: si un día cambian
      cómo empiezan las llaves, una regla fija rechazaría una llave buena. */
@@ -2370,8 +2372,34 @@ export class Sala {
       /* …y desde el 16 de octubre también OYE: las notas de voz que le llegan a Secre
          (ogg, mp3, m4a, wav) van igual, como inlineData, para que Paulina las escriba */
       const imagenes = (Array.isArray(c.imagenes) ? c.imagenes : []).filter((x) => x && /^(image\/(jpeg|png|webp|gif)|audio\/(ogg|mpeg|mp3|mp4|aac|wav|webm|amr|x-m4a|flac))$/.test(x.mime) && typeof x.data === 'string' && x.data.length < 7_000_000).slice(0, 4);
-      const r = await preguntar(motor, this.env, String(c.sistema || 'Eres un asistente útil. Contesta en español de México.').slice(0, 20_000), mensajes,
-        { tope: Math.min(Math.max(Number(c.tope) || 1500, 100), 8000), esperaMs: Math.min(Math.max(Number(c.espera) || 90_000, 10_000), 150_000), imagenes, json: !!c.json, pensarPoco: !!c.pensarPoco });
+      const sistemaIA = String(c.sistema || 'Eres un asistente útil. Contesta en español de México.').slice(0, 20_000);
+      const tope = Math.min(Math.max(Number(c.tope) || 1500, 100), 8000);
+      const espera = Math.min(Math.max(Number(c.espera) || 90_000, 10_000), 150_000);
+      const fin = Date.now() + espera + 60_000;
+      const op = { tope, esperaMs: espera, imagenes, json: !!c.json, pensarPoco: !!c.pensarPoco };
+      let r = await preguntar(motor, this.env, sistemaIA, mensajes, op);
+      /* ── SI FALLA, OTRA COMPAÑÍA (13 nov) ─────────────────────────────────
+         Carlos: «que metas más IAs para que en caso de que se acaben las que
+         están, carguen otras… que no sean de las mismas». Primero la otra de
+         la casa (Negro ↔ Paulina) y luego los respaldos (respaldos.js), cada
+         uno de otra empresa. Un error que es NUESTRO (mensaje vacío, audio que
+         sólo Paulina oye) no se reintenta. `c.sinRespaldo` lo apaga. */
+      const intentos = [{ motor, error: r.error }];
+      const audio = imagenes.some((x) => /^audio\//.test(x.mime));
+      if(!r.bien && !c.sinRespaldo && !audio){
+        const otra = motor === 'groq' ? 'gemini' : 'groq';
+        const cola = [...(imagenes.length ? [] : [otra]), ...ORDEN_RESPALDO];
+        if(imagenes.length && motor !== 'gemini') cola.unshift('gemini');
+        for(const id of cola){
+          const queda = fin - Date.now();
+          if(queda < 8000) break;
+          const op2 = { ...op, esperaMs: Math.min(queda, 60_000) };
+          const r2 = MOTORES[id] ? await preguntar(id, this.env, sistemaIA, mensajes, op2) : await preguntarRespaldo(id, this.env, sistemaIA, mensajes, op2);
+          if(r2.bien){ r = { ...r2, respaldo: true, pedido: motor }; break; }
+          if(!/apagad/.test(r2.error || '')) intentos.push({ motor: id, error: r2.error });
+        }
+      }
+      if(!r.bien) r = { ...r, intentos, error: intentos.length > 1 ? `Ninguna IA contestó. ${intentos.map((x) => x.error).join(' · ')}`.slice(0, 600) : r.error };
       return Response.json(r, { status: r.bien ? 200 : 502 });
     }
 
@@ -2380,8 +2408,23 @@ export class Sala {
        de llave y una silla rota se ven igual desde afuera, y la diferencia
        la arregla Carlos en treinta segundos si sabe cuál es. */
     if(pedido.method === 'GET' && ruta === 'motores'){
+      /* `?probar=1`: además de ver quién tiene llave, se le pregunta algo
+         corto a cada una. Es la forma de saber si todavía tienen saldo. */
+      let prueba = null;
+      if(url.searchParams.get('probar')){
+        const sis = 'Contesta sólo: listo', msj = [{ de: 'tu', texto: 'di listo' }], op = { tope: 120, esperaMs: 25_000 };
+        const ids = [...Object.keys(MOTORES), ...ORDEN_RESPALDO];
+        prueba = Object.fromEntries(await Promise.all(ids.map(async (id) => {
+          const t0 = Date.now();
+          const r = MOTORES[id] ? await preguntar(id, this.env, sis, msj, op) : await preguntarRespaldo(id, this.env, sis, msj, op);
+          return [id, { bien: !!r.bien, ms: Date.now() - t0, modelo: r.modelo, error: r.bien ? undefined : String(r.error || '').slice(0, 200) }];
+        })));
+      }
       return Response.json({
         bien: true,
+        prueba,
+        respaldos: respaldosVivos(this.env),
+        respaldosApagados: respaldosApagados(this.env),
         vivos: motoresVivos(this.env),
         apagados: motoresApagados(this.env).map(m => ({
           ...m,

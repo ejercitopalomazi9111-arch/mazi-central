@@ -193,19 +193,36 @@ export async function preguntar(id, env, sistema, mensajes, op = {}) {
     return { bien: false, motor: id, error: `${M.nombre} no ve imágenes. Para describirlas usa a Paulina (Gemini).` };
   }
   const modelos = [M.modelo, ...(M.respaldo || [])];
+  /* ── CADA MODELO CON SU PROPIO RELOJ (13 nov) ──────────────────────────────
+     Paulina se quedó colgada 90 s con una pregunta de tres palabras: el primer
+     modelo se comía TODO el tiempo y los de respaldo nunca llegaban a probarse.
+     Ahora cada intento tiene su tope (más largo cuanto más larga la respuesta
+     pedida) y, si no contesta, se pasa al siguiente. El último se queda con lo
+     que reste. */
+  const finTotal = Date.now() + (op.esperaMs || ESPERA_MODELO_MS);
+  const porModelo = op.porModeloMs || Math.max(20_000, 15_000 + tope * 12);
   let ultimo = null;
   for (let i = 0; i < modelos.length; i++) {
-    let res = await preguntarA(M, modelos[i], k, sistema, mensajes, tope, imagenes, op, corta, reloj);
-    if (!res.bien && op.pensarPoco && id === 'gemini' && /\b400\b/.test(res.error || '') && !corta.signal.aborted)
-      res = await preguntarA(M, modelos[i], k, sistema, mensajes, tope, imagenes, { ...op, _sinPensar: true }, corta, reloj);
+    const queda = finTotal - Date.now();
+    if (queda < 1500) break;
+    const mio = new AbortController();
+    const unir = () => mio.abort();
+    corta.signal.addEventListener('abort', unir);
+    const relojMio = setTimeout(() => mio.abort(), i === modelos.length - 1 ? queda : Math.min(queda, porModelo));
+    let res = await preguntarA(M, modelos[i], k, sistema, mensajes, tope, imagenes, op, mio, relojMio);
+    if (!res.bien && op.pensarPoco && id === 'gemini' && /\b400\b/.test(res.error || '') && !mio.signal.aborted)
+      res = await preguntarA(M, modelos[i], k, sistema, mensajes, tope, imagenes, { ...op, _sinPensar: true }, mio, relojMio);
+    clearTimeout(relojMio); corta.signal.removeEventListener('abort', unir);
+    if (res.tardo) res.otro = true;
     /* Se pasa al siguiente sólo si el tropiezo es del modelo (saturado,
-       caído, retirado). Una llave mala o una respuesta vacía no mejoran con
-       otro modelo. */
-    if (res.bien || !res.otro || corta.signal.aborted) { clearTimeout(reloj); delete res.otro; return res; }
+       caído, retirado, colgado). Una llave mala o una respuesta vacía no
+       mejoran con otro modelo. */
+    if (res.bien || !res.otro || corta.signal.aborted) { clearTimeout(reloj); delete res.otro; delete res.tardo; return res; }
     ultimo = res;
   }
   clearTimeout(reloj);
-  delete ultimo.otro;
+  if (!ultimo) return { bien: false, motor: id, error: `${M.nombre} no contestó a tiempo.` };
+  delete ultimo.otro; delete ultimo.tardo;
   return ultimo;
 }
 
@@ -264,11 +281,11 @@ async function preguntarA(M, modelo, k, sistema, mensajes, tope, imagenes, op, c
         `${M.nombre} contestó bien pero sin texto. Puede ser un filtro de contenido, ` +
         `o que cambiara la forma de su respuesta.` };
     }
-    return { bien: true, motor: id, texto };
+    return { bien: true, motor: id, modelo, texto };
 
   } catch (e) {
     if (e && e.name === 'AbortError') {
-      return { bien: false, motor: id, error:
+      return { bien: false, motor: id, tardo: true, error:
         `${M.nombre} no contestó en ${Math.round((op.esperaMs || ESPERA_MODELO_MS) / 1000)} s.` };
     }
     return { bien: false, motor: id, otro: true, error: `${M.nombre} falló: ${e && e.message || e}` };
