@@ -2357,7 +2357,9 @@ export class Sala {
     /* ── /pizarron · los pendientes por proyecto (pizarron.js) ── */
     if(ruta === 'pizarron') return atenderPizarron(this.ctx.storage, pedido, url, cuenta);
     /* ── /estudio · planes de examen, XP, racha y ranking (estudio.js) ── */
-    if(ruta === 'estudio') return atenderEstudio(this.ctx.storage, pedido, url, cuenta, ahora(), { vapid: () => this.llavesDeAviso(), enviar: (subs, mensaje) => this.empujarEstudio(subs, mensaje) });
+    if(ruta === 'estudio') return atenderEstudio(this.ctx.storage, pedido, url, cuenta, ahora(), { vapid: () => this.llavesDeAviso(), enviar: (subs, mensaje) => this.empujarEstudio(subs, mensaje),
+      /* la casa (quien entra con la llave de la sala, no con cuenta de CARYMO) puede poner títulos y regalos */
+      admin: !deCarymo && !!cuenta && cuenta !== 'invitado' });
     /* ── /secre · el cajón cifrado de Secre (secre.js). Sólo la cuenta dueña ── */
     if(ruta === 'secre'){
       if(cuenta !== (this.dueno || 'carlos')) return Response.json({ error: 'Esto es sólo de la cuenta dueña de la sala.' }, { status: 403 });

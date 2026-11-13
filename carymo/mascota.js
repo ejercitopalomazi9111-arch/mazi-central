@@ -24,7 +24,7 @@
  * ===========================================================================*/
 
 import { ZOO } from './zoo.js';   /* la paloma mejorada y los animales nuevos (Luna, 13 nov) */
-import { CABEZAS, svgAccesorio, svgCuello, DEL_CUELLO, svgHuevo } from './mascota-ropa.js';
+import { CABEZAS, svgAccesorio, svgCuello, DEL_CUELLO, DE_ESPALDA, svgEspalda, svgBroche, svgHuevo } from './mascota-ropa.js';
 import { SKINS } from './crianza-datos.js';
 import { taparia, decirEnMuelle } from './muelle.js';
 const NS = 'http://www.w3.org/2000/svg';
@@ -181,6 +181,8 @@ const ACCIONES = {
   piensa: { dura: 0, f(u, t, q){ return { cabezaGiro: 8 + 2 * onda(t, 2600), miraX: -3, miraY: -3.5, brazoD: q === 'paloma' ? -28 : -70, boca: .25, curva: .2, ancho: .6, cejas: .7, cejaAng: .3, cejaY: -1 }; } },
   amor: { dura: 2200, f(u, t){ return { giro: 5 * onda(t, 900), feliz: 1, cachetes: 1, abierta: .3, curva: 1.2, brazoI: 30, brazoD: -30, sy: 1 + .03 * onda(t, 450) }; } },
   duerme: { dura: 0, f(u, t){ const b = onda(t, 3200); return { cerrados: 1, sy: 1 + .035 * b, sx: 1 - .02 * b, cabezaY: 4, cabezaGiro: 7, boca: .2, curva: .5, abierta: .12 + .1 * (b + 1) / 2, ancho: .5, orejaI: 14, orejaD: -14, cachetes: .5 }; } },
+  /* habla: la boca (o el pico) se abre y se cierra a destiempo, con la cabeza acompañando; para los anuncios y para cuando narra */
+  habla: { dura: 0, f(u, t){ const k = Math.abs(Math.sin(t / 95)) * (.55 + .45 * Math.abs(Math.sin(t / 310))); return { abierta: .1 + .55 * k, picoAbre: .7 * k, curva: .7, ancho: .9 + .2 * k, cachetes: .45, cabezaGiro: 3 * Math.sin(t / 700), cejas: .35, cejaY: -1.5 * k }; } },
   calma: { dura: 0, f(u, t){ return { feliz: .85, curva: 1, abierta: .05, cachetes: .55, giro: 2 * onda(t, 2400) }; } },
   estudia: { dura: 0, f(u, t){ return { miraY: 3, cabezaY: 3, cabezaGiro: -4 + 2 * onda(t, 3000), boca: .2, curva: .4, brazoI: 25, brazoD: -25, cejas: .5, cejaAng: .2 }; } },
   juega: { dura: 1500, f(u, t){ return { giro: 10 * onda(t, 500), y: -8 * Math.abs(onda(t, 500)), feliz: 1, abierta: .6, curva: 1.2, cola: 30 * onda(t, 250), brazoI: 50 * Math.max(0, onda(t, 500)), brazoD: -50 * Math.max(0, -onda(t, 500)) }; } },
@@ -285,7 +287,7 @@ export function crearMascota(caja, op = {}){
   caja.append(el);
   const fx = document.createElement('div'); fx.className = 'masc-fx';
   const globo = document.createElement('div'); globo.className = 'masc-globo'; globo.setAttribute('aria-live', 'polite');
-  let piezas = {}, boca = null, bocaClip = null, lengua = null, ojosEl = {}, huevo = false, accCabeza = null, accCuerpo = null, escalaCabeza = 1;
+  let piezas = {}, boca = null, bocaClip = null, lengua = null, ojosEl = {}, huevo = false, accCabeza = null, accCuerpo = null, accDetras = null, escalaCabeza = 1;
   const vestidoActual = () => op.vestido !== undefined ? op.vestido : VESTIDOR ? VESTIDOR(quien) : null;
   let vestido = vestidoActual();
   function dibujar(){
@@ -307,11 +309,14 @@ export function crearMascota(caja, op = {}){
     if(fil && piezas.raiz){ let defs = svg.querySelector('defs'); if(!defs){ defs = document.createElementNS(NS, 'defs'); svg.prepend(defs); } defs.insertAdjacentHTML('beforeend', fil); piezas.raiz.setAttribute('filter', `url(#${id}skin)`); }
     const acc = [...(v.acc || [])];
     if(etapa === 'viejo' && !acc.some((k) => k === 'lentes' || k === 'lentesSol')) acc.push('sabio');
-    accCabeza = accCuerpo = null;
+    accCabeza = accCuerpo = accDetras = null;
     if(acc.length && piezas.raiz){
       const g = CABEZAS[quien] || CABEZAS.tigre, oj = ojosDe(quien);
-      const cab = acc.filter((k) => !DEL_CUELLO.has(k)).map((k) => svgAccesorio(k, g, oj)).join('');
-      const cue = acc.filter((k) => DEL_CUELLO.has(k)).map((k) => svgCuello(k, g)).join('');
+      const cab = acc.filter((k) => !DEL_CUELLO.has(k) && !DE_ESPALDA.has(k)).map((k) => svgAccesorio(k, g, oj)).join('');
+      const cue = acc.filter((k) => DEL_CUELLO.has(k)).map((k) => svgCuello(k, g)).join('') + acc.filter((k) => DE_ESPALDA.has(k)).map((k) => svgBroche(k, g)).join('');
+      const esp = acc.filter((k) => DE_ESPALDA.has(k)).map((k) => svgEspalda(k, g)).join('');
+      /* lo de la espalda va DETRÁS de todo el cuerpo */
+      if(esp){ accDetras = document.createElementNS(NS, 'g'); accDetras.setAttribute('data-capa', 'espalda'); accDetras.innerHTML = esp; piezas.raiz.before(accDetras); }
       accCuerpo = document.createElementNS(NS, 'g'); accCuerpo.setAttribute('data-capa', 'cuerpo'); accCuerpo.innerHTML = cue + (g.enCuerpo ? cab : '');
       accCabeza = document.createElementNS(NS, 'g'); accCabeza.setAttribute('data-capa', 'cabeza'); accCabeza.innerHTML = g.enCuerpo ? '' : cab;
       piezas.raiz.after(accCuerpo, accCabeza);
@@ -390,7 +395,7 @@ export function crearMascota(caja, op = {}){
     tAhora = performance.now();
     const [rx, ry] = pivoteDe(quien).raiz;
     const tRaiz = `translate(${v.x.toFixed(2)} ${v.y.toFixed(2)}) rotate(${v.giro.toFixed(2)} ${rx} ${ry}) translate(${rx} ${ry}) scale(${v.sx.toFixed(4)} ${v.sy.toFixed(4)}) translate(${-rx} ${-ry})`;
-    T(piezas.raiz, tRaiz); T(accCuerpo, tRaiz);
+    T(piezas.raiz, tRaiz); T(accCuerpo, tRaiz); T(accDetras, tRaiz);
     const alto = Math.max(0, -v.y);
     T(piezas.sombra, `translate(100 207) scale(${(1 - alto / 120).toFixed(3)} 1) translate(-100 -207)`); if(piezas.sombra) piezas.sombra.style.opacity = (1 - alto / 90).toFixed(2);
     const [pcx, pcy] = pivoteDe(quien).cabeza || [100, 130];

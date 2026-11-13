@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>CARYMO · el tigre y la paloma te lo explican</title>
+<!-- ANUNCIO 2 DE CARYMO · 9:16 (Carlos, 14 nov: «voz más humana, reduce la velocidad, más dinámico como el de Fadori:
+     fondo que se mueve, efectos 3D, juegos simples de cámara sin marear, diversos elementos; muestra lo más chingón de la app
+     y pon a las mascotas explicando y mostrando la app»).
+     · El tigre y la paloma platican: son las mascotas de verdad (carymo/mascota.js) y mueven la boca al hablar.
+     · El teléfono enseña la app DE VERDAD (carymo/anuncio/grabar.mjs → ../anuncio/rec/<toma>). Contenido de ejemplo.
+     · Voces de Google por La Sala (guion.json); la línea de tiempo sale sola de lo que dura cada voz.
+     · Música: «Fluffing a Duck», Kevin MacLeod (incompetech.com), CC BY 4.0: el crédito va en la descripción.
+     · Las mascotas corren con un RELOJ FALSO (cada cuadro avanza 1/60 s exacto): sin él, cada captura tarda distinto
+       y se moverían a saltos.
+       python3 -m http.server 8765        (en la raíz del repo)
+       MAZI_LLAVE=… node marca/anuncios/voces.mjs carymo/anuncio2
+       node herramientas/video/armar.mjs carymo/anuncio2/anuncio.html carymo/anuncio2/salida/carymo2.mp4 -->
+<style>
+  @font-face{ font-family:T; src:url(../../sala/letra/montserrat.woff2) format("woff2"); font-weight:100 900; font-display:block }
+  @font-face{ font-family:N; src:url(../../sala/letra/nunito-700.woff2) format("woff2"); font-weight:700; font-display:block }
+  :root{ --oscuro:#170A26; --oscuro2:#22103A; --vino:#7E1735; --claro:#AC27FF; --claro-txt:#C77DFF; --hueso:#F1ECF4; --oro:#E8B54A }
+  *{ box-sizing:border-box; margin:0 }
+  html, body{ width:1080px; height:1920px; overflow:hidden; background:var(--oscuro); color:var(--hueso); font-family:N, sans-serif }
+  .abs{ position:absolute }
+  /* el fondo vivo: manchas de luz que se mueven y una nube de iconos a tres profundidades */
+  #fondo{ position:absolute; inset:-120px; background:radial-gradient(90% 60% at 50% 45%, #2a0f45 0%, var(--oscuro) 75%) }
+  .mancha{ position:absolute; border-radius:50%; filter:blur(90px); opacity:.55 }
+  #iconos{ position:absolute; inset:0; perspective:1400px }
+  #iconos svg{ position:absolute; width:90px; height:90px; fill:none; stroke-linecap:round; stroke-linejoin:round; will-change:transform }
+  #piso{ position:absolute; left:-400px; right:-400px; bottom:-200px; height:900px; transform-origin:50% 100%; transform:perspective(900px) rotateX(70deg);
+    background-image:linear-gradient(rgba(199,125,255,.16) 2px, transparent 2px), linear-gradient(90deg, rgba(199,125,255,.16) 2px, transparent 2px); background-size:120px 120px;
+    mask-image:linear-gradient(transparent, #000 45%); -webkit-mask-image:linear-gradient(transparent, #000 45%) }
+  /* el mundo: lo que mueve la cámara */
+  #camara{ position:absolute; inset:0; transform-origin:50% 48%; perspective:2200px }
+  #tit{ position:absolute; left:60px; right:60px; top:96px; height:250px; display:flex; align-items:center; justify-content:center; text-align:center; font:900 84px/1.0 T; letter-spacing:-.035em }
+  #tit .pal{ display:inline-block; will-change:transform }
+  #props{ position:absolute; inset:0; z-index:5 } #tit{ z-index:6 }
+  #tel{ position:absolute; z-index:1; left:50%; top:380px; width:560px; height:1176px; margin-left:-280px; transform-style:preserve-3d }
+  #tel .caja{ position:absolute; inset:0; border-radius:84px; background:linear-gradient(145deg,#3d3150,#140c1f 40%,#2b2038); padding:18px;
+    box-shadow:0 0 0 2px #4b3d5c, 0 70px 130px -30px rgba(0,0,0,.95), 0 0 180px -20px rgba(172,39,255,.55) }
+  #tel .pantalla{ position:relative; width:524px; height:1140px; border-radius:66px; overflow:hidden; background:#000 }
+  #tel .pantalla img{ position:absolute; inset:0; width:100%; height:100%; display:block }
+  #tel .isla{ position:absolute; top:20px; left:50%; width:150px; height:42px; margin-left:-75px; border-radius:26px; background:#000; z-index:2 }
+  #tel .brillo{ position:absolute; inset:18px; border-radius:66px; background:linear-gradient(115deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,0) 30%); pointer-events:none; z-index:3 }
+  /* lo que sale del teléfono hacia la cámara */
+  .prop{ position:absolute; will-change:transform, opacity; opacity:0 }
+  .chip{ padding:20px 34px; border-radius:99px; background:#2b1745; border:3px solid #ffffff26; font:800 42px/1 T; white-space:nowrap; box-shadow:0 26px 60px -18px #000c; display:flex; align-items:center; gap:16px }
+  .chip svg{ width:46px; height:46px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round }
+  .chip.oro{ background:linear-gradient(135deg,#FFE28A,#E8B54A); color:#3B2604; border-color:#fff6 } .chip.vino{ background:var(--vino); color:#fff } .chip.claro{ background:var(--claro); color:#fff }
+  .gordo{ font:900 96px/1 T; letter-spacing:-.04em; color:var(--oro); -webkit-text-stroke:4px #5A3A06; text-shadow:0 10px 0 #0006, 0 0 50px #E8B54A88; white-space:nowrap }
+  /* las mascotas y lo que dicen */
+  .masc-actor{ position:absolute; left:0; top:0; width:300px; height:330px; transform-origin:50% 100%; will-change:transform }
+  .masc-actor .sombra{ position:absolute; left:40px; right:40px; bottom:-6px; height:34px; border-radius:50%; background:radial-gradient(#000a, transparent 70%) }
+  .globo{ position:absolute; max-width:640px; padding:26px 36px; border-radius:40px; background:#fff; color:#2A1240; font:800 46px/1.18 T; letter-spacing:-.015em; box-shadow:0 24px 60px -18px #000d; opacity:0; will-change:transform, opacity }
+  .globo::after{ content:""; position:absolute; bottom:-26px; width:0; height:0; border:28px solid transparent; border-top-color:#fff; border-bottom:0 }
+  .globo.izq::after{ left:90px } .globo.der::after{ right:90px }
+  .globo .w{ opacity:.18; transition:none } .globo .w.ya{ opacity:1 } .globo .w.em{ color:#8A2BE2 }
+  /* el gancho */
+  #gancho{ position:absolute; inset:0 }
+  #g1{ position:absolute; left:40px; right:40px; top:150px; text-align:center; font:900 170px/.92 T; letter-spacing:-.045em }
+  #cuaderno{ position:absolute; left:700px; top:620px; width:230px; height:230px; color:var(--hueso) } #tache{ position:absolute; left:680px; top:600px; width:270px; height:270px }
+  svg.i{ fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round }
+  /* sin internet y el cierre */
+  #sinred{ position:absolute; inset:0; opacity:0 }
+  #sinred .ico{ position:absolute; left:50%; top:420px; width:380px; height:380px; margin-left:-190px; color:var(--claro-txt) }
+  #sinred .txt{ position:absolute; left:60px; right:60px; top:860px; text-align:center; font:900 124px/.95 T; letter-spacing:-.04em }
+  #sinred .txt em{ font-style:normal; color:var(--claro-txt) }
+  #cierre{ position:absolute; inset:0; opacity:0 }
+  #logo{ position:absolute; left:50%; top:250px; width:640px; height:640px; margin-left:-320px; object-fit:contain }
+  #cierre .lema{ position:absolute; left:60px; right:60px; top:900px; text-align:center; font:900 108px/.98 T; letter-spacing:-.04em }
+  #cierre .lema em{ font-style:normal; color:var(--claro-txt) }
+  #cierre .boton{ position:absolute; left:50%; top:1180px; padding:30px 58px; border-radius:99px; background:var(--vino); color:#fff; font:800 46px/1 T; white-space:nowrap; box-shadow:0 20px 50px -14px rgba(126,23,53,.9) }
+  #cierre .chico{ position:absolute; left:60px; right:60px; top:1300px; text-align:center; font:700 34px/1.4 N; color:#c9b9d8 }
+  #flash{ position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none }
+</style>
+<script>
+/* EL RELOJ FALSO de las mascotas (mascota.js usa performance.now, requestAnimationFrame y animaciones del navegador):
+   cada cuadro del video avanza exactamente lo que le toca, sin importar cuánto tarde la captura. */
+window.RELOJ = 0;
+const __rafs = [];
+Object.defineProperty(performance, 'now', { value: () => window.RELOJ, configurable: true });
+window.requestAnimationFrame = (cb) => { __rafs.push(cb); return __rafs.length; };
+window.cancelAnimationFrame = () => {};
+const __animar = Element.prototype.animate, __anims = [];
+Element.prototype.animate = function(k, o){ const a = __animar.call(this, k, o); a.pause(); __anims.push({ a, t0: window.RELOJ }); return a; };
+window.avanzarReloj = (ms) => {
+  window.RELOJ = ms;
+  for(let vuelta = 0; vuelta < 2; vuelta++){ const q = __rafs.splice(0); for(const cb of q){ try{ cb(ms); }catch(e){ console.error(e); } } }
+  for(let i = __anims.length - 1; i >= 0; i--){ const x = __anims[i]; try{ x.a.currentTime = ms - x.t0; }catch{} if(ms - x.t0 > 8000) __anims.splice(i, 1); }
+};
+</script>
+</head>
+<body>
+<div id="fondo"><div class="mancha" id="m1" style="width:900px;height:900px;background:#7E1735"></div><div class="mancha" id="m2" style="width:1000px;height:1000px;background:#5B1E9A"></div><div class="mancha" id="m3" style="width:700px;height:700px;background:#AC27FF"></div><div id="piso"></div><div id="iconos"></div></div>
+<div id="camara">
+  <div id="tit"></div>
+  <div id="tel"><div class="caja"><div class="pantalla"><div class="isla"></div><img id="pantA" alt=""><img id="pantB" alt="" style="opacity:0"></div><div class="brillo"></div></div></div>
+  <div id="props"></div>
+  <div id="gancho">
+    <div id="g1">¿Examen<br>mañana?</div>
+    <svg class="i" id="cuaderno" viewBox="0 0 24 24"><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9.5 8h5"/><path d="M9.5 12H16"/><path d="M9.5 16H14"/></svg>
+    <svg id="tache" viewBox="0 0 100 100"><path id="tache1" d="M14 14 L86 86" stroke="#E2506A" stroke-width="9" stroke-linecap="round" fill="none"/><path id="tache2" d="M86 14 L14 86" stroke="#E2506A" stroke-width="9" stroke-linecap="round" fill="none"/></svg>
+  </div>
+  <div id="sinred">
+    <svg class="i ico" viewBox="0 0 24 24"><path d="M12 20h.01"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><path d="M5 12.859a10 10 0 0 1 5.17-2.69"/><path d="M19 12.859a10 10 0 0 0-2.007-1.523"/><path d="M2 8.82a15 15 0 0 1 4.177-2.643"/><path d="M22 8.82a15 15 0 0 0-11.288-3.764"/><path d="m2 2 20 20"/></svg>
+    <div class="txt">Funciona<br><em>sin internet</em></div>
+  </div>
+  <div id="cierre">
+    <img id="logo" src="../marca/logo-1024.png" alt="CARYMO">
+    <div class="lema">Estudiar ya no<br><em>da flojera</em></div>
+    <div class="boton">Pruébalo · link en la bio</div>
+    <div class="chico">Hecho por Grupo Mazi</div>
+  </div>
+</div>
+<div id="actores"></div>
+<div id="flash"></div>
+<script type="module">
+import { crearMascota } from '../mascota.js';
+import { ICONOS } from '../iconos.js';
+import { trofeoSVG } from '../ligas.js';
+
+const cl = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const p = (t, a, b) => cl((t - a) / (b - a));
+const oc = (x) => 1 - Math.pow(1 - x, 3), ob = (x) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const eio = (x) => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const lerp = (a, b, k) => a + (b - a) * k;
+const $ = (s) => document.querySelector(s);
+const svgIco = (n, extra = '') => `<svg viewBox="0 0 24 24" ${extra}>${ICONOS[n] || ''}</svg>`;
+
+/* ── el guion y la línea de tiempo: sale de lo que dura cada voz ── */
+let G, D, L = {}, SEC = [], DUR = 0;
+const GAP = .6;
+async function armarTiempos(){
+  G = await (await fetch('guion.json')).json();
+  D = await (await fetch('voz/duraciones.json')).json();
+  let t = .5;
+  for(const l of G.lineas){
+    const extra = l.id === '03' ? .5 : l.id === '09' ? .9 : l.id === '10' ? .7 : 0;   /* respiros: al entrar a la app, antes de «sin internet» y antes del cierre */
+    t += extra;
+    L[l.id] = { a: t, b: t + D[l.id], voz: l.voz, txt: l.txt };
+    t += D[l.id] + GAP;
+  }
+  DUR = L['10'].b + 3.2;
+  const s = (id) => L[id].a - .4;
+  /* las escenas del teléfono: [desde, hasta, nombre, [[toma, rec desde, rec hasta], …]] */
+  SEC = [
+    [s('03'), s('04'), 'crear'], [s('04'), s('05'), 'pizarron'], [s('05'), s('06'), 'leccion'],
+    [s('06'), s('07'), 'ligas'], [s('07'), s('08'), 'juntos'], [s('08'), s('09'), 'cuarto'],
+  ];
+}
+let REC = {};
+async function cargarTomas(){
+  for(const t of ['crear', 'pizarron', 'leccion', 'ligas', 'juntos', 'cuarto']) REC[t] = await (await fetch('../anuncio/rec/' + t + '.json')).json();
+  const m = (t) => REC[t].marcas;
+  /* qué pedazo de cada grabación va en cada escena (se reparte el tiempo de la escena entre los pedazos) */
+  const TRAMOS = {
+    crear: [['crear', m('crear').materias - .2, m('crear').preparando + .3], ['crear', m('crear').camino - .2, m('crear').fin]],
+    pizarron: [['pizarron', m('pizarron').paso1 + .1, m('pizarron').paso4]],
+    leccion: [['leccion', m('leccion').preguntas - .5, m('leccion').fin - .3]],
+    ligas: [['ligas', m('ligas').tabla - .5, m('ligas').fin]],
+    juntos: [['juntos', m('juntos').jefe ?? m('juntos').camino + .4, m('juntos').fin]],
+    cuarto: [['cuarto', m('cuarto').pelota - .4, m('cuarto').atrapa + .6], ['cuarto', m('cuarto').vestir - .3, m('cuarto').fin]],
+  };
+  for(const s of SEC) s[3] = TRAMOS[s[2]];
+}
+
+/* los titulares de cada escena */
+const TIT = { crear: 'Tu plan,<br><em>tema por tema</em>', pizarron: 'Un pizarrón que<br><em>se dibuja solo</em>', leccion: 'Practicas<br><em>como juego</em>',
+  ligas: 'Tu liga,<br><em>tu trofeo</em>', juntos: 'Con tus amigos,<br><em>vencen al jefe</em>', cuarto: 'Tus mascotas<br><em>crecen contigo</em>' };
+
+/* ── el fondo: iconos a tres profundidades ── */
+const NUBE = [];
+function armarNube(){
+  const nombres = ['book-open', 'graduation-cap', 'star', 'trophy', 'flame', 'brain', 'lightbulb', 'sparkles', 'heart', 'timer', 'medal', 'calendar', 'target', 'crown', 'notebook-pen', 'gem', 'award', 'zap'];
+  let semilla = 7; const azar = () => { semilla = (semilla * 16807) % 2147483647; return semilla / 2147483647; };
+  for(let i = 0; i < 26; i++){
+    const prof = i % 3, el = document.createElement('div');
+    el.innerHTML = svgIco(nombres[i % nombres.length], `stroke="${['#C77DFF', '#E8B54A', '#ff8fb0', '#9CC3FF'][i % 4]}" stroke-width="${1.6 + prof * .4}"`);
+    const svg = el.firstChild; $('#iconos').append(svg);
+    NUBE.push({ svg, x: azar() * 1300 - 110, y: azar() * 2200 - 140, prof, vel: 18 + azar() * 26, giro: (azar() - .5) * 40, fase: azar() * 6 });
+  }
+}
+function pintarFondo(t, cam){
+  $('#m1').style.transform = `translate(${-200 + Math.sin(t * .23) * 160}px, ${200 + Math.cos(t * .19) * 140}px)`;
+  $('#m2').style.transform = `translate(${400 + Math.cos(t * .17) * 180}px, ${900 + Math.sin(t * .21) * 160}px)`;
+  $('#m3').style.transform = `translate(${300 + Math.sin(t * .29 + 1) * 220}px, ${1500 + Math.cos(t * .25) * 120}px) scale(${1 + Math.sin(t * .4) * .12})`;
+  $('#piso').style.backgroundPosition = `0 ${(t * 40) % 120}px`;
+  for(const n of NUBE){
+    const k = [.45, .75, 1.05][n.prof], y = ((n.y - t * n.vel * k) % 2300 + 2300) % 2300 - 200;
+    const px = -cam.x * (k - .3) * 1.4, py = -cam.y * (k - .3) * 1.4;
+    n.svg.style.transform = `translate(${n.x + px + Math.sin(t * .5 + n.fase) * 24}px, ${y + py}px) scale(${[.55, .8, 1.15][n.prof]}) rotate(${n.giro * Math.sin(t * .3 + n.fase)}deg)`;
+    n.svg.style.opacity = [.18, .3, .42][n.prof];
+    n.svg.style.filter = n.prof === 0 ? 'blur(2px)' : n.prof === 2 ? 'blur(.6px)' : '';
+  }
+}
+
+/* ── los actores: el tigre y la paloma ── */
+const A = {};
+function armarActores(){
+  for(const [k, q] of [['Tigre', 'tigre'], ['Paloma', 'paloma']]){
+    const el = document.createElement('div'); el.className = 'masc-actor'; el.innerHTML = '<div class="sombra"></div>'; $('#actores').append(el);
+    const m = crearMascota(el, { personaje: q, tam: 300, vestido: q === 'tigre' ? { acc: ['bufanda'] } : { acc: ['mono'] } });
+    m.el.style.position = 'absolute'; m.el.style.left = '0'; m.el.style.top = '0';
+    const g = document.createElement('div'); g.className = 'globo ' + (q === 'tigre' ? 'izq' : 'der'); $('#actores').append(g);
+    A[k] = { el, m, g, estado: '', linea: '' };
+  }
+}
+/* dónde está cada uno en cada momento: [x, y (de los pies), escala] */
+function poseDe(k, t){
+  const g1 = L['02'].b + .2, app = L['03'].a - .3, sr = L['09'].a - .45, ci = L['10'].a - .4;
+  const abajo = k === 'Tigre' ? [210, 1880, .78] : [870, 1880, .78];
+  const gancho = k === 'Tigre' ? [540, 1640, 1.55] : [800, 1700, 1.15];
+  const sinred = k === 'Tigre' ? [250, 1720, 1.0] : [830, 1720, 1.0];
+  const cierre = k === 'Tigre' ? [250, 1880, 1.05] : [830, 1880, 1.05];
+  const mezcla = (a, b, kk) => a.map((v, i) => lerp(v, b[i], kk));
+  if(t < g1){
+    if(k === 'Paloma'){ /* la paloma entra volando desde la derecha cuando le toca */
+      const e = oc(p(t, L['02'].a - .7, L['02'].a + .1)); return [lerp(1400, gancho[0], e), gancho[1] - Math.sin(e * Math.PI) * 260, gancho[2]];
+    }
+    /* el tigre se recorre a la izquierda para hacerle lugar */
+    const e = eio(p(t, L['02'].a - .7, L['02'].a)); return [lerp(gancho[0], 330, e), gancho[1], gancho[2]];
+  }
+  const pre = k === 'Tigre' ? [330, gancho[1], gancho[2]] : gancho;
+  if(t < app + .4) return mezcla(pre, abajo, eio(p(t, g1, app + .4)));
+  if(t < sr) return abajo;
+  if(t < ci) return mezcla(abajo, sinred, eio(p(t, sr, sr + .7)));
+  return mezcla(sinred, cierre, eio(p(t, ci, ci + .7)));
+}
+const REACCIONES = [ ['05', 'Tigre', 'festeja'], ['06', 'Paloma', 'bien'], ['07', 'Tigre', 'festeja'], ['08', 'Paloma', 'amor'], ['09', 'Tigre', 'sorpresa'] ];
+function pintarActores(t, cam){
+  for(const k of ['Tigre', 'Paloma']){
+    const a = A[k], [x, y, s] = poseDe(k, t);
+    const habla = Object.values(L).find((l) => l.voz === k && t >= l.a && t < l.b);
+    const empuje = habla ? 1 + .04 * Math.sin(p(t, habla.a, habla.a + .3) * Math.PI) : 1;
+    a.el.style.transform = `translate(${x - 150 - cam.x * .25}px, ${y - 330 - cam.y * .25}px) scale(${s * empuje})`;
+    /* quién habla mueve la boca; al terminar, reacciona o se queda tranquilo */
+    let quiero = habla ? 'habla' : 'quieto';
+    for(const [id, q, r] of REACCIONES) if(q === k && t >= L[id].b && t < L[id].b + 1.6) quiero = r;
+    if(k === 'Tigre' && t >= L['01'].a - .2 && t < L['01'].a + .9) quiero = 'sorpresa';
+    if(t >= L['10'].b) quiero = 'festeja';
+    if(a.estado !== quiero){ a.estado = quiero; a.m.play(quiero === 'quieto' ? 'calma' : quiero); }
+    /* el globito con lo que dice, palabra por palabra */
+    const g = a.g;
+    if(habla){
+      if(a.linea !== habla.txt){ a.linea = habla.txt; let em = false;
+        g.innerHTML = habla.txt.split(/(\*)/).map((tok) => { if(tok === '*'){ em = !em; return ''; } return tok.split(/(\s+)/).map((w) => /^\s+$/.test(w) || !w ? w : `<span class="w${em ? ' em' : ''}">${w}</span>`).join(''); }).join(''); }
+      const ws = [...g.querySelectorAll('.w')], kk = p(t, habla.a, habla.b - .2);
+      ws.forEach((w, i) => w.classList.toggle('ya', i < Math.ceil(kk * ws.length + .5)));
+      const ent = ob(p(t, habla.a - .15, habla.a + .2)), sal = p(t, habla.b + .25, habla.b + .45);
+      g.style.opacity = String(Math.min(1, ent * 1.4) * (1 - sal));
+      const gw = g.offsetWidth, gh = g.offsetHeight, cabeza = y - 330 * s - 40;
+      const gx = k === 'Tigre' ? Math.max(30, x - 120) : Math.min(1050 - gw, x + 120 - gw);
+      g.style.transform = `translate(${gx - cam.x * .25}px, ${cabeza - gh - cam.y * .25 + (1 - ent) * 30}px) scale(${.85 + .15 * ent})`;
+      g.style.transformOrigin = k === 'Tigre' ? '20% 100%' : '80% 100%';
+    } else { g.style.opacity = '0'; a.linea = ''; }
+  }
+}
+
+/* ── lo que sale del teléfono en cada escena ── */
+const PROPS = [];
+function prop(escena, html, { x, y, z = 160, desde = .15, hasta = .92, gira = 0, clase = 'prop' } = {}){
+  const el = document.createElement('div'); el.className = clase; el.innerHTML = html; $('#props').append(el);
+  PROPS.push({ el, escena, x, y, z, desde, hasta, gira, fase: PROPS.length * 1.7 });
+}
+function armarProps(){
+  prop('crear', `<div class="chip claro">${svgIco('book-open')}Biología</div>`, { x: 40, y: 560, desde: .12 });
+  prop('crear', `<div class="chip vino">${svgIco('calendar')}En 7 días</div>`, { x: 700, y: 760, desde: .22 });
+  prop('crear', `<div class="chip">${svgIco('list-checks')}Tema por tema</div>`, { x: 600, y: 1260, desde: .5 });
+  prop('pizarron', `<div class="chip oro">${svgIco('lightbulb')}Se dibuja solo</div>`, { x: 30, y: 640, desde: .15 });
+  prop('pizarron', `<div class="chip claro">${svgIco('sparkles')}Con voz</div>`, { x: 730, y: 1120, desde: .35 });
+  prop('leccion', `<div class="gordo">COMBO x5</div>`, { x: 330, y: 450, desde: .2, gira: 6 });
+  prop('leccion', `<div class="chip oro">${svgIco('zap')}+20 XP</div>`, { x: 40, y: 1080, desde: .38 });
+  prop('leccion', `<div class="chip vino">${svgIco('flame')}Racha de 6 días</div>`, { x: 520, y: 1300, desde: .55 });
+  prop('ligas', trofeoSVG(2, { tam: 300 }), { x: 720, y: 520, desde: .1, z: 240, gira: 18 });
+  prop('ligas', `<div class="chip oro">${svgIco('trophy')}Liga Oro</div>`, { x: 30, y: 720, desde: .28 });
+  prop('ligas', `<div class="chip claro">${svgIco('arrow-up')}Subes de liga</div>`, { x: 600, y: 1300, desde: .5 });
+  prop('juntos', `<div class="chip vino">${svgIco('swords')}Modo jefe</div>`, { x: 30, y: 600, desde: .12 });
+  prop('juntos', `<div class="chip oro">${svgIco('users')}¡Jefe vencido!</div>`, { x: 560, y: 1250, desde: .62 });
+  prop('cuarto', `<div class="chip claro">${svgIco('heart')}Acarícialo</div>`, { x: 20, y: 560, desde: .1 });
+  prop('cuarto', `<div class="chip vino">${svgIco('shirt')}Vístelo</div>`, { x: 700, y: 640, desde: .45 });
+  /* y crecen: huevo → bebé → adulta, en fila, saliendo del teléfono */
+  /* a los lados del teléfono: huevo y bebé a la izquierda, adulta a la derecha (nada encima de la pantalla) */
+  for(const [i, etapa, x, y] of [[0, 'huevo', 40, 840], [1, 'bebe', 40, 1090], [2, 'adulto', 850, 960]]){
+    const d = document.createElement('div'); d.style.cssText = 'width:200px;height:220px;position:relative';
+    prop('cuarto', '', { x, y, desde: .5 + i * .1, z: 200 });
+    const caja = PROPS[PROPS.length - 1].el; caja.append(d);
+    crearMascota(d, { personaje: 'paloma', tam: 200, vestido: etapa === 'adulto' ? { etapa, acc: ['corona'] } : { etapa } });
+  }
+}
+function pintarProps(t){
+  for(const pr of PROPS){
+    const s = SEC.find((x) => x[2] === pr.escena), dur = s[1] - s[0], k = (t - s[0]) / dur;
+    const ent = ob(cl((k - pr.desde) / .1)), sal = cl((k - pr.hasta) / .06);
+    const vis = k >= pr.desde - .01 && k <= pr.hasta + .07;
+    pr.el.style.display = vis ? '' : 'none'; if(!vis) continue;
+    const flota = Math.sin(t * 1.6 + pr.fase) * 12, z = pr.z * ent;
+    pr.el.style.opacity = String(cl(ent * 1.3) * (1 - sal));
+    pr.el.style.transform = `translate(${pr.x}px, ${pr.y + flota + (1 - ent) * 60}px) perspective(1200px) translateZ(${z - sal * 300}px) rotateY(${pr.gira * Math.sin(t * .9 + pr.fase)}deg) scale(${.4 + .6 * ent})`;
+  }
+}
+
+/* ── el teléfono ── */
+const ultimo = { A: '', B: '' };
+async function cuadroDe(img, cual, toma, seg){
+  const i = cl(Math.round(seg * 60), 0, REC[toma].cuadros - 1), src = `../anuncio/rec/${toma}/${String(i).padStart(5, '0')}.jpg`;
+  if(ultimo[cual] === src) return; ultimo[cual] = src; img.src = src; try{ await img.decode(); }catch{}
+}
+function recEn(sec, t){
+  const [a, b, , tr] = sec, k = cl((t - a) / (b - a)), n = tr.length, i = Math.min(n - 1, Math.floor(k * n)), kk = k * n - i;
+  const [toma, r0, r1] = tr[i]; return [toma, r0 + (r1 - r0) * kk];
+}
+
+let titActual = '';
+function titular(html, t0, t, sale){
+  const el = $('#tit');
+  if(titActual !== html){ titActual = html;
+    el.innerHTML = '<div>' + html.split('<br>').map((r) => { const out = []; let morado = false;
+      for(const tok of r.split(/(<em>|<\/em>|\s+)/)){ if(tok === '<em>'){ morado = true; continue; } if(tok === '</em>'){ morado = false; continue; } if(!tok) continue;
+        out.push(/^\s+$/.test(tok) ? ' ' : `<span class="pal"${morado ? ' style="color:var(--claro-txt)"' : ''}>${tok}</span>`); }
+      return out.join(''); }).join('<br>') + '</div>'; }
+  [...el.querySelectorAll('.pal')].forEach((s, i) => { const k = ob(p(t, t0 + i * .07, t0 + i * .07 + .45)); s.style.transform = `translateY(${(1 - k) * 90 - sale * 60}px) rotate(${(1 - k) * 6}deg)`; s.style.opacity = String(p(t, t0 + i * .07, t0 + i * .07 + .22) * (1 - sale)); });
+}
+
+/* ── la cámara: un acercamiento lento por escena, un acomodo suave al cambiar, y nada de vueltas ── */
+function camaraEn(t){
+  const s = SEC.find(([a, b]) => t >= a && t < b);
+  if(!s) return { x: Math.sin(t * .3) * 10, y: Math.cos(t * .25) * 8, z: 1, r: 0 };
+  const i = SEC.indexOf(s), k = (t - s[0]) / (s[1] - s[0]), llega = oc(cl((t - s[0]) / .7));
+  const lado = i % 2 ? 1 : -1;
+  return { x: lado * lerp(26, -14, k) + Math.sin(t * .4) * 6, y: lerp(18, -12, k), z: lerp(.97, 1.0, llega) + .045 * k, r: lado * .5 * (1 - llega) };
+}
+
+window.listo = (async () => {
+  await document.fonts.ready; await armarTiempos(); await cargarTomas();
+  armarNube(); armarActores(); armarProps();
+  await new Promise((r) => { const i = $('#logo'); if(i.complete) r(); else i.onload = r; });
+  const FX = '../../herramientas/video/efectos/';
+  const sonidos = G.lineas.map((l) => ['voz/' + l.id + '.mp3', L[l.id].a, 1, 'voz']);
+  for(const [a] of SEC) sonidos.push([FX + 'whoosh.wav', a - .08, .45, 'fx']);
+  sonidos.push([FX + 'golpe.wav', L['01'].a + .9, .6, 'fx'], [FX + 'golpe.wav', L['01'].a + 1.2, .6, 'fx'], [FX + 'whoosh.wav', L['02'].a - .7, .5, 'fx'],
+    [FX + 'whoosh.wav', L['09'].a - .45, .5, 'fx'], [FX + 'subida.wav', L['10'].a - .4, .55, 'fx']);
+  const ligas = SEC.find((x) => x[2] === 'ligas'); sonidos.push([FX + 'ding.wav', ligas[0] + (ligas[1] - ligas[0]) * .12, .6, 'fx']);
+  const juntos = SEC.find((x) => x[2] === 'juntos'); sonidos.push([FX + 'ding.wav', juntos[0] + (juntos[1] - juntos[0]) * .64, .6, 'fx']);
+  window.VIDEO = { w: 1080, h: 1920, fps: 60, dur: DUR, musica: { archivo: '/tmp/claude-0/musica/Fluffing_a_Duck.mp3', desde: 0, vol: .3, fin: 2.2 }, sonidos };
+})();
+
+window.pintar = async (t) => {
+  window.avanzarReloj(t * 1000);
+  const cam = camaraEn(t);
+  pintarFondo(t, cam);
+  $('#camara').style.transform = `translate(${cam.x}px, ${cam.y}px) scale(${cam.z}) rotate(${cam.r}deg)`;
+  /* el gancho */
+  const finG = L['03'].a - .3, enG = t < finG + .2;
+  $('#gancho').style.display = enG ? '' : 'none';
+  if(enG){
+    const k1 = ob(p(t, .15, .65)); const vaG = eio(p(t, L['02'].a - .75, L['02'].a - .25)); $('#g1').style.transform = `scale(${(.6 + .4 * k1) * (1 - .3 * vaG)}) rotate(${(1 - k1) * -6}deg) translateY(${-vaG * 260}px)`; $('#g1').style.opacity = String(p(t, .15, .35) * (1 - vaG));
+    const k3 = ob(p(t, L['01'].a + .5, L['01'].a + .9)); $('#cuaderno').style.transform = `scale(${k3 * (1 - p(t, L['02'].a - .8, L['02'].a - .4))}) rotate(${Math.sin(t * 18) * 4 * p(t, 1.4, 2)}deg)`;
+    for(const [id, a0] of [['#tache1', L['01'].a + .9], ['#tache2', L['01'].a + 1.2]]){ const e = $(id); e.style.strokeDasharray = 102; e.style.strokeDashoffset = String(102 * (1 - p(t, a0, a0 + .2))); }
+    $('#tache').style.opacity = String(1 - p(t, L['02'].a - .8, L['02'].a - .4));
+    const sac = p(t, L['01'].a + .9, L['01'].a + 1.6); $('#gancho').style.transform = `translateX(${sac > 0 && sac < 1 ? Math.sin(t * 70) * 10 * (1 - sac) : 0}px)`;
+    if(t >= L['02'].a - .25) titular('Tranqui:<br><em>para eso estamos</em>', L['02'].a - .15, t, p(t, finG - .4, finG)); else $('#tit').innerHTML = '';
+    if(t < L['02'].a - .2) titActual = '';
+  }
+  /* el teléfono con la app */
+  const s = SEC.find(([a, b]) => t >= a && t < b), primera = SEC[0][0], ultima = SEC[SEC.length - 1][1];
+  const enTel = t >= primera - .1 && t < ultima + .6;
+  $('#tel').style.display = enTel ? '' : 'none';
+  if(enTel){
+    const ent = ob(p(t, primera - .1, primera + .6)), sale = eio(p(t, ultima - .1, ultima + .5));
+    /* el giro de cada cambio de escena: media vuelta suave con cruce de imágenes, sin marear */
+    let giro = 0, cruce = 0;
+    if(s){ const i = SEC.indexOf(s), kc = p(t, s[0], s[0] + .55); if(i > 0 && kc < 1){ giro = Math.sin(kc * Math.PI) * -28; cruce = 1 - kc; } }
+    $('#tel').style.transform = `translateY(${(1 - ent) * 1100 - sale * 1600}px) rotateY(${(1 - ent) * 70 + Math.sin(t * .45) * 7 + giro}deg) rotateX(${4 + Math.sin(t * .33) * 2.5}deg) rotateZ(${(1 - ent) * 8 + sale * -10}deg)`;
+    if(s){
+      const [toma, seg] = recEn(s, t); await cuadroDe($('#pantA'), 'A', toma, seg);
+      const i = SEC.indexOf(s);
+      if(i > 0 && cruce > 0){ const [t2, s2] = recEn(SEC[i - 1], SEC[i - 1][1] - .02); await cuadroDe($('#pantB'), 'B', t2, s2); $('#pantB').style.opacity = String(cruce); } else $('#pantB').style.opacity = '0';
+      titular(TIT[s[2]], s[0] + .15, t, p(t, s[1] - .3, s[1]));
+    }
+  }
+  pintarProps(t);
+  /* sin internet */
+  const a9 = L['09'].a - .45, b9 = L['10'].a - .4, enS = t >= a9 && t < b9 + .3;
+  $('#sinred').style.display = enS ? '' : 'none';
+  if(enS){ const k = ob(p(t, a9 + .2, a9 + .7)); $('#sinred .ico').style.transform = `scale(${k}) rotate(${(1 - k) * -20}deg)`;
+    const k2 = oc(p(t, a9 + .4, a9 + .85)); $('#sinred .txt').style.transform = `translateY(${(1 - k2) * 70}px)`; $('#sinred').style.opacity = String(Math.min(k2 * 1.5, 1) * (1 - p(t, b9, b9 + .3)));
+    if(!s && t < b9) $('#tit').innerHTML = '', titActual = ''; }
+  /* el cierre */
+  const enC = t >= b9; $('#cierre').style.display = enC ? '' : 'none';
+  if(enC){
+    $('#cierre').style.opacity = String(p(t, b9, b9 + .2));
+    const k = ob(p(t, b9 + .05, b9 + .7)); $('#logo').style.transform = `scale(${.5 + .5 * k}) rotate(${(1 - k) * -10}deg) translateY(${Math.sin(t * 1.4) * 8}px)`;
+    const k2 = oc(p(t, L['10'].a + .3, L['10'].a + .8)); $('#cierre .lema').style.transform = `translateY(${(1 - k2) * 60}px)`; $('#cierre .lema').style.opacity = String(k2);
+    const k3 = ob(p(t, L['10'].b, L['10'].b + .45)); $('#cierre .boton').style.transform = `translateX(-50%) scale(${k3 * (1 + Math.sin(Math.max(0, t - L['10'].b - .5) * 5) * .03)})`;
+    $('#cierre .chico').style.opacity = String(p(t, L['10'].b + .5, L['10'].b + .9));
+  }
+  $('#flash').style.opacity = String(Math.max(0, 1 - Math.abs(t - b9) / .12) * .45);
+  pintarActores(t, cam);
+};
+</script>
+</body>
+</html>
