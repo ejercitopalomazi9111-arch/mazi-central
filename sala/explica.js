@@ -67,7 +67,26 @@ const VOZ = {
   normal: 'de 3 a 5 frases (entre 50 y 90 palabras)',
   fondo: 'de 5 a 7 frases (entre 90 y 150 palabras): el qué, el CÓMO funciona por dentro (el mecanismo, paso a paso), el porqué, un ejemplo concreto con datos o un caso real, y cómo se conecta con lo anterior o un error común',
 };
-const NIVEL = { prepa: 'de preparatoria', uni: 'de universidad', facil: 'muy sencillo, como para alguien que nunca lo ha visto' };
+const NIVEL = {
+  kids: 'para NIÑOS de kínder y primaria: frases muy cortas y palabras sencillas, ejemplos con juguetes, animales, comida y la escuela, tono alegre y cariñoso; nada de términos técnicos sin explicarlos con algo que un niño conozca',
+  secu: 'de secundaria: claro y con ejemplos cotidianos, sin tecnicismos de más',
+  /* Carlos, 14 nov: «un nivel prepa está casi a nivel universidad, bájalos un poco» */
+  prepa: 'de preparatoria en México: lo que de verdad se ve en clase y entra en un examen de prepa; NO metas temas ni términos de universidad',
+  uni: 'de universidad',
+  facil: 'muy sencillo, como para alguien que nunca lo ha visto',
+};
+/* qué tan a fondo (Carlos, 14 nov: «en mi examen me van a preguntar generalidades… a nadie le importan 3 clases de qué es el
+   endometrio cuando el examen va a ser de todo el aparato reproductor; que me explique cuáles son las partes, cómo funciona») */
+const PROFUNDIDAD = {
+  general: 'PANORAMA PARA EL EXAMEN: cubre en la MISMA clase TODOS los subtemas principales de lo que se pide (sus partes, para qué sirve cada una y cómo funciona el conjunto), cada uno en lo esencial y con lo que suele preguntar un examen. NO te quedes en un solo detalle ni profundices en una sola parte: mejor varias cosas claras que una muy a fondo. No pierdas datos importantes',
+  normal: '',
+  detalle: 'Puedes profundizar en el mecanismo de cada parte, con detalles y ejemplos',
+};
+const profundidad = () => (document.getElementById('profundidad') || {}).value || 'normal';
+/* la llave de la clase guardada: igual que antes si la profundidad es la normal (no se pierden las ya hechas) */
+export const llaveNivel = (nivel, largo, prof) => `${nivel}-${largo}${prof && prof !== 'normal' ? '-' + prof : ''}`;
+/* lo que se pide = el tema + lo que el alumno agregó en «escribe aquí» */
+const temaPedido = () => { const t = $('#tema').value.trim(), x = ($('#extra')?.value || '').trim(); return x ? `${t}${t ? '. ' : ''}Además, el alumno pide: ${x}` : t; };
 const FORMA = `{
  "titulo": "título corto de la clase",
  "visual": true,
@@ -161,7 +180,7 @@ Contesta SÓLO con JSON válido, sin texto antes ni después, con esta forma:
 ${FORMA}
 ${CATALOGO}
 Reglas:
-- ${LARGO[largo]} pasos, nivel ${NIVEL[nivel]}. El PRIMER paso es un "titulo".
+- ${LARGO[largo]} pasos, nivel ${NIVEL[nivel] || NIVEL.prepa}.${PROFUNDIDAD[profundidad()] ? ' ' + PROFUNDIDAD[profundidad()] + '.' : ''} El PRIMER paso es un "titulo".
 - "voz": ${VOZ[largo]} que EXPLIQUEN de verdad: el porqué, un ejemplo o un truco para recordarlo.${largo === 'fondo' ? ' A FONDO quiere decir PROFUNDO, no largo de relleno: términos técnicos bien explicados, mecanismos, excepciones, matices, datos concretos y casos. Los elementos del pizarrón también más completos (listas de 5 a 7, tablas de 4 a 6 filas, diagramas con más nodos).' : ''} Nunca sólo anuncies lo que viene. Como lo dirías hablando: sin markdown, sin emojis y sin leer la pizarra palabra por palabra; la complementas.
 - "pizarra": lo que se dibuja en ese paso. USA MUCHOS TIPOS DISTINTOS: al menos 6 tipos diferentes en la clase, y no repitas el mismo tipo dos pasos seguidos. Elige el que MEJOR enseñe cada idea: si se comparan cosas, "comparar" o "tabla"; si se juntan temas, "venn"; si es un proceso, "pasos" o "ciclo"; si son partes de algo, "partes"; si hay jerarquía, "arbol" o "piramide"; si hay fechas, "linea"; si hay causas, "causas" o "diagrama".
 - "visual": true si el tema se entiende mejor con dibujos y diagramas; entonces usa más diagramas, dibujos y fotos, y menos texto suelto.
@@ -451,7 +470,7 @@ let fotos = [];
 function aviso(t){ const a = $('#aviso'); a.textContent = t; a.hidden = !t; if(!$('#vClase').hidden && t){ avisoSub(t); } }
 const ESPERA = ['Armando tu clase…', 'Ordenando las ideas…', 'Buscando buenos ejemplos…', 'Preparando el pizarrón…', 'Ya casi…'];
 async function pedirClase(){
-  const tema = $('#tema').value.trim();
+  const tema = temaPedido();
   if(!tema && !fotos.length){ aviso('Escribe qué quieres que te explique (o sube una foto de tus apuntes).'); $('#tema').focus(); return; }
   if(!conAcceso()){ aviso('Entra a tu cuenta de CARYMO (o pon la llave de La Sala) para que te expliquen.'); $('#cajaLlave').hidden = false; $('#llaveTxt').focus(); return; }
   /* el iPhone sólo deja hablar si la voz arrancó con un toque: se «despierta» aquí, con una pausa vacía */
@@ -463,7 +482,7 @@ async function pedirClase(){
   const giro = setInterval(() => { k++; const s = Math.round((Date.now() - t0) / 1000);
     $('#preparaTxt').innerHTML = `${ESPERA[k % ESPERA.length]}${largaEspera ? ` <small>(${s} s de unos 120)</small>` : ''}<b>${esc(tema || 'tus apuntes')}</b>`; }, 3000);
   try{
-    const largo = $('#largo').value, nivelB = `${$('#nivel').value}-${largo}`;
+    const largo = $('#largo').value, nivelB = llaveNivel($('#nivel').value, largo, profundidad());
     /* primero la que ya está en el teléfono (CARYMO la deja lista al crear el plan): abre sin internet */
     const deGuardada = (d, extra) => { const c = normalizarConNombre(sinCarlos(d)); c.motor = d.motor || motor; c.tema = tema; c.id = Date.now().toString(36); c.fecha = Date.now(); Object.assign(c, extra); guardarHistorial(c); empezar(c); };
     const local = tema && !fotos.length ? await leerClase(tema, nivelB) : null;
@@ -487,7 +506,7 @@ async function pedirClase(){
     if(largo === 'fondo') segundaParte(c, motor, tema).then(guardarla); else guardarla();
   }catch(e){
     /* se cayó la red a medio pedido: si hay una guardada (aunque sea la básica), mejor eso que un error */
-    const tema2 = $('#tema').value.trim(), local = tema2 && !fotos.length ? await leerClase(tema2, `${$('#nivel').value}-${$('#largo').value}`) : null;
+    const tema2 = temaPedido(), local = tema2 && !fotos.length ? await leerClase(tema2, llaveNivel($('#nivel').value, $('#largo').value, profundidad())) : null;
     if(local){ try{ const c = normalizarConNombre(sinCarlos(local)); c.motor = local.motor || 'groq'; c.tema = tema2; c.id = Date.now().toString(36); c.fecha = Date.now(); c.guardada = true; guardarHistorial(c); empezar(c); return; }catch{} }
     ver('inicio'); aviso(e.message || String(e)); if(e.llave) $('#cajaLlave').hidden = false;
   }finally{ clearInterval(giro); }
@@ -495,7 +514,7 @@ async function pedirClase(){
 /* ?preparar=1 · CARYMO la pide de antemano, en un marco escondido: se arma (o se saca de la
    biblioteca), se guarda en el teléfono y se avisa «listo». Sin pantalla, sin voz, sin sonidos. */
 async function prepararCallado(){
-  const tema = $('#tema').value.trim(), largo = $('#largo').value, nivelB = `${$('#nivel').value}-${largo}`;
+  const tema = temaPedido(), largo = $('#largo').value, nivelB = llaveNivel($('#nivel').value, largo, profundidad());
   const avisar = (ok, por) => { try{ parent.postMessage({ explica: 'listo', tema, nivel: nivelB, ok, por }, location.origin); }catch{} };
   if(!tema) return avisar(false, 'sin tema');
   if(await hayClase(tema, nivelB, { basicaCuenta: false })) return avisar(true, 'ya estaba');
@@ -619,7 +638,7 @@ document.addEventListener('visibilitychange', () => { if(document.hidden && sona
 /* ?tema=… arranca directo (desde la mesa o un link) */
 const q0 = new URLSearchParams(location.search).get('tema'); if(q0) $('#tema').value = q0;
 /* …y Estudio también dice el nivel y el largo («corta»: un nodo del camino no es una clase de una hora) */
-{ const q = new URLSearchParams(location.search); for(const k of ['nivel', 'largo', 'motor']){ const v = q.get(k); if(v && [...$('#' + k).options].some((o) => o.value === v)) $('#' + k).value = v; } }
+{ const q = new URLSearchParams(location.search); for(const k of ['nivel', 'largo', 'motor', 'profundidad']){ const v = q.get(k); if(v && [...$('#' + k).options].some((o) => o.value === v)) $('#' + k).value = v; } }
 if(new URLSearchParams(location.search).has('preparar')) prepararCallado();
 else { botonPlay(); pintarVoces(); pintarHistorial(); ver('inicio'); }
 /* para las pruebas: cargar una clase ya hecha sin pedirla */

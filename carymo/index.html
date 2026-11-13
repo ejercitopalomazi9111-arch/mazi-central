@@ -179,7 +179,19 @@
 
   /* ══ palomium y el cuarto del compañero (companero.js, cosas.js) ══ */
   .pastilla.cubos{ border:0; color:#E7CCFF; font:800 14px/1 Titulo; cursor:pointer; gap:5px }
-  .pastilla.cubos.aviso{ box-shadow:inset 0 0 0 2px #FF8A9E }
+  .pastilla.cubos{ position:relative; padding:3px 12px 3px 3px; min-height:44px }
+  .pm-aro{ --c:#4FD48A; position:relative; display:grid; place-items:center; width:40px; height:40px; border-radius:50%; flex:none;
+    background:conic-gradient(var(--c) calc(var(--salud, 80) * 1%), #ffffff22 0) }
+  .pm-aro::before{ content:""; position:absolute; inset:3px; border-radius:50%; background:var(--fondo-2, #24113A) }
+  .pm-masc{ position:relative; display:grid; place-items:center; width:34px; height:34px; overflow:hidden; border-radius:50% }
+  .pastilla.cubos[data-salud="baja"] .pm-aro{ --c:#F2C14E } .pastilla.cubos[data-salud="peligro"] .pm-aro{ --c:#FF5A72 }
+  .pastilla.cubos.sin-masc .pm-aro{ display:none }
+  .pm-cubos{ display:inline-flex; align-items:center; gap:4px } .pm-cubos b{ font:inherit }
+  .pm-alerta{ display:none; position:absolute; left:28px; top:-4px; width:18px; height:18px; border-radius:50%; background:#FF5A72; color:#fff; font:900 13px/18px Titulo; text-align:center; box-shadow:0 0 0 2px var(--fondo) }
+  .pastilla.cubos[data-salud="peligro"] .pm-alerta, .pastilla.cubos[data-salud="baja"] .pm-alerta{ display:block; animation:pmAlerta 1.1s ease-in-out infinite }
+  .pastilla.cubos[data-salud="baja"] .pm-alerta{ background:#E8A33A }
+  @keyframes pmAlerta{ 0%, 100%{ transform:translateY(0) scale(1) } 40%{ transform:translateY(-4px) scale(1.15) } }
+  .pastilla.cubos.aviso{ box-shadow:none }
   .pastilla.cubos.gana{ animation:ganaCubo .7s cubic-bezier(.3,1.6,.4,1) }
   @keyframes ganaCubo{ 40%{ transform:scale(1.25) } }
   .cubo-ico{ display:inline-grid; width:18px; height:18px; flex:none } .cubo-ico svg{ width:100%; height:100% }
@@ -690,6 +702,10 @@
   .stat{ padding:14px; border-radius:16px; background:var(--fondo-2); display:flex; gap:12px; align-items:center }
   .stat .i{ width:26px; height:26px } .stat b{ display:block; font:900 20px/1 Titulo; white-space:nowrap } .stat small{ color:var(--suave); font-size:13px }
   .ajuste{ display:flex; align-items:center; gap:12px; min-height:56px; padding:0 14px; border-radius:14px; background:var(--fondo-2); margin-bottom:8px; font-weight:700 }
+  /* la voz: el nombre arriba y la lista abajo, a todo lo ancho (si no, «pizarrón» se partía letra por letra) */
+  .ajuste.voz-aj{ flex-wrap:wrap; padding:12px 14px; row-gap:10px }
+  .ajuste.voz-aj > span{ flex:1 1 calc(100% - 40px); min-width:0; overflow-wrap:normal }
+  .ajuste.voz-aj select{ flex:1 1 auto; max-width:none !important; min-width:0 }
   .ajuste .i{ color:var(--claro-txt) } .ajuste span{ flex:1 }
   .interruptor{ position:relative; width:52px; height:32px; border-radius:999px; border:0; background:#ffffff22; transition:background .2s; flex:none }
   .interruptor::after{ content:""; position:absolute; left:3px; top:3px; width:26px; height:26px; border-radius:50%; background:#fff; transition:transform .2s }
@@ -746,6 +762,13 @@
   .agregar-am{ display:grid; grid-template-columns:minmax(0, 1fr) auto; gap:8px; margin-top:6px } .agregar-am .campo{ min-height:44px; font-size:16px }
   .barra-sesion{ position:fixed; left:12px; right:12px; top:calc(8px + env(safe-area-inset-top)); z-index:60; display:flex; align-items:center; gap:10px; padding:8px 8px 8px 14px; border-radius:18px;
     background:linear-gradient(90deg, #7E1735, #5B2A86); box-shadow:0 10px 30px #0006; color:#fff; max-width:560px; margin:0 auto }
+  .barra-sesion.mini{ left:auto; right:12px; max-width:none; margin:0; padding:6px 12px; gap:8px; border-radius:999px; touch-action:none; cursor:grab; opacity:.94 }
+  .barra-sesion.movida{ right:auto; margin:0 }
+  .barra-sesion.mini .marcador, .barra-sesion.mini [data-salir-ses]{ display:none }
+  .barra-sesion .mini-mar{ display:none; font:800 14px/1 Titulo; font-variant-numeric:tabular-nums; white-space:nowrap }
+  .barra-sesion.mini .mini-mar{ display:inline }
+  .barra-sesion.mini .crono b{ font-size:15px }
+  .barra-sesion:not(.mini).movida{ left:12px !important; right:12px }
   .barra-sesion .crono{ display:flex; align-items:center; gap:6px; font-variant-numeric:tabular-nums } .barra-sesion .crono b{ font-size:18px }
   .barra-sesion .marcador{ flex:1; display:flex; justify-content:center; align-items:center; gap:8px; font-size:13px; font-weight:700; min-width:0 }
   .barra-sesion .marcador span{ padding:3px 8px; border-radius:10px; background:#ffffff1a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:42% } .barra-sesion .marcador .gana{ background:#fff; color:#5B2A86 }
@@ -809,6 +832,9 @@
   .masc-fin{ display:grid; place-items:center; height:132px; margin:4px 0 8px }
   .hoja-res .dentro{ position:relative }
   .hoja-res .masc-res{ position:absolute; right:14px; top:-78px; width:76px; height:88px }
+  .chips-nivel{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; margin-bottom:8px }
+  .chips-nivel button{ min-height:48px; padding:10px; border-radius:16px; border:2px solid #ffffff1a; background:#ffffff0d; color:inherit; font-weight:800; font-size:15px; font-family:inherit; line-height:1.2 }
+  .chips-nivel button[aria-checked="true"]{ border-color:var(--claro); background:#AC27FF22 }
   .elige-masc{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; margin-bottom:6px }   /* 8 animales + ninguno = 3 filas de 3 */
   .elige-masc button{ display:grid; justify-items:center; gap:6px; padding:12px 6px; border-radius:18px; border:2px solid #ffffff1a; background:#ffffff0d; color:inherit; font-weight:700; font-size:14px; line-height:1.2; font-family:inherit; min-height:44px; min-width:0; overflow:hidden; transition:transform .25s cubic-bezier(.3,1.6,.4,1), border-color .2s }
   .elige-masc button[aria-checked="true"]{ border-color:var(--claro, #AC27FF); background:#AC27FF22 }

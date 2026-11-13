@@ -129,19 +129,38 @@ async function ia({ sistema, texto, imagenes = [], motor = imagenes.length ? 'ge
 
 /* ══ 1 · LO QUE SE LE PIDE A LA IA ════════════════════════════════════════ */
 const corta = (t, n) => String(t ?? '').trim().slice(0, n);
+/* EL NIVEL DE ESTUDIO (Carlos, 14 nov: «suma un nivel kids para kínder, primaria, secundaria… y un nivel prepa está casi a
+   nivel universidad, bájalos un poco»). Se elige en Ajustes; lo usan el plan, las lecciones y el pizarrón. */
+const NIVELES = { kids: 'Kids · kínder y primaria', secu: 'Secundaria', prepa: 'Prepa', uni: 'Universidad' };
+const TUTOR = {
+  kids: 'de niños de kínder y primaria en México. Hablas con frases muy cortas, palabras sencillas, tono alegre y ejemplos con juguetes, animales, comida y la escuela; nada de tecnicismos',
+  secu: 'de secundaria en Querétaro, México, claro y con ejemplos cotidianos',
+  prepa: 'de preparatoria en Querétaro, México. Te quedas en lo que de verdad se ve en clase de prepa y entra en el examen: nada de temas ni términos de universidad',
+  uni: 'de universidad en México',
+};
+const nivelEstudio = () => NIVELES[ajustes.nivel] ? ajustes.nivel : 'prepa';
+/* qué tan a fondo: «automático» = general cuando el examen está cerca (Carlos: «mientras más se acerca la fecha, que se vaya
+   volviendo más general y más útil para datos que sí te pueden preguntar»), normal si falta mucho */
+function profundidadDe(p){
+  const elegida = ajustes.profundidad || 'auto';
+  if(elegida !== 'auto') return elegida;
+  const dias = p && p.fecha ? Math.ceil((Date.parse(p.fecha + 'T12:00:00') - Date.now()) / 864e5) : 99;
+  return dias <= 10 ? 'general' : 'normal';
+}
+const llaveNivel = (nivel, largo, prof) => `${nivel}-${largo}${prof && prof !== 'normal' ? '-' + prof : ''}`;
 function sistemaPlan(){
-  return `Eres un tutor de preparatoria en Querétaro, México. Armas PLANES DE ESTUDIO para un examen, en español de México.
+  return `Eres un tutor ${TUTOR[nivelEstudio()]}. Armas PLANES DE ESTUDIO para un examen, en español de México.
 Contesta SÓLO con JSON válido, sin texto antes ni después, con esta forma:
 { "titulo": "Examen de <materia>", "notas": "resumen corto de lo que traen los apuntes o temas (máx 600 caracteres)",
   "unidades": [ { "titulo": "nombre corto de la unidad (2 a 5 palabras)", "frase": "una frase corta y motivadora de qué se aprende aquí", "temas": [ { "titulo": "tema (2 a 6 palabras)", "resumen": "de qué trata, 1 o 2 frases" } ] } ] }
 Reglas:
 - De 3 a 4 unidades, de lo básico a lo difícil (la primera son los fundamentos; la última, lo que más cuesta).
-- De 2 a 3 temas por unidad, sin repetir. Sólo temas que de verdad entran en el examen.
+- De 2 a 3 temas por unidad, sin repetir. Sólo temas que de verdad entran en el examen, del tamaño de un tema de clase (ej. «Partes del aparato reproductor femenino», NO «El endometrio»): nada de subtemas tan específicos que un examen de este nivel no preguntaría.
 - Si te mandan temas o fotos de apuntes, el plan se arma con ESO (no inventes otro temario).
 - Nada de emojis.`;
 }
 function sistemaLeccion(){
-  return `Eres un tutor de preparatoria en Querétaro, México. Escribes en español de México, claro y sin relleno.
+  return `Eres un tutor ${TUTOR[nivelEstudio()]}. Escribes en español de México, claro y sin relleno.
 Vas a escribir UNA lección corta y su cuestionario. Contesta SÓLO con JSON válido, sin texto antes ni después:
 { "leccion": { "titulo": "título corto (máximo 6 palabras)", "ideas": [ { "titulo": "2 a 4 palabras", "texto": "UNA sola idea en máximo 22 palabras, con **una** palabra clave en negritas", "icono": "un dibujo de la lista" } ], "dato": "un truco o ejemplo para recordarlo, máximo 18 palabras" },
   "preguntas": [
@@ -615,10 +634,10 @@ async function prepararPlan(datos, anadirA = null){
     /* sin fotos ni comentarios, el mismo temario de la misma materia ya se armó antes: se reusa */
     const generico = !datos.fotos.length && !datos.extra && !anadirA && datos.temas.length;
     const claveTemas = datos.temas.map((x) => x.trim()).filter(Boolean).sort().join(' · ');
-    let j = generico ? await deLaBiblioteca('plan', datos.materia.nombre, claveTemas, 'prepa', normalizarPlan) : null;
+    let j = generico ? await deLaBiblioteca('plan', datos.materia.nombre, claveTemas, nivelEstudio(), normalizarPlan) : null;
     if(!j){
       j = await ia({ sistema: sistemaPlan(), texto, imagenes: datos.fotos.map(({ mime, data }) => ({ mime, data })), tope: 4000, revisar: normalizarPlan });
-      if(generico) aLaBiblioteca('plan', datos.materia.nombre, claveTemas, 'prepa', j);
+      if(generico) aLaBiblioteca('plan', datos.materia.nombre, claveTemas, nivelEstudio(), j);
     }
     clearInterval(giro); bolas.forEach((b) => b.classList.add('ve')); lis.forEach((l) => l.classList.add('ya'));
     let p;
@@ -672,7 +691,7 @@ function contenidoDe(p, temaId){
   const t = temaDe(p, temaId);
   const u = p.unidades.find((x) => x.temas.some((y) => y.id === temaId));
   const pr = (async () => {
-    const nivel = p.academia ? 'academia' : 'prepa';
+    const nivel = p.academia ? 'academia' : nivelEstudio();
     let j = await deLaBiblioteca('leccion', p.materia, t.titulo, nivel, normalizarLeccion);
     if(!j){
       j = await ia({ sistema: sistemaLeccion(), tope: 7000, revisar: normalizarLeccion,
@@ -1198,7 +1217,7 @@ async function abrirSimulacro(p, n, _repaso){
 /* la clase en el pizarrón: Explica, la misma de la mesa, dentro de una capa */
 /* lo que se le pide a Explica para la cátedra de un nodo: lo usan abrirla y prepararla de antemano */
 function pizarraDe(p, n){
-  const q = new URLSearchParams(); q.set('nivel', 'prepa');
+  const q = new URLSearchParams(); q.set('nivel', nivelEstudio()); q.set('profundidad', profundidadDe(p));
   const unidad = n.alcance === 'unidad' && p.unidades ? p.unidades.find((u) => u.nodos.some((x) => x.id === n.id)) : null;
   if(unidad){ q.set('tema', `Panorama general de «${unidad.titulo}» (${p.materia}): de qué trata y cómo se conectan ${unidad.temas.map((t) => t.titulo).join(', ')}. Explica la idea general; cada tema se verá a fondo después.`); q.set('largo', 'normal'); }
   else { q.set('tema', `${n.titulo} (${p.materia})`); q.set('largo', 'corta'); }
@@ -1218,7 +1237,7 @@ function pizarraDe(p, n){
   }
   /* lo demás de la dirección de CARYMO pasa igual (?servidor=, ?sala=: con qué sala habla) */
   for(const [k, v] of new URLSearchParams(location.search)) if(!q.has(k) && !['ir', 'abrir', 'plan'].includes(k)) q.set(k, v);
-  return { q, unidad, nivelB: `${q.get('nivel')}-${q.get('largo')}` };
+  return { q, unidad, nivelB: llaveNivel(q.get('nivel'), q.get('largo'), q.get('profundidad')) };
 }
 /* SIN INTERNET Y SIN CLASE GUARDADA: una básica con las ideas de la lección del tema (la que ya está en
    el teléfono). Se marca «basica»: en cuanto haya red, Explica pide la de verdad y la pisa. */
@@ -1246,12 +1265,15 @@ function abrirPizarra(p, n){
      preciado en teléfono»). Se dobla sola a los 4 s; la flechita de arriba la vuelve a abrir; al terminar la clase se abre sola. */
   const plegar = (si) => { c.classList.toggle('plegada', si); $$('[data-plegar]', c).forEach((b) => b.setAttribute('aria-expanded', String(!si))); };
   let tocoCabeza = false; setTimeout(() => { if(!tocoCabeza && c.isConnected) plegar(true); }, 4000);
-  const alTerminar = (e) => { if(e.origin === location.origin && e.data && e.data.explica === 'fin' && n.id){ plegar(false); const b = $('[data-vista]', c); if(b){ b.classList.add('blanco'); b.textContent = 'Terminar'; brindis('Clase completa', '', 'presentation'); } } };
+  /* Carlos, 14 nov: «da puntos también por ver los panoramas y las clases». Antes contaba sólo si tocabas «Ya la vi», y esa
+     cabecera se dobla sola: casi nadie lo veía. Ahora, si la clase llegó al final, cuenta aunque salgas con la X. */
+  const xpClase = unidad ? 15 : 12; let terminada = false;
+  const alTerminar = (e) => { if(e.origin === location.origin && e.data && e.data.explica === 'fin' && n.id){ terminada = true; plegar(false); const b = $('[data-vista]', c); if(b){ b.classList.add('blanco'); b.textContent = 'Terminar'; } brindis(`Clase completa · +${xpClase} XP`, 'oro', 'zap'); tono(SON.moneda); } };
   addEventListener('message', alTerminar);
   c.addEventListener('click', (e) => {
     if(e.target.closest('[data-plegar]')){ tocoCabeza = true; plegar(!c.classList.contains('plegada')); tono(SON.toque); return; }
-    if(e.target.closest('[data-cerrar]')){ removeEventListener('message', alTerminar); cerrarCapa(); pintar(); return; }
-    if(e.target.closest('[data-vista]')){ removeEventListener('message', alTerminar); completarNodo(planes[p.id], n, { xp: unidad ? 15 : 12 }); }
+    if(e.target.closest('[data-cerrar]')){ removeEventListener('message', alTerminar); if(terminada && n.id) completarNodo(planes[p.id], n, { xp: xpClase }); else { cerrarCapa(); pintar(); } return; }
+    if(e.target.closest('[data-vista]')){ removeEventListener('message', alTerminar); completarNodo(planes[p.id], n, { xp: xpClase }); }
   });
 }
 
@@ -1713,6 +1735,11 @@ function pintarPerfil(){
     <div class="seccion-t">Tu compañero</div>
     <button class="bt fuerte ancho" data-abrir-companero style="margin-bottom:12px">${ico('house')}Su cuarto y la tienda</button>
     <div class="elige-masc" role="radiogroup" aria-label="Tu compañero">${[...PERSONAJES.map((k) => [k, NOMBRE_PERSONAJE[k]]), ['no', 'Ninguno']].map(([k, t]) => `<button role="radio" aria-checked="${ajustes.mascota === k}" data-masc="${k}">${k === 'no' ? ico('x') : `<span class="masc-mini" data-mini="${k}"></span>`}<span>${t}</span></button>`).join('')}</div>
+    <div class="seccion-t">Tu nivel</div>
+    <div class="chips-nivel" role="radiogroup" aria-label="Tu nivel de estudio">${Object.entries(NIVELES).map(([k, t]) => `<button role="radio" aria-checked="${nivelEstudio() === k}" data-nivel="${k}">${esc(t)}</button>`).join('')}</div>
+    <div class="seccion-t">Qué tan a fondo te explico</div>
+    <div class="chips-nivel" role="radiogroup" aria-label="Qué tan a fondo">${[['auto', 'Automático'], ['general', 'Lo general'], ['normal', 'Normal'], ['detalle', 'A detalle']].map(([k, t]) => `<button role="radio" aria-checked="${(ajustes.profundidad || 'auto') === k}" data-prof="${k}">${t}</button>`).join('')}</div>
+    <p class="sub-vista" style="margin:-2px 0 10px;font-size:13px">Automático: normal cuando falta mucho para el examen, y lo general (todos los temas, lo que sí te preguntan) cuando faltan 10 días o menos.</p>
     <div class="seccion-t">La voz que te explica</div>
     <div class="ajuste voz-aj">${ico('mic')}<span>Voz del pizarrón<small style="display:block;color:var(--tenue);font-weight:500">Las «de estudio» suenan como persona</small></span>
       <select id="pVoz" class="campo" style="max-width:170px;min-height:40px" aria-label="Voz del pizarrón">${opcionesVoz()}</select>
@@ -1727,6 +1754,8 @@ function pintarPerfil(){
   avisos?.pintar(v.querySelector('#pAvisos'));
 }
 $('#vPerfil').addEventListener('click', (e) => {
+  const nv = e.target.closest('[data-nivel]'); if(nv){ ajustes.nivel = nv.dataset.nivel; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); brindis(`Nivel: ${NIVELES[ajustes.nivel]}`, '', 'graduation-cap'); return; }
+  const pf = e.target.closest('[data-prof]'); if(pf){ ajustes.profundidad = pf.dataset.prof; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); return; }
   const a = e.target.closest('[data-aj]'); if(a){ ajustes[a.dataset.aj] = !ajustes[a.dataset.aj]; guarda.poner('est.ajustes', ajustes); a.setAttribute('aria-checked', ajustes[a.dataset.aj]); encenderSonidos(ajustes.sonido !== false); tono(SON.toque); return; }
   const p = e.target.closest('[data-abrir-plan]'); if(p){ actualId = p.dataset.abrirPlan; guardarLocal(); vista = 'plan'; pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); return; }
   if(e.target.closest('[data-nuevo-plan]')) alta();
@@ -1792,7 +1821,7 @@ companero = iniciarCompanero({ sala, capa, cerrarCapa, hoja, cerrarHoja, esc, ic
   perfil: () => perfil, ajustes: () => ajustes, alCerrar: () => pintar() });
 companero.pintarPastilla();
 yo = iniciarYo({ esc, ico, $, tono, SON, crearMascota, perfil: () => perfil, ajustes: () => ajustes, planes: () => planes,
-  cuantosApuntes: () => apuntes?.cuantos?.() || 0, pintarCubos: (el) => { if(el) el.innerHTML = $('#pCubos')?.innerHTML || ''; },
+  cuantosApuntes: () => apuntes?.cuantos?.() || 0, pintarCubos: (el) => { if(el) el.innerHTML = $('#pCubos .pm-cubos')?.innerHTML || $('#pCubos')?.innerHTML || ''; },
   svgPersonaje: (p) => vestidor.svgPersonaje(p), personajeVivo, hoja, abrirVestidor: () => vestidor.abrir(), abrirCompanero: () => companero.abrir() });
 /* tu personaje vivo: el mismo del vestidor, con lo que te pusiste (personaje-vivo.js) */
 configurarPersonaje({ personaje: () => normalizarPersonaje(perfil.personaje || personajeDeArranque(perfil.cuenta || perfil.nombre || ''), perfil.ropa || [], perfil.cuenta || ''), svg: (p) => vestidor.svgPersonaje(p) });
@@ -1807,4 +1836,22 @@ entrada({ personaje: ajustes.mascota });
 $('#pCubos').addEventListener('click', () => companero.abrir());
 { const cod = codigoDe(location.search); if(cod){ history.replaceState(null, '', location.pathname); setTimeout(() => anadirCurso(cod), 3400); } }
 /* para las pruebas */
+/* EL BOTÓN DE ATRÁS (Carlos, 14 nov: «el botón de regresar de Android te saca de la app; debería regresarte al apartado
+   anterior»). Se deja una entrada de más en el historial; cuando el teléfono la «regresa», la app cierra lo que esté
+   encima (una hoja, una pantalla de lección o de clase, una fiesta) o vuelve a la pantalla de antes, y deja la trampa otra
+   vez. Sólo cuando ya estás en el inicio sin nada abierto, el siguiente «atrás» sí sale de la app. */
+(function botonAtras(){
+  const trampa = () => { try{ history.pushState({ carymo: Date.now() }, ''); }catch{} };
+  trampa();
+  addEventListener('popstate', () => {
+    if($('#hoja')){ cerrarHoja(); return trampa(); }
+    const fiesta = $('.fiesta'); if(fiesta){ fiesta.querySelector('button')?.click(); return trampa(); }
+    const res = $('.hoja-res'); if(res){ res.querySelector('[data-continuar]')?.click(); return trampa(); }
+    const c = $('#capa');
+    if(c){ const x = c.querySelector('[data-cerrar], [data-atras], [data-v="cerrar"], [data-volver]'); if(x) x.click(); else { cerrarCapa(); pintar(); } return trampa(); }
+    if(SUBVISTAS[vista]){ vista = 'yo'; pintar(); scrollTo({ top: 0 }); return trampa(); }
+    if(vista !== 'plan'){ vista = 'plan'; pintar(); scrollTo({ top: 0 }); return trampa(); }
+    history.back();
+  });
+})();
 window.__estudio = { ir: (v) => { vista = v; pintar(); }, yo: () => yo, vestidor: () => vestidor, avisos: () => avisos, companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };

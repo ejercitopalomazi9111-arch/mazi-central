@@ -415,6 +415,9 @@ export async function correr({ ok, almacen, atenderEstudio }){
       await pagina.evaluate(() => window.__estudio.amigos().latido()); await espera(1200);
       ok(/Luis 12/.test(await pagina.textContent('#barraSesion')), 'el marcador muestra lo que va juntando el otro');
       await foto('16-sesion');
+      ok(await pagina.$eval('#barraSesion', (b) => b.classList.contains('mini') && b.getBoundingClientRect().width < 260), 'la barra es una pastilla chica que no estorba');
+      await pagina.click('#barraSesion'); await espera(250);
+      ok(await pagina.isVisible('[data-salir-ses]'), 'al tocarla se abre con el marcador y el botón de salir');
       await pagina.click('[data-salir-ses]'); await pagina.click('[data-salir-ses]'); await espera(500);
       ok(/Ganó Luis/.test(await pagina.textContent('#hoja')) && await pagina.isVisible('#sesFelicita'), 'al salir sale quién ganó y el botón de felicitarlo');
       await pagina.click('#sesFelicita'); await espera(400);

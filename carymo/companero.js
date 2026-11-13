@@ -41,12 +41,26 @@ export function iniciarCompanero(h){
   }
 
   /* ── la pastilla de arriba ── */
+  /* Carlos, 14 nov: «encontrar la habitación de la mascota es difícil; el loguito del cubo nada más es un cubo… que sea el icono
+     de la mascota con una barrita alrededor de cómo está, que vaya disminuyendo, y que le salgan exclamaciones cuando ya está
+     en peligro». La pastilla ahora es TU MASCOTA con un aro que se vacía (verde, amarillo, rojo) y un «!» que brinca. */
+  let mascPastilla = null, quienPastilla = '';
   function pintarPastilla(){
     const b = $('#pCubos'); if(!b) return;
-    b.innerHTML = `<span class="cubo-ico">${CUBO}</span>${cubos()}`;
-    b.setAttribute('aria-label', `${cubos()} cubitos de palomium. Abrir tu compañero`);
-    const c = cuidado(), q = quePasa(c);
-    b.classList.toggle('aviso', q === 'hambre' || q === 'sucio' || q === 'triste' || q === 'muy-mal');
+    const c = cuidado(), q = quePasa(c), salud = Math.max(0, Math.min(100, Math.round(Math.min(c.hambre ?? 80, c.limpieza ?? 80, c.animo ?? 80))));
+    const quien = (h.ajustes && h.ajustes().mascota) || 'tigre', conMasc = quien !== 'no';
+    if(!b.querySelector('.pm-cubos')){
+      b.innerHTML = `<span class="pm-aro"><span class="pm-masc"></span></span><span class="pm-alerta" aria-hidden="true">!</span><span class="pm-cubos"><span class="cubo-ico">${CUBO}</span><b></b></span>`;
+      mascPastilla = null; quienPastilla = '';
+    }
+    if(conMasc && quienPastilla !== quien){ try{ mascPastilla?.destruir?.(); }catch{} b.querySelector('.pm-masc').innerHTML = ''; mascPastilla = crearMascota(b.querySelector('.pm-masc'), { personaje: quien, tam: 34 }); quienPastilla = quien; }
+    b.classList.toggle('sin-masc', !conMasc);
+    b.style.setProperty('--salud', salud);
+    b.dataset.salud = salud < 25 ? 'peligro' : salud < 50 ? 'baja' : 'bien';
+    const n = b.querySelector('.pm-cubos b'); if(n.textContent !== String(cubos())) n.textContent = cubos();
+    const como = { 'muy-mal': 'está muy mal', hambre: 'tiene hambre', sucio: 'necesita un baño', triste: 'está triste', normal: 'está bien', feliz: 'está feliz' }[q];
+    b.setAttribute('aria-label', `Tu compañero ${como} (${salud} %). ${cubos()} cubitos de palomium. Toca para entrar a su cuarto`);
+    b.classList.toggle('aviso', salud < 50);
   }
 
   /* ── el aviso de cubitos ganados ── */
