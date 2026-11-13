@@ -12,6 +12,12 @@
 
 ## 1 · Arreglos rápidos
 
+- ✅ **El pizarrón le decía «Carlos» a todos.** La instrucción decía «la maestra particular de Carlos», y las
+  clases guardadas en la biblioteca llevaban el nombre adentro. Ahora:
+  - la IA escribe `{nombre}` y se cambia por el nombre de quien la ve (`nombreAlumno` en `sala/explica.js`);
+  - lo que se guarda en la biblioteca va con `{nombre}`;
+  - lo viejo que trae «Carlos» se limpia al sacarlo.
+
 - ✅ Quitado del pizarrón el cursor con el círculo que «señalaba» mientras hablaba la voz (#336).
   Carlos: «se ve horrible, estorba y ni siquiera sigue lo que dice la voz».
 - ✅ La Sala: el botón «escuchar» de cada mensaje lee con la voz del teléfono y sigue con los de abajo (#335, #336).
@@ -63,19 +69,27 @@ suscripción de paga dará cubitos diarios por seguir la racha.
 | Terminar un plan completo | 10 |
 | Subir de nivel de cuenta | 5 |
 
-- [ ] El saldo vive en el **servidor** (`sala/servidor/estudio.js`, `est:perfil`), nunca sólo en el teléfono.
+- ✅ El saldo vive en el **servidor** (`sala/servidor/estudio.js`, `est:perfil`), nunca sólo en el teléfono.
       Cada premio es un evento con id, igual que el XP, para que no se cobre dos veces.
-- [ ] Tienda: **congelador de racha** (salva un día sin entrar), muebles del cuarto, comida, cosméticos y
+- ✅ Tienda: **congelador de racha** (salva un día sin entrar), muebles del cuarto, comida, cosméticos y
       ropa del personaje.
+**Hecho (Luna):**
+- El servidor es `sala/servidor/palomium.js` (26 pruebas: `node sala/servidor/pruebas-palomium.mjs`).
+- La pantalla es `carymo/companero.js`: el cuarto, las barras, Comer / Bañar / Jugar y la tienda. Se abre con la
+  pastilla del cubito (arriba, junto a la racha) o desde Perfil → «Su cuarto y la tienda». Tiene 14 pruebas:
+  `node carymo/pruebas-companero.mjs`.
+- Los dibujos de las cosas están en `carymo/cosas.js`.
+- Los premios reales (con su tope diario) están en `PREMIOS` de `palomium.js`. Se empieza con 5 cubitos de regalo.
+
 - [ ] Después (cuando haya pagos): comprar cubitos y la suscripción que da cubitos diarios.
 
 ## 4 · El cuarto de la mascota (tipo Pou / Tamagotchi)
 
-- [ ] El cuarto se compra o se desbloquea; adentro se ponen muebles (salita, cama, tapete…).
-- [ ] Comida, baño y jugar.
-- [ ] Si no entras o no estudias, se va sintiendo mal: tiene hambre, está sucia o está triste, y la
+- ✅ El cuarto se compra o se desbloquea; adentro se ponen muebles (salita, cama, tapete…).
+- ✅ Comida, baño y jugar.
+- ✅ Si no entras o no estudias, se va sintiendo mal: tiene hambre, está sucia o está triste, y la
       mascota lo dice y lo pone en la cara.
-- [ ] Los indicadores se calculan con la hora de la última vez (no hace falta que la app esté abierta).
+- ✅ Los indicadores se calculan con la hora de la última vez (no hace falta que la app esté abierta).
 
 ## 5 · Apuntes
 
