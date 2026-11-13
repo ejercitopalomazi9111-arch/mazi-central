@@ -23,13 +23,14 @@
 
 **Publicado también:** subtítulos del pizarrón por frase, el arreglo de estudiar juntos y **Apuntes con el lápiz** (5).
 
-**Sigue:** 9 · varios cursos con pomodoro.
+**Publicado también:** 9 · varios cursos con pomodoro.
+
+**Sigue:** 11 · idiomas, y lo que dejó Sylcred en su relevo.
 
 **Avanzado sin publicar:** el motor de dibujo de Apuntes (`carymo/trazo.js`). Le falta la pantalla.
 
 **Después, en este orden:**
-1. 9 · Varios cursos con pomodoro.
-2. 11 · Idiomas.
+1. 11 · Idiomas.
 3. 10 y 8-bis · Imágenes.
 4. 8 · Elementos del pizarrón.
 5. 6 · Personaje de perfil.
@@ -202,8 +203,10 @@ suscripción de paga dará cubitos diarios por seguir la racha.
 
 ## 9 · Varios cursos a la vez (semana de exámenes)
 
-- [ ] Varios planes activos (programación, matemáticas, química, biología…) y cambiar entre ellos rápido.
-- [ ] **Sesión de estudio:** media hora de cada uno, con pomodoros, y que pase sola al siguiente.
+- ✅ Varios planes activos (programación, matemáticas, química, biología…) y cambiar entre ellos rápido.
+- ✅ **Sesión de estudio:** media hora de cada uno, con pomodoros, y que pase sola al siguiente.
+
+**Hecho (Luna):** `carymo/sesion.js` hace la fila de cursos arriba del camino y la sesión con pomodoro (cursos, minutos, descanso y vueltas). Si el bloque se acaba a media lección, avisa y cambia al salir. Sobrevive a cerrar la app. Tiene 14 pruebas: `node carymo/pruebas-sesion.mjs`.
 
 ## 10 · Mejores imágenes
 

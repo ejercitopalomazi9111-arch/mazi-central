@@ -74,6 +74,23 @@
   .pastilla .i{ width:16px; height:16px }
   .pastilla.racha{ color:#FFB27A } .pastilla.racha.apagada{ color:var(--tenue) }
   .pastilla.xp{ color:var(--claro-txt) }
+  /* ══ varios cursos y la sesión de estudio (sesion.js) ══ */
+  .cursos-fila{ display:flex; gap:8px; overflow-x:auto; padding:4px 2px 12px; margin:0 -2px; scrollbar-width:none } .cursos-fila::-webkit-scrollbar{ display:none }
+  .curso-chip{ flex:none; display:flex; align-items:center; gap:8px; padding:8px 12px 8px 8px; min-height:48px; border-radius:16px; border:2px solid #ffffff14; background:var(--fondo-2); color:inherit; font:inherit; text-align:left }
+  .curso-chip[aria-selected="true"]{ border-color:var(--c, var(--claro)); background:color-mix(in srgb, var(--c, #AC27FF) 22%, var(--fondo-2)) }
+  .curso-chip > i{ width:28px; height:28px; border-radius:50%; flex:none; background:conic-gradient(var(--c, #AC27FF) calc(var(--p) * 1%), #ffffff1f 0); -webkit-mask:radial-gradient(circle, transparent 52%, #000 54%); mask:radial-gradient(circle, transparent 52%, #000 54%) }
+  .curso-chip span{ display:grid; gap:1px } .curso-chip b{ font:800 13.5px/1.15 Titulo; white-space:nowrap } .curso-chip small{ font-size:11.5px; color:var(--tenue); white-space:nowrap }
+  .curso-chip.sesion{ border-style:dashed; border-color:#C77DFF77 } .curso-chip.sesion .i{ width:22px; height:22px; color:var(--claro-txt); margin-left:4px }
+  .ses-cursos{ display:flex; flex-wrap:wrap; gap:8px } .ses-cursos .chip[aria-pressed="true"]{ background:color-mix(in srgb, var(--c, #AC27FF) 40%, transparent); border-color:var(--c, #AC27FF) }
+  .ses-total{ text-align:center; color:var(--suave); font-weight:700; margin:16px 0 10px }
+  .pomodoro{ position:fixed; left:50%; top:calc(6px + env(safe-area-inset-top)); translate:-50% 0; z-index:66; display:flex; align-items:center; gap:7px; max-width:calc(100vw - 32px); min-height:36px; padding:4px 14px 4px 10px; border:0; border-radius:99px;
+    background:var(--vino); color:#fff; font:700 13px/1 Texto; box-shadow:0 6px 18px #0007 }
+  .pomodoro .i{ width:17px; height:17px; flex:none } .pomodoro b{ font:800 15px/1 Titulo; font-variant-numeric:tabular-nums } .pomodoro span{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; opacity:.92 }
+  .pomodoro small{ font-size:11px; opacity:.8 } .pomodoro.descanso{ background:#1F6F5B } .pomodoro.pausado{ opacity:.75 }
+  body.con-pomodoro .cabeza{ padding-top:calc(48px + env(safe-area-inset-top)) }
+  body.con-pomodoro .capa .arriba, body.con-pomodoro .dib-arriba{ padding-top:calc(48px + env(safe-area-inset-top)) }
+  body.con-pomodoro #vHorario, body.con-pomodoro #vApuntes, body.con-pomodoro #vBuscar, body.con-pomodoro #vRanking, body.con-pomodoro #vPerfil{ padding-top:44px }
+
   /* ══ apuntes (apuntes.js) y el editor de dibujo (trazo.js) ══ */
   #vApuntes .campo[type=search]{ margin-bottom:10px }
   .ap-filtro{ margin-bottom:12px }
