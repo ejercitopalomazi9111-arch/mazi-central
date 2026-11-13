@@ -382,7 +382,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
       await como('luis', { accion: 'amistad', a: 'carlos' }); await como('luis', { accion: 'latido' });
       await pagina.evaluate(() => window.__estudio.amigos().latido()); await espera(500);
       ok(/ya es tu amigo/.test(await pagina.textContent('#brindis')), 'cuando acepta, llega el aviso');
-      ok(await pagina.isVisible('[data-am="felicita"][data-cuenta="luis"]'), 'y sale en «Tus amigos» con Felicitar y Saludar');
+      ok(await pagina.isVisible('[data-am="felicita"][data-cuenta="luis"]'), 'y sale en «Amigos» con Felicitar y Saludar');
       await foto('14-amigos');
       await como('luis', { accion: 'latido' });
       const inv = await como('luis', { accion: 'invitar', a: 'carlos', minutos: 15 });

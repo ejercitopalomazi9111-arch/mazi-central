@@ -395,12 +395,37 @@
   .podio .fila-rank:nth-child(1) .n{ color:var(--oro) }
 
   /* horario */
-  .horario{ display:grid; gap:14px }
-  .dia-h h4{ font:800 15px/1 Titulo; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center }
-  .dia-h h4.hoy{ color:var(--claro-txt) }
-  .clase-h{ display:grid; grid-template-columns:78px minmax(0, 1fr) auto; gap:10px; align-items:center; padding:10px 12px; border-radius:14px; background:var(--fondo-2); border-left:5px solid var(--c, var(--vino)); margin-bottom:6px }
-  .clase-h .hr{ font:800 13px/1.2 Titulo; color:var(--suave) } .clase-h.ahora{ background:#2A1245 }
-  .clase-h button{ border:0; background:none; color:var(--tenue); width:40px; height:40px; display:grid; place-items:center }
+  .horario{ display:grid; gap:10px }
+  .dia-h h4{ font:800 15px/1 Titulo; margin:6px 0 8px } .dia-h .clase-h{ grid-template-columns:52px minmax(0, 1fr); margin-bottom:6px }   /* la vista previa de la foto del horario */
+  /* cada día plegado (Carlos, 13 nov: «se ve espantoso y atascadísimo»); hoy viene abierto */
+  .hz-dia{ border-radius:16px; background:var(--fondo-2); border:1px solid var(--borde); overflow:hidden }
+  .hz-dia.hoy{ border-color:color-mix(in srgb, var(--claro) 45%, transparent) }
+  .hz-dia summary{ list-style:none; display:grid; grid-template-columns:minmax(0, 1fr) auto; grid-template-rows:auto auto; column-gap:10px; align-items:center; padding:14px 16px; min-height:56px; cursor:pointer }
+  .hz-dia summary::-webkit-details-marker{ display:none }
+  .hz-n{ font:800 16px/1.2 Titulo; display:flex; align-items:center; gap:8px }
+  .hz-n em{ font:800 11px/1 Titulo; font-style:normal; letter-spacing:.08em; text-transform:uppercase; padding:4px 8px; border-radius:99px; background:var(--vino); color:#fff }
+  .hz-dia summary small{ grid-column:1; color:var(--suave); font-size:13px; margin-top:3px }
+  .hz-flecha{ grid-column:2; grid-row:1 / span 2; width:20px; height:20px; color:var(--tenue); transition:transform .2s }
+  .hz-dia[open] .hz-flecha{ transform:rotate(90deg) }
+  .hz-clases{ padding:0 12px 12px; display:grid; gap:6px }
+  .hz-vacio{ color:var(--tenue); font-size:14px; padding:2px 4px 6px }
+  .clase-h{ display:grid; grid-template-columns:52px minmax(0, 1fr) auto auto; gap:10px; align-items:center; padding:10px 12px; border-radius:12px; background:var(--sup); border-left:4px solid var(--c, var(--vino)); min-height:52px }
+  .clase-h .hr{ font:800 14px/1.15 Titulo; color:var(--hueso) } .clase-h .hr small{ display:block; font:700 12px/1.2 Texto; color:var(--tenue) }
+  .clase-h b{ min-width:0; overflow-wrap:anywhere }
+  .clase-h.ahora{ background:color-mix(in srgb, var(--vino) 55%, var(--sup)) } .clase-h.pasada{ opacity:.5 }
+  .clase-h button{ display:none; border:0; background:none; color:var(--tenue); width:44px; height:44px; place-items:center; margin:-8px -6px -8px 0 }
+  .horario.editando .clase-h button{ display:grid }
+  .hz-chip{ font:800 11px/1 Titulo; letter-spacing:.06em; text-transform:uppercase; padding:5px 8px; border-radius:99px; background:var(--vino); color:#fff }
+  .hz-chip.sig{ background:transparent; color:var(--claro-txt); box-shadow:inset 0 0 0 1.5px currentColor }
+  .hz-cab{ display:flex; align-items:center; justify-content:space-between; gap:10px }
+  .hz-ahora{ position:relative; padding:18px 18px 16px; border-radius:20px; background:var(--vino); margin:6px 0 18px; overflow:hidden }
+  .hz-ahora::before{ content:""; position:absolute; inset:0 auto 0 0; width:6px; background:var(--c, var(--claro)) }
+  .hz-ahora.libre{ background:var(--sup) }
+  .hz-ahora small{ font:800 12px/1 Titulo; letter-spacing:.08em; text-transform:uppercase; opacity:.85 }
+  .hz-ahora > b{ display:block; font:800 24px/1.15 Titulo; margin:6px 0 4px; overflow-wrap:anywhere }
+  .hz-hr{ display:block; color:#ffffffd9; font-size:14px }
+  .hz-barra{ display:block; height:6px; border-radius:3px; background:#ffffff2e; margin:12px 0 10px; overflow:hidden } .hz-barra i{ display:block; height:100%; background:#fff; border-radius:3px }
+  .hz-sig{ display:flex; align-items:center; gap:6px; font-size:14px; color:#fff } .hz-sig .i{ width:16px; height:16px }
   .ahora-banner{ padding:16px; border-radius:18px; background:var(--vino); margin-bottom:16px }
   .ahora-banner small{ font-size:12px; letter-spacing:.08em; text-transform:uppercase; opacity:.8 } .ahora-banner b{ display:block; font:800 20px/1.2 Titulo }
   .examenes li{ list-style:none; display:flex; gap:12px; align-items:center; padding:12px; border-radius:14px; background:var(--fondo-2); margin-bottom:8px }
