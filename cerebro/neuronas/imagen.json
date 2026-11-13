@@ -358,6 +358,25 @@
         "miniatura sale distinta"
       ],
       "vecinas": []
+    },
+    {
+      "id": "relleno-se-cuela-por-el-contorno",
+      "titulo": "Quitar el fondo blanco a un personaje blanco se come el cuerpo",
+      "gravedad": "media",
+      "sintoma": "Al recortar las poses del tigre blanco, varias salían con la panza y la cara transparentes.",
+      "causa": "El relleno del fondo desde la orilla se colaba por huequitos del contorno (JPEG suave) hasta el blanco del cuerpo.",
+      "porque": "Fondo y cuerpo son el mismo blanco: lo único que los separa es el contorno, y basta un pixel abierto.",
+      "arreglo": "Engordar el contorno antes de rellenar y regresarlo después; para contornos tenues, rellenar también lo que el contorno cerrado encierra. Las poses que no se salvan se tiran y se arman con otra pose más un icono.",
+      "comoCazarlo": "Hacer una hoja de contacto de todas las poses sobre fondo oscuro y verla: en la hoja salta de inmediato.",
+      "consejo": "Antes de usar un recorte, verlo sobre un fondo de otro color.",
+      "senales": [
+        "se ve transparente",
+        "recorte con huecos",
+        "se come el cuerpo",
+        "fondo blanco"
+      ],
+      "salioDe": "Mascotas de CARYMO, 13 de noviembre de 2026.",
+      "vecinas": []
     }
   ]
 }

@@ -1396,7 +1396,7 @@ function pintarPerfil(){
     <div class="seccion-t">Tú</div>
     <label class="ajuste">${ico('pencil')}<span>Tu nombre en el ranking</span><input id="pNombre" class="campo" style="max-width:150px;min-height:40px" value="${esc(perfil.nombre || '')}" aria-label="Tu nombre en el ranking"></label>
     <div class="seccion-t">Tu compañero</div>
-    <div class="elige-masc" role="radiogroup" aria-label="Tu compañero">${[['tigre', 'Tigre'], ['paloma', 'Paloma'], ['no', 'Ninguno']].map(([k, t]) => `<button role="radio" aria-checked="${ajustes.mascota === k}" data-masc="${k}">${k === 'no' ? ico('x') : `<img src="mascotas/${k}-${k === 'tigre' ? 'parado' : 'parada'}.webp" alt="">`}<span>${t}</span></button>`).join('')}</div>
+    <div class="elige-masc" role="radiogroup" aria-label="Tu compañero">${[['tigre', 'Tigre'], ['paloma', 'Paloma'], ['no', 'Ninguno']].map(([k, t]) => `<button role="radio" aria-checked="${ajustes.mascota === k}" data-masc="${k}">${k === 'no' ? ico('x') : `<span class="masc-mini" data-mini="${k}"></span>`}<span>${t}</span></button>`).join('')}</div>
     <div class="seccion-t">La voz que te explica</div>
     <div class="ajuste voz-aj">${ico('mic')}<span>Voz del pizarrón<small style="display:block;color:var(--tenue);font-weight:500">Las «de estudio» suenan como persona</small></span>
       <select id="pVoz" class="campo" style="max-width:170px;min-height:40px" aria-label="Voz del pizarrón">${opcionesVoz()}</select>
@@ -1405,6 +1405,8 @@ function pintarPerfil(){
     <div class="ajuste">${ico('volume-2')}<span>Efectos de sonido</span><button class="interruptor" role="switch" data-aj="sonido" aria-checked="${!!ajustes.sonido}" aria-label="Efectos de sonido"></button></div>
     <div class="ajuste">${ico('vibrate')}<span>Vibración</span><button class="interruptor" role="switch" data-aj="vibrar" aria-checked="${!!ajustes.vibrar}" aria-label="Vibración"></button></div>
     <p class="version">${esc(VERSION_ESTUDIO)} · ${cola.length ? `${cola.length} logros por mandar a La Sala` : 'todo guardado en La Sala'}</p>`;
+  /* el selector de compañero con las mascotas vivas (sin imágenes recortadas) */
+  $$('[data-mini]', v).forEach((d) => crearMascota(d, { personaje: d.dataset.mini, tam: 62 }));
 }
 $('#vPerfil').addEventListener('click', (e) => {
   const a = e.target.closest('[data-aj]'); if(a){ ajustes[a.dataset.aj] = !ajustes[a.dataset.aj]; guarda.poner('est.ajustes', ajustes); a.setAttribute('aria-checked', ajustes[a.dataset.aj]); encenderSonidos(ajustes.sonido !== false); tono(SON.toque); return; }

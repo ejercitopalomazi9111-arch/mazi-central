@@ -106,6 +106,24 @@
         "como los de ugoki"
       ],
       "salioDe": "Los 23 anuncios del panel de joinugoki.com, vistos cuadro por cuadro el 12 de noviembre de 2026."
+    },
+    {
+      "id": "voz-lee-la-instruccion",
+      "titulo": "La voz lee en voz alta la instrucción de estilo",
+      "gravedad": "alta",
+      "sintoma": "En el pizarrón la voz dice «Explícalo en español de México como una maestra…» antes de la clase.",
+      "causa": "A Gemini TTS se le mandaba «estilo: texto» en un solo campo; a veces lo trata todo como texto a decir.",
+      "porque": "Un modelo de voz no distingue de forma confiable entre la instrucción y lo que hay que decir cuando vienen juntos.",
+      "arreglo": "A la voz va SÓLO el texto (generarVoz ignora estilo) y todo lo que se lee pasa por paraDecir (sala/voces.js), que tira renglones con pinta de instrucción y JSON.",
+      "comoCazarlo": "sala/pruebas-explica.mjs revisa que /ia-voz reciba sólo el texto del paso; sala/servidor/pruebas.mjs, que a Google no le llegue instrucción.",
+      "consejo": "Nunca mezclar instrucciones con el texto que se va a leer.",
+      "senales": [
+        "la voz lee el prompt",
+        "dice la instrucción",
+        "lee lo que no debe"
+      ],
+      "salioDe": "CARYMO, 13 de noviembre de 2026.",
+      "vecinas": []
     }
   ]
 }
