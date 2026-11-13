@@ -15,13 +15,24 @@
    nada de librerías, y los pasos ya dichos se quedan quietos (cero trabajo).
    ═════════════════════════════════════════════════════════════════════════ */
 import { ico, DIBUJOS } from './iconos-clase.js';
-import { crearLienzo, armarFijo, buscarDibujo, TIPOS } from './lienzo.js';
+import { crearLienzo, armarFijo, buscarDibujo, TIPOS, ponerFuenteDeFotos } from './lienzo.js';
 import { CATALOGO_MAS, normalizarMas, SINONIMOS_MAS, TIPOS_MAS } from './lienzo-mas.js';
 import { sacarJSON } from './json-ia.js';
 import { crearVoz, paraDecir, todas, nombreDe, despertar, VOZ_DE_FABRICA } from './voces.js';
 import { sonar, encender as encenderSonidos } from './sonidos/sonidos.js';
 import { llave, ponerLlave, llamar, SERVIDOR, SALA } from '../presentaciones/ia.js';
 import { pedirSala, conAcceso } from './acceso.js';
+/* las fotos del pizarrón: sólo las verificadas del banco (carpeta «Escuela», marcadas «lista»). Sin foto, sale el dibujo */
+ponerFuenteDeFotos(async (buscar) => {
+  if(!conAcceso() || (typeof navigator !== 'undefined' && navigator.onLine === false)) return null;
+  const r = await pedirSala('banco-escuela', { metodo: 'GET', q: '?buscar=' + encodeURIComponent(buscar), espera: 15000 });
+  if(!r.ok) return null;
+  const f = ((await r.json()).fotos || [])[0]; if(!f) return null;
+  let img = await pedirSala('banco-escuela', { metodo: 'GET', q: `?id=${encodeURIComponent(f.id)}&parte=mini`, espera: 20000 });
+  if(!img.ok) img = await pedirSala('banco-escuela', { metodo: 'GET', q: `?id=${encodeURIComponent(f.id)}`, espera: 30000 });
+  if(!img.ok) return null;
+  return { src: URL.createObjectURL(await img.blob()), titulo: f.titulo, credito: 'Foto verificada del banco de CARYMO' };
+});
 import { leerClase, guardarClase, hayClase } from './clases-guardadas.js';   /* para que la clase abra sin internet (Carlos, 13 nov) */   /* con la llave o con la cuenta de CARYMO (Carlos, 13 nov) */
 /* a La Sala directo (no por presentaciones/ia.js#texto) para mandar `espera` y `pensarPoco`: una clase entera tarda */
 async function iaTexto(cuerpo){
@@ -82,7 +93,7 @@ const CATALOGO = `TIPOS DE "pizarra" (cada uno con sus campos):
 - pregunta { pregunta, respuesta } · para que el alumno piense antes de ver la respuesta
 - resumen { titulo, puntos: [] }
 - codigo { lenguaje, codigo } · sólo en temas de programación
-- imagen { buscar, pie } · una FOTO real: "buscar" es el título EXACTO de un artículo de Wikipedia en español (ej. "Corazón humano", "Pirámide de Kukulcán")
+- imagen { buscar, pie, icono } · una FOTO verificada del banco de la escuela: "buscar" son 1 a 3 palabras de lo que muestra (ej. "corazón humano", "célula animal"). Sólo sale si una persona ya revisó esa foto; si no hay, se dibuja "icono" (un nombre de la lista de DIBUJOS), así que pon SIEMPRE un icono que sirva
 - icono { icono, texto } · un dibujo grande
 - partes { icono, titulo, partes: [] } · un dibujo con sus partes señaladas
 - comparar { titulo, a: { nombre, puntos: [] }, b: { nombre, puntos: [] } }
@@ -154,7 +165,7 @@ Reglas:
 - "voz": ${VOZ[largo]} que EXPLIQUEN de verdad: el porqué, un ejemplo o un truco para recordarlo.${largo === 'fondo' ? ' A FONDO quiere decir PROFUNDO, no largo de relleno: términos técnicos bien explicados, mecanismos, excepciones, matices, datos concretos y casos. Los elementos del pizarrón también más completos (listas de 5 a 7, tablas de 4 a 6 filas, diagramas con más nodos).' : ''} Nunca sólo anuncies lo que viene. Como lo dirías hablando: sin markdown, sin emojis y sin leer la pizarra palabra por palabra; la complementas.
 - "pizarra": lo que se dibuja en ese paso. USA MUCHOS TIPOS DISTINTOS: al menos 6 tipos diferentes en la clase, y no repitas el mismo tipo dos pasos seguidos. Elige el que MEJOR enseñe cada idea: si se comparan cosas, "comparar" o "tabla"; si se juntan temas, "venn"; si es un proceso, "pasos" o "ciclo"; si son partes de algo, "partes"; si hay jerarquía, "arbol" o "piramide"; si hay fechas, "linea"; si hay causas, "causas" o "diagrama".
 - "visual": true si el tema se entiende mejor con dibujos y diagramas; entonces usa más diagramas, dibujos y fotos, y menos texto suelto.
-- Usa "icono" seguido (en titulo, texto, definicion, icono y partes): sólo nombres de la lista de DIBUJOS. Usa 1 o 2 "imagen" si el tema tiene algo que se pueda ver en una foto.
+- Usa "icono" seguido (en titulo, texto, definicion, icono y partes): sólo nombres de la lista de DIBUJOS. Usa a lo mucho 1 "imagen" si el tema tiene algo que se pueda ver en una foto, siempre con su "icono" de respaldo.
 - "conecta": true cuando un elemento sigue directamente del anterior (se dibuja una flecha entre los dos).
 - En los textos: **así** pinta con marcatextos lo más importante (máximo 3 por elemento), __así__ subraya y ((así)) encierra en un círculo una palabra clave (máximo 1 por elemento). Textos cortos: el pizarrón no es un libro.
 - NUNCA inventes datos, cifras ni citas: si no estás segura, usa otro tipo de elemento.

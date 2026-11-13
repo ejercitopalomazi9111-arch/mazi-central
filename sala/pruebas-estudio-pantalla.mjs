@@ -213,7 +213,9 @@ export async function correr({ ok, almacen, atenderEstudio }){
     ok(pedidosIA.some((c) => /UNA lección/.test(c.sistema) && /Sistema circulatorio/.test(c.mensajes[0].texto)), 'el primer nivel se prepara solo mientras ves las cátedras');
 
     await pagina.evaluate(() => document.querySelectorAll('.nodo.cerrado')[2].click());
-    ok(await pagina.isVisible('text=Primero termina el que está brillando'), 'un nodo cerrado avisa en vez de abrirse');
+    ok(await pagina.isVisible('text=¿Saltar hasta aquí?') && /Te saltas 3 temas/.test(await pagina.textContent('#hoja')), 'tocar uno bloqueado pregunta si quieres saltar hasta ahí, y cuántos te saltas');
+    await pagina.click('[data-quedarme]'); await espera(250);
+    ok(!(await pagina.$('#hoja')) && (await pagina.$$('.nodo.cerrado')).length === 17 && !(await pagina.$('.nodo.saltado')), '«Mejor sigo en orden» no mueve nada');
 
     /* 1 · panorama de la unidad */
     ok(await siguienteEs() === 'Panorama de la unidad', 'lo primero es el panorama de la unidad');
@@ -383,7 +385,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
     await pagina.click('[data-ir="ranking"]'); await espera(300);
     const filas = await pagina.$$eval('.fila-rank', (fs) => fs.map((f) => f.textContent));
     ok(filas.length === 2 && /Luis/.test(filas[0]) && /\(tú\)/.test(filas[1]), 'el ranking junta las cuentas de La Sala y marca la tuya');
-    ok(await pagina.isVisible('text=para llegar a la cima'), 'dice cuántos lugares faltan');
+    ok(/Te faltan [0-9,.]+ (k |M )?XP para pasar a Luis/.test(await pagina.textContent('.rank-frase')), 'dice cuántos XP te faltan para pasar al de arriba');
     await foto('13-ranking');
 
     /* amigos: Luis tiene la app abierta, lo agrego, me invita a estudiar juntos, y al final «¿cómo te fue?» */

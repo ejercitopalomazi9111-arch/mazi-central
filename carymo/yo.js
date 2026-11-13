@@ -8,6 +8,7 @@
  * aquí sólo se ordena cómo se llega a ellas.
  * ===========================================================================*/
 import { personajeDeArranque, normalizarPersonaje } from './ropa.js';
+import { LIGAS, ligaDe, trofeoSVG } from './ligas.js';
 
 /* las sub-pantallas de «Tú»: su título en la barrita de regreso */
 export const SUBVISTAS = { horario: 'Horario', apuntes: 'Apuntes', pizarron: 'Pizarrón libre', buscar: 'Buscar un tema', perfil: 'Ajustes y cuenta' };
@@ -34,7 +35,7 @@ export function iniciarYo(h){
     v.innerHTML = `<div class="yo-cab">
         <button class="yo-pj" data-yo="vestidor" aria-label="Tu personaje: cambiar ropa y accesorios"><span class="yo-pj-dib" id="yoPj"></span><span class="yo-pj-lapiz">${ico('pencil')}</span></button>
         <div class="yo-quien"><h2>${esc(p.nombre || 'Tú')}</h2>
-          <div class="yo-chips"><span class="pastilla racha">${ico('flame')}${p.racha || 0}</span><span class="pastilla">${ico('zap')}${p.xp || 0} XP</span><span class="pastilla cubos" id="yoCubos"></span></div></div>
+          <div class="yo-chips"><span class="pastilla racha">${ico('flame')}${p.racha || 0}</span><span class="pastilla">${ico('zap')}${p.xp || 0} XP</span><span class="pastilla cubos" id="yoCubos"></span><button class="pastilla liga" data-yo="trofeos" aria-label="Liga ${esc(ligaDe(p.liga).nombre)}: ver tus trofeos">${trofeoSVG(p.liga | 0, { tam: 16 })}${esc(ligaDe(p.liga).nombre)}</button></div></div>
       </div>
       ${conMasc ? `<button class="yo-masc ${cl}" data-yo="companero" aria-label="Tu compañero: ${esc(como)}. Entrar a su cuarto"><span class="yo-masc-dib" id="yoMasc"></span><span class="yo-masc-txt"><b>Tu compañero</b><small>${esc(como)} · entra a su cuarto</small></span>${ico('chevron-right')}</button>`
         : `<button class="yo-masc" data-ir="perfil" aria-label="Elegir un compañero"><span class="yo-masc-dib">${ico('heart')}</span><span class="yo-masc-txt"><b>Elige un compañero</b><small>Te acompaña mientras estudias</small></span>${ico('chevron-right')}</button>`}
@@ -59,6 +60,13 @@ export function iniciarYo(h){
     h.tono(h.SON.toque);
     if(b.dataset.yo === 'vestidor') h.abrirVestidor();
     if(b.dataset.yo === 'companero') h.abrirCompanero();
+    if(b.dataset.yo === 'trofeos') vitrina();
   });
-  return { pintar };
+  /* la vitrina: un trofeo por liga; los que ya alcanzaste a color, con cuántas semanas y podios; los demás en silueta */
+  function vitrina(){
+    const p = h.perfil(), v = p.vitrina || {}, max = Math.max(p.ligaMax | 0, p.liga | 0);
+    h.hoja('Tus trofeos', `<p class="sub-vista" style="margin:0 0 12px">Cada lunes los primeros de tu liga suben y los últimos bajan. Al llegar a una liga, su trofeo es tuyo para siempre.</p>
+      <div class="vitrina">${LIGAS.map((L, i) => { const x = v[L.id], ya = i <= max; return `<div class="vt ${ya ? '' : 'no'}">${trofeoSVG(i, { tam: 54, apagado: !ya })}<b>${esc(L.nombre)}</b><small>${ya ? (x && x.semanas ? `${x.semanas} ${x.semanas === 1 ? 'semana' : 'semanas'}${x.podios ? ` · ${x.podios} ${x.podios === 1 ? 'podio' : 'podios'}` : ''}` : i === (p.liga | 0) ? 'Aquí estás' : 'Ganado') : 'Por ganar'}</small></div>`; }).join('')}</div>`);
+  }
+  return { pintar, vitrina };
 }

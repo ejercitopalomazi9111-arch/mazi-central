@@ -26,6 +26,7 @@
    ═════════════════════════════════════════════════════════════════════════ */
 import { atenderAvisos, avisoDePrueba } from './avisos-estudio.js';
 import { atenderVestidor } from './vestidor.js';
+import { LIGAS, grupoDe, reglasDe, resultadoSemana, TAM_GRUPO } from '../../carymo/ligas.js';
 import { conEconomia, premiar, premiarUnaVez, cobrarNivel, estudioAnima, comprar, cuidar, PREMIOS, TIENDA, nivelDe, animoDe, parejaDe, avanzarRachaJuntos, rachaJuntosHoy } from './palomium.js';
 export const MAX_PLAN = 1_500_000;
 const kPerfil = (c) => `est:perfil:${c}`;
@@ -53,9 +54,9 @@ export function semanaDe(dia){
 }
 
 function perfilNuevo(cuenta){
-  return { cuenta, nombre: cuenta.charAt(0).toUpperCase() + cuenta.slice(1), xp: 0, racha: 0, mejorRacha: 0, ultimoDia: '', congeladas: 0, horario: null, ids: [], t: 0 };
+  return { cuenta, nombre: cuenta.charAt(0).toUpperCase() + cuenta.slice(1), xp: 0, racha: 0, mejorRacha: 0, ultimoDia: '', congeladas: 0, horario: null, ids: [], t: 0, liga: 0, ligaMax: 0, vitrina: { bronce: { semanas: 0, podios: 0, mejor: 0 } } };
 }
-const publico = (p) => { const { ids, premiados, ...resto } = p; return { ...resto, nivel: nivelDe(p.xp || 0), siente: p.cuidado ? animoDe(p.cuidado) : 'feliz' }; };
+const publico = (p) => { const { ids, premiados, ligaAviso, ...resto } = p; return { ...resto, nivel: nivelDe(p.xp || 0), siente: p.cuidado ? animoDe(p.cuidado) : 'feliz' }; };
 
 /* la racha: qué pasa al estudiar el día `dia` */
 export function avanzarRacha(p, dia){
@@ -73,10 +74,56 @@ export function avanzarRacha(p, dia){
   return eventos;
 }
 
-async function ranking(storage, semana, nombres = {}){
+/* ══ LIGAS (carymo/ligas.js tiene las reglas) ══
+     est:miembros            { <cuenta>: { nombre, liga } }   quién está en qué liga, aunque no haya estudiado esta semana
+   Carlos, 14 nov: «no se ve la tabla y eso no invita a la competitividad». Antes la tabla sólo traía a quien
+   ya ganó XP esta semana: el lunes salías solo. Ahora trae a TU liga completa (los que no han estudiado, con 0
+   y abajo) y aparte a tus amigos, para que siempre haya a quién alcanzar. */
+const K_MIEMBROS = 'est:miembros';
+async function apuntarMiembro(storage, cuenta, nombre, liga){
+  const m = (await storage.get(K_MIEMBROS)) || {};
+  const v = m[cuenta];
+  if(v && v.nombre === nombre && (v.liga | 0) === (liga | 0)) return m;
+  m[cuenta] = { nombre, liga: liga | 0 };
+  await storage.put(K_MIEMBROS, m);
+  return m;
+}
+/* cerrar la semana que quedó pendiente: sube, baja o se queda, y la vitrina */
+function cerrarLiga(tabla, perfil, cuenta){
+  const r = resultadoSemana(tabla || {}, cuenta, perfil.ligaSem);
+  perfil.ligaSem = null;
+  if(!r) return null;
+  perfil.liga = Math.max(0, Math.min(LIGAS.length - 1, r.nueva));
+  perfil.ligaMax = Math.max(perfil.ligaMax | 0, perfil.liga);
+  const v = perfil.vitrina || (perfil.vitrina = {});
+  const de = LIGAS[r.liga].id;
+  v[de] = v[de] || { semanas: 0, podios: 0, mejor: 0 };
+  v[de].semanas += 1;
+  if(r.lugar <= 3 && r.n >= 2) v[de].podios += 1;
+  v[de].mejor = v[de].mejor ? Math.min(v[de].mejor, r.lugar) : r.lugar;
+  if(r.nueva !== r.liga){ const a = LIGAS[perfil.liga].id; v[a] = v[a] || { semanas: 0, podios: 0, mejor: 0 }; }
+  perfil.ligaAviso = { ...r, de: LIGAS[r.liga].nombre, a: LIGAS[perfil.liga].nombre };
+  return perfil.ligaAviso;
+}
+/* cuánto falta para que cierre la semana (domingo a medianoche en México) */
+function cierraEn(dia, ahora){
+  const d = new Date(aMs(dia)); const dow = (d.getUTCDay() + 6) % 7;
+  return Math.max(0, aMs(dia) + (7 - dow) * DIA_MS + 6 * 36e5 - ahora);
+}
+async function ranking(storage, semana, cuenta, perfil, dia, ahora){
   const tabla = (await storage.get(kSem(semana))) || {};
-  return { semana, filas: Object.entries(tabla).map(([cuenta, f]) => ({ cuenta, nombre: nombres[cuenta] || f.nombre || cuenta, xp: f.xp || 0 }))
-    .sort((a, b) => b.xp - a.xp || a.nombre.localeCompare(b.nombre)) };
+  const miembros = (await storage.get(K_MIEMBROS)) || {};
+  const liga = perfil.liga | 0;
+  const grupo = grupoDe(tabla, cuenta, semana, liga).map((f) => ({ ...f, nombre: f.cuenta === cuenta ? perfil.nombre : (miembros[f.cuenta]?.nombre || f.nombre) }));
+  const activos = grupo.filter((f) => f.xp > 0).length;
+  /* los de tu liga que aún no estudian esta semana: abajo, con 0, para llenar el grupo */
+  const ya = new Set(grupo.map((f) => f.cuenta));
+  const quietos = Object.entries(miembros).filter(([k, v]) => !ya.has(k) && (v.liga | 0) === liga && !(tabla[k]?.xp > 0))
+    .map(([k, v]) => ({ cuenta: k, nombre: v.nombre || k, xp: 0 })).sort((a, b) => a.nombre.localeCompare(b.nombre)).slice(0, Math.max(0, TAM_GRUPO - grupo.length));
+  const am = await amigosDe(storage, cuenta);
+  const amigos = [cuenta, ...am.amigos.filter((k) => k !== cuenta)].slice(0, 200).map((k) => ({ cuenta: k, nombre: k === cuenta ? perfil.nombre : (miembros[k]?.nombre || tabla[k]?.nombre || k), xp: tabla[k]?.xp || 0, liga: k === cuenta ? liga : (miembros[k]?.liga | 0) }))
+    .sort((a, b) => b.xp - a.xp || a.nombre.localeCompare(b.nombre));
+  return { semana, liga, filas: grupo.concat(quietos), activos, reglas: reglasDe(liga, Math.max(activos, 1)), amigos, cierra: cierraEn(dia, ahora) };
 }
 
 /* junta el progreso de dos versiones de un plan: lo hecho se queda hecho y gana la mejor calificación */
@@ -293,6 +340,13 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
   const hoy = diaMexico(ahora);
   const perfil = conEconomia((await storage.get(kPerfil(cuenta))) || perfilNuevo(cuenta), ahora);
   const indice = (await storage.get(kPlanes(cuenta))) || {};
+  /* la semana que estudiaste ya cerró: se decide si subes o bajas antes de cualquier otra cosa */
+  if(perfil.ligaSem && perfil.ligaSem !== semanaDe(hoy)){
+    cerrarLiga(await storage.get(kSem(perfil.ligaSem)), perfil, cuenta);
+    perfil.t = ahora; await storage.put(kPerfil(cuenta), perfil);
+  }
+  /* el aviso de liga se entrega una sola vez */
+  const avisoLiga = async () => { const a = perfil.ligaAviso; if(!a) return undefined; delete perfil.ligaAviso; await storage.put(kPerfil(cuenta), perfil); return a; };
 
   if(pedido.method === 'GET'){
     const id = url.searchParams.get('plan');
@@ -302,7 +356,9 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
       return Response.json({ bien: true, plan });
     }
     if(url.searchParams.get('tienda')) return Response.json({ bien: true, tienda: TIENDA, premios: PREMIOS, perfil: publico(perfil) });
-    return Response.json({ bien: true, hoy, perfil: publico(perfil), planes: Object.values(indice), ranking: await ranking(storage, semanaDe(hoy), { [cuenta]: perfil.nombre }), hora: ahora });
+    await apuntarMiembro(storage, cuenta, perfil.nombre, perfil.liga);
+    const ligaAviso = await avisoLiga();
+    return Response.json({ bien: true, hoy, perfil: publico(perfil), planes: Object.values(indice), ranking: await ranking(storage, semanaDe(hoy), cuenta, perfil, hoy, ahora), liga: ligaAviso, hora: ahora });
   }
   if(pedido.method !== 'POST') return Response.json({ error: 'Usa GET o POST.' }, { status: 405 });
 
@@ -389,8 +445,9 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
       if(['leccion', 'grado', 'plan'].includes(e.motivo)) dar(e.motivo, premiar(perfil, e.motivo, dia));
       estudioAnima(perfil, xp);
       const sem = semanaDe(dia), tabla = (await storage.get(kSem(sem))) || {};
-      tabla[cuenta] = { xp: (tabla[cuenta]?.xp || 0) + xp, nombre: perfil.nombre };
+      tabla[cuenta] = { xp: (tabla[cuenta]?.xp || 0) + xp, nombre: perfil.nombre, liga: tabla[cuenta] ? (tabla[cuenta].liga | 0) : (perfil.liga | 0) };
       await storage.put(kSem(sem), tabla);
+      if(sem === semanaDe(hoy)) perfil.ligaSem = sem;
     }
     if(c.nombre) perfil.nombre = limpio(c.nombre, 30) || perfil.nombre;
     dar('nivel', cobrarNivel(perfil, hoy));
@@ -406,7 +463,9 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
     } }
     perfil.t = ahora;
     await storage.put(kPerfil(cuenta), perfil);
-    return Response.json({ bien: true, sumado: suma, premios, eventos: [...new Set(dijo)], perfil: publico(perfil), ranking: await ranking(storage, semanaDe(hoy), { [cuenta]: perfil.nombre }) });
+    await apuntarMiembro(storage, cuenta, perfil.nombre, perfil.liga);
+    const ligaAviso = await avisoLiga();
+    return Response.json({ bien: true, sumado: suma, premios, eventos: [...new Set(dijo)], perfil: publico(perfil), ranking: await ranking(storage, semanaDe(hoy), cuenta, perfil, hoy, ahora), liga: ligaAviso });
   }
 
   /* ── COMPARTIR UN PLAN (Carlos, 13 nov) ──
@@ -464,6 +523,7 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
     /* el nombre nuevo también en el ranking de esta semana */
     const sem = semanaDe(hoy), tabla = await storage.get(kSem(sem));
     if(tabla && tabla[cuenta]){ tabla[cuenta].nombre = perfil.nombre; await storage.put(kSem(sem), tabla); }
+    await apuntarMiembro(storage, cuenta, perfil.nombre, perfil.liga);
     return Response.json({ bien: true, perfil: publico(perfil) });
   }
 

@@ -61,6 +61,42 @@ export function limpiarCampos(c = {}){
   return s;
 }
 
+/* ══ LAS FOTOS DE LA ESCUELA · /banco-escuela (lo lee el pizarrón de CARYMO) ══
+   Carlos, 14 nov: «solamente se va a hacer con imágenes que estén en el banco de datos ya verificadas como son, qué
+   incluyen y cuál muestra exactamente lo que queremos mostrar… ¿cuáles son las trompas de Falopio? y muestran una
+   imagen de semen». Antes el pizarrón buscaba en Wikipedia y a veces traía otra cosa. Ahora SÓLO sale una foto del
+   banco que cumple las dos: está en la carpeta «Escuela» (así nunca sale una foto de All's ni de un cliente) y Carlos
+   la marcó «lista». Y tiene que coincidir con lo que se busca: TODAS las palabras importantes de la búsqueda deben
+   estar en su título, sus temas o sus palabras clave. Si ninguna pasa, no hay foto: el pizarrón pone el dibujo.
+   Es de sólo lectura y no da nada más que esas fotos: por eso también la puede abrir una cuenta de CARYMO. */
+const sinAcentoB = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const VACIAS_B = new Set('el la los las un una unos unas de del al a y e o u en con por para que como su sus se lo le es son'.split(' '));
+const palabrasB = (t) => sinAcentoB(t).split(/[^a-z0-9ñ]+/).filter((w) => w.length > 2 && !VACIAS_B.has(w));
+const raizB = (w) => w.length > 4 ? w.replace(/(es|s)$/, '') : w;
+export const esDeEscuela = (f) => !!f && f.estado === 'lista' && /^escuela\b/.test(sinAcentoB(f.carpeta || '').trim());
+export function fotoVerificada(fichas, buscado){
+  const q = [...new Set(palabrasB(buscado).map(raizB))];
+  if(!q.length) return [];
+  const out = [];
+  for(const f of Object.values(fichas || {})){
+    if(!esDeEscuela(f)) continue;
+    const hay = new Set([f.titulo, ...(f.temas || []), ...(f.palabras || [])].flatMap(palabrasB).map(raizB));
+    if(!q.every((w) => hay.has(w))) continue;
+    const exacta = [f.titulo, ...(f.temas || []), ...(f.palabras || [])].some((x) => sinAcentoB(x).trim() === sinAcentoB(buscado).trim());
+    out.push({ f, puntos: (exacta ? 100 : 0) + q.length * 10 - hay.size * .01 });
+  }
+  return out.sort((a, b) => b.puntos - a.puntos).slice(0, 3).map(({ f }) => ({ id: f.id, titulo: f.titulo, descripcion: String(f.descripcion || '').slice(0, 300), ancho: f.ancho, alto: f.alto }));
+}
+export async function atenderBancoEscuela(storage, pedido, url){
+  if(pedido.method !== 'GET') return Response.json({ error: 'Sólo GET.' }, { status: 405 });
+  const fichas = (await storage.get(K_FICHAS)) || {};
+  const id = url.searchParams.get('id');
+  if(!id) return Response.json({ bien: true, fotos: fotoVerificada(fichas, url.searchParams.get('buscar') || '') });
+  /* la imagen, sólo si es de las verificadas de la escuela */
+  if(!esDeEscuela(fichas[id])) return Response.json({ error: 'Esa foto no está verificada.' }, { status: 404 });
+  return atenderBanco(storage, pedido, url, '');
+}
+
 export async function atenderBanco(storage, pedido, url, cuenta){
   const fichas = (await storage.get(K_FICHAS)) || {};
 

@@ -127,7 +127,7 @@ export function iniciarAmigos(h){
   function pintarSeccion(){
     const v = document.getElementById('vRanking'); if(!v) return;
     let s = document.getElementById('secAmigos');
-    if(!s){ s = document.createElement('section'); s.id = 'secAmigos'; s.className = 'sec-amigos'; v.prepend(s); }
+    if(!s){ s = document.createElement('section'); s.id = 'secAmigos'; s.className = 'sec-amigos'; v.append(s); }   /* abajo de la tabla: la tabla es lo primero que se ve (Carlos, 14 nov) */
     const enLinea = estado.enLinea || [], amigos = estado.amigos || [], pide = estado.pide || [];
     const ses = estado.sesion && (estado.sesion.estado === 'activa' || estado.sesion.estado === 'invitada');
     s.innerHTML = `<div class="seccion-t">Personas conectadas ${enLinea.length ? `<small>· ${enLinea.length}</small>` : ''}</div>
