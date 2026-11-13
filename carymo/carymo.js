@@ -16,7 +16,6 @@
 import { ico } from './iconos.js';
 import { DIBUJOS } from '../sala/iconos-clase.js';
 import { sacarJSON } from '../sala/json-ia.js';
-import { buscarImagen } from '../sala/lienzo.js';
 import { sonar, encender as encenderSonidos } from '../sala/sonidos/sonidos.js';
 import { llave, ponerLlave, llamar, SERVIDOR, SALA } from '../presentaciones/ia.js';
 import { CURSOS, MATERIAL, HECHOS, planDeCurso } from './academia.js';
@@ -143,7 +142,6 @@ Vas a escribir UNA lección corta y su cuestionario. Contesta SÓLO con JSON vá
     { "tipo": "hueco", "frase": "una oración con ___ donde va la palabra que falta", "respuesta": "la palabra (1 a 3 palabras)", "distractores": ["…", "…", "…"], "porque": "…", "pista": "…" },
     { "tipo": "escribir", "pregunta": "pregunta que se contesta con 1 a 3 palabras", "respuesta": "la respuesta", "aceptadas": ["otras formas válidas de decirlo"], "porque": "…", "pista": "…" },
     { "tipo": "unir", "pregunta": "Conecta cada … con su …", "pares": [["concepto", "lo que le corresponde"], ["…", "…"], ["…", "…"], ["…", "…"]], "porque": "…" },
-    { "tipo": "imagen", "pregunta": "¿Cuál de estas imágenes es …?", "opciones": [{ "texto": "nombre corto", "buscar": "título EXACTO de un artículo de Wikipedia en español que tenga foto", "icono": "un dibujo de la lista" }], "correcta": 0, "porque": "…" },
     { "tipo": "error", "pregunta": "En este diagrama hay UN paso mal. ¿Cuál?", "pasos": ["paso 1", "paso 2", "paso 3", "paso 4"], "error": 2, "correccion": "cómo debería decir ese paso", "porque": "…" },
     { "tipo": "ordenar", "pregunta": "Arma el diagrama de flujo de …", "pasos": ["primero", "luego", "después", "al final"], "porque": "…" },
     { "tipo": "clasificar", "pregunta": "Clasifica cada … en su grupo", "grupos": [{ "nombre": "grupo A", "items": ["…", "…"] }, { "nombre": "grupo B", "items": ["…", "…"] }], "porque": "…" }
@@ -151,8 +149,7 @@ Vas a escribir UNA lección corta y su cuestionario. Contesta SÓLO con JSON vá
 Reglas:
 - La lección se lee en el teléfono UNA IDEA POR PANTALLA: de 3 a 4 "ideas", cortas de verdad. Nada de párrafos largos.
 - "icono": escoge el dibujo que mejor ilustre cada idea, SÓLO de esta lista: ${DIBUJOS_LISTA}
-- De 8 a 9 preguntas MUY VARIADAS: 2 de "opcion" y una de cada uno de los demás tipos (hueco, escribir, unir, imagen, error, ordenar, clasificar). Si el tema de plano no tiene un proceso para "error" u "ordenar", cámbialo por otro tipo, pero usa al menos 6 tipos distintos. Que todo se conteste con lo que dice la lección.
-- "imagen": 4 opciones de cosas que se puedan VER (órganos, animales, lugares, objetos, personajes históricos…); cada una con su "buscar" = el título EXACTO del artículo de Wikipedia en español de ESA cosa concreta (ej. «Corazón», no «Corazón humano» ni «el corazón»; «Mitocondria», «Benito Juárez»), o "" si no hay artículo claro y su "icono" de la lista por si no hay foto.
+- De 8 a 9 preguntas MUY VARIADAS: 2 de "opcion" y una de cada uno de los demás tipos (hueco, escribir, unir, error, ordenar, clasificar). Si el tema de plano no tiene un proceso para "error" u "ordenar", cámbialo por otro tipo, pero usa al menos 6 tipos distintos. Que todo se conteste con lo que dice la lección.
 - "error": de 4 a 6 pasos de un proceso real con UNO cambiado para que esté mal; "error" es su número (empieza en 0).
 - "ordenar": de 4 a 6 pasos de un proceso en su orden correcto (la app los revuelve).
 - "clasificar": 2 o 3 grupos con 2 a 3 elementos cada uno.
@@ -199,8 +196,7 @@ export function normalizarLeccion(j){
     if(tipo === 'escribir'){ const respuesta = corta(p.respuesta, 60); if(!p.pregunta || !respuesta || respuesta.split(/\s+/).length > 5) return null; return { tipo, pregunta: corta(p.pregunta, 300), respuesta, aceptadas: lista(p.aceptadas, 60, 5), ...base }; }
     if(tipo === 'unir'){ const pares = (Array.isArray(p.pares) ? p.pares : []).map((x) => Array.isArray(x) ? [corta(x[0], 80), corta(x[1], 120)] : x && typeof x === 'object' ? [corta(x.a || x.concepto || x[0], 80), corta(x.b || x.definicion || x[1], 120)] : null).filter((x) => x && x[0] && x[1]).slice(0, 5);
       if(pares.length < 3 || new Set(pares.map((x) => quitarAcentos(x[0]))).size !== pares.length || new Set(pares.map((x) => quitarAcentos(x[1]))).size !== pares.length) return null; return { tipo, pregunta: corta(p.pregunta, 200), pares, ...base }; }
-    if(tipo === 'imagen'){ const ops = (Array.isArray(p.opciones) ? p.opciones : []).map((o) => typeof o === 'string' ? { texto: corta(o, 50), buscar: corta(o, 80), icono: '' } : { texto: corta(o && (o.texto || o.nombre), 50), buscar: corta(o && o.buscar, 100), icono: dibujoValido(o && o.icono) }).filter((o) => o.texto).slice(0, 4);
-      const c0 = Number(p.correcta); if(ops.length < 3 || !Number.isInteger(c0) || c0 < 0 || c0 >= ops.length || !p.pregunta) return null; return { tipo, pregunta: corta(p.pregunta, 200), opciones: ops, correcta: c0, ...base }; }
+    if(tipo === 'imagen'){ const q = sinImagen(p); if(!q) return null; return { ...q, ...base }; }
     if(tipo === 'error'){ const pasos = lista(p.pasos, 120, 7), e0 = Number(p.error); if(pasos.length < 3 || !Number.isInteger(e0) || e0 < 0 || e0 >= pasos.length) return null; return { tipo, pregunta: corta(p.pregunta, 200), pasos, error: e0, correccion: corta(p.correccion, 160) || 'otro paso', ...base }; }
     if(tipo === 'ordenar'){ const pasos = lista(p.pasos, 100, 7); if(pasos.length < 3 || new Set(pasos.map(quitarAcentos)).size !== pasos.length) return null; return { tipo, pregunta: corta(p.pregunta, 200), pasos, ...base }; }
     if(tipo === 'clasificar'){ const grupos = (Array.isArray(p.grupos) ? p.grupos : []).map((g) => ({ nombre: corta(g && g.nombre, 40), items: lista(g && g.items, 50, 4) })).filter((g) => g.nombre && g.items.length).slice(0, 3);
@@ -839,22 +835,6 @@ const EJ = {
     revisar: (q) => ({ bien: !q._err, correcta: q.pares.map((p) => `${p[0]} → ${p[1]}`).join(' · '), nota: q._err ? `Las conectaste todas, pero con ${q._err} ${q._err === 1 ? 'intento fallido' : 'intentos fallidos'}.` : '' }),
     marcar(){},
   },
-  imagen: {
-    pintar(q){ q._ops ||= barajar(q.opciones.map((o, k) => ({ ...o, k })));
-      return `<div class="habla"><div class="cara">${ico('image-plus')}</div><div class="dice">${esc(q.pregunta)}</div></div>
-        <div class="imagenes">${q._ops.map((o) => `<button class="img-op" data-img="${o.k}" aria-label="Opción ${esc(o.texto)}"><span class="foto-op" data-buscar="${esc(o.buscar || '')}" data-icono="${esc(o.icono || '')}"></span><span class="pie-op">${esc(o.texto)}</span></button>`).join('')}</div>`; },
-    montar(q, c){
-      /* la foto de Wikipedia si la hay; si no, el dibujo; mientras, el dibujo */
-      for(const s of $$('.foto-op', c)){
-        const icono = s.dataset.icono; s.innerHTML = dibujoMini(icono);
-        if(s.dataset.buscar) buscarImagen(s.dataset.buscar).then((r) => { if(!r || !s.isConnected) return; const im = new Image(); let i = 0; im.alt = ''; im.onload = () => { s.innerHTML = ''; s.append(im); }; im.onerror = () => { i++; if(r.fuentes && r.fuentes[i]) im.src = r.fuentes[i]; }; im.src = (r.fuentes && r.fuentes[0]) || r.src; });
-      }
-    },
-    tocar(e, q, c){ const b = e.target.closest('[data-img]'); if(!b || b.disabled) return false; q._r = +b.dataset.img; $$('.img-op', c).forEach((x) => x.classList.toggle('sel', x === b)); tono(SON.toque); return true; },
-    listo: (q) => q._r != null,
-    revisar: (q) => ({ bien: q._r === q.correcta, correcta: q.opciones[q.correcta].texto }),
-    marcar(q, r, c){ $$('.img-op', c).forEach((b) => { b.disabled = true; b.classList.add('revelada'); const k = +b.dataset.img; if(k === q.correcta) b.classList.add('bien'); else if(k === q._r) b.classList.add('mal'); }); },
-  },
   error: {
     pintar: (q) => `<p class="instruccion">${esc(q.pregunta || 'Toca el paso que está mal')}</p>
       <div class="flujo">${q.pasos.map((p, k) => `${k ? `<span class="flecha-f">${ico('arrow-down')}</span>` : ''}<button class="caja-f" data-err="${k}">${esc(p)}</button>`).join('')}</div>`,
@@ -902,9 +882,8 @@ const EJ = {
     marcar(q, r, c){ q._items.forEach((x, j) => { const b = $(`[data-cla="${j}"]`, c); b.disabled = true; b.classList.add(q._en[j] === x.gi ? 'bien' : 'mal'); }); },
   },
 };
-const INSTRUCCION = { opcion: 'Elige la correcta', hueco: 'Completa', escribir: 'Escribe', unir: 'Conecta', imagen: 'Elige la imagen', error: 'Encuentra el error', ordenar: 'Arma el diagrama', clasificar: 'Clasifica' };
+const INSTRUCCION = { opcion: 'Elige la correcta', hueco: 'Completa', escribir: 'Escribe', unir: 'Conecta', error: 'Encuentra el error', ordenar: 'Arma el diagrama', clasificar: 'Clasifica' };
 function volar(el, desde){ const hasta = el.getBoundingClientRect(); el.animate([{ transform: `translate(${desde.left - hasta.left}px, ${desde.top - hasta.top}px)` }, { transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.2,.9,.3,1.15)' }); }
-function dibujoMini(nombre){ const d = DIBUJOS[nombre] || DIBUJOS.sparkles || ''; return `<svg class="dib-op" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`; }
 
 /* EL COMBO: en cada acierto seguido (x2, x3…), más grande, más brillante y más agudo mientras más largo */
 function comboVFX(n){
@@ -931,9 +910,19 @@ function comboVFX(n){
   setTimeout(() => capaC.remove(), 1300);
 }
 
+/* Carlos, 13 nov: «a los de seleccionar cuál imagen es la correcta, stop». Ya no se piden; las que ya estaban
+   guardadas se vuelven una pregunta normal de opciones con los mismos nombres (no se pierde la pregunta) */
+export function sinImagen(q){
+  if(!q || q.tipo !== 'imagen') return q;
+  const opciones = (Array.isArray(q.opciones) ? q.opciones : []).map((o) => String(typeof o === 'string' ? o : (o && (o.texto || o.nombre)) || '').trim().slice(0, 200)).filter(Boolean).slice(0, 4);
+  const c = Number(q.correcta);
+  if(opciones.length < 3 || !Number.isInteger(c) || c < 0 || c >= opciones.length || new Set(opciones.map((x) => x.toLowerCase())).size !== opciones.length) return null;
+  const pregunta = String(q.pregunta || '').replace(/(de )?estas im[aá]genes/gi, (m, de) => de ? 'de estas opciones' : 'estas opciones').slice(0, 300) || '¿Cuál es la correcta?';
+  return { tipo: 'opcion', pregunta, opciones, correcta: c, porque: q.porque || '', pista: q.pista || '' };
+}
 function cuestionario(p, n, preguntas, { simulacro = false } = {}){
   const c = capa();
-  const fila = barajar(preguntas).filter((q) => EJ[q.tipo]).map((q) => ({ ...q, intento: 0 }));
+  const fila = barajar(preguntas.map(sinImagen)).filter((q) => q && EJ[q.tipo]).map((q) => ({ ...q, intento: 0 }));
   const total = fila.length;
   let i = 0, combo = 0, maxCombo = 0, buenasPrimera = 0, contestadas = 0;
   const t0 = Date.now();

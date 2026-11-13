@@ -128,11 +128,10 @@ export async function correr({ ok, almacen, atenderEstudio }){
   async function contestar(d, bien = true){
     const tipo = await pagina.getAttribute('#qCuerpo', 'data-tipo');
     const de = (t) => d.preguntas.filter((x) => x.tipo === t);
-    if(tipo === 'opcion'){ const preg = (await pagina.textContent('.habla .dice')).trim(); const q = de('opcion').find((x) => x.pregunta === preg); await pagina.click(`.opc:text-is("${q.opciones[bien ? q.correcta : (q.correcta + 1) % q.opciones.length]}")`); }
+    if(tipo === 'opcion'){ const preg = (await pagina.textContent('.habla .dice')).trim(); const q = [...de('opcion'), ...de('imagen').map((x) => ({ pregunta: x.pregunta, opciones: x.opciones.map((o) => o.texto), correcta: x.correcta }))].find((x) => x.pregunta === preg); await pagina.click(`.opc:text-is("${q.opciones[bien ? q.correcta : (q.correcta + 1) % q.opciones.length]}")`); }
     else if(tipo === 'hueco'){ const frase = (await pagina.textContent('.hueco-frase')).trim(); const q = de('hueco').find((x) => frase.startsWith(x.frase.split('___')[0].trim())); await pagina.click(`.ficha:text-is("${bien ? q.respuesta : q.distractores[0]}")`); }
     else if(tipo === 'escribir'){ const q = de('escribir')[0]; await pagina.fill('#escribe', bien ? q.respuesta.replace(/ó/g, 'o').replace(/z/, 's') : 'riñón izquierdo'); }
     else if(tipo === 'unir'){ const q = de('unir')[0]; if(!bien){ await pagina.click('[data-u="i0"]'); await pagina.click('[data-u="d1"]'); } for(let k = 0; k < q.pares.length; k++){ await pagina.click(`[data-u="i${k}"]`); await pagina.click(`[data-u="d${k}"]`); } }
-    else if(tipo === 'imagen'){ const q = de('imagen')[0]; await pagina.click(`[data-img="${bien ? q.correcta : (q.correcta + 1) % q.opciones.length}"]`); }
     else if(tipo === 'error'){ const q = de('error')[0]; await pagina.click(`[data-err="${bien ? q.error : (q.error + 1) % q.pasos.length}"]`); }
     else if(tipo === 'ordenar'){ const q = de('ordenar')[0]; const orden = bien ? q.pasos : [q.pasos[1], q.pasos[0], ...q.pasos.slice(2)]; for(const p of orden) await pagina.click(`.fichas.sueltas .ficha:text-is("${p}")`); }
     else if(tipo === 'clasificar'){ const q = de('clasificar')[0]; for(const [gi, g] of q.grupos.entries()) for(const it of g.items){ await pagina.click(`.ficha:text-is("${it}")`); await pagina.click(`[data-grupo="${bien ? gi : (gi + 1) % q.grupos.length}"]`); } }
@@ -274,7 +273,8 @@ export async function correr({ ok, almacen, atenderEstudio }){
       await pagina.click('[data-continuar]');
       await espera(150);
     }
-    ok(['opcion', 'hueco', 'escribir', 'unir', 'imagen', 'error', 'ordenar', 'clasificar'].every((t) => tiposVistos.has(t)), `salen los 8 tipos de ejercicio (${[...tiposVistos].join(', ')})`);
+    ok(['opcion', 'hueco', 'escribir', 'unir', 'error', 'ordenar', 'clasificar'].every((t) => tiposVistos.has(t)), `salen los 7 tipos de ejercicio (${[...tiposVistos].join(', ')})`);
+    ok(!tiposVistos.has('imagen'), 'ya no sale «elige la imagen correcta»: la que venía así se pregunta como opción normal');
     ok(vioPista, 'la pista sale al pedirla');
     ok(maxComboVisto >= 6, `el combo sale en CADA acierto seguido, con sus efectos (llegó a x${maxComboVisto})`);
     ok(vistas === 9, `la que fallé regresó al final (${vistas} ejercicios para 8)`);
