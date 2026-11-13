@@ -102,6 +102,52 @@ try{
     await ctx.close();
   }
 
+  console.log('La voz: sólo la explicación, voces para elegir, sin subtítulos estorbosos, pantalla viva');
+  {
+    const { ctx, p } = await abrir();
+    const v = await p.evaluate(async () => {
+      const m = await import('/sala/voces.js');
+      return {
+        normal: m.paraDecir('La fotosíntesis hace la **comida** de la planta: CO₂ → glucosa.'),
+        prompt: m.paraDecir('Explícalo en español de México como una maestra clara: la célula es la unidad de la vida.'),
+        sistema: m.paraDecir('Eres la maestra particular de Carlos. Contesta SÓLO con JSON válido.'),
+        json: m.paraDecir('{"tipo":"texto","texto":"hola"} La mitocondria da energía.'),
+        mezcla: m.paraDecir('Reglas: no uses markdown\nLa sangre lleva oxígeno.'),
+        estudio: m.VOCES.filter((x) => x.id.startsWith('nube:')).length,
+      };
+    });
+    ok(v.normal === 'La fotosíntesis hace la comida de la planta: CO2 produce glucosa.', 'lo que se lee sale limpio: sin asteriscos y con los signos dichos (' + v.normal + ')');
+    ok(v.prompt === '' && v.sistema === '', 'una instrucción para la IA NUNCA se lee en voz alta');
+    ok(v.json === 'La mitocondria da energía.' && v.mezcla === 'La sangre lleva oxígeno.', 'un pedazo de JSON o un renglón de reglas se tira y se lee sólo la explicación');
+    ok(v.estudio >= 8, `hay ${v.estudio} voces de estudio para elegir`);
+    const opciones = await p.$$eval('#vozSel option', (o) => o.map((x) => x.value));
+    ok(opciones.includes('nube:estrella') && opciones.includes('google:Kore') && opciones.includes('no'), 'el menú «Voz» trae las de estudio, las de Google y «Sin voz»');
+    /* una clase con voz de la nube (de mentiras): la voz pedida es SÓLO la del paso */
+    const pedidas = [];
+    await ctx.route(/ia-voz/, async (r) => { pedidas.push(JSON.parse(r.request().postData())); await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ bien: true, mime: 'audio/wav', data: 'UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=' }) }); });
+    await p.selectOption('#vozSel', 'nube:javier');
+    await p.evaluate((c) => window.__explica.empezar(c), CLASE);
+    await p.waitForFunction(() => window.__explica.estado().dibujados >= 1);
+    await p.waitForTimeout(600);
+    ok(pedidas.length >= 1 && pedidas.every((x) => x.voz === 'nube:javier' && !/maestra|Explícalo|JSON|Eres /i.test(x.texto)) && pedidas[0].texto === CLASE.pasos[0].voz.replace(/\*\*/g, ''), 'la voz elegida (Javier) recibe sólo lo que dice el paso, sin instrucciones (' + String(JSON.stringify(pedidas[0])).slice(0, 90) + ')');
+    ok(await p.isHidden('#subVoz'), 'los subtítulos vienen apagados: no tapan el pizarrón');
+    await p.click('#bSub');
+    ok(await p.isVisible('#subVoz'), '«CC» los prende');
+    await p.click('#bSub');
+    /* pantalla viva: un paso con voz larga, ya dibujado, sigue moviéndose */
+    await p.evaluate(() => { document.querySelector('#bPlay').click(); });
+    await p.evaluate(() => { const v = document.querySelector('#vozSel'); v.value = 'no'; v.dispatchEvent(new Event('change')); });
+    const larga = { titulo: 'Viva', pasos: [{ voz: Array(60).fill('palabra').join(' '), pizarra: { tipo: 'lista', titulo: 'Partes', items: ['**Núcleo** guarda el ADN', 'Membrana deja pasar cosas', 'Citoplasma donde todo flota'] } }] };
+    await p.evaluate((c) => window.__explica.empezar(c), larga);
+    await p.waitForFunction(() => document.querySelector('#tablero .halo.v'), null, { timeout: 20000 }).catch(() => {});
+    const posA = await p.evaluate(() => [document.querySelector('#tablero .cur')?.style.transform, document.querySelector('#tablero .halo')?.style.transform]);
+    await p.waitForTimeout(1800);
+    const posB = await p.evaluate(() => [document.querySelector('#tablero .cur')?.style.transform, document.querySelector('#tablero .halo')?.style.transform]);
+    ok(!!posA[1] && (posA[0] !== posB[0] || posA[1] !== posB[1]), 'ya dibujado, mientras sigue la voz el maestro va señalando con un halo: la pantalla no se queda quieta');
+    await foto(p, '00-halo');
+    await ctx.close();
+  }
+
   console.log('La clase completa, dibujada por muchos cursores');
   {
     const { ctx, p } = await abrir();

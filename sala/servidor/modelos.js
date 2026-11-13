@@ -569,15 +569,61 @@ export function buscarAudio(j){
   return hallado;
 }
 
-/** pedido: { texto, voz?, estilo? } → { bien, mime, data (base64), modelo } */
+/* ── LAS VOCES DE LA NUBE (Cloudflare Workers AI, sin llave: el enlace AI del Worker) ──
+   Carlos, 13 nov: «la voz en teléfono es feísima, mete varias voces para que en perfil
+   puedan elegir una». Aura-2 de Deepgram trae 10 voces en español (comprobado contra la
+   API de la cuenta el 13 nov). Cuesta 2,727 neuronas por cada mil letras: el plan gratis
+   (10,000 al día) alcanza para ~3,600 letras diarias. Cuando se acaba, MeloTTS (18
+   neuronas por MINUTO de audio: casi ilimitada) y, si tampoco, el teléfono lee. */
+export const VOCES_NUBE = ['estrella', 'javier', 'sirio', 'selena', 'aquila', 'celeste', 'carina', 'diana', 'alvaro', 'nestor'];
+const b64 = (buf) => { const u = new Uint8Array(buf); let s = ''; for(let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000)); return btoa(s); };
+async function aBytes(x){
+  if(!x) return null;
+  if(x instanceof ArrayBuffer) return x;
+  if(ArrayBuffer.isView(x)) return x.buffer.slice(x.byteOffset, x.byteOffset + x.byteLength);
+  if(typeof x.getReader === 'function' || x instanceof Response) return await new Response(x).arrayBuffer();
+  if(typeof x === 'object' && typeof x.audio === 'string') return { yaB64: x.audio };
+  return null;
+}
+export async function generarVozNube(env, texto, voz){
+  const ai = env && env.AI;
+  if(!ai) return { bien: false, error: 'La voz de la nube está apagada: falta el enlace AI.' };
+  const intentos = voz === 'melo' ? [['melo']] : [['aura', VOCES_NUBE.includes(voz) ? voz : 'estrella'], ['melo']];
+  const errores = [];
+  for(const [cual, quien] of intentos){
+    try{
+      const r = cual === 'aura'
+        ? await ai.run('@cf/deepgram/aura-2-es', { text: texto, speaker: quien, encoding: 'mp3' })
+        : await ai.run('@cf/myshell-ai/melotts', { prompt: texto, lang: 'es' });
+      const by = await aBytes(r);
+      const data = by && (by.yaB64 || (by.byteLength > 200 ? b64(by) : ''));
+      if(data){
+        const wav = data.startsWith('UklGR');
+        return { bien: true, mime: wav ? 'audio/wav' : 'audio/mpeg', data, modelo: cual === 'aura' ? 'aura-2-es' : 'melotts', voz: cual === 'aura' ? quien : 'melo', ...(cual === 'melo' && voz !== 'melo' ? { respaldo: true } : {}) };
+      }
+      errores.push(`${cual}: sin audio`);
+    }catch(e){ errores.push(`${cual}: ${String(e && e.message || e).slice(0, 120)}`); }
+  }
+  return { bien: false, error: 'La voz de la nube no contestó (' + errores.join(' · ') + ').' };
+}
+
+/* Lo que se le manda a la voz es SÓLO el texto a decir. Hasta el 13 nov se le anteponía
+   «Dilo en español de México…:» como instrucción de estilo, y Gemini a veces la LEÍA en voz
+   alta (Carlos: «asegúrate que JAMÁS la voz lea el prompt»). `estilo` se ignora a propósito. */
+/** pedido: { texto, voz? } → { bien, mime, data (base64), modelo } */
 export async function generarVoz(env, pedido = {}, hacer = fetch){
+  const vozPedida = String(pedido.voz || '');
+  if(/^nube:/.test(vozPedida)){
+    const texto = String(pedido.texto || '').trim().slice(0, 1500);
+    if(!texto) return { bien: false, error: 'Falta qué decir.' };
+    return generarVozNube(env, texto, vozPedida.slice(5));
+  }
   const k = env && env.GEMINI_API_KEY;
   if(!k) return { bien: false, error: 'La voz está apagada: falta el secreto GEMINI_API_KEY en el proyecto sala de Cloudflare.' };
   const texto = String(pedido.texto || '').trim().slice(0, 1500);
   if(!texto) return { bien: false, error: 'Falta qué decir.' };
-  const voz = VOCES.includes(pedido.voz) ? pedido.voz : 'Kore';
-  const estilo = String(pedido.estilo || 'Dilo en español de México, natural y amable, como una asistente platicando por WhatsApp').slice(0, 300);
-  const dicho = `${estilo}: ${texto}`;
+  const voz = VOCES.includes(vozPedida.replace(/^google:/, '')) ? vozPedida.replace(/^google:/, '') : 'Kore';
+  const dicho = texto;
   const corta = new AbortController();
   const reloj = setTimeout(() => corta.abort(), 90_000);
   const cab = { 'x-goog-api-key': k, 'Content-Type': 'application/json' };

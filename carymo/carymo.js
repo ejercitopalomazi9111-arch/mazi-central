@@ -20,6 +20,7 @@ import { buscarImagen } from '../sala/lienzo.js';
 import { sonar, encender as encenderSonidos } from '../sala/sonidos/sonidos.js';
 import { llave, ponerLlave, llamar, SERVIDOR, SALA } from '../presentaciones/ia.js';
 import { CURSOS, MATERIAL, HECHOS, planDeCurso } from './academia.js';
+import { crearVoz, todas as todasLasVoces, VOZ_DE_FABRICA, despertar } from '../sala/voces.js';
 
 const $ = (s, d = document) => d.querySelector(s);
 const $$ = (s, d = document) => [...d.querySelectorAll(s)];
@@ -1273,6 +1274,22 @@ function pintarRanking(){
 }
 
 /* ══ 16 · PERFIL Y AJUSTES ════════════════════════════════════════════════ */
+/* La voz se guarda donde la lee el pizarrón (explica.voz): las dos páginas son del mismo sitio */
+const vozGuardada = () => { const v = guarda.leer('explica.voz', VOZ_DE_FABRICA); return { tel: 'tel:', natural: 'google:Kore' }[v] || v; };
+function opcionesVoz(){
+  const grupos = {}; for(const v of todasLasVoces()) (grupos[v.grupo] ||= []).push(v);
+  const ya = vozGuardada();
+  return Object.entries(grupos).map(([g, vs]) => `<optgroup label="${esc(g)}">${vs.map((v) => `<option value="${esc(v.id)}"${v.id === ya ? ' selected' : ''}>${esc(v.nombre)} · ${esc(v.desc)}</option>`).join('')}</optgroup>`).join('') + `<option value="no"${ya === 'no' ? ' selected' : ''}>Sin voz</option>`;
+}
+let vozPrueba = null;
+function probarVoz(){
+  despertar();
+  vozPrueba ||= crearVoz({ pedir: async (c) => (await llamar(`${SERVIDOR}/api/sala/${SALA}/ia-voz`, { metodo: 'POST', cuerpo: c, espera: 60000 })).json().catch(() => ({})),
+    alFallar: () => brindis('Esa voz no contestó; te puse la del teléfono', 'vino', 'mic') });
+  const v = vozGuardada(); if(v === 'no'){ brindis('Elegiste «Sin voz»', '', 'mic'); return; }
+  const nom = (perfil.nombre && perfil.nombre !== 'Tú') ? perfil.nombre.split(' ')[0] : '';
+  vozPrueba.decir(`¡Hola${nom ? ', ' + nom : ''}! Así te voy a explicar en el pizarrón. ¿Le entramos?`, v);
+}
 function pintarPerfil(){
   const v = $('#vPerfil'), ps = Object.values(planes);
   v.innerHTML = `<div class="perfil-cab"><span class="av">${esc((perfil.nombre || 'T').charAt(0).toUpperCase())}</span><div><h2>${esc(perfil.nombre || 'Tú')}</h2><small>${perfil.cuenta ? '@' + esc(perfil.cuenta) + ' · ' : ''}Instituto Rembrandt de Querétaro</small></div></div>
@@ -1285,6 +1302,10 @@ function pintarPerfil(){
       <button data-nuevo-plan>${ico('plus')}<span>Crear un plan</span></button></div>
     <div class="seccion-t">Tú</div>
     <label class="ajuste">${ico('pencil')}<span>Tu nombre en el ranking</span><input id="pNombre" class="campo" style="max-width:150px;min-height:40px" value="${esc(perfil.nombre || '')}" aria-label="Tu nombre en el ranking"></label>
+    <div class="seccion-t">La voz que te explica</div>
+    <div class="ajuste voz-aj">${ico('mic')}<span>Voz del pizarrón<small style="display:block;color:var(--tenue);font-weight:500">Las «de estudio» suenan como persona</small></span>
+      <select id="pVoz" class="campo" style="max-width:170px;min-height:40px" aria-label="Voz del pizarrón">${opcionesVoz()}</select>
+      <button class="bt redondo" data-probar-voz aria-label="Oír la voz">${ico('play')}</button></div>
     <div class="seccion-t">App</div>
     <div class="ajuste">${ico('volume-2')}<span>Efectos de sonido</span><button class="interruptor" role="switch" data-aj="sonido" aria-checked="${!!ajustes.sonido}" aria-label="Efectos de sonido"></button></div>
     <div class="ajuste">${ico('vibrate')}<span>Vibración</span><button class="interruptor" role="switch" data-aj="vibrar" aria-checked="${!!ajustes.vibrar}" aria-label="Vibración"></button></div>
@@ -1294,8 +1315,10 @@ $('#vPerfil').addEventListener('click', (e) => {
   const a = e.target.closest('[data-aj]'); if(a){ ajustes[a.dataset.aj] = !ajustes[a.dataset.aj]; guarda.poner('est.ajustes', ajustes); a.setAttribute('aria-checked', ajustes[a.dataset.aj]); encenderSonidos(ajustes.sonido !== false); tono(SON.toque); return; }
   const p = e.target.closest('[data-abrir-plan]'); if(p){ actualId = p.dataset.abrirPlan; guardarLocal(); vista = 'plan'; pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); return; }
   if(e.target.closest('[data-nuevo-plan]')) alta();
+  if(e.target.closest('[data-probar-voz]')) probarVoz();
 });
 $('#vPerfil').addEventListener('change', (e) => {
+  if(e.target.id === 'pVoz'){ const v = e.target.value; guarda.poner('explica.voz', v); if(v !== 'no') guarda.poner('explica.vozAntes', v); tono(SON.toque); probarVoz(); return; }
   if(e.target.id !== 'pNombre') return;
   const n = e.target.value.trim().slice(0, 30); if(!n) return;
   perfil.nombre = n; guarda.poner('est.perfil', perfil);

@@ -17,6 +17,7 @@
 import { ico, DIBUJOS } from './iconos-clase.js';
 import { crearLienzo, armarFijo, buscarDibujo, TIPOS } from './lienzo.js';
 import { sacarJSON } from './json-ia.js';
+import { crearVoz, paraDecir, todas, nombreDe, despertar, VOZ_DE_FABRICA } from './voces.js';
 import { sonar, encender as encenderSonidos } from './sonidos/sonidos.js';
 import { llave, ponerLlave, llamar, SERVIDOR, SALA } from '../presentaciones/ia.js';
 /* a La Sala directo (no por presentaciones/ia.js#texto) para mandar `espera` y `pensarPoco`: una clase entera tarda */
@@ -214,56 +215,28 @@ function margenes(){ const m = $('#mando'); lienzo.margenes(6, m.hidden ? 0 : m.
 new ResizeObserver(margenes).observe($('#mando'));
 tablero.addEventListener('camara-libre', () => { $('#bSeguir').hidden = false; });
 
-/* ══ 3 · LA VOZ ═════════════════════════════════════════════════════════════ */
-const MODOS_VOZ = ['tel', 'natural', 'no'];
-let modoVoz = guarda.leer('explica.voz', 'tel'), velocidad = guarda.leer('explica.vel', 1);
-let vocesTel = [];
-const cargarVoces = () => { vocesTel = (speechSynthesis.getVoices && speechSynthesis.getVoices()) || []; };
-if('speechSynthesis' in window){ cargarVoces(); speechSynthesis.addEventListener?.('voiceschanged', cargarVoces); }
-function vozTel(motor){
-  const es = vocesTel.filter((v) => /^es/i.test(v.lang));
-  const mx = es.filter((v) => /MX|US|419/i.test(v.lang));
-  const pref = motor === 'groq' ? /juan|jorge|diego|carlos|male|hombre/i : /paulina|m[oó]nica|sabina|female|mujer|google/i;
-  return mx.find((v) => pref.test(v.name)) || mx[0] || es.find((v) => pref.test(v.name)) || es[0] || null;
-}
-/* lo que se OYE: los subíndices y los signos se leen como se dicen («CO₂» → «CO2», «→» → «produce») */
-const SUBS = { '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4', '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9', '⁰': '0', '¹': '1', '²': ' al cuadrado', '³': ' al cubo' };
-const decible = (t) => String(t || '').replace(/[₀-₉⁰¹²³]/g, (c) => SUBS[c]).replace(/\s*(→|⟶|=>)\s*/g, ' produce ').replace(/\s=\s/g, ' igual a ')
-  .replace(/\s\+\s/g, ' más ').replace(/\s[·×]\s/g, ' por ').replace(/\*\*/g, '');
-const decirTel = (t0, motor, alPalabra) => new Promise((fin) => { const t = decible(t0);
-  if(!('speechSynthesis' in window) || !t){ fin(); return; }
-  const u = new SpeechSynthesisUtterance(t); const v = vozTel(motor); if(v){ u.voice = v; u.lang = v.lang; } else u.lang = 'es-MX';
-  u.rate = Math.min(2, 1.02 * velocidad); u.onend = u.onerror = () => fin();
-  u.onboundary = (e) => { if(e.name === 'word' || e.charIndex != null) alPalabra && alPalabra(e.charIndex); };
-  speechSynthesis.speak(u);
+/* ══ 3 · LA VOZ (sala/voces.js) ═════════════════════════════════════════════
+   La voz se elige (perfil de CARYMO o el menú de aquí): voces de estudio de la nube,
+   Google o las del teléfono. Lo que se lee pasa por `paraDecir`: JAMÁS una instrucción. */
+let velocidad = guarda.leer('explica.vel', 1);
+const VIEJAS = { tel: 'tel:', natural: 'google:Kore' };
+let vozElegida = guarda.leer('explica.voz', VOZ_DE_FABRICA); if(VIEJAS[vozElegida]) vozElegida = VIEJAS[vozElegida];
+let callada = vozElegida === 'no'; if(callada) vozElegida = guarda.leer('explica.vozAntes', VOZ_DE_FABRICA);
+const decible = paraDecir;
+const voz = crearVoz({
+  pedir: async (cuerpo) => { const r = await llamar(`${SERVIDOR}/api/sala/${SALA}/ia-voz`, { metodo: 'POST', cuerpo, espera: 60000 }); return r.json().catch(() => ({})); },
+  alFallar: (e) => aviso(`La voz «${nombreDe(vozElegida)}» no contestó; sigo con la del teléfono. (${e.message})`),
 });
-/* la natural: audio de Gemini; PCM crudo se envuelve en WAV aquí mismo */
-const audiosNat = new Map();
-function wav(b64, mime){
-  const crudo = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-  if(!/L16|pcm/i.test(mime)) return new Blob([crudo], { type: mime });
-  const rate = +(/rate=(\d+)/.exec(mime) || [, 24000])[1], h = new DataView(new ArrayBuffer(44));
-  const s = (o, t) => [...t].forEach((c, i) => h.setUint8(o + i, c.charCodeAt(0)));
-  s(0, 'RIFF'); h.setUint32(4, 36 + crudo.length, true); s(8, 'WAVE'); s(12, 'fmt '); h.setUint32(16, 16, true); h.setUint16(20, 1, true); h.setUint16(22, 1, true);
-  h.setUint32(24, rate, true); h.setUint32(28, rate * 2, true); h.setUint16(32, 2, true); h.setUint16(34, 16, true); s(36, 'data'); h.setUint32(40, crudo.length, true);
-  return new Blob([h.buffer, crudo], { type: 'audio/wav' });
+voz.velocidad = velocidad;
+const vozActiva = () => callada ? 'no' : vozElegida;
+function pedirNatural(i){ if(clase && clase.pasos[i] && clase.pasos[i].voz) voz.precargar(clase.pasos[i].voz, vozActiva()); }
+function callar(){ voz.callar(); }
+function pintarVoces(){
+  const sel = $('#vozSel'); if(!sel) return;
+  const grupos = {}; for(const v of todas()) (grupos[v.grupo] ||= []).push(v);
+  sel.innerHTML = Object.entries(grupos).map(([g, vs]) => `<optgroup label="${esc(g)}">${vs.map((v) => `<option value="${esc(v.id)}">${esc(v.nombre)} · ${esc(v.desc)}</option>`).join('')}</optgroup>`).join('') + '<option value="no">Sin voz</option>';
+  sel.value = vozActiva();
 }
-function pedirNatural(i){
-  if(audiosNat.has(i) || !clase || !clase.pasos[i] || !clase.pasos[i].voz) return audiosNat.get(i);
-  const p = (async () => {
-    const r = await llamar(`${SERVIDOR}/api/sala/${SALA}/ia-voz`, { metodo: 'POST', cuerpo: { texto: decible(clase.pasos[i].voz), voz: clase.motor === 'groq' ? 'Charon' : 'Kore', estilo: 'Explícalo en español de México como una maestra clara, cálida y con buen ritmo' }, espera: 90000 });
-    const j = await r.json().catch(() => ({}));
-    if(!r.ok || !j.bien) throw new Error(j.error || 'La voz natural no contestó.');
-    return URL.createObjectURL(wav(j.data, j.mime));
-  })();
-  p.catch(() => {}); audiosNat.set(i, p); return p;
-}
-let audioActual = null;
-async function decirNatural(i){
-  const url = await pedirNatural(i);
-  return new Promise((fin) => { const a = new Audio(url); audioActual = a; a.playbackRate = velocidad; a.onended = a.onerror = () => fin(); a.play().catch(() => fin()); });
-}
-function callar(){ try{ speechSynthesis.cancel(); }catch{} if(audioActual){ audioActual.pause(); audioActual = null; } }
 
 /* ══ 4 · LA CLASE EN PANTALLA ═══════════════════════════════════════════════ */
 let clase = null, actual = -1, sonando = false, turno = 0;
@@ -275,8 +248,13 @@ const ver = (cual) => {
   if(cual === 'clase') requestAnimationFrame(margenes);
 };
 const segundos = (t) => Math.min(70, Math.max(2.2, String(t || '').split(/\s+/).length * .38 / velocidad));
-function pintarSub(t, hasta){ const p = String(t || '').split(/(\s+)/); let n = 0; $('#subVoz').innerHTML = p.map((w) => { const i = n; n += w.length; return /^\s+$/.test(w) ? w : `<span class="${i + w.length <= hasta ? 'ya' : i <= hasta ? 'ahora' : ''}">${esc(w)}</span>`; }).join(''); }
-function botonPlay(){ $('#bPlay').innerHTML = ico(sonando ? 'pause' : 'play'); $('#bVoz').innerHTML = ico(modoVoz === 'no' ? 'volume-x' : 'volume-2') ; $('#bVoz').title = { tel: 'Voz del teléfono', natural: 'Voz natural de Gemini', no: 'Sin voz' }[modoVoz]; $('#bVel').textContent = velocidad + '×'; }
+/* los subtítulos estorbaban (Carlos, 13 nov): vienen apagados; «CC» los prende. Los avisos sí salen, un rato */
+let conSubs = guarda.leer('explica.subs', false), quitaAviso = 0;
+function sub(t, hasta){ if(conSubs) pintarSub(t, hasta); }
+function avisoSub(t){ pintarSub(t, Infinity); if(!conSubs){ clearTimeout(quitaAviso); quitaAviso = setTimeout(() => { if(!conSubs) $('#subVoz').hidden = true; }, 4500); } }
+function pintarSub(t, hasta){ $('#subVoz').hidden = false; const p = String(t || '').split(/(\s+)/); let n = 0; $('#subVoz').innerHTML = p.map((w) => { const i = n; n += w.length; return /^\s+$/.test(w) ? w : `<span class="${i + w.length <= hasta ? 'ya' : i <= hasta ? 'ahora' : ''}">${esc(w)}</span>`; }).join(''); }
+function botonPlay(){ $('#bPlay').innerHTML = ico(sonando ? 'pause' : 'play'); $('#bVoz').innerHTML = ico(callada ? 'volume-x' : 'volume-2'); $('#bVoz').title = callada ? 'Sin voz' : 'Voz: ' + nombreDe(vozElegida); $('#bVel').textContent = velocidad + '×';
+  $('#bSub').textContent = 'CC'; $('#bSub').setAttribute('aria-pressed', String(conSubs)); $('#bSub').style.opacity = conSubs ? 1 : .55; $('#bSub').style.textDecoration = conSubs ? 'none' : 'line-through'; $('#subVoz').hidden = !conSubs; }
 
 /* lo de antes, dibujado completo y quieto; lo de este paso en adelante, fuera */
 function asegurarHasta(i){
@@ -295,29 +273,30 @@ async function reproducir(i){
   $('#bTodo').hidden = true;
   const paso = clase.pasos[i];
   $('#avance').style.width = ((i + 1) / clase.pasos.length * 100) + '%';
-  pintarSub(paso.voz, -1);
+  sub(paso.voz, -1);
   let p = null;
   if(paso.pizarra){ p = lienzo.poner(paso.pizarra, i); lienzo.enfocar(p); }
-  if(!sonando){ if(p) lienzo.dibujarYa(p); pintarSub(paso.voz, Infinity); return; }
+  if(!sonando){ if(p) lienzo.dibujarYa(p); sub(paso.voz, Infinity); return; }
   const dur = segundos(paso.voz) * 1000;
-  if(modoVoz === 'natural'){ pedirNatural(i + 1); pedirNatural(i + 2); }
+  pedirNatural(i); pedirNatural(i + 1); pedirNatural(i + 2);
   const inicio = performance.now();
-  const subTimer = setInterval(() => { if(yo !== turno){ clearInterval(subTimer); return; } pintarSub(paso.voz, paso.voz.length * Math.min(1, (performance.now() - inicio) / dur)); }, 160);
-  const voz = (async () => {
-    if(modoVoz === 'no'){ await new Promise((r) => setTimeout(r, dur)); return; }
-    if(modoVoz === 'natural'){ try{ await decirNatural(i); return; }catch(e){ aviso('La voz natural falló; sigo con la del teléfono. (' + e.message + ')'); modoVoz = 'tel'; botonPlay(); } }
-    await Promise.race([decirTel(paso.voz, clase.motor), new Promise((r) => setTimeout(r, dur * 1.8 + 2500))]);
+  const subTimer = conSubs ? setInterval(() => { if(yo !== turno){ clearInterval(subTimer); return; } sub(paso.voz, paso.voz.length * Math.min(1, (performance.now() - inicio) / dur)); }, 160) : 0;
+  const hablando = (async () => {
+    if(vozActiva() === 'no' || !decible(paso.voz)){ await new Promise((r) => setTimeout(r, dur)); return; }
+    await Promise.race([voz.decir(paso.voz, vozActiva()), new Promise((r) => setTimeout(r, dur * 2.2 + 8000))]);
   })();
-  /* el dibujo acaba antes que la voz: lo que se dice ya está en el pizarrón */
-  const dibujo = p ? lienzo.dibujar(p, dur * .78) : Promise.resolve();
-  await Promise.all([voz, dibujo]); clearInterval(subTimer);
+  /* el dibujo acaba antes que la voz: lo que se dice ya está en el pizarrón. Y mientras la voz
+     sigue, el maestro va señalando lo dibujado: la pantalla nunca se queda quieta */
+  let parar = null;
+  const dibujo = p ? lienzo.dibujar(p, dur * .78).then((bien) => { if(bien && yo === turno) parar = lienzo.recorrer(p); }) : Promise.resolve();
+  await Promise.all([hablando, dibujo]); clearInterval(subTimer); if(parar) parar();
   if(yo !== turno) return;
-  pintarSub(paso.voz, Infinity);
+  sub(paso.voz, Infinity);
   await new Promise((r) => setTimeout(r, 320));
   if(yo !== turno || !sonando) return;
   if(i >= clase.pasos.length - 1 && clase.pendiente){
     /* la clase a fondo se escribe en dos partes: si la segunda no ha llegado, se espera aquí */
-    pintarSub('Un momento: estoy armando la segunda parte de la clase…', Infinity);
+    avisoSub('Un momento: estoy armando la segunda parte de la clase…');
     await clase.pendiente;
     if(yo !== turno || !sonando) return;
   }
@@ -387,14 +366,14 @@ function abrirApuntes(){
 
 /* ══ 5 · PEDIDOS: clase nueva y preguntas sobre la misma ════════════════════ */
 let fotos = [];
-function aviso(t){ const a = $('#aviso'); a.textContent = t; a.hidden = !t; if(!$('#vClase').hidden && t){ pintarSub(t, Infinity); } }
+function aviso(t){ const a = $('#aviso'); a.textContent = t; a.hidden = !t; if(!$('#vClase').hidden && t){ avisoSub(t); } }
 const ESPERA = ['Armando tu clase…', 'Ordenando las ideas…', 'Buscando buenos ejemplos…', 'Preparando el pizarrón…', 'Ya casi…'];
 async function pedirClase(){
   const tema = $('#tema').value.trim();
   if(!tema && !fotos.length){ aviso('Escribe qué quieres que te explique (o sube una foto de tus apuntes).'); $('#tema').focus(); return; }
   if(!llave()){ aviso('Falta la llave de La Sala en este teléfono.'); $('#cajaLlave').hidden = false; $('#llaveTxt').focus(); return; }
   /* el iPhone sólo deja hablar si la voz arrancó con un toque: se «despierta» aquí, con una pausa vacía */
-  try{ const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); }catch{}
+  despertar();
   let motor = $('#motor').value; if(fotos.length && motor === 'groq'){ motor = 'gemini'; }
   aviso(''); ver('prepara'); $('#quien').textContent = '· ' + NOMBRE[motor];
   let k = 0; $('#preparaTxt').innerHTML = `${NOMBRE[motor]} está armando tu clase<b>${esc(tema || 'tus apuntes')}</b>`;
@@ -429,7 +408,7 @@ function segundaParte(c, motor, tema){
     .finally(() => { c.pendiente = null; });
 }
 async function empezar(c){
-  clase = c; audiosNat.clear();
+  clase = c; voz.olvidar();
   $('#quien').textContent = '· ' + NOMBRE[c.motor || 'gemini']; document.title = c.titulo + ' · Explica';
   ver('clase'); scrollTo({ top: 0 });
   /* las letras tienen que estar cargadas antes de medir: el texto SVG se acomoda con ellas */
@@ -439,7 +418,7 @@ async function empezar(c){
 }
 async function preguntar(q){
   if(!clase || !q) return;
-  sonando = false; callar(); botonPlay(); pintarSub(`${NOMBRE[clase.motor]} está pensando tu pregunta…`, Infinity);
+  sonando = false; callar(); botonPlay(); avisoSub(`${NOMBRE[clase.motor]} está pensando tu pregunta…`);
   try{
     const resumen = clase.pasos.map((p, i) => `${i + 1}. ${p.voz}`).join('\n');
     const nueva = await pedirJSON({ motor: clase.motor, json: true, tope: 6000,
@@ -449,7 +428,7 @@ async function preguntar(q){
     clase.referencias.push(...nueva.referencias.filter((r) => !clase.referencias.some((x) => x.titulo === r.titulo)));
     if(nueva.repaso.length) clase.repaso = nueva.repaso;
     guardarHistorial(clase); sonando = true; botonPlay(); reproducir(desde);
-  }catch(e){ pintarSub('No pude contestar: ' + (e.message || e), Infinity); }
+  }catch(e){ avisoSub('No pude contestar: ' + (e.message || e)); }
 }
 
 /* ══ 6 · HISTORIAL (en este teléfono) ═══════════════════════════════════════ */
@@ -462,7 +441,7 @@ function pintarHistorial(){
 $('#histLista').addEventListener('click', (e) => {
   const a = e.target.closest('[data-abrir]'), b = e.target.closest('[data-borrar]');
   const h = guarda.leer('explica.historial', []);
-  if(a){ const c = h.find((x) => x.id === a.dataset.abrir); if(c){ try{ const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); }catch{} empezar(c); } }
+  if(a){ const c = h.find((x) => x.id === a.dataset.abrir); if(c){ despertar(); empezar(c); } }
   if(b){ if(b.dataset.seguro){ guarda.poner('explica.historial', h.filter((x) => x.id !== b.dataset.borrar)); pintarHistorial(); } else { b.dataset.seguro = '1'; b.style.background = 'var(--rojo)'; setTimeout(() => { delete b.dataset.seguro; b.style.background = ''; }, 2500); } }
 });
 
@@ -488,10 +467,13 @@ let terminada = false;
 $('#bPlay').addEventListener('click', () => { if(sonando){ sonando = false; turno++; callar(); lienzo.detener(); botonPlay(); } else { sonando = true; botonPlay(); reproducir(terminada && actual >= clase.pasos.length - 1 ? 0 : Math.max(0, actual)); terminada = false; } });
 $('#bSig').addEventListener('click', () => { if(actual < clase.pasos.length - 1) reproducir(actual + 1); else { sonando = false; turno++; callar(); lienzo.detener(); botonPlay(); terminada = true; pintarFinal(); } });
 $('#bAtras').addEventListener('click', () => reproducir(actual - 1));
-$('#bVel').addEventListener('click', () => { velocidad = { 1: 1.25, 1.25: 1.5, 1.5: .85, .85: 1 }[velocidad] || 1; guarda.poner('explica.vel', velocidad); botonPlay(); });
-$('#bVoz').addEventListener('click', () => { modoVoz = MODOS_VOZ[(MODOS_VOZ.indexOf(modoVoz) + 1) % MODOS_VOZ.length]; guarda.poner('explica.voz', modoVoz); botonPlay(); pintarSub({ tel: 'Voz del teléfono.', natural: 'Voz natural de Gemini (tarda un poquito más en arrancar cada paso).', no: 'Sin voz: sólo el pizarrón.' }[modoVoz], Infinity); });
+$('#bVel').addEventListener('click', () => { velocidad = { 1: 1.25, 1.25: 1.5, 1.5: .85, .85: 1 }[velocidad] || 1; voz.velocidad = velocidad; guarda.poner('explica.vel', velocidad); botonPlay(); });
+$('#bVoz').addEventListener('click', () => { callada = !callada; if(callada) callar(); guarda.poner('explica.voz', vozActiva()); botonPlay(); avisoSub(callada ? 'Sin voz: sólo el pizarrón.' : 'Voz: ' + nombreDe(vozElegida) + '. La cambias en «Voz» al empezar o en tu perfil de CARYMO.'); });
+$('#bSub').addEventListener('click', () => { conSubs = !conSubs; guarda.poner('explica.subs', conSubs); botonPlay(); if(conSubs && clase && clase.pasos[actual]) pintarSub(clase.pasos[actual].voz, Infinity); });
+$('#vozSel').addEventListener('change', () => { const v = $('#vozSel').value; callada = v === 'no'; if(!callada){ vozElegida = v; guarda.poner('explica.vozAntes', v); } guarda.poner('explica.voz', vozActiva()); botonPlay(); });
+if(typeof speechSynthesis !== 'undefined') speechSynthesis.addEventListener?.('voiceschanged', pintarVoces);
 $('#bPreg').addEventListener('click', () => { $('#fPreg').hidden = !$('#fPreg').hidden; if(!$('#fPreg').hidden) $('#pregTxt').focus(); });
-$('#fPreg').addEventListener('submit', (e) => { e.preventDefault(); const q = $('#pregTxt').value.trim(); if(!q) return; $('#pregTxt').value = ''; $('#fPreg').hidden = true; try{ const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); }catch{} preguntar(q); });
+$('#fPreg').addEventListener('submit', (e) => { e.preventDefault(); const q = $('#pregTxt').value.trim(); if(!q) return; $('#pregTxt').value = ''; $('#fPreg').hidden = true; despertar(); preguntar(q); });
 $('#bNueva').addEventListener('click', () => { sonando = false; turno++; callar(); lienzo.detener(); clase = null; ver('inicio'); document.title = 'Explica · La Sala'; $('#tema').value = ''; fotos = []; $('#fotos').innerHTML = ''; });
 $('#bSeguir').addEventListener('click', () => { lienzo.seguir(); $('#bSeguir').hidden = true; });
 $('#bTodo').addEventListener('click', () => lienzo.verTodo());
@@ -510,7 +492,7 @@ document.addEventListener('visibilitychange', () => { if(document.hidden && sona
 const q0 = new URLSearchParams(location.search).get('tema'); if(q0) $('#tema').value = q0;
 /* …y Estudio también dice el nivel y el largo («corta»: un nodo del camino no es una clase de una hora) */
 { const q = new URLSearchParams(location.search); for(const k of ['nivel', 'largo', 'motor']){ const v = q.get(k); if(v && [...$('#' + k).options].some((o) => o.value === v)) $('#' + k).value = v; } }
-botonPlay(); pintarHistorial(); ver('inicio');
+botonPlay(); pintarVoces(); pintarHistorial(); ver('inicio');
 /* para las pruebas: cargar una clase ya hecha sin pedirla */
 window.__explica = { abrirDicho, empezar: (c) => empezar({ ...normalizar(c), motor: c.motor || 'groq', fecha: Date.now() }), normalizar, normalizarPizarra, abrirApuntes, lienzo,
   estado: () => ({ actual, sonando, pasos: clase && clase.pasos.length, dibujados: lienzo.piezas.length, cursores: lienzo.cursores, libre: lienzo.libre }) };

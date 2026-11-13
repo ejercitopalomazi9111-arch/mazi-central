@@ -70,6 +70,11 @@
   .cur{ position:absolute; left:0; top:0; will-change:transform }
   .cur svg{ position:absolute; left:-4px; top:-4.7px; width:24px; height:24px; overflow:visible; filter:drop-shadow(0 2px 2px #0005) }
   .cur .etq{ position:absolute; left:15px; top:17px; padding:3px 8px 3px 7px; border-radius:3px 10px 10px 10px; color:#fff; font:700 11px/1.2 Texto; white-space:nowrap; box-shadow:0 2px 6px #0003 }
+  /* el halo que señala lo que se está explicando (recorrer en lienzo.js) */
+  .halo{ position:absolute; left:0; top:0; width:64px; height:64px; margin:-32px 0 0 -32px; border-radius:50%; pointer-events:none; opacity:0;
+    background:radial-gradient(#AC27FF2e, #AC27FF10 55%, transparent 72%); border:2px solid #AC27FF55; transition:opacity .35s }
+  .halo.v{ opacity:1; animation:late 1.1s cubic-bezier(.3,1.4,.4,1) both }
+  @keyframes late{ 0%{ scale:.3 } 55%{ scale:1.12 } 100%{ scale:1 } }
   .clic{ position:absolute; left:0; top:0; width:0; height:0; border-color:var(--violeta) }
   .clic::after{ content:""; position:absolute; left:-10px; top:-10px; width:20px; height:20px; border-radius:50%; border:1.5px solid; border-color:inherit; opacity:.75; animation:clic .32s ease-out forwards }
   @keyframes clic{ from{ transform:scale(.25); opacity:1 } to{ transform:scale(1.35); opacity:0 } }
@@ -176,7 +181,8 @@
   /* abajo: subtítulo y controles */
   .mando{ position:fixed; left:0; right:0; bottom:0; z-index:30; padding:10px 12px calc(10px + env(safe-area-inset-bottom)); background:linear-gradient(transparent, #100A18 22%) }
   .mando .dentro{ max-width:760px; margin:0 auto; background:#1E1428f2; backdrop-filter:blur(12px); border:1px solid #ffffff14; border-radius:20px; padding:10px 12px }
-  .sub-voz{ font:600 15px/1.45 Texto; color:#D8D0E2; min-height:44px; max-height:66px; overflow:hidden; margin-bottom:8px }
+  .sub-voz{ font:600 13px/1.4 Texto; color:#D8D0E2; max-height:38px; overflow:hidden; margin-bottom:8px; -webkit-mask-image:linear-gradient(#000 70%, transparent) }
+  .sub-voz[hidden]{ display:none }
   .sub-voz .ya{ color:#fff } .sub-voz .ahora{ color:var(--marca) }
   .barra-pasos{ height:4px; border-radius:2px; background:#ffffff18; margin-bottom:10px; overflow:hidden } .barra-pasos i{ display:block; height:100%; background:var(--violeta2); width:0; transition:width .3s }
   .botones{ display:flex; gap:8px; align-items:center } .botones .crece{ flex:1 }
@@ -202,6 +208,7 @@
       <div><label for="nivel">Nivel</label><select id="nivel"><option value="prepa">Prepa</option><option value="uni">Universidad</option><option value="facil">Muy fácil</option></select></div>
       <div><label for="largo">Largo</label><select id="largo"><option value="corta">Corta</option><option value="normal" selected>Normal</option><option value="fondo">A fondo</option></select></div>
       <div><label for="cursores">Cursores que dibujan</label><select id="cursores"><option value="monton">Un montón</option><option value="varios">Unos cuantos</option><option value="uno">Sólo uno</option></select></div>
+      <div><label for="vozSel">Voz</label><select id="vozSel"></select></div>
       <div><label for="sonidos">Efectos de sonido</label><select id="sonidos"><option value="si">Sí, suavecitos</option><option value="no">No</option></select></div>
     </div>
     <div class="acciones">
@@ -244,6 +251,7 @@
       <button class="bt redondo fuerte" id="bPlay" aria-label="Reproducir o pausar"></button>
       <button class="bt redondo" id="bSig" aria-label="Paso siguiente"></button>
       <span class="crece"></span>
+      <button class="bt redondo" id="bSub" aria-label="Subtítulos"></button>
       <button class="bt" id="bVel" aria-label="Velocidad">1×</button>
       <button class="bt redondo" id="bVoz" aria-label="Voz encendida o apagada"></button>
       <button class="bt redondo" id="bPreg" aria-label="Preguntar algo sobre esto"></button>

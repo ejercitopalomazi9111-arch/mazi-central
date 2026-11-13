@@ -883,7 +883,7 @@ export function crearLienzo(vista, { modo = 'monton', maestro = 'Negro', alMover
   function apuntar(){
     const p = foco; if(!p) return;
     const vw = vista.clientWidth, vh = vista.clientHeight - margenAbajo - margenArriba;
-    const s = lim((vw - 24) / p.w, .32, 1.12);
+    const s = lim((vw - 24) / p.w, .32, 1.12) * empuje;
     cam.ts = s; cam.tx = vw / 2 - (p.x + p.w / 2) * s;
     if(p.h * s <= vh - 20) cam.ty = margenArriba + (vh - p.h * s) / 2 - p.y * s;
     else {
@@ -965,6 +965,39 @@ export function crearLienzo(vista, { modo = 'monton', maestro = 'Negro', alMover
   function dibujarYa(p){ for(const t of p.tareas){ t.ini && t.ini(); t.fin(); } }
   function detener(){ gen++; for(const a of [...activos]) a.forzar(); activos.clear(); }
 
+  /* ── la pantalla no se queda quieta mientras la voz sigue ──
+     Carlos, 13 nov: «que no se quede tanto tiempo la pantalla quieta mientras explica algo».
+     Ya dibujada la pieza, el maestro va señalando lo importante (lo marcado, las viñetas, los
+     nodos) con un halo que late, y la cámara se acerca poquito y despacio. Regresa con qué parar. */
+  let empuje = 1;
+  function recorrer(p){
+    if(!p || !p.el) return () => {};
+    const g = gen; let vivo = true;
+    turnoDibujo++;                       // así no se retira el maestro a media explicación
+    const c = principal(); c.fuera = false;
+    const r0 = p.el.getBoundingClientRect(), k0 = cam.s || 1, pts = [];
+    for(const n of p.el.querySelectorAll('mark, .m, .bala, li, .nodo, .ev, .celda, h3, b, .p')){
+      const r = n.getBoundingClientRect(); if(r.width < 3 || r.height < 3) continue;
+      pts.push([p.x + (r.left - r0.left + Math.min(r.width, 180) * .5) / k0, p.y + (r.top - r0.top + r.height * .6) / k0]);
+      if(pts.length >= 12) break;
+    }
+    if(pts.length < 3) for(let i = 0; i < 4; i++) pts.push([p.x + p.w * (.2 + .6 * ((i * .37) % 1)), p.y + p.h * (.2 + .6 * (i / 3))]);
+    const halo = document.createElement('div'); halo.className = 'halo'; mundo.append(halo);
+    const t0 = performance.now();
+    anima(9000, (k) => { empuje = 1 + .055 * (k * k * (3 - 2 * k)); }, g);
+    (async () => {
+      for(let i = 0; vivo && g === gen; i++){
+        const [x, y] = pts[i % pts.length], ox = c.x, oy = c.y;
+        const d = Math.hypot(x - ox, y - oy), dur = lim(d * 2.2, 520, 1100);
+        await anima(dur, (k) => { const e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; c.x = ox + (x - ox) * e; c.y = oy + (y - oy) * e + Math.sin(k * Math.PI) * -14; }, g);
+        if(!vivo || g !== gen) break;
+        halo.style.transform = `translate3d(${f1(x)}px, ${f1(y)}px, 0)`; halo.classList.remove('v'); void halo.offsetWidth; halo.classList.add('v');
+        await anima(900 + (i % 3) * 260, () => {}, g);
+      }
+    })();
+    return () => { vivo = false; halo.classList.remove('v'); setTimeout(() => halo.remove(), 450); empuje = 1; arrancar(); return performance.now() - t0; };
+  }
+
   /* ── ver todo / seguir / gestos ── */
   function caja0(){ if(!piezas.length) return null; const x0 = Math.min(...piezas.map((p) => p.x)), y0 = Math.min(...piezas.map((p) => p.y)), x1 = Math.max(...piezas.map((p) => p.x + p.w)), y1 = Math.max(...piezas.map((p) => p.y + p.h)); return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }; }
   function verTodo(){
@@ -1022,7 +1055,7 @@ export function crearLienzo(vista, { modo = 'monton', maestro = 'Negro', alMover
   ro.observe(vista);
 
   return {
-    poner, dibujar, dibujarYa, quitarDesde, limpiar, detener, enfocar, verTodo, seguir,
+    poner, dibujar, dibujarYa, quitarDesde, limpiar, detener, enfocar, verTodo, seguir, recorrer,
     margenes(arriba, abajo){ margenArriba = arriba; margenAbajo = abajo; if(foco && !cam.libre){ apuntar(); arrancar(); } },
     modo(m){ if(MODOS_CURSORES[m]) modo = m; return modo; },
     maestro(nombre){ maestro = nombre; if(cursores[0]){ cursores[0].nombre = nombre; const e = cursores[0].nodo.querySelector('.etq'); if(e) e.textContent = nombre; } },
