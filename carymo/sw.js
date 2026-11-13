@@ -34,7 +34,7 @@ const ESPERA_PAGINA = 5000, ESPERA_ARCHIVO = 8000;
 const BASE = [
   './', './index.html', './manifest.webmanifest', './pizarron.html',
   './carymo.js', './academia.js', './amigos.js', './apuntes.js', './avisos.js', './companero.js', './cosas.js', './cuenta.js',
-  './entrada.js', './iconos.js', './mascota.js', './ropa.js', './sesion.js', './trazo.js', './vestidor.js', './yo.js', './zoo.js', './personaje-vivo.js', './ligas.js', './crianza-datos.js', './mascota-ropa.js',
+  './entrada.js', './iconos.js', './mascota.js', './ropa.js', './sesion.js', './trazo.js', './vestidor.js', './yo.js', './zoo.js', './personaje-vivo.js', './ligas.js', './crianza-datos.js', './mascota-ropa.js', './muelle.js', './nombre.js', './titulos.js',
   './marca/icono-192.png', './marca/favicon-64.png',
   '../sala/explica.html', '../sala/explica.js', '../sala/lienzo.js', '../sala/voces.js', '../sala/acceso.js', '../sala/iconos-clase.js',
   '../sala/json-ia.js', '../sala/clases-guardadas.js', '../sala/sonidos/sonidos.js', '../presentaciones/ia.js',

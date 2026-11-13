@@ -9,6 +9,7 @@
  * ===========================================================================*/
 import { personajeDeArranque, normalizarPersonaje } from './ropa.js';
 import { LIGAS, ligaDe, trofeoSVG } from './ligas.js';
+import { nombreHTML, insigniasHTML } from './nombre.js';
 
 /* las sub-pantallas de «Tú»: su título en la barrita de regreso */
 export const SUBVISTAS = { horario: 'Horario', apuntes: 'Apuntes', pizarron: 'Pizarrón libre', buscar: 'Buscar un tema', perfil: 'Ajustes y cuenta' };
@@ -34,7 +35,7 @@ export function iniciarYo(h){
     const planes = Object.values(h.planes()), nApuntes = h.cuantosApuntes();
     v.innerHTML = `<div class="yo-cab">
         <button class="yo-pj" data-yo="vestidor" aria-label="Tu personaje: cambiar ropa y accesorios"><span class="yo-pj-dib" id="yoPj"></span><span class="yo-pj-lapiz">${ico('pencil')}</span></button>
-        <div class="yo-quien"><h2>${esc(p.nombre || 'Tú')}</h2>
+        <div class="yo-quien"><h2>${nombreHTML(p.nombre || 'Tú', p.estiloNombre)}</h2>${(p.titulos || []).length ? `<div class="insignias">${insigniasHTML(p.titulos, ico)}</div>` : ''}
           <div class="yo-chips"><span class="pastilla racha">${ico('flame')}${p.racha || 0}</span><span class="pastilla">${ico('zap')}${p.xp || 0} XP</span><span class="pastilla cubos" id="yoCubos"></span><button class="pastilla liga" data-yo="trofeos" aria-label="Liga ${esc(ligaDe(p.liga).nombre)}: ver tus trofeos">${trofeoSVG(p.liga | 0, { tam: 16 })}${esc(ligaDe(p.liga).nombre)}</button></div></div>
       </div>
       ${conMasc ? `<button class="yo-masc ${cl}" data-yo="companero" aria-label="Tu compañero: ${esc(como)}. Entrar a su cuarto"><span class="yo-masc-dib" id="yoMasc"></span><span class="yo-masc-txt"><b>Tu compañero</b><small>${esc(como)} · entra a su cuarto</small></span>${ico('chevron-right')}</button>`

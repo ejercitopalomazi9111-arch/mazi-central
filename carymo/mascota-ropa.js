@@ -45,6 +45,18 @@ export function svgAccesorio(k, g, ojos){
       <path d="M${eL + 15} ${eyY - 3} H${eR - 15}" stroke="${N}" stroke-width="4"/><path d="M${eL - 9} ${eyY - 4} l6 -3 M${eR - 9} ${eyY - 4} l6 -3" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity=".7"/></g>`;
     case 'audifonos': return `<g data-acc="audifonos"><path d="M${x0 - w * .46} ${eyY - 4} Q${x0 - w * .5} ${t - 18} ${x0} ${t - 20} Q${x0 + w * .5} ${t - 18} ${x0 + w * .46} ${eyY - 4}" fill="none" stroke="${M}" stroke-width="7" stroke-linecap="round"/>
       <rect x="${x0 - w * .55}" y="${eyY - 14}" width="16" height="26" rx="7" fill="#AC27FF" stroke="${M}" stroke-width="2"/><rect x="${x0 + w * .55 - 16}" y="${eyY - 14}" width="16" height="26" rx="7" fill="#AC27FF" stroke="${M}" stroke-width="2"/></g>`;
+    /* ── los de regalo (no se venden): los pone la casa a mano (titulos.js) ── */
+    case 'boina': { /* la boina de artista de Sandra, con tres gotitas de pintura */
+      const cx = x0 - w * .06, cy = t - 4;
+      return `<g data-acc="boina" transform="rotate(-10 ${x0} ${t})"><ellipse cx="${cx}" cy="${cy}" rx="${W(.5)}" ry="15" fill="#2A1A3A" stroke="#160C22" stroke-width="2"/>
+      <path d="M${cx - w * .46} ${cy + 3} Q${cx} ${cy + 14} ${cx + w * .46} ${cy + 3}" fill="none" stroke="#3E2A55" stroke-width="3"/>
+      <path d="M${cx + 2} ${cy - 15} q3 -7 7 -6" fill="none" stroke="#2A1A3A" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="${cx - w * .2}" cy="${cy - 3}" r="4" fill="#E5484D"/><circle cx="${cx - w * .05}" cy="${cy - 7}" r="3.2" fill="#F5C842"/><circle cx="${cx + w * .12}" cy="${cy - 4}" r="3.6" fill="#3B82F6"/></g>`; }
+    case 'coronaMazi': { /* la de Carlos: morado y vino de la casa, con la M cubo en medio */
+      const cy = t - 10;
+      return `<g data-acc="coronaMazi"><path d="M${x0 - w * .32} ${t + 2} L${x0 - w * .34} ${t - 20} L${x0 - w * .16} ${t - 8} L${x0} ${t - 26} L${x0 + w * .16} ${t - 8} L${x0 + w * .34} ${t - 20} L${x0 + w * .32} ${t + 2}Z" fill="#AC27FF" stroke="#4A1470" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M${x0 - w * .32} ${t - 3} H${x0 + w * .32} V${t + 3} H${x0 - w * .32}Z" fill="${V}" stroke="#4A1470" stroke-width="1.5"/>
+      <circle cx="${x0 - w * .34}" cy="${t - 21}" r="2.6" fill="#E9E4E4"/><circle cx="${x0 + w * .34}" cy="${t - 21}" r="2.6" fill="#E9E4E4"/>${cubo(x0, cy, 7)}</g>`; }
     case 'sabio': return `<g data-acc="sabio" fill="none" stroke="${OO}" stroke-width="2"><circle cx="${eL}" cy="${eyY + 2}" r="11"/><circle cx="${eR}" cy="${eyY + 2}" r="11"/><path d="M${eL + 11} ${eyY + 1} Q${x0} ${eyY - 3} ${eR - 11} ${eyY + 1}"/></g>`;
     default: return '';
   }
@@ -55,9 +67,45 @@ export function svgCuello(k, g){
   if(k === 'bufanda') return `<g data-acc="bufanda"><path d="M${x0 - w * .38} ${y - 6} Q${x0} ${y + 8} ${x0 + w * .38} ${y - 6} L${x0 + w * .36} ${y + 6} Q${x0} ${y + 20} ${x0 - w * .36} ${y + 6}Z" fill="${V}" stroke="#4E0D20" stroke-width="2"/>
     <path d="M${x0 + w * .16} ${y + 8} l6 30 l12 -3 l-6 -26z" fill="#9A1E42" stroke="#4E0D20" stroke-width="2" stroke-linejoin="round"/><path d="M${x0 - w * .25} ${y + 2} v8 M${x0 - w * .1} ${y + 6} v8 M${x0 + w * .05} ${y + 7} v8" stroke="#F2C6D2" stroke-width="2" opacity=".6"/></g>`;
   if(k === 'corbatin') return `<g data-acc="corbatin"><path d="M${x0} ${y} L${x0 - 16} ${y - 9} L${x0 - 16} ${y + 9}Z M${x0} ${y} L${x0 + 16} ${y - 9} L${x0 + 16} ${y + 9}Z" fill="${M}" stroke="#2A1240" stroke-width="2" stroke-linejoin="round"/><circle cx="${x0}" cy="${y}" r="4.5" fill="#AC27FF" stroke="#2A1240" stroke-width="1.5"/></g>`;
+  if(k === 'perlas'){ /* el collar de perlas (Mónica: «detalles de blanco») */
+    let c = ''; for(let i = 0; i <= 10; i++){ const a = i / 10, px = x0 - w * .36 + w * .72 * a, py = y - 4 + Math.sin(a * Math.PI) * 12;
+      c += `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${i === 5 ? 5.2 : 4}" fill="#FBF8F2" stroke="#CFC6B8" stroke-width="1.2"/><circle cx="${(px - 1.3).toFixed(1)}" cy="${(py - 1.4).toFixed(1)}" r="1.3" fill="#fff"/>`; }
+    return `<g data-acc="perlas">${c}</g>`;
+  }
   return '';
 }
-export const DEL_CUELLO = new Set(['bufanda', 'corbatin']);
+export const DEL_CUELLO = new Set(['bufanda', 'corbatin', 'perlas']);
+
+/* la M cubo de Grupo Mazi en chiquito (la usan la corona y el broche de la capa): techo morado claro, caras vino y oscuro */
+function cubo(cx, cy, r){
+  const h = r * .5, R = (n) => n.toFixed(1);
+  return `<g data-cubo><path d="M${R(cx)} ${R(cy - r)} L${R(cx + r)} ${R(cy - h)} L${R(cx)} ${R(cy)} L${R(cx - r)} ${R(cy - h)}Z" fill="#AC27FF"/>
+    <path d="M${R(cx - r)} ${R(cy - h)} L${R(cx)} ${R(cy)} L${R(cx)} ${R(cy + r)} L${R(cx - r)} ${R(cy + h)}Z" fill="#7E1735"/>
+    <path d="M${R(cx + r)} ${R(cy - h)} L${R(cx)} ${R(cy)} L${R(cx)} ${R(cy + r)} L${R(cx + r)} ${R(cy + h)}Z" fill="#170A26"/>
+    <path d="M${R(cx - r * .7)} ${R(cy + h * .9)} V${R(cy - h * .1)} L${R(cx - r * .35)} ${R(cy + h * .5)} L${R(cx)} ${R(cy + h * .1)} V${R(cy + r * .8)}" fill="none" stroke="#E9E4E4" stroke-width="1.1" stroke-linejoin="round" opacity=".9"/></g>`;
+}
+
+/* ── lo de la espalda: se dibuja DETRÁS del cuerpo (asoma por los lados) y se mueve con él ── */
+export const DE_ESPALDA = new Set(['pincel', 'capaMazi']);
+export function svgEspalda(k, g){
+  const y = g.cuello, x0 = 100, w = g.w;
+  if(k === 'pincel') /* el pincel de Sandra, cruzado en la espalda: mango de madera, casquillo y la punta con pintura de colores */
+    return `<g data-acc="pincel" transform="rotate(38 ${x0} ${y + 20})"><rect x="${x0 - 6}" y="${y - 70}" width="12" height="150" rx="6" fill="#C98B4E" stroke="#7A4E22" stroke-width="2"/>
+      <path d="M${x0 - 3} ${y - 60} V${y + 70}" stroke="#E6B27C" stroke-width="2.5" opacity=".7"/>
+      <rect x="${x0 - 8}" y="${y - 88}" width="16" height="22" rx="3" fill="#C9CDD6" stroke="#7D8494" stroke-width="2"/>
+      <path d="M${x0 - 9} ${y - 88} Q${x0 - 11} ${y - 112} ${x0} ${y - 126} Q${x0 + 11} ${y - 112} ${x0 + 9} ${y - 88}Z" fill="#6B4A2A" stroke="#3E2A16" stroke-width="2"/>
+      <path d="M${x0 - 7} ${y - 104} Q${x0 - 6} ${y - 118} ${x0} ${y - 126} Q${x0 + 6} ${y - 118} ${x0 + 7} ${y - 104} Q${x0} ${y - 98} ${x0 - 7} ${y - 104}Z" fill="#E5484D"/>
+      <path d="M${x0 - 4.5} ${y - 114} Q${x0} ${y - 110} ${x0 + 4.5} ${y - 114}" stroke="#F5C842" stroke-width="3" fill="none"/><path d="M${x0 - 2.5} ${y - 120} Q${x0} ${y - 118} ${x0 + 2.5} ${y - 120}" stroke="#3B82F6" stroke-width="2.5" fill="none"/></g>`;
+  if(k === 'capaMazi') /* la capa de Carlos: vino por fuera, morado por dentro */
+    return `<g data-acc="capaMazi"><path d="M${x0 - w * .3} ${y - 4} Q${x0 - w * .62} ${y + 40} ${x0 - w * .7} ${y + 78} Q${x0} ${y + 92} ${x0 + w * .7} ${y + 78} Q${x0 + w * .62} ${y + 40} ${x0 + w * .3} ${y - 4}Z" fill="${V}" stroke="#4E0D20" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M${x0 - w * .66} ${y + 74} Q${x0} ${y + 86} ${x0 + w * .66} ${y + 74} Q${x0} ${y + 80} ${x0 - w * .66} ${y + 74}Z" fill="#5B2A86"/></g>`;
+  return '';
+}
+/* lo que va al frente de lo de la espalda (el broche de la capa) */
+export function svgBroche(k, g){
+  if(k === 'capaMazi') return `<g data-acc="broche">${cubo(100 - g.w * .3, g.cuello - 2, 6)}${cubo(100 + g.w * .3, g.cuello - 2, 6)}<path d="M${100 - g.w * .3 + 6} ${g.cuello} Q100 ${g.cuello + 6} ${100 + g.w * .3 - 6} ${g.cuello}" fill="none" stroke="#E8B54A" stroke-width="2"/></g>`;
+  return '';
+}
 
 /* ── el huevo: se mece, se cuartea con la XP y al final asoman los ojos ── */
 const COLOR_HUEVO = { paloma: ['#E9DDF6', '#B98BE0'], pinguino: ['#EAF1F7', '#7FA6C9'], default: ['#F5EEDC', '#D4B483'] };

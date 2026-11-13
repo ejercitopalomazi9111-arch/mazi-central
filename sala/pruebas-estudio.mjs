@@ -299,6 +299,33 @@ console.log('El servidor');
   ok(r.historial.length === 1 && r.historial[0].como === 'excelente', 'corregirlo no lo duplica');
 }
 
+
+console.log('Títulos, regalos y el perfil de otro (Carlos, 14 nov)');
+{
+  const s = almacen();
+  const casa = (cuenta, cuerpo, admin = true) => atenderEstudio(s, ...pedido('POST', '', cuerpo), cuenta, MEDIODIA('2026-11-12'), { admin }).then((x) => x.json().then((j) => ({ ...j, _st: x.status })));
+  let r = await llamar(s, 'sandra', 'POST', '', { accion: 'xp', id: 's1', xp: 30 });
+  ok(r.perfil.titulos.includes('alfa') && r.ranking.filas[0].titulos.includes('alfa'), 'quien ya está dado de alta sale como Alfa tester, en su perfil y en la tabla');
+  await llamar(s, 'sandra', 'POST', '', { accion: 'mascota', personaje: 'tigre' });
+  r = await casa('sandra', { accion: 'admin', que: 'miembros' }, false);
+  ok(r._st === 403, 'una cuenta de CARYMO (sin la llave de la sala) no puede poner títulos');
+  r = await casa('carlos', { accion: 'admin', que: 'miembros' });
+  ok(r.bien && r.miembros.sandra, 'la casa ve quiénes están');
+  r = await casa('carlos', { accion: 'admin', que: 'especial', cuenta: 'sandra', titulo: 'artista', estilo: 'arcoiris', regalos: ['pincel', 'boina', 'nada'], ponerle: true });
+  ok(r.bien && r.titulos[0] === 'artista' && r.titulos.includes('alfa') && r.estilo === 'arcoiris' && r.armario.includes('pincel') && !r.armario.includes('nada'), 'a Sandra: Artista principal, nombre en arcoíris y el pincel y la boina de regalo');
+  r = await casa('carlos', { accion: 'admin', que: 'especial', cuenta: 'sandra', estilo: 'neon' });
+  ok(r._st === 400, 'un estilo que no existe no se pone');
+  r = await llamar(s, 'sandra', 'GET', '');
+  ok(r.perfil.mascotas.tigre.acc.includes('pincel') && r.perfil.mascotas.tigre.acc.includes('boina'), 'y su mascota ya los trae puestos');
+  ok(r.ranking.filas.find((f) => f.cuenta === 'sandra').estilo === 'arcoiris', 'en la tabla su nombre viene con su estilo');
+  r = await llamar(s, 'sandra', 'POST', '', { accion: 'crianza', que: 'comprarRopa', item: 'capaMazi' });
+  ok(!r.bien, 'lo de regalo no se puede comprar');
+  r = await llamar(s, 'luis', 'GET', '?perfil=sandra');
+  ok(r.bien && r.otro.nombre && r.otro.estilo === 'arcoiris' && r.otro.mascotas[0].especie === 'tigre' && !('cubos' in r.otro) && !('amigos' in r.otro), 'el perfil de otra persona enseña su nivel, títulos y mascotas, sin sus cubitos ni sus amigos');
+  r = await llamar(s, 'luis', 'GET', '?perfil=nadie');
+  ok(r.error, 'de quien no está en la comunidad no se ve nada');
+}
+
 if(process.env.SOLO !== 'servidor') await (await import('./pruebas-estudio-pantalla.mjs')).correr({ ok, almacen, atenderEstudio });
 
 console.log(`\n${bien} pasan · ${mal} fallan`);

@@ -26,6 +26,7 @@
   @font-face{ font-family:Titulo; src:url(../sala/letra/montserrat.woff2) format("woff2"); font-weight:100 900; font-display:swap }
   @font-face{ font-family:Texto; src:url(../sala/letra/nunito-600.woff2) format("woff2"); font-weight:600; font-display:swap }
   @font-face{ font-family:Texto; src:url(../sala/letra/nunito-700.woff2) format("woff2"); font-weight:700; font-display:swap }
+  @font-face{ font-family:Dibujada; src:url(../sala/letra/caveat-700.woff2) format("woff2"); font-weight:700; font-display:swap }
   :root{
     --fondo:#170A26; --fondo-2:#1F1031; --sup:#2A1640; --sup-2:#351C4F; --borde:#ffffff14;
     --vino:#7E1735; --vino-2:#9A1F43; --vino-osc:#4E0E22;
@@ -617,6 +618,36 @@
   .zona-rank.sube{ color:#4FD48A } .zona-rank.baja{ color:#FF6B7F } .zona-rank.quieta{ color:var(--suave) }
   .fila-rank.sube .n{ color:#4FD48A } .fila-rank.baja .n{ color:#FF6B7F }
   .fila-rank.quieto{ opacity:.6 }
+
+  /* ── el nombre con estilo y las insignias (nombre.js; Carlos, 14 nov) ── */
+  .fila-rank .nom{ display:flex; flex-direction:column; align-items:flex-start; gap:3px; min-width:0; white-space:normal }
+  .fila-rank .nom-linea{ display:flex; align-items:center; gap:6px; min-width:0; max-width:100% }
+  .fila-rank .nom-linea small{ flex:none }
+  .fila-rank .nom .nom-txt{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block }
+  .fila-rank .nom .nom-mazi{ display:inline-flex }
+  .fila-rank .insignias .insignia{ font-size:10.5px; padding:1px 6px 1px 4px }
+  .nom-txt{ display:inline-flex; align-items:center; gap:4px; max-width:100% }
+  /* Sandra, la artista: arcoíris en letra dibujada, que corre despacito */
+  .nom-arcoiris{ font-family:Dibujada, Texto, cursive; font-weight:700; font-size:1.3em; line-height:1; letter-spacing:.01em; padding:0 2px;
+    background:linear-gradient(90deg, #FF5A5F, #FFB13B, #F5E04A, #4CD97B, #3BA7FF, #9B6BFF, #FF5A5F) 0 0 / 200% 100%; -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation:nom-arco 6s linear infinite; filter:drop-shadow(0 1px 0 #170A26) }
+  @keyframes nom-arco{ to{ background-position:-200% 0 } }
+  /* Carlos: los colores de la casa con la M cubo */
+  .nom-mazi > span{ background:linear-gradient(90deg, #C77DFF, #AC27FF 55%, #E36D8F); -webkit-background-clip:text; background-clip:text; color:transparent; font-weight:800 }
+  .nom-cubo{ width:1.05em; height:1.05em; flex:none; filter:drop-shadow(0 0 4px #AC27FF88) }
+  /* Mónica: perla, blanco con brillo nacarado */
+  .nom-perla{ background:linear-gradient(100deg, #FFFFFF 20%, #E7DDF6 38%, #FFFFFF 50%, #F3E9DA 64%, #FFFFFF 80%) 0 0 / 220% 100%; -webkit-background-clip:text; background-clip:text; color:transparent;
+    font-weight:800; animation:nom-perla 5s ease-in-out infinite alternate; filter:drop-shadow(0 0 5px #ffffff55) }
+  @keyframes nom-perla{ to{ background-position:-120% 0 } }
+  @media (prefers-reduced-motion: reduce){ .nom-arcoiris, .nom-perla{ animation:none } }
+  .insignias{ display:inline-flex; flex-wrap:wrap; gap:4px; flex:none }
+  .insignia{ display:inline-flex; align-items:center; gap:3px; padding:2px 7px 2px 5px; border-radius:99px; font-size:11px; font-weight:800; line-height:1.3; white-space:nowrap;
+    background:#AC27FF22; color:var(--claro-txt); border:1px solid #AC27FF55 }
+  .insignia .i{ width:12px; height:12px }
+  .insignia.ins-alfa{ background:linear-gradient(90deg, #7E173533, #AC27FF33); border-color:#C77DFF66 }
+  .insignia.ins-artista{ background:#F5E04A1F; color:#F5E04A; border-color:#F5E04A55 }
+  .insignia.ins-fundador{ background:#E8B54A22; color:var(--oro); border-color:#E8B54A66 }
+  .yo-quien .insignias{ margin:2px 0 6px }
   .fila-rank .nom small{ color:var(--suave); font-weight:600 }
   .fila-rank:has(.mini-liga){ grid-template-columns:minmax(30px, max-content) 40px minmax(0, 1fr) auto auto }
   .mini-liga{ display:grid; place-items:center }

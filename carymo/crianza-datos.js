@@ -49,6 +49,12 @@ export const ACCESORIOS = {
   audifonos: { nombre: 'Audífonos', precio: 25, lugar: 'orejas' },
   bufanda: { nombre: 'Bufanda', precio: 16, lugar: 'cuello' },
   corbatin: { nombre: 'Corbatín', precio: 10, lugar: 'cuello' },
+  /* de regalo: no se venden (precio null); los pone la casa a mano a quien se lo ganó */
+  pincel: { nombre: 'Pincel de artista', precio: null, lugar: 'espalda', regalo: true },
+  boina: { nombre: 'Boina de artista', precio: null, lugar: 'cabeza', regalo: true },
+  capaMazi: { nombre: 'Capa Grupo Mazi', precio: null, lugar: 'espalda', regalo: true },
+  coronaMazi: { nombre: 'Corona Mazi', precio: null, lugar: 'cabeza', regalo: true },
+  perlas: { nombre: 'Collar de perlas', precio: null, lugar: 'cuello', regalo: true },
 };
 export const SKINS = {
   normal: { nombre: 'Normal', precio: 0, filtro: '' },

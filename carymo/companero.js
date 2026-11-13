@@ -276,7 +276,7 @@ export function iniciarCompanero(h){
       vista = crearMascota(hj.querySelector('#vestirVista'), { personaje: q, tam: 130, vestido: vestido() });
       const pintar = () => {
         const g = hj.querySelector('#vestirG'), arm = armario();
-        const lista = tab === 'ropa' ? Object.entries(ACCESORIOS) : Object.entries(SKINS).filter(([k, S]) => !S.soloCreadores || arm.includes(k));
+        const lista = tab === 'ropa' ? Object.entries(ACCESORIOS).filter(([k, A]) => A.precio != null || arm.includes(k)) : Object.entries(SKINS).filter(([k, S]) => !S.soloCreadores || arm.includes(k));
         g.innerHTML = lista.map(([k, A]) => { const tengo = A.precio === 0 || arm.includes(k), puesto = tab === 'ropa' ? prueba.acc.includes(k) : prueba.skin === k;
           return `<button class="prenda ${puesto ? 'puesta' : ''} ${tengo ? '' : 'sin'}" data-prenda="${k}" aria-pressed="${puesto}"><span class="pr-dib" data-pr="${k}"></span><b>${esc(A.nombre)}</b><small>${tengo ? (puesto ? 'Puesto' : 'Tuyo') : `<span class="cubo-ico">${CUBO}</span>${A.precio}`}</small></button>`; }).join('');
         g.querySelectorAll('[data-pr]').forEach((d) => { const k = d.dataset.pr; crearMascota(d, { personaje: q, tam: 46, vestido: tab === 'ropa' ? { acc: [k] } : { skin: k } }); });

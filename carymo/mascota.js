@@ -24,7 +24,7 @@
  * ===========================================================================*/
 
 import { ZOO } from './zoo.js';   /* la paloma mejorada y los animales nuevos (Luna, 13 nov) */
-import { CABEZAS, svgAccesorio, svgCuello, DEL_CUELLO, svgHuevo } from './mascota-ropa.js';
+import { CABEZAS, svgAccesorio, svgCuello, DEL_CUELLO, DE_ESPALDA, svgEspalda, svgBroche, svgHuevo } from './mascota-ropa.js';
 import { SKINS } from './crianza-datos.js';
 import { taparia, decirEnMuelle } from './muelle.js';
 const NS = 'http://www.w3.org/2000/svg';
@@ -287,7 +287,7 @@ export function crearMascota(caja, op = {}){
   caja.append(el);
   const fx = document.createElement('div'); fx.className = 'masc-fx';
   const globo = document.createElement('div'); globo.className = 'masc-globo'; globo.setAttribute('aria-live', 'polite');
-  let piezas = {}, boca = null, bocaClip = null, lengua = null, ojosEl = {}, huevo = false, accCabeza = null, accCuerpo = null, escalaCabeza = 1;
+  let piezas = {}, boca = null, bocaClip = null, lengua = null, ojosEl = {}, huevo = false, accCabeza = null, accCuerpo = null, accDetras = null, escalaCabeza = 1;
   const vestidoActual = () => op.vestido !== undefined ? op.vestido : VESTIDOR ? VESTIDOR(quien) : null;
   let vestido = vestidoActual();
   function dibujar(){
@@ -309,11 +309,14 @@ export function crearMascota(caja, op = {}){
     if(fil && piezas.raiz){ let defs = svg.querySelector('defs'); if(!defs){ defs = document.createElementNS(NS, 'defs'); svg.prepend(defs); } defs.insertAdjacentHTML('beforeend', fil); piezas.raiz.setAttribute('filter', `url(#${id}skin)`); }
     const acc = [...(v.acc || [])];
     if(etapa === 'viejo' && !acc.some((k) => k === 'lentes' || k === 'lentesSol')) acc.push('sabio');
-    accCabeza = accCuerpo = null;
+    accCabeza = accCuerpo = accDetras = null;
     if(acc.length && piezas.raiz){
       const g = CABEZAS[quien] || CABEZAS.tigre, oj = ojosDe(quien);
-      const cab = acc.filter((k) => !DEL_CUELLO.has(k)).map((k) => svgAccesorio(k, g, oj)).join('');
-      const cue = acc.filter((k) => DEL_CUELLO.has(k)).map((k) => svgCuello(k, g)).join('');
+      const cab = acc.filter((k) => !DEL_CUELLO.has(k) && !DE_ESPALDA.has(k)).map((k) => svgAccesorio(k, g, oj)).join('');
+      const cue = acc.filter((k) => DEL_CUELLO.has(k)).map((k) => svgCuello(k, g)).join('') + acc.filter((k) => DE_ESPALDA.has(k)).map((k) => svgBroche(k, g)).join('');
+      const esp = acc.filter((k) => DE_ESPALDA.has(k)).map((k) => svgEspalda(k, g)).join('');
+      /* lo de la espalda va DETRÁS de todo el cuerpo */
+      if(esp){ accDetras = document.createElementNS(NS, 'g'); accDetras.setAttribute('data-capa', 'espalda'); accDetras.innerHTML = esp; piezas.raiz.before(accDetras); }
       accCuerpo = document.createElementNS(NS, 'g'); accCuerpo.setAttribute('data-capa', 'cuerpo'); accCuerpo.innerHTML = cue + (g.enCuerpo ? cab : '');
       accCabeza = document.createElementNS(NS, 'g'); accCabeza.setAttribute('data-capa', 'cabeza'); accCabeza.innerHTML = g.enCuerpo ? '' : cab;
       piezas.raiz.after(accCuerpo, accCabeza);
@@ -392,7 +395,7 @@ export function crearMascota(caja, op = {}){
     tAhora = performance.now();
     const [rx, ry] = pivoteDe(quien).raiz;
     const tRaiz = `translate(${v.x.toFixed(2)} ${v.y.toFixed(2)}) rotate(${v.giro.toFixed(2)} ${rx} ${ry}) translate(${rx} ${ry}) scale(${v.sx.toFixed(4)} ${v.sy.toFixed(4)}) translate(${-rx} ${-ry})`;
-    T(piezas.raiz, tRaiz); T(accCuerpo, tRaiz);
+    T(piezas.raiz, tRaiz); T(accCuerpo, tRaiz); T(accDetras, tRaiz);
     const alto = Math.max(0, -v.y);
     T(piezas.sombra, `translate(100 207) scale(${(1 - alto / 120).toFixed(3)} 1) translate(-100 -207)`); if(piezas.sombra) piezas.sombra.style.opacity = (1 - alto / 90).toFixed(2);
     const [pcx, pcy] = pivoteDe(quien).cabeza || [100, 130];
