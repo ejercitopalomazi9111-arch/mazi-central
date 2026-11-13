@@ -725,6 +725,16 @@ a.btn{ text-decoration:none; display:inline-flex; align-items:center; }
 .reacciones:empty{display:none}
 .reaccionar.simple{border-style:solid; font-size:10.5px; font-family:var(--dato);
   letter-spacing:.06em}
+/* escuchar el mensaje: bocina de Lucide, no emoji */
+.reaccionar.oir{opacity:.85; border-style:solid; font-size:10.5px; font-family:var(--dato); letter-spacing:.06em;
+  display:inline-flex; align-items:center; gap:5px; min-height:28px}
+.reaccionar.oir svg{width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2.2;
+  stroke-linecap:round; stroke-linejoin:round; flex:none}
+.reaccionar.oir.sonando{opacity:1; color:var(--hueso); border-color:var(--violeta);
+  background:color-mix(in srgb, var(--violeta) 22%, var(--vacio))}
+.reaccionar.oir.sonando svg{animation:oirLatido 1s ease-in-out infinite}
+@keyframes oirLatido{ 50%{ transform:scale(1.18) } }
+@media (prefers-reduced-motion: reduce){ .reaccionar.oir.sonando svg{animation:none} }
 .llano{
   margin-top:10px; padding:9px 12px; border-radius:9px;
   background:rgba(90,169,230,.12); border:1px solid rgba(90,169,230,.4);
@@ -2678,6 +2688,11 @@ function pintarReacciones(e){
   partes.push(`<button class="reaccionar simple" data-simple="${esc(e.id)}"
     aria-label="${IDIOMA === 'en' ? 'Read it in English' : 'Explícamelo simple'}">${
       IDIOMA === 'en' ? '🌐 english' : '💬 simple'}</button>`);
+  /* ESCUCHAR. Carlos, e1177 (13 nov): «agregue texto a voz de los chats de aquí de la sala para poder picarle
+     y escuchar el mensaje porque luego estoy ocupado y es un chingo de texto». Lo lee la voz del propio teléfono. */
+  const suena = oyendo === e.id;
+  partes.push(`<button class="reaccionar oir${suena ? ' sonando' : ''}" data-oir="${esc(e.id)}" aria-pressed="${suena}"
+    aria-label="${suena ? 'Parar' : 'Escuchar el mensaje'}">${suena ? ICO_PARAR : ICO_OIR}<span>${suena ? 'parar' : 'escuchar'}</span></button>`);
   return `<div class="reacciones">${partes.join('')}</div>`;
 }
 
@@ -3271,6 +3286,8 @@ $('paletaRejilla').innerHTML = REACCIONES.map(([k, f, q]) =>
   `<button type="button" data-poner="${k}"><span>${f}</span>${q}</button>`).join('');
 
 document.addEventListener('click', (e) => {
+  const oir = e.target.closest('[data-oir]');
+  if(oir){ escuchar(oir.dataset.oir); return; }
   const simple = e.target.closest('[data-simple]');
   if(simple){ explicarSimple(simple.dataset.simple); return; }
   const abrir = e.target.closest('[data-abrir-reac]');
@@ -3310,6 +3327,90 @@ async function reaccionar(sobre, cual){
 }
 
 /* ── explícamelo simple ─────────────────────────────────────────────────── */
+/* ── ESCUCHAR UN MENSAJE ─────────────────────────────────────────────────────
+   Con la voz del teléfono (speechSynthesis): no gasta llaves ni red y en el iPhone, si se baja la voz
+   «Paulina (mejorada)» en Ajustes → Accesibilidad → Contenido leído → Voces, suena casi natural.
+   · Se habla DENTRO del toque: el iPhone calla lo que se pide fuera de un gesto.
+   · Va en pedazos de una o dos frases: un solo enunciado larguísimo, Chrome lo corta a los ~15 s y
+     el iPhone a veces ni lo empieza. Todos los pedazos se encolan en el mismo toque.
+   · El código no se lee letra por letra («viene un pedazo de código»), y los links tampoco. */
+let oyendo = null;
+const ICO_OIR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/></svg>';
+const ICO_PARAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+function vozEspanol(){
+  const vs = (window.speechSynthesis && speechSynthesis.getVoices()) || [];
+  const es = vs.filter(v => /^es/i.test(v.lang));
+  const puntos = (v) => (/es[-_]MX/i.test(v.lang) ? 40 : /es[-_](US|419)/i.test(v.lang) ? 25 : 10)
+    + (/enhanced|premium|mejorada|neural|natural/i.test(v.name) ? 30 : 0) + (/paulina/i.test(v.name) ? 8 : 0)
+    + (v.localService ? 2 : 0);
+  return es.sort((a, b) => puntos(b) - puntos(a))[0] || null;
+}
+if(window.speechSynthesis){ speechSynthesis.getVoices(); speechSynthesis.addEventListener?.('voiceschanged', () => speechSynthesis.getVoices()); }
+function textoParaOir(ev){
+  let t = ev.texto || '';
+  if(ev.tipo === 'limite' && ev.limite) t = `Se topó con el límite. ${t}`;
+  t = t.replace(/```[\s\S]*?(```|$)/g, ' (aquí viene un pedazo de código) ')
+       .replace(/`([^`]+)`/g, '$1')
+       .replace(/https?:\/\/\S+/g, 'un enlace')
+       .replace(/[*_#>~|]+/g, ' ')
+       .replace(/\s*\n+\s*/g, '. ')
+       .replace(/\.(\s*\.)+/g, '.')
+       .replace(/\s{2,}/g, ' ')
+       .replace(/\s+([.,;:!?])/g, '$1').replace(/[,;:]\./g, '.').replace(/\.{2,}/g, '.').trim();
+  if(t && !/[.!?]$/.test(t)) t += '.';
+  const n = (ev.adjuntos || []).length;
+  if(n) t += n === 1 ? ' Trae un archivo adjunto.' : ` Trae ${n} archivos adjuntos.`;
+  const quien = (gente[ev.de.id] && gente[ev.de.id].nombre) || ev.de.nombre || 'Alguien';
+  return `${quien} dice: ${t || 'nada escrito.'}`;
+}
+function pedazosDeVoz(t, max = 220){
+  const frases = t.match(/[^.!?¿¡;:]+[.!?;:]*|[¿¡][^?!]*[?!]/g) || [t];
+  const out = []; let cur = '';
+  for(let f of frases){
+    f = f.trim(); if(!f) continue;
+    while(f.length > max){ const corte = f.lastIndexOf(' ', max) > 40 ? f.lastIndexOf(' ', max) : max; out.push(f.slice(0, corte)); f = f.slice(corte).trim(); }
+    if((cur + ' ' + f).length > max && cur){ out.push(cur); cur = f; } else cur = cur ? cur + ' ' + f : f;
+  }
+  if(cur) out.push(cur);
+  return out;
+}
+function marcarOyendo(id){
+  oyendo = id;
+  for(const b of document.querySelectorAll('[data-oir]')){
+    const s = b.dataset.oir === id;
+    b.classList.toggle('sonando', s); b.setAttribute('aria-pressed', s);
+    b.setAttribute('aria-label', s ? 'Parar' : 'Escuchar el mensaje');
+    b.innerHTML = (s ? ICO_PARAR : ICO_OIR) + `<span>${s ? 'parar' : 'escuchar'}</span>`;
+  }
+}
+function escuchar(id){
+  const sy = window.speechSynthesis;
+  if(!sy || !window.SpeechSynthesisUtterance){ letrero('Este navegador no sabe leer en voz alta.'); return; }
+  const yaEra = oyendo === id;
+  sy.cancel();
+  if(yaEra){ marcarOyendo(null); return; }
+  const ev = hilo.find(x => x.id === id);
+  if(!ev) return;
+  const voz = vozEspanol();
+  const pedazos = pedazosDeVoz(textoParaOir(ev));
+  const turno = id + ':' + Date.now();
+  escuchar.turno = turno;
+  pedazos.forEach((p, i) => {
+    const u = new SpeechSynthesisUtterance(p);
+    u.lang = voz ? voz.lang : 'es-MX'; if(voz) u.voice = voz;
+    u.rate = 1.04;
+    if(i === pedazos.length - 1){
+      u.onend = () => { if(escuchar.turno === turno) marcarOyendo(null); };
+    }
+    u.onerror = (x) => { if(escuchar.turno === turno && x.error !== 'interrupted' && x.error !== 'canceled') marcarOyendo(null); };
+    sy.speak(u);
+  });
+  /* el iPhone a veces deja la cola en pausa tras un cancel(): se le da un empujón */
+  if(sy.paused) sy.resume();
+  marcarOyendo(id);
+}
+window.escucharMensaje = escuchar;
+
 async function explicarSimple(id){
   if(simples[id]){ delete simples[id]; fallaron.delete(id); return pintarHilo(); }   /* segundo toque lo quita */
   const ev = hilo.find(x => x.id === id);
