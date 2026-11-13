@@ -64,6 +64,8 @@ const ESCALA = [0, 2, 4, 7, 9, 12];
 /* cuánto dura la escalera de cada uno: un acierto tarda en llegar, un «pop» no (combo ya sube solo) */
 const ESCALERA = new Map([['bien', 15000], ['moneda', 2500], ['pop', 2500], ['toque', 900]]);
 const racha = new Map();
+const nota = new Map();
+const ARRIBA = [7, 9, 12, 14, 16];   /* la pentatónica de arriba, donde se pasea un combo largo */
 const azar = (r) => 1 + (Math.random() * 2 - 1) * r;
 /* sonar: vol de 0 a 1; tono 1 = normal; cada = ms mínimos entre dos iguales; fijo = sin variación */
 export function sonar(nombre, { vol = .7, tono = 1, cada = 40, fijo = false } = {}){
@@ -76,15 +78,23 @@ export function sonar(nombre, { vol = .7, tono = 1, cada = 40, fijo = false } = 
   if(nombre === 'mal') racha.set('bien', -1);   /* fallar regresa la escalera de aciertos al inicio */
   const b = buffers.get(nombre);
   if(!b){ cargar(nombre); return; }
-  let paso = 0;
+  let semis = 0;
   if(ESCALERA.has(nombre) && !fijo){
-    paso = ahora - antes < ESCALERA.get(nombre) ? Math.min((racha.get(nombre) ?? -1) + 1, nombre === 'toque' ? 2 : ESCALA.length - 1) : 0;
-    racha.set(nombre, paso);
+    const r = ahora - antes < ESCALERA.get(nombre) ? (racha.get(nombre) ?? -1) + 1 : 0, tope = nombre === 'toque' ? 2 : ESCALA.length - 1;
+    racha.set(nombre, r);
+    if(r <= tope) semis = ESCALA[r];
+    else {
+      /* ya arriba (Carlos, 13 nov: «el agudo se queda pegado»): pasea por la pentatónica alta, sube y baja
+         como melodía, nunca la misma nota dos veces seguidas y sin regresar al piso */
+      const antes2 = nota.get(nombre) ?? ESCALA[tope], cerca = ARRIBA.filter((x) => x !== antes2 && Math.abs(x - antes2) <= 5);
+      semis = cerca[Math.floor(Math.random() * cerca.length)];
+    }
+    nota.set(nombre, semis);
   }
   const t0 = c.currentTime, s = c.createBufferSource(), g = c.createGain();
   const p = c.createStereoPanner ? c.createStereoPanner() : null;
   s.buffer = b;
-  s.playbackRate.value = tono * Math.pow(2, ESCALA[paso] / 12) * (fijo ? 1 : azar(.025));
+  s.playbackRate.value = tono * Math.pow(2, semis / 12) * (fijo ? 1 : azar(.025));
   const v = Math.max(0, Math.min(1, vol * (fijo ? 1 : azar(.12))));
   const dura = b.duration / s.playbackRate.value;
   g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(v, t0 + .004);

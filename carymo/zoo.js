@@ -82,22 +82,23 @@ function svgPaloma(id){
     <g data-p="pataI"><path d="M86 190 v9" stroke="#F2A126" stroke-width="6" stroke-linecap="round"/><path d="M73 206 C 74 198 80 196 86 196 C 92 196 98 198 99 206 C 92 208 80 208 73 206 Z" fill="#F7AE2C" stroke="#E08A12" stroke-width="1.6"/><path d="M81 206 v-4 M91 206 v-4" stroke="#E08A12" stroke-width="1.6" stroke-linecap="round"/></g>
     <g data-p="pataD"><path d="M114 190 v9" stroke="#F2A126" stroke-width="6" stroke-linecap="round"/><path d="M101 206 C 102 198 108 196 114 196 C 120 196 126 198 127 206 C 120 208 108 208 101 206 Z" fill="#F7AE2C" stroke="#E08A12" stroke-width="1.6"/><path d="M109 206 v-4 M119 206 v-4" stroke="#E08A12" stroke-width="1.6" stroke-linecap="round"/></g>
     <g data-p="cola"><path d="M118 184 q24 4 32 -6 q-4 13 -28 14 z M116 189 q22 9 32 2 q-7 11 -30 4 z" fill="#3D2280"/></g>
+    <!-- las alas van DETRÁS del cuerpo (relevo de Sylcred, 13 nov: «que no se encimen con la cara»), saliendo por los lados como en la hoja de Carlos -->
+    <g data-p="brazoI"><path d="M66 104 C 42 112 20 146 24 182 C 30 194 50 188 60 174 C 66 152 70 126 70 108 Z" fill="url(#${id}al)" stroke="${c.contorno}" stroke-width="2"/><path d="M34 150 q6 10 14 12 M32 166 q6 8 14 10" stroke="#7856C9" stroke-width="2.4" stroke-linecap="round" fill="none"/></g>
+    <g data-p="brazoD"><path d="M134 104 C 158 112 180 146 176 182 C 170 194 150 188 140 174 C 134 152 130 126 130 108 Z" fill="url(#${id}al)" stroke="${c.contorno}" stroke-width="2"/><path d="M166 150 q-6 10 -14 12 M168 166 q-6 8 -14 10" stroke="#7856C9" stroke-width="2.4" stroke-linecap="round" fill="none"/></g>
     <g data-p="cuerpo">
-      <path d="M100 30 C 146 30 157 66 156 110 C 156 166 136 198 100 198 C 64 198 44 166 44 110 C 43 66 54 30 100 30 Z" fill="url(#${id}cu)" stroke="${c.contorno}" stroke-width="2"/>
-      <path d="M58 118 C 72 128 128 128 142 118" stroke="#3E2380" stroke-width="3" stroke-linecap="round" fill="none" opacity=".35"/>
+      <path d="M100 32 C 134 32 148 58 148 90 C 148 116 160 142 160 168 C 160 192 134 200 100 200 C 66 200 40 192 40 168 C 40 142 52 116 52 90 C 52 58 66 32 100 32 Z" fill="url(#${id}cu)" stroke="${c.contorno}" stroke-width="2"/>
+      
       <path d="M64 64 C 72 46 86 38 100 37" stroke="#A98AF0" stroke-width="5" stroke-linecap="round" fill="none" opacity=".5"/>
-      <ellipse cx="100" cy="160" rx="38" ry="36" fill="url(#${id}pa)"/>
-      <ellipse cx="92" cy="150" rx="15" ry="12" fill="#FFFFFF" opacity=".22"/>
+      <path d="M100 128 C 132 128 150 146 148 168 C 146 188 126 196 100 196 C 74 196 54 188 52 168 C 50 146 68 128 100 128 Z" fill="url(#${id}pa)"/>
+      <ellipse cx="90" cy="146" rx="18" ry="9" fill="#FFFFFF" opacity=".2"/>
     </g>
     <g data-p="cabeza">
-      <g data-p="copete"><ellipse cx="90" cy="26" rx="6.5" ry="9" transform="rotate(-24 90 26)" fill="#6A47BC"/><ellipse cx="100" cy="21" rx="7" ry="11" fill="#5E3CB0"/><ellipse cx="110" cy="26" rx="6.5" ry="9" transform="rotate(24 110 26)" fill="#6A47BC"/><ellipse cx="98" cy="17" rx="2.2" ry="4" fill="#9370E2" opacity=".7"/></g>
+      <g data-p="copete"><ellipse cx="93" cy="30" rx="6" ry="7.5" transform="rotate(-20 93 30)" fill="#6A47BC"/><ellipse cx="102" cy="27" rx="6.5" ry="8.5" fill="#5E3CB0"/><ellipse cx="98" cy="17" rx="2.2" ry="4" fill="#9370E2" opacity=".7"/></g>
       ${cachetes(110, 38, .3)}
-      ${ojos(id, 79, 82, 121, 82, O)}
+      ${ojos(id, 82, 84, 118, 84, O)}
       <g data-p="picoAbajo"><path d="M94 106 Q100 115 106 106 Q100 109 94 106 Z" fill="#E0870F"/></g>
       <path d="M92 104 Q100 96 108 104 Q104 109 100 110 Q96 109 92 104 Z" fill="#F7AE2C"/><path d="M96 101 Q99.5 99 103 100.5" stroke="#FFD27A" stroke-width="2" stroke-linecap="round" fill="none"/>
     </g>
-    <g data-p="brazoI"><path d="M53 100 C 36 114 30 150 40 176 C 45 184 56 178 58 166 C 62 146 64 120 61 104 Z" fill="url(#${id}al)"/><path d="M44 140 q5 9 11 11 M42 156 q5 7 11 9 M47 124 q4 6 9 8" stroke="#7856C9" stroke-width="2.4" stroke-linecap="round" fill="none"/></g>
-    <g data-p="brazoD"><path d="M147 100 C 164 114 170 150 160 176 C 155 184 144 178 142 166 C 138 146 136 120 139 104 Z" fill="url(#${id}al)"/><path d="M156 140 q-5 9 -11 11 M158 156 q-5 7 -11 9 M153 124 q-4 6 -9 8" stroke="#7856C9" stroke-width="2.4" stroke-linecap="round" fill="none"/></g>
   </g></svg>`;
 }
 
@@ -279,8 +280,8 @@ function svgPerrito(id){
 const conOjos = (xi, yi, xd, yd, o) => ({ I: [xi, yi, altoOjo(o)], D: [xd, yd, altoOjo(o)] });
 export const ZOO = {
   paloma: { nombre: 'Paloma', etiqueta: 'Tu paloma', svg: svgPaloma, abre: 6,
-    pivote: { raiz: [100, 206], cuerpo: [100, 198], cabeza: [100, 116], copete: [100, 30], brazoI: [57, 104], brazoD: [143, 104], cola: [118, 188], pataI: [86, 196], pataD: [114, 196], ojoI: [79, 82], ojoD: [121, 82], picoAbajo: [100, 106] },
-    ojos: conOjos(79, 82, 121, 82, { estilo: 'blanco', esc: 1.25 }) },
+    pivote: { raiz: [100, 206], cuerpo: [100, 198], cabeza: [100, 116], copete: [100, 30], brazoI: [66, 108], brazoD: [134, 108], cola: [118, 188], pataI: [86, 196], pataD: [114, 196], ojoI: [82, 84], ojoD: [118, 84], picoAbajo: [100, 106] },
+    ojos: conOjos(82, 84, 118, 84, { estilo: 'blanco', esc: 1.25 }) },
   pinguino: { nombre: 'Pingüino', etiqueta: 'Tu pingüino', svg: svgPinguino, abre: 4,
     pivote: { raiz: [100, 206], cuerpo: [100, 200], cabeza: [100, 128], brazoI: [55, 114], brazoD: [145, 114], cola: [122, 196], pataI: [83, 202], pataD: [117, 202], ojoI: [80, 86], ojoD: [120, 86], picoAbajo: [100, 104] },
     ojos: conOjos(80, 86, 120, 86, { estilo: 'oscuro', esc: .95 }) },
