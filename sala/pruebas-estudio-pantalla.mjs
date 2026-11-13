@@ -356,7 +356,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
     await pagina.fill('#pTxt', 'Hora\tLunes\tMartes\tMiércoles\tJueves\tViernes\n7:00-7:50\tFísica\tInglés\tFísica\tQuímica y Biología III\tTEC III\n7:50-8:40\tProgramación y BD\tReceso\tInglés\tFísica\tGeometría Analítica');
     await pagina.click('#pListo'); await espera(300);
     ok((await pagina.$$('.clase-h')).length === 9, 'el horario pegado de Excel sale por día (sin el receso)');
-    ok((await pagina.textContent('#vHorario')).includes('Próximos exámenes'), 'el horario enseña el examen que viene');
+    ok((await pagina.textContent('#vHorario')).includes('Cuánto falta para tus exámenes') && (await pagina.$$('.cuenta-ex')).length >= 1, 'el horario enseña el examen que viene, con su línea de cuánto falta');
     ok(await desborde() <= 0, 'el horario no se sale de lado');
     await espera(300);
     ok((s.m.get('est:perfil:carlos').horario || {}).clases?.length === 9, 'el horario se guarda en La Sala');
