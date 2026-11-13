@@ -25,7 +25,7 @@
    Sin `cloudflare:workers`: las pruebas cargan esto en Node.
    ═════════════════════════════════════════════════════════════════════════ */
 import { atenderAvisos, avisoDePrueba } from './avisos-estudio.js';
-import { conEconomia, premiar, premiarUnaVez, cobrarNivel, estudioAnima, comprar, cuidar, PREMIOS, TIENDA, nivelDe, animoDe } from './palomium.js';
+import { conEconomia, premiar, premiarUnaVez, cobrarNivel, estudioAnima, comprar, cuidar, PREMIOS, TIENDA, nivelDe, animoDe, parejaDe, avanzarRachaJuntos, rachaJuntosHoy } from './palomium.js';
 export const MAX_PLAN = 1_500_000;
 const kPerfil = (c) => `est:perfil:${c}`;
 const kSem = (s) => `est:sem:${s}`;
@@ -192,7 +192,8 @@ async function atenderAmigos(storage, c, cuenta, perfil, ahora){
     const desde = Number(c.desde) || 0, buzon = ((await storage.get(kBuzon(cuenta))) || []).filter((m) => m.t > desde);
     const ses = await sesionDe(storage, cuenta, ahora);
     const nombres = {}; for(const k of mis.amigos.concat(mis.pide)){ const p = await storage.get(kPerfil(k)); nombres[k] = p ? p.nombre : k; }
-    return { bien: true, enLinea, amigos: mis.amigos.map((k) => ({ cuenta: k, nombre: nombres[k], enLinea: !!(pres[k] && ahora - pres[k].t < EN_LINEA_MS), estado: pres[k]?.estado || '' })),
+    const rachas = {}; for(const k of mis.amigos) rachas[k] = rachaJuntosHoy(await storage.get('est:rjuntos:' + parejaDe(cuenta, k)), diaMexico(ahora));
+    return { bien: true, enLinea, amigos: mis.amigos.map((k) => ({ cuenta: k, nombre: nombres[k], enLinea: !!(pres[k] && ahora - pres[k].t < EN_LINEA_MS), estado: pres[k]?.estado || '', rachaJuntos: rachas[k] })),
       pide: mis.pide.map((k) => ({ cuenta: k, nombre: nombres[k] })), buzon, sesion: ses, hora: ahora };
   }
   if(!idValido(otro) || otro === cuenta) return { error: 'Falta a quién.', estado: 400 };
@@ -362,7 +363,12 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
     if(c.nombre) perfil.nombre = limpio(c.nombre, 30) || perfil.nombre;
     dar('nivel', cobrarNivel(perfil, hoy));
     /* si estás en una sesión con alguien, lo que estudias cuenta para su marcador (y paga una vez por sesión) */
-    if(suma > 0){ const x = await sesionDe(storage, cuenta, ahora); if(x && x.estado === 'activa'){ x.xp[cuenta] = (x.xp[cuenta] || 0) + suma; await storage.put(kSes(x.id), x); dar('juntos', premiarUnaVez(perfil, 'juntos', 'juntos:' + x.id, hoy)); } }
+    if(suma > 0){ const x = await sesionDe(storage, cuenta, ahora); if(x && x.estado === 'activa'){ x.xp[cuenta] = (x.xp[cuenta] || 0) + suma; await storage.put(kSes(x.id), x); dar('juntos', premiarUnaVez(perfil, 'juntos', 'juntos:' + x.id, hoy));
+      /* la racha de la pareja: un día más si ayer también estudiaron juntos; cada 7, premio para los dos (cada quien lo cobra una vez) */
+      const par = parejaDe(x.de, x.a), kr = 'est:rjuntos:' + par, r = avanzarRachaJuntos(await storage.get(kr), hoy);
+      await storage.put(kr, r);
+      if(r.n > 0 && r.n % 7 === 0){ dijo.push('racha-juntos'); dar('rachaJuntos', premiarUnaVez(perfil, 'rachaJuntos', `rj:${par}:${r.ultimoDia}`, hoy)); }
+    } }
     perfil.t = ahora;
     await storage.put(kPerfil(cuenta), perfil);
     return Response.json({ bien: true, sumado: suma, premios, eventos: [...new Set(dijo)], perfil: publico(perfil), ranking: await ranking(storage, semanaDe(hoy), { [cuenta]: perfil.nombre }) });

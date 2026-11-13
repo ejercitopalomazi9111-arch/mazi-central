@@ -97,7 +97,7 @@ export function iniciarAmigos(h){
   /* la sección «Amigos», dentro de Ranking */
   function fila(x, acciones){
     return `<div class="amigo"><span class="av" style="background:${h.colorDe(x.cuenta)}">${esc((x.nombre || '?').charAt(0).toUpperCase())}${x.enLinea || x.estado ? '<i class="punto"></i>' : ''}</span>
-      <span class="quien"><b>${esc(x.nombre || x.cuenta)}</b><small>@${esc(x.cuenta)}${x.estado === 'estudiando' ? ' · estudiando' + (x.materia ? ' ' + esc(x.materia) : '') : x.enLinea || x.estado ? ' · en línea' : ''}</small></span>
+      <span class="quien"><b>${esc(x.nombre || x.cuenta)}${x.rachaJuntos > 0 ? `<span class="rj" title="Días seguidos estudiando juntos" aria-label="${x.rachaJuntos} ${x.rachaJuntos === 1 ? 'día' : 'días'} seguidos estudiando juntos">${ico('flame')}${x.rachaJuntos}</span>` : ''}</b><small>@${esc(x.cuenta)}${x.estado === 'estudiando' ? ' · estudiando' + (x.materia ? ' ' + esc(x.materia) : '') : x.enLinea || x.estado ? ' · en línea' : ''}</small></span>
       <span class="acc">${acciones}</span></div>`;
   }
   const btn = (accion, cuenta, icono, texto) => `<button class="bt mini" data-am="${accion}" data-cuenta="${esc(cuenta)}" aria-label="${esc(texto)}">${ico(icono)}<span>${esc(texto)}</span></button>`;

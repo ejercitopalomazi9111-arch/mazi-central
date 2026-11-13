@@ -1,7 +1,7 @@
 /* Pruebas de los cubitos de palomium, la tienda y el cuidado de la mascota (palomium.js + estudio.js).
    node sala/servidor/pruebas-palomium.mjs */
 import { atenderEstudio } from './estudio.js';
-import { TIENDA, PREMIOS, REGALO_INICIAL, cuidadoAhora, animoDe, nivelDe } from './palomium.js';
+import { TIENDA, PREMIOS, REGALO_INICIAL, cuidadoAhora, animoDe, nivelDe, avanzarRachaJuntos, rachaJuntosHoy, parejaDe } from './palomium.js';
 
 let bien = 0, mal = 0;
 const ok = (c, t) => { if(c){ bien++; console.log('  ✓', t); } else { mal++; console.log('  ✗', t); } };
@@ -100,6 +100,38 @@ console.log('La tienda');
   r = await llamar(s, 'dani', { accion: 'mascota', personaje: 'foca', voz: 9 });
   ok(r.perfil.voces.foca === 2, 'la voz va de 0 a 2: un 9 se queda en la última');
   ok(!('premiados' in r.perfil) && !('ids' in r.perfil), 'lo interno (ids y premios cobrados) no sale al teléfono');
+}
+
+console.log('La racha con un amigo');
+{
+  let r = avanzarRachaJuntos(null, '2026-11-10');
+  ok(r.n === 1, 'el primer día juntos es racha de 1');
+  r = avanzarRachaJuntos(r, '2026-11-10'); ok(r.n === 1, 'dos veces el mismo día no suma');
+  r = avanzarRachaJuntos(r, '2026-11-11'); ok(r.n === 2, 'al día siguiente sube a 2');
+  r = avanzarRachaJuntos(r, '2026-11-13'); ok(r.n === 1 && r.mejor === 2, 'si se saltan un día vuelve a 1 (y se guarda la mejor)');
+  ok(rachaJuntosHoy({ n: 4, ultimoDia: '2026-11-12' }, '2026-11-13') === 4 && rachaJuntosHoy({ n: 4, ultimoDia: '2026-11-11' }, '2026-11-13') === 0, 'se ve viva si estudiaron ayer u hoy; si no, en 0');
+  ok(parejaDe('luis', 'ana') === parejaDe('ana', 'luis'), 'la pareja es la misma la pida quien la pida');
+
+  /* de punta a punta: siete días con una sesión juntos cada día → premio para los DOS, una vez */
+  const s = almacen();
+  await llamar(s, 'ana', { accion: 'perfil', nombre: 'Ana' }); await llamar(s, 'beto', { accion: 'perfil', nombre: 'Beto' });
+  const dias = ['2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05', '2026-11-06', '2026-11-07', '2026-11-08'];
+  let ra, rb;
+  for(const [i, dia] of dias.entries()){
+    const t = MEDIODIA(dia);
+    const x = { id: 'ses' + i, de: 'ana', a: 'beto', nombres: {}, minutos: 25, estado: 'activa', creada: t, inicio: t, fin: t + 25 * 6e4, xp: { ana: 0, beto: 0 } };
+    await s.put('est:ses:' + x.id, x); await s.put('est:sesactual:ana', x.id); await s.put('est:sesactual:beto', x.id);
+    ra = await llamar(s, 'ana', { accion: 'xp', eventos: [{ id: 'a' + i, xp: 10, motivo: 'leccion', dia }] }, dia);
+    rb = await llamar(s, 'beto', { accion: 'xp', eventos: [{ id: 'b' + i, xp: 10, motivo: 'leccion', dia }] }, dia);
+  }
+  ok((await s.get('est:rjuntos:' + parejaDe('ana', 'beto'))).n === 7, 'siete días estudiando juntos dan racha de 7 a la pareja');
+  ok(ra.premios.some((p) => p.motivo === 'rachaJuntos' && p.cubos === PREMIOS.rachaJuntos.cubos) && rb.premios.some((p) => p.motivo === 'rachaJuntos'), `al día 7, los DOS cobran ${PREMIOS.rachaJuntos.cubos} cubitos`);
+  ok(ra.eventos.includes('racha-juntos'), 'y el teléfono se entera para festejarlo');
+  const otra = await llamar(s, 'ana', { accion: 'xp', eventos: [{ id: 'a-extra', xp: 10, motivo: 'leccion', dia: '2026-11-08' }] }, '2026-11-08');
+  ok(!otra.premios.some((p) => p.motivo === 'rachaJuntos'), 'otra lección ese mismo día no vuelve a pagar la racha');
+  await llamar(s, 'ana', { accion: 'amistad', a: 'beto' }); await llamar(s, 'beto', { accion: 'amistad', a: 'ana' });
+  const lat = await llamar(s, 'ana', { accion: 'latido' }, '2026-11-09');
+  ok(lat.amigos.find((x) => x.cuenta === 'beto')?.rachaJuntos === 7, 'la lista de amigos dice cuántos días llevan juntos');
 }
 
 console.log(`\n${bien} pasan · ${mal} fallan`);

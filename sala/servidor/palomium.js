@@ -33,6 +33,7 @@ export const PREMIOS = {
   semana: { cubos: 3, tope: 3, que: 'Siete días seguidos' },
   nivel: { cubos: 5, tope: 15, que: 'Subiste de nivel' },
   juntos: { cubos: 2, tope: 4, que: 'Estudiaste con un amigo' },
+  rachaJuntos: { cubos: 3, tope: 6, que: 'Siete días seguidos estudiando con un amigo' },
 };
 export const REGALO_INICIAL = 5;
 
@@ -109,6 +110,25 @@ export function premiarUnaVez(p, motivo, id, dia){
   const dado = premiar(p, motivo, dia);
   if(dado){ p.premiados = [...p.premiados, id].slice(-300); }
   return dado;
+}
+/* LA RACHA CON UN AMIGO (Carlos, 13 nov: «racha con amigos»). La lleva la PAREJA, no cada quien:
+   est:rjuntos:<a>|<b> (en orden) = { n, ultimoDia, mejor }. Sube un día por cada día que estudian JUNTOS
+   (una sesión de «Estudiar juntos» activa); si se saltan un día, vuelve a 1. Pura, para probarla sin disco. */
+export const parejaDe = (a, b) => [a, b].sort().join('|');
+export function avanzarRachaJuntos(r, dia){
+  r = r && typeof r === 'object' ? { ...r } : { n: 0, ultimoDia: '', mejor: 0 };
+  if(r.ultimoDia === dia) return r;
+  const brinco = r.ultimoDia ? Math.round((Date.parse(dia) - Date.parse(r.ultimoDia)) / 864e5) : 0;
+  if(r.ultimoDia && brinco < 0) return r;
+  r.n = r.ultimoDia && brinco === 1 ? r.n + 1 : 1;
+  r.ultimoDia = dia; r.mejor = Math.max(r.mejor || 0, r.n);
+  return r;
+}
+/* la que se ve hoy: si ayer o hoy estudiaron juntos sigue viva; si no, ya se perdió */
+export function rachaJuntosHoy(r, hoy){
+  if(!r || !r.ultimoDia) return 0;
+  const d = Math.round((Date.parse(hoy) - Date.parse(r.ultimoDia)) / 864e5);
+  return d <= 1 ? r.n : 0;
 }
 /* el nivel: cada nivel nuevo paga una vez */
 export function cobrarNivel(p, dia){
