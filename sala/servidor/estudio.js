@@ -249,8 +249,12 @@ async function atenderSesion(storage, c, cuenta, perfil, ahora){
     return { bien: true, sesion: x };
   }
   if(c.accion === 'salirSesion'){
-    if(x.estado === 'activa' || x.estado === 'invitada'){ x.estado = x.estado === 'activa' ? 'terminada' : 'cancelada'; x.fin = Math.min(x.fin || ahora, ahora); await storage.put(kSes(x.id), x); await alBuzon(storage, el, { de: cuenta, nombre: perfil.nombre, tipo: 'fin', sesion: x.id }, ahora); }
-    await soltarSesion(storage, x);
+    if(x.estado === 'activa' || x.estado === 'invitada'){ x.estado = x.estado === 'activa' ? 'terminada' : 'cancelada'; x.fin = Math.min(x.fin || ahora, ahora); x.salio = cuenta; await storage.put(kSes(x.id), x); await alBuzon(storage, el, { de: cuenta, nombre: perfil.nombre, tipo: 'fin', sesion: x.id }, ahora); }
+    /* Carlos, 13 nov: «nunca acabó el tiempo pero desapareció el timer». Cuando uno salía, se le borraba la
+       sesión a LOS DOS y al otro se le esfumaba el cronómetro sin ver el final. Ahora sólo se suelta la de
+       quien sale; el otro ve el final («salió antes») y la suelta al cerrarlo. */
+    if((await storage.get(kSesAct(cuenta))) === x.id) await storage.delete(kSesAct(cuenta));
+    if(x.estado === 'cancelada' || x.estado === 'rechazada') await soltarSesion(storage, x);
     return { bien: true, sesion: x };
   }
   return null;
