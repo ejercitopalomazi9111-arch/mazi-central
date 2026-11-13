@@ -39,13 +39,26 @@ ok(await pg.locator(`[data-oir="${id}"].sonando`).count()===1, 'el botón queda 
 if(process.env.FOTO) await pg.screenshot({path:process.env.FOTO});
 await pg.locator(`[data-oir="${id}"]`).tap(); await pg.waitForTimeout(100);
 ok(await pg.locator('.sonando').count()===0, 'tocarlo otra vez lo calla');
+/* sigue con el de abajo (Carlos, 13 nov: «que lea el que activaste, el siguiente, etcétera») */
+const ids=await pg.$$eval('[data-oir]',b=>b.map(x=>x.dataset.oir));
+await pg.evaluate(()=>{ window.__dicho.length=0; });
 await pg.locator('[data-oir]').first().tap(); await pg.waitForTimeout(100);
 await pg.evaluate(()=>speechSynthesis._acabar()); await pg.waitForTimeout(100);
-ok(await pg.locator('.sonando').count()===0, 'al terminar de leer, el botón vuelve a «escuchar»');
+ok(await pg.locator(`[data-oir="${ids[1]}"].sonando`).count()===1, 'al acabar uno, sigue solo con el mensaje de abajo');
+await pg.evaluate(()=>speechSynthesis._acabar()); await pg.waitForTimeout(100);
+ok(await pg.locator(`[data-oir="${ids[2]}"].sonando`).count()===1, 'y con el siguiente');
+const hablados=await pg.evaluate(()=>window.__dicho.filter(x=>x.t).length);
+await pg.locator(`[data-oir="${ids[2]}"]`).tap(); await pg.waitForTimeout(100);
+await pg.evaluate(()=>speechSynthesis._acabar()); await pg.waitForTimeout(100);
+ok(await pg.locator('.sonando').count()===0 && await pg.evaluate(()=>window.__dicho.filter(x=>x.t).length)===hablados, '«parar» corta la cadena: no sigue con nada');
+for(let k=0;k<ids.length+2;k++) await pg.evaluate(()=>speechSynthesis._acabar());
+await pg.locator(`[data-oir="${ids[ids.length-1]}"]`).tap(); await pg.waitForTimeout(100);
+await pg.evaluate(()=>speechSynthesis._acabar()); await pg.waitForTimeout(100);
+ok(await pg.locator('.sonando').count()===0, 'al acabar el último, el botón vuelve a «escuchar»');
 const t=await pg.evaluate(()=>textoParaOir({de:{id:'x',nombre:'Luna'},texto:'Mira **esto**:\n```js\nconst a=1;\n```\nY https://x.dev/a ya quedó.',adjuntos:[{},{}]}));
 ok(!/const a|https|\*\*/.test(t) && /pedazo de código/.test(t) && /un enlace/.test(t) && /2 archivos/.test(t), 'no lee el código ni los links letra por letra: «'+t+'»');
 const ancho=await pg.evaluate(()=>document.documentElement.scrollWidth);
 ok(ancho<=390, 'nada se sale de lado ('+ancho+')');
 ok(err.length===0, 'cero errores'+(err.length?': '+err[0]:''));
-console.log(`\n${10 - f} pasan · ${f} fallan`);
+console.log(`\n${13 - f} pasan · ${f} fallan`);
 await b.close(); srv.kill(); process.exit(f?1:0);

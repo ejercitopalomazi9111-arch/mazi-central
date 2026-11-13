@@ -285,11 +285,12 @@ async function reproducir(i){
     if(vozActiva() === 'no' || !decible(paso.voz)){ await new Promise((r) => setTimeout(r, dur)); return; }
     await Promise.race([voz.decir(paso.voz, vozActiva()), new Promise((r) => setTimeout(r, dur * 2.2 + 8000))]);
   })();
-  /* el dibujo acaba antes que la voz: lo que se dice ya está en el pizarrón. Y mientras la voz
-     sigue, el maestro va señalando lo dibujado: la pantalla nunca se queda quieta */
-  let parar = null;
-  const dibujo = p ? lienzo.dibujar(p, dur * .78).then((bien) => { if(bien && yo === turno) parar = lienzo.recorrer(p); }) : Promise.resolve();
-  await Promise.all([hablando, dibujo]); clearInterval(subTimer); if(parar) parar();
+  /* el dibujo acaba antes que la voz: lo que se dice ya está en el pizarrón.
+     QUITADO (Carlos, 13 nov): el cursor con el círculo que iba «señalando» lo dibujado mientras la voz
+     seguía (lienzo.recorrer). «Se ve horrible, estorba y ni siquiera sigue lo que dice la voz.» Al
+     terminar de dibujar, el cursor se va de la pantalla y deja ver la pieza en paz. */
+  const dibujo = p ? lienzo.dibujar(p, dur * .78) : Promise.resolve();
+  await Promise.all([hablando, dibujo]); clearInterval(subTimer);
   if(yo !== turno) return;
   sub(paso.voz, Infinity);
   await new Promise((r) => setTimeout(r, 320));
