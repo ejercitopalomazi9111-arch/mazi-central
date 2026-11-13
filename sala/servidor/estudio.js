@@ -25,6 +25,7 @@
    Sin `cloudflare:workers`: las pruebas cargan esto en Node.
    ═════════════════════════════════════════════════════════════════════════ */
 import { atenderAvisos, avisoDePrueba } from './avisos-estudio.js';
+import { atenderVestidor } from './vestidor.js';
 import { conEconomia, premiar, premiarUnaVez, cobrarNivel, estudioAnima, comprar, cuidar, PREMIOS, TIENDA, nivelDe, animoDe, parejaDe, avanzarRachaJuntos, rachaJuntosHoy } from './palomium.js';
 export const MAX_PLAN = 1_500_000;
 const kPerfil = (c) => `est:perfil:${c}`;
@@ -291,6 +292,12 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
   }
   if(['responder', 'salirSesion'].includes(c.accion)){
     const r = await atenderSesion(storage, c, cuenta, perfil, ahora);
+    if(r) return Response.json(r, { status: r.estado || 200 });
+  }
+  /* ── el personaje de perfil (vestidor.js) ── */
+  if(['comprarRopa', 'vestir', 'personajes'].includes(c.accion)){
+    const r = await atenderVestidor(storage, c, cuenta, perfil, ahora);
+    if(r && r.bien && c.accion !== 'personajes') r.perfil = publico(perfil);
     if(r) return Response.json(r, { status: r.estado || 200 });
   }
   /* ── los avisos con notificación (avisos-estudio.js) ── */

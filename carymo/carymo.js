@@ -30,6 +30,7 @@ import { iniciarSesionEstudio } from './sesion.js';
 import { pedirSala, conAcceso } from '../sala/acceso.js';
 import { entrada } from './entrada.js';
 import { iniciarAvisos } from './avisos.js';
+import { iniciarVestidor } from './vestidor.js';
 
 const $ = (s, d = document) => d.querySelector(s);
 const $$ = (s, d = document) => [...d.querySelectorAll(s)];
@@ -102,6 +103,7 @@ let vista = 'plan';
 let amigos = null;   /* amigos.js; se arranca al final, cuando ya existe todo */
 let companero = null;   /* companero.js: el cuarto, el cuidado y la tienda de palomium */
 let avisos = null;   /* avisos.js: los recordatorios con notificación */
+let vestidor = null;   /* vestidor.js: tu personaje de perfil, su ropa y sus accesorios */
 let cuentaUI = null, apuntes = null, sesionEst = null;   /* sesion.js: varios cursos y el pomodoro */   /* apuntes.js: la pestaña de Apuntes con el lápiz */   /* cuenta.js: crear cuenta y entrar, sin la llave de La Sala */
 const plan = () => planes[actualId] || null;
 const guardarLocal = () => { guarda.poner('est.planes', planes); guarda.poner('est.actual', actualId); };
@@ -1535,6 +1537,8 @@ function pintarPerfil(){
       : `<div class="fila-bt" style="margin-bottom:6px"><button class="bt fuerte" data-cuenta-p="crear">${ico('user-plus')}Crear cuenta</button><button class="bt" data-cuenta-p="entrar">Ya tengo cuenta</button></div>`}
     <div class="seccion-t">Tú</div>
     <label class="ajuste">${ico('pencil')}<span>Tu nombre en el ranking</span><input id="pNombre" class="campo" style="max-width:150px;min-height:40px" value="${esc(perfil.nombre || '')}" aria-label="Tu nombre en el ranking"></label>
+    <div class="seccion-t">Tu personaje</div>
+    <button class="bt ancho" data-abrir-vestidor style="margin-bottom:12px">${ico('shirt')}Vístelo: cara, pelo, ropa y accesorios</button>
     <div class="seccion-t">Tu compañero</div>
     <button class="bt fuerte ancho" data-abrir-companero style="margin-bottom:12px">${ico('house')}Su cuarto y la tienda</button>
     <div class="elige-masc" role="radiogroup" aria-label="Tu compañero">${[...PERSONAJES.map((k) => [k, NOMBRE_PERSONAJE[k]]), ['no', 'Ninguno']].map(([k, t]) => `<button role="radio" aria-checked="${ajustes.mascota === k}" data-masc="${k}">${k === 'no' ? ico('x') : `<span class="masc-mini" data-mini="${k}"></span>`}<span>${t}</span></button>`).join('')}</div>
@@ -1619,6 +1623,7 @@ sesionEst = iniciarSesionEstudio({ $, esc, ico, hoja, cerrarHoja, brindis, tono,
 companero = iniciarCompanero({ sala, capa, cerrarCapa, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, crearMascota, $, brindis, ponerPerfil,
   perfil: () => perfil, ajustes: () => ajustes, alCerrar: () => pintar() });
 companero.pintarPastilla();
+vestidor = iniciarVestidor({ sala, capa, cerrarCapa, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, brindis, $, ponerPerfil, conAcceso, perfil: () => perfil });
 /* tocar un aviso abre lo que dice: el cuarto del compañero o el plan del examen */
 avisos = iniciarAvisos({ sala, esc, ico, brindis, tono, SON,
   alAbrir: ({ plan: id, abrir }) => { if(abrir === 'companero'){ companero.abrir(); return; } if(id && planes[id]){ actualId = id; guardarLocal(); vista = 'plan'; pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); } } });
@@ -1629,4 +1634,4 @@ entrada({ personaje: ajustes.mascota });
 $('#pCubos').addEventListener('click', () => companero.abrir());
 { const cod = codigoDe(location.search); if(cod){ history.replaceState(null, '', location.pathname); setTimeout(() => anadirCurso(cod), 3400); } }
 /* para las pruebas */
-window.__estudio = { avisos: () => avisos, companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };
+window.__estudio = { vestidor: () => vestidor, avisos: () => avisos, companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };

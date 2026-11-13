@@ -371,6 +371,28 @@
   .estrellas button .i{ width:36px; height:36px }
   .estrellas button.on{ color:var(--oro) } .estrellas button.on .i{ fill:var(--oro) }
 
+  /* ══ tu personaje (vestidor.js): Avataaars de Pablo Stanley, libre para uso comercial ══ */
+  .av.con-pj{ padding:0; overflow:hidden; background:var(--sup) !important; font-size:0 }
+  .av.con-pj svg{ width:100%; height:100%; display:block }
+  .perfil-cab .av{ cursor:pointer }
+  .pj-grande{ width:min(200px, 52vw); aspect-ratio:1; margin:4px auto 14px; filter:drop-shadow(0 10px 18px #0007) } .pj-grande svg{ width:100%; height:100%; display:block }
+  .pj-tabs{ display:grid; grid-template-columns:repeat(6, minmax(0, 1fr)); gap:4px; position:sticky; top:0; z-index:2; padding:6px 0; background:var(--fondo) }
+  .pj-tabs button{ display:grid; justify-items:center; gap:3px; min-height:52px; padding:6px 2px; border:0; border-radius:14px; background:transparent; color:var(--suave); font:800 11.5px/1 Titulo }
+  .pj-tabs button .i{ width:20px; height:20px }
+  .pj-tabs button[aria-selected="true"]{ background:var(--sup); color:var(--claro-txt) }
+  .pj-rejilla{ display:grid; grid-template-columns:repeat(auto-fill, minmax(78px, 1fr)); gap:8px }
+  .pj-op{ position:relative; display:grid; justify-items:center; gap:4px; padding:6px 4px 8px; border-radius:16px; border:2px solid transparent; background:var(--fondo-2); color:inherit; font:inherit; min-height:44px }
+  .pj-op[aria-pressed="true"]{ border-color:#AC27FF; background:#AC27FF1c }
+  .pj-mini{ width:62px; height:62px; display:grid; place-items:center; color:var(--tenue) } .pj-mini svg{ width:100%; height:100% } .pj-mini .i{ width:24px; height:24px }
+  .pj-op small{ font:700 11px/1.15 Texto; color:var(--suave); text-align:center }
+  .pj-op.de-paga .pj-mini{ opacity:.72 }
+  .pj-precio{ position:absolute; top:4px; right:4px; display:inline-flex; align-items:center; gap:2px; padding:2px 6px 2px 3px; border-radius:99px; background:#170A26e6; color:#fff; font:800 11px/1 Titulo; font-variant-numeric:tabular-nums }
+  .pj-precio .cubo-ico{ width:13px; height:13px }
+  .pj-colores{ display:flex; flex-wrap:wrap; gap:10px }
+  .pj-color{ width:44px; height:44px; border-radius:50%; border:3px solid var(--fondo); background:var(--c); box-shadow:0 0 0 2px var(--borde) }
+  .pj-color[aria-pressed="true"]{ box-shadow:0 0 0 3px #AC27FF }
+  .pj-compra{ width:120px; height:120px } .pj-compra svg{ width:100%; height:100% }
+
   /* la racha con un amigo, junto a su nombre */
   .amigo .rj{ display:inline-flex; align-items:center; gap:2px; margin-left:6px; padding:1px 7px 1px 4px; border-radius:99px; background:rgba(255,178,122,.14); color:#FFB27A; font-size:13px; font-weight:800; vertical-align:2px; font-variant-numeric:tabular-nums }
   .amigo .rj .i{ width:14px; height:14px }
