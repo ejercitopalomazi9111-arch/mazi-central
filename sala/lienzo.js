@@ -28,6 +28,7 @@
    recorre igual que una línea. Las fotos salen de Wikipedia, con su crédito.
    ═════════════════════════════════════════════════════════════════════════ */
 import { DIBUJOS } from './iconos-clase.js';
+import { masElementos, ANCHOS_MAS } from './lienzo-mas.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -459,6 +460,9 @@ export const ELEMENTOS = {
   escala: { armar(el, w, z, ctx){ return armarEscala(el, w, z, ctx); } },
   partes: { armar(el, w, z, ctx){ return armarPartes(el, w, z, ctx); } },
 };
+/* los 50 de lienzo-mas.js (Carlos, 13 nov: «300 elementos extra»), aparte para no pisar lo que meta Luna aquí */
+Object.assign(ELEMENTOS, masElementos({ lienzoSVG, textoSVG, trazo, relleno, caja, circulo, ovalo, linea, flecha, sector, dibujo, partir, medirTexto, TINTAS, f1 }));
+for(const k of ANCHOS_MAS) ancho2.add(k);
 export const TIPOS = Object.keys(ELEMENTOS);
 
 /* un SVG del tamaño del elemento para los tipos que son puro dibujo */

@@ -16,6 +16,7 @@
    ═════════════════════════════════════════════════════════════════════════ */
 import { ico, DIBUJOS } from './iconos-clase.js';
 import { crearLienzo, armarFijo, buscarDibujo, TIPOS } from './lienzo.js';
+import { CATALOGO_MAS, normalizarMas, SINONIMOS_MAS, TIPOS_MAS } from './lienzo-mas.js';
 import { sacarJSON } from './json-ia.js';
 import { crearVoz, paraDecir, todas, nombreDe, despertar, VOZ_DE_FABRICA } from './voces.js';
 import { sonar, encender as encenderSonidos } from './sonidos/sonidos.js';
@@ -101,6 +102,7 @@ const CATALOGO = `TIPOS DE "pizarra" (cada uno con sus campos):
 - barras { titulo, unidad, datos: [{ etiqueta, valor }] } · SÓLO con datos reales que conozcas bien
 - lineas { titulo, ejeY, puntos: [{ x, y }] } · una tendencia, SÓLO con datos reales
 - pastel { titulo, datos: [{ etiqueta, valor }] } · partes de un todo, SÓLO con datos reales
+${CATALOGO_MAS}
 DIBUJOS que existen para "icono" (escribe el nombre tal cual): ${Object.keys(DIBUJOS).join(', ')}`;
 /* lo que Estudio (u otro) dice del alumno, para que la clase sea SUYA */
 const CONTEXTO = new URLSearchParams(location.search).get('contexto') || '';
@@ -183,10 +185,10 @@ export function normalizarPizarra(p){
   if(!p || typeof p !== 'object') return null;
   const z = { ...p };
   let tipo = String(z.tipo || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-  tipo = SINONIMOS[tipo] || tipo;
+  tipo = SINONIMOS[tipo] || SINONIMOS_MAS[tipo] || SINONIMOS_MAS[tipo.replace(/\s+/g, '')] || tipo;
   z.tipo = TIPOS.includes(tipo) ? tipo : 'texto';
   for(const k of ['texto', 'titulo', 'sub', 'termino', 'expresion', 'autor', 'pie', 'numero', 'resultado', 'pregunta', 'respuesta', 'centro', 'efecto', 'raiz', 'ejeX', 'ejeY', 'izquierda', 'derecha', 'unidad', 'lenguaje', 'buscar'])
-    if(z[k] != null) z[k] = corta(z[k], k === 'texto' || k === 'respuesta' ? 600 : 160);
+    if(z[k] != null && typeof z[k] !== 'object') z[k] = corta(z[k], k === 'texto' || k === 'respuesta' ? 600 : 160);   /* la balanza trae izquierda/derecha como objetos */
   if(z.icono) z.icono = buscarDibujo(z.icono) || '';
   z.conecta = !!z.conecta;
   const vacio = () => null;
@@ -223,6 +225,8 @@ export function normalizarPizarra(p){
     case 'barras': case 'pastel': z.datos = (Array.isArray(z.datos) ? z.datos : []).map((d) => ({ etiqueta: corta(d && d.etiqueta, 30), valor: num(d && d.valor) })).filter((d) => d.etiqueta && d.valor != null && d.valor >= 0).slice(0, z.tipo === 'pastel' ? 8 : 10); if(z.datos.length < 2) return vacio(); break;
     case 'lineas': z.puntos = (Array.isArray(z.puntos) ? z.puntos : []).map((d) => ({ x: corta(d && d.x, 14), y: num(d && d.y) })).filter((d) => d.x && d.y != null).slice(0, 14); if(z.puntos.length < 2) return vacio(); break;
   }
+  /* los 50 de lienzo-mas.js se revisan allá */
+  if(TIPOS_MAS.includes(z.tipo)) return normalizarMas(z);
   return z;
 }
 export function normalizar(j){
