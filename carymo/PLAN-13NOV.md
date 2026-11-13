@@ -10,6 +10,53 @@
 > Lo empezó Luna (la sesión de Carlos). Sylcred trabaja en CARYMO en paralelo (rama
 > `claude/juego-oregon-3kmicc`), así que **antes de tocar un archivo grande se avisa en la sala**.
 
+## En qué vamos (se actualiza en cada entrega)
+
+**Publicado:** bloques 1, 2, 3 y 4 casi completos, y el 12.
+- Arreglos.
+- Mascotas y sus voces.
+- Palomium y tienda.
+- Cuarto del compañero.
+- Entrada animada.
+
+**En curso (Luna):**
+- **Cuentas propias de CARYMO, sin la llave de La Sala** (bloque 0, lo más urgente).
+- **Compartir un plan por link o código** (bloque 0-bis).
+
+**Avanzado sin publicar:** el motor de dibujo de Apuntes (`carymo/trazo.js`). Le falta la pantalla.
+
+**Después, en este orden:**
+1. 5 · Apuntes.
+2. 9 · Varios cursos con pomodoro.
+3. 11 · Idiomas.
+4. 10 y 8-bis · Imágenes.
+5. 8 · Elementos del pizarrón.
+6. 6 · Personaje de perfil.
+7. 7 · Avisos.
+
+## 0 · Cuentas propias, sin la llave de La Sala (Carlos, 13 nov · lo más urgente)
+
+> «Que crearlo sea más fácil, que no requiera de la llave de la sala, porque estarla dando es darle acceso a la
+> gente a la sala y no queremos eso… que haya otra manera de que se creen su usuario, ya sea con correo… encárgate
+> tú de que funcione».
+
+- [ ] Crear cuenta y entrar con **usuario y contraseña** (y correo opcional para recuperarla después). La
+      contraseña se guarda con hash y sal (PBKDF2) en el servidor, nunca en claro.
+- [ ] La cuenta da un **token sólo de CARYMO**: sirve para planes, XP, palomium, amigos y la IA de CARYMO
+      (con tope diario por cuenta), **no** para leer ni escribir en La Sala.
+- [ ] La llave de La Sala deja de pedirse en CARYMO. Las cuentas viejas (las que entraban con la llave) se
+      pueden pasar a usuario propio sin perder su avance.
+
+## 0-bis · Compartir un plan por link o código (Carlos, 13 nov)
+
+> «Si yo estoy haciendo un plan para un examen y copio ese link o el código y lo mando a mi grupo, ellos lo
+> ponen en "añadir curso por link" y ya les pone exactamente lo mismo… y así ya no se gastan tokens».
+
+- [ ] Botón «Compartir» en el plan: sale un link y un código corto (6 letras).
+- [ ] «Añadir curso por link o código»: copia el plan entero (camino, lecciones, preguntas, cátedras ya hechas)
+      sin gastar IA; el avance empieza en cero para quien lo recibe.
+- [ ] Si quien lo recibe pide algo extra (otro tema, sus fotos), sólo eso gasta IA.
+
 ## 1 · Arreglos rápidos
 
 - ✅ **El pizarrón le decía «Carlos» a todos.** La instrucción decía «la maestra particular de Carlos», y las
