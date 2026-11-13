@@ -39,6 +39,7 @@ La Sala también abre esta app.
 | `carymo/index.html` | La página y TODO su diseño (CSS): colores vino, morado oscuro y morado claro |
 | `carymo/carymo.js` | Toda la lógica: plan, camino, lección, los 8 ejercicios (`EJ`), combo (`comboVFX`), tarjetas, ranking, horario, perfil |
 | `carymo/iconos.js` | Los íconos de los botones (Lucide) |
+| `carymo/marca/` + `manifest.webmanifest` | El ícono (la CM) y el dibujo del logo que mandó Carlos (sala, e1176, 13 nov). Con eso se instala en el iPhone: Compartir → Agregar a pantalla de inicio |
 | `sala/servidor/estudio.js` | **Servidor** (dentro de La Sala): planes, XP, racha y ranking. Ruta `/api/sala/GRUPAZ/estudio` |
 | `sala/explica.html` + `explica.js` | El pizarrón (Explica): lo usan CARYMO y La Sala |
 | `sala/lienzo.js` | El motor del pizarrón: muchos cursores, 33 tipos de elemento, cámara infinita |
@@ -85,5 +86,5 @@ node sala/servidor/pruebas.mjs
   2. Su forma en `CATALOGO` de `sala/explica.js`.
   3. Su revisión en `normalizarPizarra`.
 - **Pendiente que se ve venir:**
-  - que la app se instale en la pantalla de inicio (falta el ícono, que lo decide Carlos);
+  - el logo de Carlos dice «CARIMO» con I: en la portada va sólo el dibujo hasta que diga cuál nombre vale;
   - que el pizarrón arranque solo sin tocar «Explícame» (el iPhone pide un toque para hablar).

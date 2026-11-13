@@ -6,6 +6,14 @@
 <meta name="theme-color" content="#170A26">
 <title>CARYMO · Learn. Explore. Grow.</title>
 <meta name="description" content="CARYMO: todo lo que puedes aprender, en un solo lugar.">
+<!-- el ícono y el logo los mandó Carlos (sala, e1176, 13 nov): la CM es el ícono; del logo se usa el dibujo sin las letras -->
+<link rel="icon" type="image/png" sizes="32x32" href="marca/favicon-32.png">
+<link rel="apple-touch-icon" href="marca/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CARYMO">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <!-- CARYMO · antes «Estudio» (Carlos, 12 nov: «ahora la App se llamará CARYMO · Learn. Explore. Grow. · Todo lo que puedes
      aprender, en un solo lugar»). Lo que sigue es cómo nació (Carlos, 12 nov): «una app tipo Duolingo tipo Knowunity conectada a la sala», «con nuestro estilo pero
      enfócate más en el color vino, usa morado oscuro para detalles y el claro para resaltar, como algo más profesional».
@@ -239,6 +247,8 @@
 
   /* ══ CARYMO: la marca ══ */
   .marca-carymo{ display:flex; flex-direction:column; align-items:center; gap:6px; margin:0 auto 6px }
+  .marca-carymo img{ width:min(160px, 42vw); aspect-ratio:546/426; height:auto; border-radius:22px; margin-bottom:10px;
+    box-shadow:0 0 0 1px #ffffff14, 0 18px 40px -18px #000 }
   .marca-carymo b{ font:900 46px/1 Titulo; letter-spacing:.08em; color:#fff; padding-left:.08em;
     background:linear-gradient(100deg, #fff 30%, var(--claro-txt) 62%, #fff 90%); -webkit-background-clip:text; background-clip:text; color:transparent }
   .marca-carymo span{ font:800 13px/1 Titulo; letter-spacing:.32em; text-transform:uppercase; color:var(--claro-txt); padding-left:.32em }

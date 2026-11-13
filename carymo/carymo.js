@@ -380,7 +380,7 @@ const ONDA = [0, .62, .85, .62, 0, -.62, -.85, -.62];
 function pintarPlan(){
   const c = $('#planCuerpo'), p = plan();
   if(!p){
-    c.innerHTML = `<div class="vacio entra"><div class="marca-carymo"><b>CARYMO</b><span>Learn. Explore. Grow.</span></div><p class="lema">Todo lo que puedes aprender, en un solo lugar.</p>
+    c.innerHTML = `<div class="vacio entra"><div class="marca-carymo"><img src="marca/emblema.webp" width="546" height="426" alt=""><b>CARYMO</b><span>Learn. Explore. Grow.</span></div><p class="lema">Todo lo que puedes aprender, en un solo lugar.</p>
       <h1>¿Tienes un examen pronto?<em>Aquí estamos para ayudarte</em></h1>
       <p>Dinos la materia, la fecha y qué temas vienen, o súbele foto a tus apuntes. Te armamos el camino hasta el día del examen.</p>
       <button class="bt fuerte ancho" id="bCrear">${ico('plus')} Crear mi plan</button></div>`;
