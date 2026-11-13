@@ -24,6 +24,8 @@
  * ===========================================================================*/
 
 import { ZOO } from './zoo.js';   /* la paloma mejorada y los animales nuevos (Luna, 13 nov) */
+import { CABEZAS, svgAccesorio, svgCuello, DEL_CUELLO, svgHuevo } from './mascota-ropa.js';
+import { SKINS } from './crianza-datos.js';
 const NS = 'http://www.w3.org/2000/svg';
 const lerp = (a, b, k) => a + (b - a) * k;
 const lim = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -215,8 +217,41 @@ function ponerEstilo(){
   .masc-fx > span svg{ width:100%; height:100%; display:block }
   .masc-globo{ position:absolute; left:50%; bottom:100%; translate:-50% 0; margin-bottom:6px; max-width:210px; width:max-content; padding:8px 12px; border-radius:14px;
     background:#fff; color:#2A1240; font:700 13px/1.3 system-ui, sans-serif; box-shadow:0 6px 18px #0004; pointer-events:none; opacity:0; text-align:center; z-index:2 }
-  .masc-globo::after{ content:""; position:absolute; left:50%; top:100%; translate:-50% -1px; border:7px solid transparent; border-top-color:#fff }`;
+  .masc-globo::after{ content:""; position:absolute; left:50%; top:100%; translate:-50% -1px; border:7px solid transparent; border-top-color:#fff }
+  .masc > svg{ transform:scale(var(--voltea, 1), 1); transform-origin:50% 94% }
+  .masc[data-etapa=bebe] > svg{ transform:scale(calc(var(--voltea, 1) * .78), .78) }
+  .masc[data-etapa=joven] > svg{ transform:scale(calc(var(--voltea, 1) * .9), .9) }
+  .masc .huevo-mece{ transform-box:view-box; transform-origin:100px 204px; animation:masc-mece 3.2s ease-in-out infinite }
+  @keyframes masc-mece{ 0%,70%,100%{ transform:rotate(0) } 76%{ transform:rotate(-7deg) } 84%{ transform:rotate(6deg) } 92%{ transform:rotate(-3deg) } }
+  @media (prefers-reduced-motion: reduce){ .masc .huevo-mece{ animation:none } }`;
   document.head.append(s);
+}
+
+/* ── el vestido: etapa (huevo, bebé, joven, adulta, sabia), color (skin) y accesorios ──
+   La página dice cómo va vestida TU mascota de cada especie (configurarVestido); las demás salen normales.
+   Un vestido es { etapa, skin, acc: ['corona', …], progreso } (progreso: qué tanto le falta al huevo). */
+let VESTIDOR = null;
+export function configurarVestido(fn){ VESTIDOR = typeof fn === 'function' ? fn : null; for(const m of VIVAS) m.revestir && m.revestir(); }
+export function refrescarVestidos(){ for(const m of VIVAS) m.revestir && m.revestir(); }
+/* el color se hace con un filtro SVG (no CSS) para que funcione igual en Safari y no pinte los accesorios.
+   Cada color es un DEGRADADO de tres tonos (oscuro, medio, claro) que se le pone a la luz de la mascota:
+   así el «dorado» es dorado en el tigre blanco y en la ballena azul (con girar el tono, la paloma de noche salía verde). */
+const TONOS = {
+  menta: ['#0E5E4A', '#3FC79A', '#E9FFF6'], noche: ['#0E0A33', '#3A4FB8', '#DCE4FF'], lava: ['#4A0808', '#E2451C', '#FFE6B8'],
+  dorado: ['#4E3200', '#E2A21C', '#FFF7D6'], galaxia: ['#0B1446', '#6A45E8', '#B8F6FF'], creador: ['#2A0838', '#AC27FF', '#FFEFFF'],
+  arcoiris: ['#4A0A24', '#FF3B6B', '#FFE8F0'],
+};
+const canal = (hex, i) => (parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) / 255).toFixed(3);
+function filtroSVG(id, skin, etapa){
+  const pasos = [], t = TONOS[skin];
+  if(t){
+    pasos.push('<feColorMatrix type="matrix" values=".2126 .7152 .0722 0 0 .2126 .7152 .0722 0 0 .2126 .7152 .0722 0 0 0 0 0 1 0"/>');
+    pasos.push(`<feComponentTransfer>${['R', 'G', 'B'].map((c, i) => `<feFunc${c} type="table" tableValues="${t.map((h) => canal(h, i)).join(' ')}"/>`).join('')}</feComponentTransfer>`);
+    if(skin === 'arcoiris') pasos.push(`<feColorMatrix type="hueRotate" values="0">${quieta() ? '' : '<animate attributeName="values" from="0" to="360" dur="5s" repeatCount="indefinite"/>'}</feColorMatrix>`);
+  }
+  if(etapa === 'viejo') pasos.push('<feColorMatrix type="saturate" values=".72"/>');
+  if(!pasos.length) return '';
+  return `<filter id="${id}" color-interpolation-filters="sRGB" x="-10%" y="-10%" width="120%" height="120%">${pasos.join('')}</filter>`;
 }
 
 /* el motor: un solo bucle por todas las mascotas de la página */
@@ -245,12 +280,37 @@ export function crearMascota(caja, op = {}){
   caja.append(el);
   const fx = document.createElement('div'); fx.className = 'masc-fx';
   const globo = document.createElement('div'); globo.className = 'masc-globo'; globo.setAttribute('aria-live', 'polite');
-  let piezas = {}, boca = null, bocaClip = null, lengua = null, ojosEl = {};
+  let piezas = {}, boca = null, bocaClip = null, lengua = null, ojosEl = {}, huevo = false, accCabeza = null, accCuerpo = null, escalaCabeza = 1;
+  const vestidoActual = () => op.vestido !== undefined ? op.vestido : VESTIDOR ? VESTIDOR(quien) : null;
+  let vestido = vestidoActual();
   function dibujar(){
     const id = 'm' + (++uid) + '_';
+    const v = vestido || {}, etapa = v.etapa || 'adulto';
+    huevo = etapa === 'huevo';
+    el.dataset.etapa = etapa;
+    if(huevo){
+      el.innerHTML = svgHuevo(quien, v.progreso || 0); el.append(fx, globo); piezas = {};
+      el.setAttribute('aria-label', `Tu huevo de ${(ZOO[quien] && ZOO[quien].nombre) || 'mascota'}`);
+      return;
+    }
     el.innerHTML = ZOO[quien] ? ZOO[quien].svg(id) : quien === 'tigre' ? svgTigre(id) : svgPaloma(id);
     el.append(fx, globo);
     piezas = {}; for(const g of el.querySelectorAll('[data-p]')) piezas[g.dataset.p] = g;
+    escalaCabeza = etapa === 'bebe' ? 1.17 : etapa === 'joven' ? 1.06 : 1;
+    /* color y accesorios: los accesorios van en capas aparte que copian el movimiento de la cabeza y del cuerpo */
+    const svg = el.querySelector('svg'), fil = filtroSVG(id + 'skin', v.skin, etapa);
+    if(fil && piezas.raiz){ let defs = svg.querySelector('defs'); if(!defs){ defs = document.createElementNS(NS, 'defs'); svg.prepend(defs); } defs.insertAdjacentHTML('beforeend', fil); piezas.raiz.setAttribute('filter', `url(#${id}skin)`); }
+    const acc = [...(v.acc || [])];
+    if(etapa === 'viejo' && !acc.some((k) => k === 'lentes' || k === 'lentesSol')) acc.push('sabio');
+    accCabeza = accCuerpo = null;
+    if(acc.length && piezas.raiz){
+      const g = CABEZAS[quien] || CABEZAS.tigre, oj = ojosDe(quien);
+      const cab = acc.filter((k) => !DEL_CUELLO.has(k)).map((k) => svgAccesorio(k, g, oj)).join('');
+      const cue = acc.filter((k) => DEL_CUELLO.has(k)).map((k) => svgCuello(k, g)).join('');
+      accCuerpo = document.createElementNS(NS, 'g'); accCuerpo.setAttribute('data-capa', 'cuerpo'); accCuerpo.innerHTML = cue + (g.enCuerpo ? cab : '');
+      accCabeza = document.createElementNS(NS, 'g'); accCabeza.setAttribute('data-capa', 'cabeza'); accCabeza.innerHTML = g.enCuerpo ? '' : cab;
+      piezas.raiz.after(accCuerpo, accCabeza);
+    }
     boca = el.querySelector('[data-boca]'); bocaClip = el.querySelector('[data-boca-clip]'); lengua = el.querySelector('[data-lengua]');
     ojosEl = {};
     for(const lado of ['I', 'D']){ const g = piezas['ojo' + lado]; ojosEl[lado] = { mira: g.querySelector('[data-mira]'), parpado: g.querySelector('[data-parpado]'), pestana: g.querySelector('[data-pestana]'), brillo: g.querySelector('[data-brillo]') }; }
@@ -258,7 +318,7 @@ export function crearMascota(caja, op = {}){
   }
   dibujar();
 
-  const yo = { cuadro: (a) => cuadro(a) };
+  const yo = { cuadro: (a) => cuadro(a), revestir(){ const n = vestidoActual(); if(JSON.stringify(n) === JSON.stringify(vestido)) return; vestido = n; dibujar(); } };
   /* estado: lo que pide la acción + lo que hace solo (respirar, parpadear, mirar) */
   const p = BASE(), mostrado = BASE();
   let accion = null, accionT0 = 0, accionDura = 0, mezcla = 0, mezclaObj = 0, despues = null;
@@ -272,7 +332,7 @@ export function crearMascota(caja, op = {}){
     /* si su pantalla ya se quitó, se deja de animar (y de gastar) */
     if(!el.isConnected){ if(++desconectado > 30){ VIVAS.delete(yo); io?.disconnect(); } return; }
     desconectado = 0;
-    if(!visible || document.hidden) return;
+    if(!visible || document.hidden || huevo) return;
     const t = ahora - t0;
     const base = BASE();
     /* respirar: siempre */
@@ -324,10 +384,13 @@ export function crearMascota(caja, op = {}){
   function pintar(v){
     tAhora = performance.now();
     const [rx, ry] = pivoteDe(quien).raiz;
-    T(piezas.raiz, `translate(${v.x.toFixed(2)} ${v.y.toFixed(2)}) rotate(${v.giro.toFixed(2)} ${rx} ${ry}) translate(${rx} ${ry}) scale(${v.sx.toFixed(4)} ${v.sy.toFixed(4)}) translate(${-rx} ${-ry})`);
+    const tRaiz = `translate(${v.x.toFixed(2)} ${v.y.toFixed(2)}) rotate(${v.giro.toFixed(2)} ${rx} ${ry}) translate(${rx} ${ry}) scale(${v.sx.toFixed(4)} ${v.sy.toFixed(4)}) translate(${-rx} ${-ry})`;
+    T(piezas.raiz, tRaiz); T(accCuerpo, tRaiz);
     const alto = Math.max(0, -v.y);
     T(piezas.sombra, `translate(100 207) scale(${(1 - alto / 120).toFixed(3)} 1) translate(-100 -207)`); if(piezas.sombra) piezas.sombra.style.opacity = (1 - alto / 90).toFixed(2);
-    T(piezas.cabeza, rot('cabeza', v.cabezaGiro, `translate(${v.cabezaX.toFixed(2)} ${v.cabezaY.toFixed(2)}) `));
+    const [pcx, pcy] = pivoteDe(quien).cabeza || [100, 130];
+    const tCab = rot('cabeza', v.cabezaGiro, `translate(${v.cabezaX.toFixed(2)} ${v.cabezaY.toFixed(2)}) `) + (escalaCabeza !== 1 ? ` translate(${pcx} ${pcy}) scale(${escalaCabeza}) translate(${-pcx} ${-pcy})` : '');
+    T(piezas.cabeza, tCab); T(accCabeza, tRaiz + ' ' + tCab);
     /* un brazo que sube se abre hacia afuera: así la pata queda junto a la cara, no encima */
     const subeI = lim(v.brazoI / 120, 0, 1), subeD = lim(-v.brazoD / 120, 0, 1), ab = ZOO[quien] ? ZOO[quien].abre : quien === 'tigre' ? 14 : 6;
     T(piezas.brazoI, rot('brazoI', v.brazoI, `translate(${(-ab * subeI).toFixed(2)} ${(-4 * subeI).toFixed(2)}) `));
@@ -396,6 +459,14 @@ export function crearMascota(caja, op = {}){
 
   let estado = 'quieto', vuelta = 0;
   async function play(e, op2 = {}){
+    if(huevo){
+      /* el huevo no tiene cara: se mece fuerte, brinca y suelta lo que toque */
+      const g = el.querySelector('.huevo-mece');
+      if(g && !quieta()) g.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-12deg) translateY(-6px)' }, { transform: 'rotate(10deg)' }, { transform: 'rotate(-5deg)' }, { transform: 'rotate(0)' }], { duration: 700, easing: 'ease-in-out' });
+      const ic = ICONO_DE[e]; if(ic) icono(azar(ic));
+      if(op2.decir) decir(op2.decir, op2.decirMs || 2400);
+      return;
+    }
     if(e === 'piensa_corto'){ e = 'piensa'; op2.dura = 1600; }
     const A = ACCIONES[e] || ACCIONES.quieto;
     const yo = ++vuelta; estado = e; if(!op2.solo) ultimoTravieso = performance.now();
@@ -420,7 +491,9 @@ export function crearMascota(caja, op = {}){
   return {
     el, play, decir, lluvia, icono,
     get estado(){ return estado; }, get quien(){ return quien; }, get parametros(){ return { ...mostrado }; },
-    personaje(q){ if(!existe(q) || q === quien) return; quien = q; dibujar(); play('saluda'); },
+    personaje(q){ if(!existe(q) || q === quien) return; quien = q; vestido = vestidoActual(); dibujar(); play('saluda'); },
+    vestir(v){ op.vestido = v; vestido = vestidoActual(); dibujar(); },
+    get vestido(){ return vestido; },
     destruir(){ VIVAS.delete(yo); io?.disconnect(); clearTimeout(globoT); el.remove(); },
   };
 }

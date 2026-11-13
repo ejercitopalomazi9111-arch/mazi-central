@@ -66,6 +66,49 @@ console.log('El servidor');
   r = await llamar(s, 'carlos', 'GET', '', null, '2026-11-16');
   ok(r.ranking.filas[0].nombre === 'Palomazi' && !('ids' in r.perfil), 'el ranking usa el nombre nuevo y el perfil no expone los ids');
 
+  /* ── la crianza de mascotas (crianza-datos.js) ── */
+  {
+    const C = almacen();
+    const dia = '2026-11-12';
+    let q = await llamar(C, 'mia', 'POST', '', { accion: 'mascota', personaje: 'perrito' }, dia);
+    ok(q.perfil.mascotas && q.perfil.mascotas.perrito && q.perfil.mascota === 'perrito', 'la primera mascota que eliges es tuya gratis');
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'mascota', personaje: 'gatito' }, dia);
+    ok(q.error && q.adoptar === 'gatito' && q.perfil.mascota === 'perrito', 'para cambiarte a otra, primero hay que adoptarla');
+    let pf = C.m.get('est:perfil:mia'); pf.cubos = 500; C.m.set('est:perfil:mia', pf);
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'adoptar', especie: 'paloma' }, dia);
+    ok(q.bien && q.gastado === 40 && q.perfil.mascota === 'paloma' && q.perfil.cubos === 460, 'adoptar otra cuesta cubitos y se vuelve tu compañera');
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'xp', id: 'c1', xp: 30 }, dia);
+    ok(q.perfil.mascotas.paloma.xp === 30 && q.perfil.mascotas.perrito.xp === 0 && q.mascotaSube && q.mascotaSube.etapaAntes === 'huevo' && q.mascotaSube.etapa === 'bebe', 'lo que estudias lo gana la que está contigo; la paloma sale del huevo');
+    pf = C.m.get('est:perfil:mia'); pf.mascotas.paloma.xp = 1215; C.m.set('est:perfil:mia', pf);
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'xp', id: 'c2', xp: 30 }, dia);
+    ok(q.perfil.mascotas.paloma.xp === 1225, 'después de nivel 10 gana sólo un tercio (conviene cambiar de mascota)');
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'activa', especie: 'perrito' }, dia);
+    ok(q.bien && q.perfil.mascota === 'perrito', 'cambiarte a una que ya tienes es gratis');
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'vestir', especie: 'perrito', acc: ['birrete'] }, dia);
+    ok(q.bien && q.perfil.mascotas.perrito.acc.length === 0, 'no se puede poner lo que no has comprado');
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'comprarRopa', item: 'birrete' }, dia);
+    await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'comprarRopa', item: 'corona' }, dia);
+    await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'comprarRopa', item: 'lentes' }, dia);
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'vestir', especie: 'perrito', acc: ['birrete', 'corona', 'lentes'], skin: 'normal' }, dia);
+    ok(q.bien && q.perfil.mascotas.perrito.acc.join() === 'birrete,lentes', 'se compra y se pone, uno por lugar (birrete y corona no van juntos)');
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'comprarRopa', item: 'creador' }, dia);
+    ok(q.error, 'el color de creador no se vende');
+    for(let k = 0; k < 22; k++) q = await llamar(C, 'mia', 'POST', '', { accion: 'cuidar', que: 'caricia' }, dia);
+    ok(q.tope, 'las caricias suben el ánimo, con tope por día');
+    /* nadie la cuida: en cero, y 3 días después, se muere */
+    pf = C.m.get('est:perfil:mia'); pf.cuidado = { hambre: 10, limpieza: 90, animo: 80, t: MEDIODIA(dia) }; C.m.set('est:perfil:mia', pf);
+    q = await llamar(C, 'mia', 'GET', '', null, '2026-11-14');
+    ok(q.perfil.peligroDesde && !q.perfil.mascotas.perrito.muerta && !q.mascota, 'en cero de algo queda en peligro (todavía viva)');
+    q = await llamar(C, 'mia', 'GET', '', null, '2026-11-17');
+    ok(q.perfil.mascotas.perrito.muerta && q.mascota && q.mascota.tipo === 'murio' && q.perfil.cielo.some((x) => x.especie === 'perrito'), 'tres días en cero y se muere (y se avisa una vez)');
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'xp', id: 'c3', xp: 20 }, '2026-11-17');
+    ok(q.perfil.mascotas.perrito.muerta && !q.mascotaSube, 'una mascota que se murió ya no gana nada');
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'activa', especie: 'paloma' }, '2026-11-17');
+    ok(q.bien && q.perfil.mascota === 'paloma', 'te puedes quedar con otra de las que tienes');
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'adoptar', especie: 'perrito' }, '2026-11-17');
+    ok(q.bien && q.gastado === 40 && !q.perfil.mascotas.perrito.muerta && q.perfil.mascotas.perrito.xp === 0, 'y la que se murió sólo vuelve como una nueva, desde el principio');
+  }
+
   /* ── las ligas ── */
   {
     const L = almacen();

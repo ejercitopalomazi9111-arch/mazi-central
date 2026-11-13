@@ -20,7 +20,8 @@ import { sonar, encender as encenderSonidos } from '../sala/sonidos/sonidos.js';
 import { llave, ponerLlave, llamar, SERVIDOR, SALA } from '../presentaciones/ia.js';
 import { CURSOS, MATERIAL, HECHOS, planDeCurso } from './academia.js';
 import { crearVoz, todas as todasLasVoces, VOZ_DE_FABRICA, despertar } from '../sala/voces.js';
-import { crearMascota, PERSONAJES, NOMBRE_PERSONAJE } from './mascota.js';
+import { crearMascota, PERSONAJES, NOMBRE_PERSONAJE, configurarVestido, refrescarVestidos } from './mascota.js';
+import { ESPECIES, ETAPAS, nivelMascota, xpDeNivel, etapaDe } from './crianza-datos.js';
 import { iniciarAmigos } from './amigos.js';
 import { iniciarCompanero } from './companero.js';
 import { iniciarCuenta } from './cuenta.js';
@@ -78,7 +79,17 @@ if(!ajustes.mascota) ajustes.mascota = 'tigre';
 /* la mascota (tigre o paloma, de las hojas de Carlos): acompaña, reacciona y festeja */
 /* las mascotas que hay en pantalla: la más reciente y visible es la que dice los avisos */
 const enPantalla = new Set();
-const mascotaEn = (caja, op = {}) => { if(ajustes.mascota === 'no' || !caja) return null; const m = crearMascota(caja, { personaje: ajustes.mascota, ...op }); enPantalla.add(m); return m; };
+/* la mascota que te acompaña: la que elegiste, salvo que se haya muerto (entonces ninguna hasta que adoptes otra) */
+const muerta = (q) => !!(perfil.mascotas && perfil.mascotas[q] && perfil.mascotas[q].muerta);
+const mascotaActiva = () => ajustes.mascota === 'no' || muerta(ajustes.mascota) ? 'no' : ajustes.mascota;
+const mascotaEn = (caja, op = {}) => { if(mascotaActiva() === 'no' || !caja) return null; const m = crearMascota(caja, { personaje: mascotaActiva(), ...op }); enPantalla.add(m); return m; };
+/* tu mascota sale como va: su etapa (huevo, bebé, joven, adulta, sabia), su color y lo que trae puesto (crianza) */
+function vestidoDe(especie){
+  const m = perfil.mascotas && perfil.mascotas[especie]; if(!m || m.muerta) return null;
+  const n = nivelMascota(m.xp || 0), a = xpDeNivel(n), b = xpDeNivel(n + 1);
+  return { etapa: etapaDe(especie, n), skin: m.skin || 'normal', acc: m.acc || [], progreso: Math.max(0, Math.min(1, ((m.xp || 0) - a) / Math.max(1, b - a))) };
+}
+configurarVestido(vestidoDe);
 /* SIN VOZ. Carlos, 13 nov: «quítales la voz a las mascotas». Hablan sólo con su globito; la voz se queda
    para el pizarrón, que es donde explica. (Antes cada mascota tenía 3 voces: VOCES_MASCOTA, en la historia de git.) */
 /* que el aviso lo diga la mascota que está a la vista (con su modo); si no hay ninguna, el letrerito de siempre */
@@ -355,6 +366,7 @@ async function mandarCola(){
       const antes = posicion();
       ponerPerfil(r.perfil); ponerRanking(r.ranking);
       if(r.liga) await fiestaLiga(r.liga);
+      if(r.mascotaSube) await companero?.crecio(r.mascotaSube);
       companero?.premios(r);
       if((r.premios || []).some((x) => x.motivo === 'nivel')){ tono(SON.nivel); reaccion('sube', { cameo: true }); }
       if(r.eventos.includes('racha-perdida')){ tono(SON.perdio); reaccion('baja', { cameo: true }); }
@@ -371,7 +383,14 @@ async function mandarCola(){
   return mandando;
 }
 function posicion(){ const i = ranking.filas.findIndex((f) => f.yo); return i < 0 ? 0 : i + 1; }
-function ponerPerfil(p){ if(!p) return; perfil = { ...perfil, ...p }; delete perfil._localRacha; guarda.poner('est.perfil', perfil); pintarCabeza(); companero?.pintarPastilla(); }
+function ponerPerfil(p){ if(!p) return; perfil = { ...perfil, ...p }; delete perfil._localRacha; guarda.poner('est.perfil', perfil);
+  /* la mascota activa la decide el servidor (la crianza vive allá); si la tuya de antes todavía no está allá, se le manda una vez */
+  if(perfil.mascotas){
+    const q = perfil.mascota;
+    if(q && (q === 'no' || perfil.mascotas[q]) && q !== ajustes.mascota){ ajustes.mascota = q; guarda.poner('est.ajustes', ajustes); }
+    else if(!Object.keys(perfil.mascotas).length && ESPECIES[ajustes.mascota] && !ponerPerfil.migrada && conAcceso()){ ponerPerfil.migrada = true; sala({ accion: 'mascota', personaje: ajustes.mascota }).then((r) => r && ponerPerfil(r.perfil)).catch(() => {}); }
+  }
+  refrescarVestidos(); pintarCabeza(); companero?.pintarPastilla(); }
 /* un premio sin XP (subir de grado): el servidor decide cuántos cubitos vale */
 function encolarPremio(motivo){ cola.push({ id: 'x' + nuevoId(), xp: 0, dia: hoyLocal(), motivo }); guarda.poner('est.cola', cola); }
 function ponerRanking(r){ if(!r) return; const yoEs = (f) => ({ ...f, yo: f.cuenta === perfil.cuenta }); ranking = { ...r, liga: r.liga | 0, filas: r.filas.map(yoEs), amigos: (r.amigos || []).map(yoEs), recibido: Date.now() }; guarda.poner('est.ranking', ranking); if(vista === 'ranking') pintarRanking(); }
@@ -397,6 +416,7 @@ async function sincronizar(){
   try{
     const r = await sala(null);
     perfil.cuenta = r.perfil.cuenta; ponerPerfil(r.perfil); ponerRanking(r.ranking); if(r.liga) setTimeout(() => fiestaLiga(r.liga), 900);
+    if(r.mascota && r.mascota.tipo === 'murio') setTimeout(() => companero?.murio(r.mascota), r.liga ? 1800 : 900);
     for(const x of r.planes){
       if(x.borrado){ if(planes[x.id]){ delete planes[x.id]; if(actualId === x.id) actualId = null; } continue; }
       if(!planes[x.id] || (planes[x.id].t || 0) < x.t){
@@ -1734,7 +1754,8 @@ function pintarPerfil(){
     <button class="bt ancho" data-abrir-vestidor style="margin-bottom:12px">${ico('shirt')}Vístelo: cara, pelo, ropa y accesorios</button>
     <div class="seccion-t">Tu compañero</div>
     <button class="bt fuerte ancho" data-abrir-companero style="margin-bottom:12px">${ico('house')}Su cuarto y la tienda</button>
-    <div class="elige-masc" role="radiogroup" aria-label="Tu compañero">${[...PERSONAJES.map((k) => [k, NOMBRE_PERSONAJE[k]]), ['no', 'Ninguno']].map(([k, t]) => `<button role="radio" aria-checked="${ajustes.mascota === k}" data-masc="${k}">${k === 'no' ? ico('x') : `<span class="masc-mini" data-mini="${k}"></span>`}<span>${t}</span></button>`).join('')}</div>
+    <div class="elige-masc" role="radiogroup" aria-label="Tu compañero">${[...PERSONAJES.map((k) => [k, NOMBRE_PERSONAJE[k]]), ['no', 'Ninguno']].map(([k, t]) => { const mia = k === 'no' || !perfil.mascotas || (perfil.mascotas[k] && !perfil.mascotas[k].muerta);
+      return `<button role="radio" aria-checked="${mascotaActiva() === k}" data-masc="${k}" class="${mia ? '' : 'sin-adoptar'}">${k === 'no' ? ico('x') : `<span class="masc-mini" data-mini="${k}"></span>`}<span>${t}</span>${mia ? '' : `<small>${ico('lock')}Adoptar</small>`}</button>`; }).join('')}</div>
     <div class="seccion-t">Tu nivel</div>
     <div class="chips-nivel" role="radiogroup" aria-label="Tu nivel de estudio">${Object.entries(NIVELES).map(([k, t]) => `<button role="radio" aria-checked="${nivelEstudio() === k}" data-nivel="${k}">${esc(t)}</button>`).join('')}</div>
     <div class="seccion-t">Qué tan a fondo te explico</div>
@@ -1762,7 +1783,8 @@ $('#vPerfil').addEventListener('click', (e) => {
   if(e.target.closest('[data-anadir-plan]')) anadirCurso();
   const cb = e.target.closest('[data-cuenta-p]'); if(cb){ if(cb.dataset.cuentaP === 'salir') cuentaUI.salir(); else cuentaUI.abrir(cb.dataset.cuentaP); return; }
   if(e.target.closest('[data-probar-voz]')) probarVoz();
-  const mb = e.target.closest('[data-masc]'); if(mb){ ajustes.mascota = mb.dataset.masc; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); pintarPlan.saludo = false; try{ sessionStorage.removeItem('carymo.saludo'); }catch{} if(conAcceso()) sala({ accion: 'mascota', personaje: mb.dataset.masc }).catch(() => {}); }
+  const mb = e.target.closest('[data-masc]'); if(mb && mb.classList.contains('sin-adoptar')){ tono(SON.toque); companero.abrir({ adoptar: mb.dataset.masc }); return; }
+  if(mb){ ajustes.mascota = mb.dataset.masc; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); pintarPlan.saludo = false; try{ sessionStorage.removeItem('carymo.saludo'); }catch{} if(conAcceso()) sala({ accion: 'mascota', personaje: mb.dataset.masc }).catch(() => {}); }
   if(e.target.closest('[data-abrir-companero]')){ companero.abrir(); return; }
 });
 $('#vPerfil').addEventListener('change', (e) => {
@@ -1818,7 +1840,8 @@ sesionEst = iniciarSesionEstudio({ $, esc, ico, hoja, cerrarHoja, brindis, tono,
   planes: () => planes, actual: () => actualId, ocupado: () => !!$('#capa'), alCambiar: () => { if(vista === 'plan') pintar(); },
   cambiarPlan: (id) => { if(!planes[id]) return; actualId = id; guardarLocal(); vista = 'plan'; pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); } });
 companero = iniciarCompanero({ sala, capa, cerrarCapa, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, crearMascota, $, brindis, ponerPerfil,
-  perfil: () => perfil, ajustes: () => ajustes, alCerrar: () => pintar() });
+  perfil: () => perfil, ajustes: () => ajustes, activa: mascotaActiva, vestidoDe, confeti,
+  elegir: (q) => { ajustes.mascota = q; guarda.poner('est.ajustes', ajustes); refrescarVestidos(); }, alCerrar: () => pintar() });
 companero.pintarPastilla();
 yo = iniciarYo({ esc, ico, $, tono, SON, crearMascota, perfil: () => perfil, ajustes: () => ajustes, planes: () => planes,
   cuantosApuntes: () => apuntes?.cuantos?.() || 0, pintarCubos: (el) => { if(el) el.innerHTML = $('#pCubos .pm-cubos')?.innerHTML || $('#pCubos')?.innerHTML || ''; },
