@@ -74,6 +74,20 @@
   .pastilla .i{ width:16px; height:16px }
   .pastilla.racha{ color:#FFB27A } .pastilla.racha.apagada{ color:var(--tenue) }
   .pastilla.xp{ color:var(--claro-txt) }
+  /* ══ la animación de entrada (entrada.js) ══ */
+  #entrada{ position:fixed; inset:0; z-index:200; background:radial-gradient(circle at 50% 38%, #4A1A6E 0, #2A0F45 34%, #170A26 70%); overflow:hidden; touch-action:none }
+  .en-chispas i{ position:absolute; width:30px; height:30px; margin:-15px 0 0 -15px; opacity:0; filter:drop-shadow(0 0 6px #C77DFF);
+    background:conic-gradient(from 45deg, transparent 0 20%, #F1DDFF 20% 30%, transparent 30% 45%, #F1DDFF 45% 55%, transparent 55% 70%, #F1DDFF 70% 80%, transparent 80%); clip-path:polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%) }
+  .en-centro{ position:absolute; left:0; right:0; top:46%; translate:0 -50%; display:flex; flex-direction:column; align-items:center }
+  .en-ico{ width:min(170px, 44vw); height:auto; border-radius:22%; opacity:0; box-shadow:0 22px 50px -16px #000, 0 0 60px -10px #AC27FF }
+  .en-onda{ position:absolute; top:0; width:min(170px, 44vw); aspect-ratio:1; border-radius:50%; border:3px solid #C77DFF; opacity:0 }
+  .en-nombre{ position:relative; display:flex; margin-top:26px; padding:4px 6px }
+  .en-nombre i{ display:block; font:900 clamp(42px, 13vw, 60px)/1 Titulo; font-style:normal; color:#fff; letter-spacing:.06em; opacity:0; text-shadow:0 6px 24px #AC27FF77 }
+  .en-nombre i:nth-child(4){ color:#E7CCFF }
+  .en-brillo{ position:absolute; inset:0 auto 0 0; width:40%; background:linear-gradient(90deg, transparent, #ffffffb0, transparent); mix-blend-mode:overlay; opacity:0; pointer-events:none }
+  .en-lema{ margin:12px 0 0; padding-left:.32em; font:800 13px/1 Titulo; letter-spacing:.32em; text-transform:uppercase; color:#C77DFF; opacity:0 }
+  .en-masc{ margin-top:30px; opacity:0 }
+
   /* ══ palomium y el cuarto del compañero (companero.js, cosas.js) ══ */
   .pastilla.cubos{ border:0; color:#E7CCFF; font:800 14px/1 Titulo; cursor:pointer; gap:5px }
   .pastilla.cubos.aviso{ box-shadow:inset 0 0 0 2px #FF8A9E }
@@ -559,6 +573,13 @@
 </style>
 </head>
 <body>
+<!-- la animación de entrada (entrada.js). Va aquí, antes que todo, para que no se asome la app un instante antes. -->
+<div id="entrada" aria-hidden="true"><div class="en-chispas"></div><div class="en-centro">
+  <span class="en-onda"></span><img class="en-ico" src="marca/icono-512.webp" width="512" height="512" alt="">
+  <div class="en-nombre"><i>C</i><i>A</i><i>R</i><i>Y</i><i>M</i><i>O</i><span class="en-brillo"></span></div>
+  <p class="en-lema">Learn. Explore. Grow.</p><div class="en-masc"></div></div></div>
+<script>/* ya se vio en esta visita, «reducir movimiento», o la maneja un robot de pruebas (salvo ?entrada=1): fuera el telón */
+try{ if(!/[?&]entrada=1/.test(location.search) && (sessionStorage.getItem('carymo.entrada') || navigator.webdriver || matchMedia('(prefers-reduced-motion: reduce)').matches)) document.getElementById('entrada').remove(); }catch(e){ document.getElementById('entrada').remove(); }</script>
 <div class="app" id="app">
   <!-- ══ PLAN (el camino) ══ -->
   <section id="vPlan">
