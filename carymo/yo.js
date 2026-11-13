@@ -48,7 +48,9 @@ export function iniciarYo(h){
       </div>`;
     h.pintarCubos($('#yoCubos'));
     const pj = normalizarPersonaje(p.personaje || personajeDeArranque(p.cuenta || p.nombre || ''), p.ropa || [], p.cuenta || '');
-    h.svgPersonaje(pj).then((s) => { const e = $('#yoPj'); if(e) e.innerHTML = s; }).catch(() => {});
+    /* vivo: parpadea, mira, se duerme si lo dejas y reacciona a lo que pase (personaje-vivo.js) */
+    if(h.personajeVivo) h.personajeVivo($('#yoPj'), { tam: 92, personaje: pj });
+    else h.svgPersonaje(pj).then((s) => { const e = $('#yoPj'); if(e) e.innerHTML = s; }).catch(() => {});
     if(masc){ try{ masc.destruir(); }catch{} masc = null; }
     if(conMasc){ masc = h.crearMascota($('#yoMasc'), { personaje: aj.mascota, tam: 86 }); if(cl) setTimeout(() => masc?.play('triste'), 500); }
   }
