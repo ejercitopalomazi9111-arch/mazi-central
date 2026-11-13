@@ -484,7 +484,9 @@ function pintarPlan(){
     const nodos = $$('.nodos', c)[mascotaPos.u];
     if(nodos){ const d = document.createElement('div'); d.className = 'masc-camino'; d.style.left = mascotaPos.x + '%'; d.style.top = (mascotaPos.y + (mascotaPos.y < 120 ? 56 : 0)) + 'px'; nodos.append(d);
       const m = mascotaEn(d, { tam: 84 });
-      if(m && !pintarPlan.saludo){ pintarPlan.saludo = true; setTimeout(() => m.play('saluda', { decir: a.hechos ? '¡A seguirle!' : '¡Empecemos!' }), 600); } }
+      /* saluda UNA vez por visita (Carlos, 13 nov: al salir y volver, el iPhone recarga la página y volvía a saludar) */
+      let yaSaludo = pintarPlan.saludo; try{ yaSaludo = yaSaludo || sessionStorage.getItem('carymo.saludo') === '1'; }catch{}
+      if(m && !yaSaludo){ pintarPlan.saludo = true; try{ sessionStorage.setItem('carymo.saludo', '1'); }catch{} setTimeout(() => m.play('saluda', { decir: a.hechos ? '¡A seguirle!' : '¡Empecemos!' }), 600); } }
   }
   $('#bRepasoFinal')?.addEventListener('click', () => { const n = todosLosNodos(p).find((x) => x.tipo === 'simulacro'); if(n) abrirNodo(n.id, true); });
   /* el nodo actual a la vista */
@@ -1571,7 +1573,7 @@ $('#vPerfil').addEventListener('click', (e) => {
   if(e.target.closest('[data-anadir-plan]')) anadirCurso();
   const cb = e.target.closest('[data-cuenta-p]'); if(cb){ if(cb.dataset.cuentaP === 'salir') cuentaUI.salir(); else cuentaUI.abrir(cb.dataset.cuentaP); return; }
   if(e.target.closest('[data-probar-voz]')) probarVoz();
-  const mb = e.target.closest('[data-masc]'); if(mb){ ajustes.mascota = mb.dataset.masc; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); pintarPlan.saludo = false; if(conAcceso()) sala({ accion: 'mascota', personaje: mb.dataset.masc }).catch(() => {}); }
+  const mb = e.target.closest('[data-masc]'); if(mb){ ajustes.mascota = mb.dataset.masc; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); pintarPlan.saludo = false; try{ sessionStorage.removeItem('carymo.saludo'); }catch{} if(conAcceso()) sala({ accion: 'mascota', personaje: mb.dataset.masc }).catch(() => {}); }
   if(e.target.closest('[data-abrir-companero]')){ companero.abrir(); return; }
 });
 $('#vPerfil').addEventListener('change', (e) => {

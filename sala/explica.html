@@ -195,6 +195,17 @@
   /* los tres que importan, al centro; «más» a la orilla */
   .botones{ position:relative; justify-content:center } .botones .crece{ display:none } #bMas{ position:absolute; right:0; top:50% ; translate:0 -50% }
   #bPlay{ width:56px; height:56px }
+  /* LA BARRA REDONDA (Carlos, 13 nov: «más circular y sólo tenga contorno a los botones y se expanda si es necesario»):
+     una píldora; los botones son sólo su contorno; con «más» abierto crece hacia arriba y se redondea menos */
+  .mando .dentro{ border-radius:999px; padding:8px 14px 10px; background:#140C1Fe6; transition:border-radius .3s cubic-bezier(.2,.8,.2,1), padding .3s }
+  .mando .dentro:has(.mas:not([hidden])), .mando .dentro:has(.preg:not([hidden])){ border-radius:28px }
+  .mando .barra-pasos{ margin:2px 18px 8px }
+  .mando .botones .bt, .mando .mas .bt{ background:transparent; border:1.5px solid #ffffff38; color:var(--hueso) }
+  .mando .botones .bt:active, .mando .mas .bt:active{ background:#ffffff12 }
+  .mando #bPlay{ border:2px solid var(--violeta2, #C77DFF); color:var(--violeta2, #C77DFF); background:transparent }
+  .mando #bMas.activo{ border-color:var(--violeta2, #C77DFF); color:var(--violeta2, #C77DFF); background:transparent }
+  .mando .mas{ justify-content:center }
+  .mando .bt.redondo{ border-radius:50% } .mando .mas .bt:not(.redondo){ border-radius:999px }
   #bMas .i{ fill:currentColor; stroke:currentColor; stroke-width:2 } #bMas.activo{ background:#AC27FF33 }
   /* dentro de un marco y con la clase corriendo: sin barra de arriba */
   .embebido.en-clase .barra{ display:none }
