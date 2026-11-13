@@ -20,6 +20,7 @@ import { sonar, encender as encenderSonidos } from '../sala/sonidos/sonidos.js';
 import { llave, ponerLlave, llamar, SERVIDOR, SALA } from '../presentaciones/ia.js';
 import { CURSOS, MATERIAL, HECHOS, planDeCurso } from './academia.js';
 import { crearVoz, todas as todasLasVoces, VOZ_DE_FABRICA, despertar } from '../sala/voces.js';
+import { alMuelle, muelleArriba } from './muelle.js';
 import { crearMascota, PERSONAJES, NOMBRE_PERSONAJE, configurarVestido, refrescarVestidos } from './mascota.js';
 import { ESPECIES, ETAPAS, nivelMascota, xpDeNivel, etapaDe } from './crianza-datos.js';
 import { iniciarAmigos } from './amigos.js';
@@ -90,6 +91,7 @@ function vestidoDe(especie){
   return { etapa: etapaDe(especie, n), skin: m.skin || 'normal', acc: m.acc || [], progreso: Math.max(0, Math.min(1, ((m.xp || 0) - a) / Math.max(1, b - a))) };
 }
 configurarVestido(vestidoDe);
+muelleArriba();   /* la franja de arriba donde vive todo lo que aparece (muelle.js) */
 /* SIN VOZ. Carlos, 13 nov: «quítales la voz a las mascotas». Hablan sólo con su globito; la voz se queda
    para el pizarrón, que es donde explica. (Antes cada mascota tenía 3 voces: VOCES_MASCOTA, en la historia de git.) */
 /* que el aviso lo diga la mascota que está a la vista (con su modo); si no hay ninguna, el letrerito de siempre */
@@ -1006,7 +1008,7 @@ function comboVFX(n){
   const capaC = document.createElement('div'); capaC.className = 'combo-vfx n' + nivel; capaC.setAttribute('aria-hidden', 'true');
   const titulo = n >= 10 ? '¡IMPARABLE!' : n >= 8 ? '¡EN LLAMAS!' : n >= 5 ? '¡RACHA!' : '';
   capaC.innerHTML = `<div class="onda" style="border-color:${color}"></div><div class="combo-txt" style="--c:${color}"><small>${titulo}</small>COMBO <b>x${n}</b></div>`;
-  document.body.append(capaC);
+  alMuelle(capaC);   /* en el muelle de arriba: el combo ya no sale encima de la pregunta */
   /* chispas que salen del centro: más mientras más largo el combo */
   if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
     const cuantas = 10 + nivel * 8;
@@ -1877,4 +1879,4 @@ $('#pCubos').addEventListener('click', () => companero.abrir());
     history.back();
   });
 })();
-window.__estudio = { ir: (v) => { vista = v; pintar(); }, yo: () => yo, vestidor: () => vestidor, avisos: () => avisos, companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };
+window.__estudio = { prueba: { brindis, dice, comboVFX, reaccion }, ir: (v) => { vista = v; pintar(); }, yo: () => yo, vestidor: () => vestidor, avisos: () => avisos, companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };

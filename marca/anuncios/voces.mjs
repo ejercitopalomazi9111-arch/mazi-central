@@ -29,6 +29,25 @@ for(const l of g.lineas){
     execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', wav, '-af', (tono ? `rubberband=pitch=${Math.pow(2, tono / 12).toFixed(4)}:formant=preserved,` : '') + 'highpass=f=70,acompressor=threshold=0.12:ratio=2.5:attack=8:release=120,aresample=44100', '-ac', '2', '-b:a', '160k', mp3]);
     fs.rmSync(wav); hechas[l.id] = firma; console.log('✓', l.id, l.voz, '(piper)');
   }
+  /* GOOGLE (Gemini TTS) por La Sala: "google:Puck", "google:Kore"… Suena a persona y no gasta ElevenLabs. Es el puente
+     mientras Chris no tiene saldo (CLAUDE.md: la voz de la casa es Chris). La llave de La Sala va en MAZI_LLAVE, nunca aquí.
+     A la voz va SÓLO lo que se dice: Gemini a veces lee en voz alta las instrucciones de estilo (CLAUDE.md). */
+  else if((hechas[l.id] !== firma || !fs.existsSync(mp3)) && voz.startsWith('google:')){
+    const SALA = process.env.SALA_URL || 'https://sala.palomazi9111.workers.dev';
+    if(!process.env.MAZI_LLAVE){ console.error('falta MAZI_LLAVE para', l.id); process.exit(1); }
+    let j = null;
+    /* Google frena si se le pide seguido (429): se espera y se reintenta */
+    for(let intento = 0; intento < 6 && !(j && j.bien); intento++){
+      if(intento) await new Promise((ok) => setTimeout(ok, 20000 * intento));
+      const r = await fetch(`${SALA}/api/sala/GRUPAZ/ia-voz`, { method: 'POST', headers: { 'X-Llave': process.env.MAZI_LLAVE, 'content-type': 'application/json' }, body: JSON.stringify({ texto, voz }) });
+      j = await r.json().catch(() => null);
+    }
+    if(!j || !j.bien){ console.error('✗', l.id, (j && j.error) || 'la voz no contestó'); fs.writeFileSync(path.join(vd, 'hechas.json'), JSON.stringify(hechas, null, 1)); process.exit(1); }
+    const wav = mp3.replace(/\.mp3$/, '.wav'); fs.writeFileSync(wav, Buffer.from(j.data, 'base64'));
+    const lento = l.lento ?? g.lento?.[l.voz];
+    execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', wav, '-af', (lento ? `atempo=${(1 / lento).toFixed(3)},` : '') + 'silenceremove=start_periods=1:start_threshold=-45dB,areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,highpass=f=70,acompressor=threshold=0.12:ratio=2.5:attack=8:release=120,aresample=44100', '-ac', '2', '-b:a', '160k', mp3]);
+    fs.rmSync(wav); hechas[l.id] = firma; console.log('✓', l.id, l.voz, '(google)');
+  }
   else if(hechas[l.id] !== firma || !fs.existsSync(mp3)){
     if(!LLAVE){ console.error('falta ELEVENLABS_API_KEY para', l.id); process.exit(1); }
     const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voz}?output_format=mp3_44100_128`, {

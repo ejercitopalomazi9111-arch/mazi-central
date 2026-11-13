@@ -15,6 +15,7 @@
  *     cronómetro y el marcador de los dos, y el final de la sesión;
  *   · después de la fecha de un examen, «¿cómo te fue?» → historial + aviso a amigos.
  * ===========================================================================*/
+import { alMuelle } from './muelle.js';
 
 /* LOS MODOS DE «ESTUDIAR JUNTOS» (Carlos, 13 nov: «invéntate más maneras… de lo de los cooperativos»).
    Las reglas viven en el servidor (sala/servidor/estudio.js · MODOS_JUNTOS); aquí, cómo se ven. */
@@ -78,20 +79,14 @@ export function iniciarAmigos(h){
     if(!x || (x.estado !== 'activa' && x.estado !== 'terminada' && x.estado !== 'invitada')){ b?.remove(); clearInterval(tic); return; }
     if(x.estado === 'terminada'){ b?.remove(); clearInterval(tic); finSesion(x); return; }
     const yo = h.cuenta(), el = x.de === yo ? x.a : x.de;
-    if(!b){ b = document.createElement('div'); b.id = 'barraSesion'; b.className = 'barra-sesion mini entra'; document.body.append(b);
-      /* Carlos, 14 nov: «el cronómetro de en equipo estorba». Ahora es una PASTILLA chica (tiempo y marcador); al tocarla se
-         abre unos segundos con todo, y se puede arrastrar a donde no estorbe (se queda ahí la siguiente vez). */
+    if(!b){ b = document.createElement('div'); b.id = 'barraSesion'; b.className = 'barra-sesion mini entra'; alMuelle(b);
+      /* Carlos, 14 nov: «el cronómetro de en equipo estorba» y luego «ningún elemento emergente puede cubrir otro». Es una
+         PASTILLA chica en el muelle de arriba (muelle.js): la página se recorre para hacerle lugar y no tapa nada. Al tocarla
+         se abre unos segundos con todo. */
       b.innerHTML = `<span class="crono">${ico('timer')}<b class="t"></b></span><span class="mini-mar"></span><span class="marcador"></span><button class="bt redondo fantasma" data-salir-ses aria-label="Salir de la sesión">${ico('x')}</button>`;
       b.setAttribute('role', 'button'); b.setAttribute('aria-label', 'Tu sesión de estudio juntos: toca para ver más');
-      try{ const pos = JSON.parse(localStorage.getItem('carymo.barraPos') || 'null'); if(pos){ b.style.left = Math.round(pos.x * innerWidth) + 'px'; b.style.top = Math.round(pos.y * innerHeight) + 'px'; b.style.right = 'auto'; b.classList.add('movida'); } }catch{}
-      let arrastre = null, cerrar = 0;
-      b.addEventListener('pointerdown', (e) => { if(e.target.closest('[data-salir-ses]') || !b.classList.contains('mini')) return; const r = b.getBoundingClientRect(); arrastre = { x: e.clientX, y: e.clientY, dx: e.clientX - r.left, dy: e.clientY - r.top, movio: false }; });
-      addEventListener('pointermove', (e) => { if(!arrastre) return; if(!arrastre.movio && Math.hypot(e.clientX - arrastre.x, e.clientY - arrastre.y) < 8) return; arrastre.movio = true;
-        const r = b.getBoundingClientRect(), x = Math.min(innerWidth - r.width - 6, Math.max(6, e.clientX - arrastre.dx)), y = Math.min(innerHeight - r.height - 6, Math.max(6, e.clientY - arrastre.dy));
-        b.style.left = x + 'px'; b.style.top = y + 'px'; b.style.right = 'auto'; b.classList.add('movida'); });
-      addEventListener('pointerup', () => { if(!arrastre) return; const movio = arrastre.movio; arrastre = null;
-        if(movio){ b.dataset.arrastro = '1'; setTimeout(() => delete b.dataset.arrastro, 50); try{ const r = b.getBoundingClientRect(); localStorage.setItem('carymo.barraPos', JSON.stringify({ x: r.left / innerWidth, y: r.top / innerHeight })); }catch{} } });
-      b.addEventListener('click', (e) => { if(e.target.closest('[data-salir-ses]') || b.dataset.arrastro) return; b.classList.toggle('mini'); clearTimeout(cerrar); if(!b.classList.contains('mini')) cerrar = setTimeout(() => b.classList.add('mini'), 6000); });
+      let cerrar = 0;
+      b.addEventListener('click', (e) => { if(e.target.closest('[data-salir-ses]')) return; b.classList.toggle('mini'); clearTimeout(cerrar); if(!b.classList.contains('mini')) cerrar = setTimeout(() => b.classList.add('mini'), 6000); });
       b.addEventListener('click', async (e) => { if(!e.target.closest('[data-salir-ses]')) return; if(!b.dataset.seguro){ b.dataset.seguro = '1'; e.target.closest('[data-salir-ses]').textContent = '¿Salir?'; setTimeout(() => { delete b.dataset.seguro; const bs = b.querySelector('[data-salir-ses]'); if(bs) bs.innerHTML = ico('x'); }, 2500); return; }
         try{ const r = await sala({ accion: 'salirSesion', sesion: x.id }); estado.sesion = r.sesion; finSesion(r.sesion); b.remove(); }catch{} }); }
     const pinta = () => {

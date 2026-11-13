@@ -9,6 +9,7 @@
  *     el curso que sigue. Si el bloque se acaba a media lección, no te saca: te avisa y cambia al salir.
  *     Vive en el teléfono (localStorage) con horas de verdad, así que sobrevive a cerrar la app.
  * ===========================================================================*/
+import { alMuelle } from './muelle.js';
 const CLAVE = 'carymo.sesionEstudio';
 
 export function iniciarSesionEstudio(h){
@@ -67,7 +68,7 @@ export function iniciarSesionEstudio(h){
   function pintarPastilla(){
     let b = document.getElementById('pomodoro');
     if(!s){ b?.remove(); document.body.classList.remove('con-pomodoro'); return; }
-    if(!b){ b = document.createElement('button'); b.id = 'pomodoro'; b.className = 'pomodoro'; b.addEventListener('click', controles); document.body.append(b); }
+    if(!b){ b = document.createElement('button'); b.id = 'pomodoro'; b.className = 'pomodoro'; b.addEventListener('click', controles); alMuelle(b, { primero: true }); }
     document.body.classList.add('con-pomodoro');
     const desc = s.fase === 'descanso';
     b.classList.toggle('descanso', desc); b.classList.toggle('pausado', s.pausadoQueda != null);
