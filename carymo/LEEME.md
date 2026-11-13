@@ -32,12 +32,25 @@ La Sala también abre esta app.
 5. Grado de 6 a 10, XP, racha con racha congelada, **ranking de la semana** entre cuentas, horario
    pegado de Excel y perfil con sonidos y vibración.
 
+6. **Academia Grupo Mazi** (botón en «Tus planes» y en la pantalla vacía). Tres cursos para
+   vendedores —*Conoce Grupo Mazi*, *Lo que vendemos y cuánto cuesta* y *Cómo vender con Grupo
+   Mazi*— con lecciones y 55 preguntas ya escritas (no gastan IA), cátedras en el pizarrón que sólo
+   usan la hoja oficial (`HECHOS`), y la Guía del vendedor y la presentación para descargar. La
+   Chuleta de Carlos NO va: es para él. **El porcentaje de comisión no está escrito**: el curso
+   dice que lo confirma Carlos.
+7. **Si una IA se cae, contesta otra** (de otra compañía): Negro ↔ Paulina, luego la nube de
+   Cloudflare (sin llave) y, si Carlos pega sus llaves en `/llaves-ia`, OpenRouter, Cerebras y
+   Mistral. Ver `sala/servidor/respaldos.js`.
+8. **Sonidos con variación**: cada vez suenan un poco distinto, los aciertos seguidos suben de
+   nota y todo pasa por una sala suave (`sala/sonidos/sonidos.js`).
+
 ## Cómo está armado
 
 | Archivo | Qué es |
 |---|---|
 | `carymo/index.html` | La página y TODO su diseño (CSS): colores vino, morado oscuro y morado claro |
 | `carymo/carymo.js` | Toda la lógica: plan, camino, lección, los 8 ejercicios (`EJ`), combo (`comboVFX`), tarjetas, ranking, horario, perfil |
+| `carymo/academia.js` | La Academia: hoja oficial (`HECHOS`), material (`MATERIAL`) y los 3 cursos (`CURSOS`). Cambia un precio aquí y cambia en los cursos y en las cátedras |
 | `carymo/iconos.js` | Los íconos de los botones (Lucide) |
 | `sala/servidor/estudio.js` | **Servidor** (dentro de La Sala): planes, XP, racha y ranking. Ruta `/api/sala/GRUPAZ/estudio` |
 | `sala/explica.html` + `explica.js` | El pizarrón (Explica): lo usan CARYMO y La Sala |

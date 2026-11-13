@@ -66,7 +66,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
   const { chromium } = await import(PW);
   const s = almacen();
   const TIPOS = { '.html': 'text/html', '.js': 'text/javascript', '.woff2': 'font/woff2', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.mp3': 'audio/mpeg' };
-  let iaLenta = 0;
+  let iaLenta = 0, iaVeces = 0;
   const servidor = http.createServer(async (q, res) => {
     const u = new URL(q.url, 'http://x');
     res.setHeader('Access-Control-Allow-Origin', '*'); res.setHeader('Access-Control-Allow-Headers', '*');
@@ -77,6 +77,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
       res.writeHead(r.status, { 'content-type': 'application/json' }); res.end(Buffer.from(await r.arrayBuffer())); return;
     }
     if(u.pathname.endsWith('/ia-texto')){
+      iaVeces++;
       if(iaLenta) await new Promise((r) => setTimeout(r, iaLenta));
       res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(contestarIA(JSON.parse(cuerpo)))); return;
     }
@@ -226,11 +227,12 @@ export async function correr({ ok, almacen, atenderEstudio }){
       ok(await pagina.isEnabled('[data-verificar]'), `«${tipo}»: Verificar se prende al contestar`);
       await pagina.click('[data-verificar]');
       await pagina.waitForSelector('.hoja-res');
+      const estaLaFalle = !falle;
       if(!falle){
         falle = true;
         ok(await pagina.isVisible('.hoja-res.mal') && await pagina.isVisible('text=Te la vuelvo a preguntar al final'), 'una mala: hoja roja con la respuesta y «te la vuelvo a preguntar»');
       } else ok(await pagina.isVisible('.hoja-res.bien'), `«${tipo}» contestado bien cuenta como bien`);
-      if(tipo === 'escribir' && falle) ok(/Casi perfecto/.test(await pagina.textContent('.hoja-res')), 'escribir con errores de dedo («corason») cuenta como bien y te dice cómo se escribe');
+      if(tipo === 'escribir' && !estaLaFalle) ok(/Casi perfecto/.test(await pagina.textContent('.hoja-res')), 'escribir con errores de dedo («corason») cuenta como bien y te dice cómo se escribe');
       await espera(140);
       const combo = await pagina.$$eval('.combo-vfx .combo-txt b', (x) => x.map((b) => +b.textContent.replace('x', '')));
       if(combo.length){ maxComboVisto = Math.max(maxComboVisto, ...combo); if(combo[0] === 2 && process.env.FOTOS) await foto('08-combo'); }
@@ -361,6 +363,48 @@ export async function correr({ ok, almacen, atenderEstudio }){
     ok(t3.length === 6 && t3[0] === 'Panorama de la unidad*' && t3[1] === 'Cátedra en el pizarrón*' && /^Nivel.*\*$/.test(t3[2]) && t3[3] === 'Cátedra en el pizarrón', `un plan viejo gana sus cátedras, y lo que ya pasaste sigue pasado (${t3.join(' · ')})`);
     ok(await p3.textContent('.siguiente small') === 'Cátedra en el pizarrón', 'y sigue justo donde se había quedado: la cátedra del tema 2');
     await ctx3.close();
+
+    /* ── la Academia Grupo Mazi (13 nov): cursos ya escritos, sin gastar IA ── */
+    const { CURSOS } = await import('../carymo/academia.js');
+    await pagina.click('[data-ir="plan"]'); await espera(200);
+    await pagina.click('#bPlanes'); await pagina.click('[data-plan="academia"]');
+    await pagina.waitForSelector('.acad-curso');
+    ok((await pagina.$$('.acad-curso')).length === CURSOS.length, `la Academia enseña sus ${CURSOS.length} cursos`);
+    ok(await pagina.$$eval('.acad-doc', (a) => a.length === 2 && a.every((x) => /empresa\/ventas\/.+\.pdf$/.test(x.getAttribute('href'))) && !a.some((x) => /Chuleta/.test(x.getAttribute('href')))), 'trae la Guía y la presentación para descargar, y NO la chuleta');
+    ok(await desborde() <= 0, 'la Academia no se sale de lado');
+    await espera(700); await foto('40-academia');
+    /* cada lección y cada pregunta pasan el mismo revisor que lo que escribe la IA: ninguna se tira */
+    const tirados = await pagina.evaluate(async () => {
+      const m = await import('/carymo/carymo.js'), a = await import('/carymo/academia.js'), malos = [];
+      for(const k of a.CURSOS) for(const u of k.unidades) for(const t of u.temas){
+        const r = m.normalizarLeccion({ leccion: t.leccion, preguntas: t.preguntas });
+        if(r.preguntas.length !== t.preguntas.length) malos.push(`${t.titulo}: ${t.preguntas.length - r.preguntas.length} pregunta(s)`);
+        if(r.leccion.ideas.some((x) => !x.icono)) malos.push(`${t.titulo}: un dibujo que no existe`);
+      }
+      return malos;
+    });
+    ok(!tirados.length, 'todas las lecciones y preguntas de la Academia pasan el revisor' + (tirados.length ? ': ' + tirados.join(' · ') : ''));
+    const totalPregs = CURSOS.reduce((x, k) => x + k.unidades.reduce((y, u) => y + u.temas.reduce((z, t) => z + t.preguntas.length, 0), 0), 0);
+    ok(totalPregs >= 50, `la Academia trae ${totalPregs} preguntas`);
+    const iaAntes = iaVeces;
+    await pagina.click('[data-curso="acad-quienes"]'); await pagina.waitForSelector('.camino');
+    ok((await pagina.textContent('#planNombre')).trim() === 'Conoce Grupo Mazi', 'el curso abre como un plan más, con su camino');
+    const srcA = await catedra();
+    ok(/curso interno de Grupo Mazi/.test(srcA) && srcA.includes('442 883 3786') && /nivel=uni/.test(srcA), 'su cátedra en el pizarrón lleva la hoja oficial de Grupo Mazi');
+    await catedra();
+    const d0 = CURSOS[0].unidades[0].temas[0];
+    await pagina.click('.siguiente [data-nodo]');
+    await pagina.waitForSelector('.historia', { timeout: 5000 });
+    ok(iaVeces === iaAntes, 'la lección del curso abre al instante, sin pedirle nada a la IA');
+    for(let k = 0; k < 8 && await pagina.isVisible('[data-sig]'); k++) await pagina.click('[data-sig]');
+    await pagina.click('[data-empezar]');
+    for(let k = 0; k < 14 && !(await pagina.isVisible('.resultado')); k++){ await contestar(d0, true); await pagina.click('[data-verificar]'); await pagina.click('[data-continuar]'); await espera(120); }
+    ok(await pagina.isVisible('.resultado'), 'se juega el nivel completo de «Qué es Grupo Mazi»');
+    await foto('41-academia-nivel');
+    await pagina.click('[data-continuar]'); await pagina.waitForSelector('.camino');
+    await pagina.click('#bPlanes');
+    ok(await pagina.$$eval('[data-plan]', (b) => b.some((x) => x.textContent.includes('Conoce Grupo Mazi') && x.textContent.includes('Curso de Grupo Mazi'))), 'el curso queda en «Tus planes», sin fecha de examen rara');
+    await pagina.keyboard.press('Escape');
 
     /* 320 de ancho */
     await pagina.setViewportSize({ width: 320, height: 640 });

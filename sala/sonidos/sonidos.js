@@ -15,10 +15,26 @@ let ctx = null, encendido = true, maestro = null;
 const buffers = new Map(), pidiendo = new Map();
 const ultimo = new Map();
 
+/* ── LA CADENA DE SALIDA (13 nov, Carlos: «variación en los sonidos, un mejor feeling, más smooth») ──
+   Todo pasa por: un pasabajos suave (quita lo chillón), un compresor (dos sonidos juntos no
+   truenan) y un poquito de cuarto (eco cortito hecho aquí mismo, al 14 %), que es lo que hace
+   que suene «redondo» y no a clic de computadora. */
+let seco = null;
+function cuarto(c){
+  const seg = 0.9, n = Math.floor(c.sampleRate * seg), ir = c.createBuffer(2, n, c.sampleRate);
+  for(let k = 0; k < 2; k++){ const d = ir.getChannelData(k); for(let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3.2) * .5; }
+  const v = c.createConvolver(); v.buffer = ir; return v;
+}
 function contexto(){
   if(!ctx){
     const C = window.AudioContext || window.webkitAudioContext; if(!C) return null;
-    ctx = new C(); maestro = ctx.createGain(); maestro.gain.value = .9; maestro.connect(ctx.destination);
+    ctx = new C();
+    maestro = ctx.createGain(); maestro.gain.value = .9;
+    const suave = ctx.createBiquadFilter(); suave.type = 'lowpass'; suave.frequency.value = 9500; suave.Q.value = .5;
+    const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -16; comp.knee.value = 18; comp.ratio.value = 3.5; comp.attack.value = .004; comp.release.value = .2;
+    seco = ctx.createGain(); seco.gain.value = 1;
+    const eco = cuarto(ctx), mojado = ctx.createGain(); mojado.gain.value = .14;
+    maestro.connect(suave); suave.connect(seco).connect(comp); suave.connect(eco).connect(mojado).connect(comp); comp.connect(ctx.destination);
   }
   if(ctx.state === 'suspended') ctx.resume().catch(() => {});
   return ctx;
@@ -36,18 +52,46 @@ function cargar(nombre){
 export function precargar(nombres = TODOS){ return Promise.all(nombres.map(cargar)); }
 export function encender(v){ encendido = !!v; }
 export const estaEncendido = () => encendido;
-/* sonar: vol de 0 a 1; tono 1 = normal (combo más alto mientras más largo); cada = ms mínimos entre dos iguales */
-export function sonar(nombre, { vol = .7, tono = 1, cada = 40 } = {}){
+/* ── LA VARIACIÓN ──
+   Un sonido idéntico veinte veces seguidas cansa: el oído lo nota como «máquina». Cada vez:
+   · el tono se mueve un poquito (±2.5 %) y el volumen otro poquito (±12 %), y se abre un pelo a
+     la izquierda o a la derecha;
+   · los que llevan escalera (bien, combo, moneda, pop) SUBEN por una escala pentatónica cuando
+     caen seguidos (do re mi sol la…), y vuelven a empezar tras un rato de calma: cada acierto
+     seguido suena más arriba, como un juego;
+   · entra con un fundido de 4 ms y sale con otro: sin «clic» al arrancar ni al cortar. */
+const ESCALA = [0, 2, 4, 7, 9, 12];
+/* cuánto dura la escalera de cada uno: un acierto tarda en llegar, un «pop» no (combo ya sube solo) */
+const ESCALERA = new Map([['bien', 15000], ['moneda', 2500], ['pop', 2500], ['toque', 900]]);
+const racha = new Map();
+const azar = (r) => 1 + (Math.random() * 2 - 1) * r;
+/* sonar: vol de 0 a 1; tono 1 = normal; cada = ms mínimos entre dos iguales; fijo = sin variación */
+export function sonar(nombre, { vol = .7, tono = 1, cada = 40, fijo = false } = {}){
   if(!encendido) return;
   const c = contexto(); if(!c) return;
   const ahora = performance.now();
-  if(ahora - (ultimo.get(nombre) || 0) < cada) return;
+  const antes = ultimo.get(nombre) || 0;
+  if(ahora - antes < cada) return;
   ultimo.set(nombre, ahora);
+  if(nombre === 'mal') racha.set('bien', -1);   /* fallar regresa la escalera de aciertos al inicio */
   const b = buffers.get(nombre);
   if(!b){ cargar(nombre); return; }
-  const s = c.createBufferSource(), g = c.createGain();
-  s.buffer = b; s.playbackRate.value = tono; g.gain.value = vol;
-  s.connect(g).connect(maestro); s.start();
+  let paso = 0;
+  if(ESCALERA.has(nombre) && !fijo){
+    paso = ahora - antes < ESCALERA.get(nombre) ? Math.min((racha.get(nombre) ?? -1) + 1, nombre === 'toque' ? 2 : ESCALA.length - 1) : 0;
+    racha.set(nombre, paso);
+  }
+  const t0 = c.currentTime, s = c.createBufferSource(), g = c.createGain();
+  const p = c.createStereoPanner ? c.createStereoPanner() : null;
+  s.buffer = b;
+  s.playbackRate.value = tono * Math.pow(2, ESCALA[paso] / 12) * (fijo ? 1 : azar(.025));
+  const v = Math.max(0, Math.min(1, vol * (fijo ? 1 : azar(.12))));
+  const dura = b.duration / s.playbackRate.value;
+  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(v, t0 + .004);
+  g.gain.setValueAtTime(v, t0 + Math.max(.005, dura - .03)); g.gain.linearRampToValueAtTime(0, t0 + dura);
+  if(p){ p.pan.value = fijo ? 0 : (Math.random() * 2 - 1) * .18; s.connect(g).connect(p).connect(maestro); }
+  else s.connect(g).connect(maestro);
+  s.start(t0);
 }
 /* el primer toque despierta el audio y trae todos los sonidos */
 function despertar(){ contexto(); precargar(); }

@@ -1131,7 +1131,9 @@ console.log('\n· Las sillas');
     ok('Paulina recibe la foto junto con la pregunta', c5 === 200 && enviado?.contents?.at(-1)?.parts?.[0]?.inlineData?.mimeType === 'image/jpeg', JSON.stringify(enviado).slice(0, 200));
     ok('y se le pide JSON cuando se quiere JSON', enviado?.generationConfig?.responseMimeType === 'application/json');
     const [c6, r6] = await leer(await pedir(s, 'POST', 'ia-texto', { motor: 'negro', texto: 'describe', imagenes: [foto] }, 'MAESTRA'));
-    ok('Negro no ve imágenes y lo dice (no las ignora callado)', c6 === 502 && /no ve imágenes/.test(r6.error), JSON.stringify(r6));
+    ok('una foto pedida a Negro la contesta Paulina, de respaldo (13 nov)', c6 === 200 && r6.respaldo && r6.motor === 'gemini', JSON.stringify(r6));
+    const [c6b, r6b] = await leer(await pedir(s, 'POST', 'ia-texto', { motor: 'negro', texto: 'describe', imagenes: [foto], sinRespaldo: true }, 'MAESTRA'));
+    ok('y sin respaldo, Negro dice que no ve imágenes (no las ignora callado)', c6b === 502 && /no ve imágenes/.test(r6b.error), JSON.stringify(r6b));
     /* las notas de voz de Secre: Paulina las oye para escribirlas */
     const nota = { mime: 'audio/ogg', data: 'T2dnUw' + 'A'.repeat(200) };
     const [c7] = await leer(await pedir(s, 'POST', 'ia-texto', { motor: 'gemini', texto: 'escribe lo que dice', imagenes: [nota] }, 'MAESTRA'));

@@ -573,6 +573,8 @@ dependemos.
    | si a la IA se le pide `json: true` y «SÓLO JSON válido», el `JSON.parse` de lo que manda siempre jala | Negro (Groq) a veces deja una coma de más antes de cerrar, un comentario, o se corta en el tope; y a veces contesta «Claro que sí…» sin JSON | a Carlos le tronó la PRIMERA lección de CARYMO: «Expected double-quoted property name in JSON at position 742». Todo JSON de IA pasa por `sala/json-ia.js` (repara comas, comentarios, comillas, llaves sin comillas y respuestas cortadas) y, si ni así, se pide una segunda vez; `sala/pruebas-estudio-pantalla.mjs` manda los dos casos |
    | Freesound y Kenney (CC0) se bajan como cualquier archivo | desde este contenedor los dos contestan **403** a la descarga, y Wikimedia Commons **429** a la segunda; Openverse sí contesta (sin cuenta) pero sus archivos viven en esos sitios | los sonidos de las apps se generan en `sala/sonidos/hacer.py` (receta apuntada, son nuestros), como permite el flujo de sonido que pasó Carlos |
 
+   | un tope de tiempo para toda la lista de modelos protege a los respaldos | el primero que se cuelga se come el tope entero: Gemini se quedaba 90 s pensando y ya no quedaba tiempo para el siguiente modelo ni para otra compañía | CARYMO decía «la IA no contestó» con la llave buena. Ahora cada modelo trae su propio tope, el colgado queda castigado 10 min (`ENFERMOS` en `sala/servidor/modelos.js`) y se baja a otras compañías (`sala/servidor/respaldos.js`) |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---

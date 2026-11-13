@@ -19,6 +19,7 @@ import { sacarJSON } from '../sala/json-ia.js';
 import { buscarImagen } from '../sala/lienzo.js';
 import { sonar, encender as encenderSonidos } from '../sala/sonidos/sonidos.js';
 import { llave, ponerLlave, llamar, SERVIDOR, SALA } from '../presentaciones/ia.js';
+import { CURSOS, MATERIAL, HECHOS, planDeCurso } from './academia.js';
 
 const $ = (s, d = document) => d.querySelector(s);
 const $$ = (s, d = document) => [...d.querySelectorAll(s)];
@@ -383,8 +384,10 @@ function pintarPlan(){
     c.innerHTML = `<div class="vacio entra"><div class="marca-carymo"><b>CARYMO</b><span>Learn. Explore. Grow.</span></div><p class="lema">Todo lo que puedes aprender, en un solo lugar.</p>
       <h1>¿Tienes un examen pronto?<em>Aquí estamos para ayudarte</em></h1>
       <p>Dinos la materia, la fecha y qué temas vienen, o súbele foto a tus apuntes. Te armamos el camino hasta el día del examen.</p>
-      <button class="bt fuerte ancho" id="bCrear">${ico('plus')} Crear mi plan</button></div>`;
+      <button class="bt fuerte ancho" id="bCrear">${ico('plus')} Crear mi plan</button>
+      <button class="bt ancho academia-bt" id="bAcademia" style="margin-top:12px">${ico('graduation-cap')} Academia Grupo Mazi</button></div>`;
     $('#bCrear').addEventListener('click', alta);
+    $('#bAcademia').addEventListener('click', abrirAcademia);
     return;
   }
   const a = avanceDe(p), sig = a.siguiente;
@@ -507,7 +510,7 @@ function listaMaterias(){
   return m.filter((x) => !x.oficial && x.id !== 'general' && x.id !== 'efisica');
 }
 const masDias = (n) => { const d = new Date(Date.now() + n * 864e5); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
-const cuandoTexto = (f) => { const d = diasHasta(f); return d === 0 ? 'Hoy' : d === 1 ? 'Mañana' : d < 0 ? 'Ya pasó' : `En ${d} días`; };
+const cuandoTexto = (f) => { if(!f) return 'Curso de Grupo Mazi'; const d = diasHasta(f); return d === 0 ? 'Hoy' : d === 1 ? 'Mañana' : d < 0 ? 'Ya pasó' : `En ${d} días`; };
 async function achicar(f){
   const img = await createImageBitmap(f).catch(() => null); if(!img) return null;
   const k = Math.min(1, 1600 / Math.max(img.width, img.height)), cv = document.createElement('canvas'); cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
@@ -786,7 +789,10 @@ const EJ = {
         <div class="grupos">${q.grupos.map((g, gi) => `<button class="grupo" data-grupo="${gi}"><b>${esc(g.nombre)}</b><span class="dentro-g" data-dentro="${gi}"></span></button>`).join('')}</div>
         <div class="fichas sueltas">${q._items.map((x, j) => `<div class="ficha-lugar" data-lugar-c="${j}"><button class="ficha" data-cla="${j}">${esc(x.t)}</button></div>`).join('')}</div>`; },
     tocar(e, q, c){
-      const f = e.target.closest('[data-cla]');
+      let f = e.target.closest('[data-cla]');
+      /* con una ficha elegida, tocar un grupo ENCIMA de otra ficha que ya está ahí es querer meterla a ese grupo
+         (antes sacaba la de abajo: en el teléfono, el dedo casi siempre cae sobre una ficha ya puesta) */
+      if(f && q._sel != null && q._sel !== +f.dataset.cla && q._en[+f.dataset.cla] != null) f = null;
       if(f && !f.disabled){ const j = +f.dataset.cla;
         if(q._en[j] != null){ const desde = f.getBoundingClientRect(); delete q._en[j]; $(`[data-lugar-c="${j}"]`, c).append(f); volar(f, desde); q._sel = null; tono(SON.pop); }
         else { q._sel = j; $$('[data-cla]', c).forEach((x) => x.classList.toggle('sel', x === f)); tono(SON.toque); }
@@ -1018,7 +1024,13 @@ function abrirPizarra(p, n){
   if(unidad){ q.set('tema', `Panorama general de «${unidad.titulo}» (${p.materia}): de qué trata y cómo se conectan ${unidad.temas.map((t) => t.titulo).join(', ')}. Explica la idea general; cada tema se verá a fondo después.`); q.set('largo', 'normal'); }
   else { q.set('tema', `${n.titulo} (${p.materia})`); q.set('largo', 'corta'); }
   /* para que la clase sea SUYA: qué examen prepara, cuándo, qué ya vio y qué le costó (Explica lo mete en lo que le pide a la IA) */
-  if(p.unidades){
+  if(p.academia){
+    /* Academia: la IA explica SÓLO con la hoja oficial de Grupo Mazi (academia.js), para que no invente precios ni clientes */
+    q.set('nivel', 'uni');
+    if(!unidad) q.set('tema', `${n.titulo} (curso de Grupo Mazi para vendedores)`);
+    q.set('contexto', `Es un curso interno de Grupo Mazi para sus vendedores. Usa SÓLO estos datos oficiales; si algo no está aquí, no lo inventes: ${HECHOS}`);
+  }
+  else if(p.unidades){
     const t = n.tema && temaDe(p, n.tema), ns = todosLosNodos(p);
     const vistos = ns.filter((x) => x.tipo === 'quiz' && hecho(p, x)).map((x) => x.titulo).slice(-8);
     const costo = ns.filter((x) => x.tipo === 'quiz' && p.progreso[x.id] && p.progreso[x.id].mejor < 70).map((x) => x.titulo).slice(0, 5);
@@ -1032,6 +1044,37 @@ function abrirPizarra(p, n){
   c.addEventListener('click', (e) => {
     if(e.target.closest('[data-cerrar]')){ removeEventListener('message', alTerminar); cerrarCapa(); pintar(); return; }
     if(e.target.closest('[data-vista]')){ removeEventListener('message', alTerminar); completarNodo(planes[p.id], n, { xp: unidad ? 15 : 12 }); }
+  });
+}
+
+/* ══ 10-bis · ACADEMIA GRUPO MAZI (academia.js) ══════════════════════════════
+   Carlos, 13 nov: «que en caso de que tengamos vendedores les podamos decir: si quieres estudiar
+   cómo trabajar con Grupo Mazi, ahí mismo lo puedes hacer». Tres cursos ya escritos (sin gastar IA)
+   que se juegan con el mismo camino, lecciones, ejercicios, combo, tarjetas y examen. */
+function abrirAcademia(){
+  const c = capa('academia');
+  const pinta = () => {
+    c.innerHTML = `<div class="arriba"><button class="bt redondo fantasma" data-cerrar aria-label="Cerrar">${ico('x')}</button><div style="flex:1"></div></div>
+      <div class="cuerpo entra"><div class="acad-cab"><div class="marca-carymo"><b>ACADEMIA</b><span>Grupo Mazi</span></div>
+        <h1>Aprende a trabajar con Grupo Mazi</h1><p>De dónde venimos, qué vendemos y cómo se cierra una venta. Cada curso trae lecciones, ejercicios, cátedras en el pizarrón y un examen.</p></div>
+        <div class="acad-cursos">${CURSOS.map((k, i) => { const p = planes['p-' + k.id], a = p ? avanceDe(p) : null, nTemas = k.unidades.reduce((x, u) => x + u.temas.length, 0);
+          return `<button class="acad-curso entra" style="--c:${k.color};animation-delay:${i * 70}ms" data-curso="${k.id}">
+            <span class="acad-ico">${ico(k.icono)}</span><span class="acad-txt"><small>Curso ${i + 1} · ${k.unidades.length} unidades · ${nTemas} lecciones</small><b>${esc(k.titulo)}</b><em>${esc(k.frase)}</em>
+            <span class="acad-barra"><i style="width:${a ? Math.max(4, a.pct) : 0}%"></i></span></span>
+            <span class="acad-ir">${a ? (a.pct >= 100 ? ico('circle-check') : a.pct + ' %') : 'Empezar'}</span></button>`; }).join('')}</div>
+        <div class="seccion-t">Material para llevar</div>
+        <div class="acad-material">${MATERIAL.map((m) => `<a class="acad-doc" href="${esc(m.href)}" target="_blank" rel="noopener">${ico(m.icono)}<span><b>${esc(m.titulo)}</b><small>${esc(m.detalle)}</small></span>${ico('chevron-right')}</a>`).join('')}</div>
+        <p class="acad-pie">¿Dudas? WhatsApp de la empresa: 442 883 3786</p></div>`;
+  };
+  pinta();
+  c.addEventListener('click', (e) => {
+    if(e.target.closest('[data-cerrar]')){ cerrarCapa(); pintar(); return; }
+    const b = e.target.closest('[data-curso]'); if(!b) return;
+    const k = CURSOS.find((x) => x.id === b.dataset.curso); if(!k) return;
+    tono(SON.toque);
+    const id = 'p-' + k.id;
+    if(!planes[id]){ const p = planDeCurso(k, armarCamino); p.color = k.color; guardarPlan(p); brindis(`Empezaste «${k.titulo}»`, 'vino', 'graduation-cap'); }
+    actualId = id; guardarLocal(); cerrarCapa(); vista = 'plan'; pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 });
   });
 }
 
@@ -1092,8 +1135,9 @@ $('#bMenuPlan').addEventListener('click', () => {
 $('#bPlanes').addEventListener('click', () => {
   const lista = Object.values(planes).sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
   const h = hoja('Tus planes', `<div class="menu">${lista.map((p) => `<button data-plan="${esc(p.id)}">${ico('notebook-pen')}<span>${esc(p.titulo)}<br><small style="color:var(--suave);font-weight:600">${esc(cuandoTexto(p.fecha))} · ${avanceDe(p).pct} %</small></span>${p.id === actualId ? `<span class="sel">${ico('circle-check')}</span>` : ''}</button>`).join('')}</div>
-    <button class="bt blanco ancho" style="margin-top:12px" data-plan="nuevo">${ico('plus')}Crear un nuevo plan</button>`);
-  h.addEventListener('click', (e) => { const b = e.target.closest('[data-plan]'); if(!b) return; cerrarHoja(); if(b.dataset.plan === 'nuevo') alta(); else { actualId = b.dataset.plan; guardarLocal(); pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); } });
+    <button class="bt blanco ancho" style="margin-top:12px" data-plan="nuevo">${ico('plus')}Crear un nuevo plan</button>
+    <button class="bt ancho" style="margin-top:10px" data-plan="academia">${ico('graduation-cap')}Academia Grupo Mazi</button>`);
+  h.addEventListener('click', (e) => { const b = e.target.closest('[data-plan]'); if(!b) return; cerrarHoja(); if(b.dataset.plan === 'nuevo') alta(); else if(b.dataset.plan === 'academia') abrirAcademia(); else { actualId = b.dataset.plan; guardarLocal(); pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); } });
 });
 function editarPlan(p){
   const h = hoja('Editar plan', `<label class="seccion-t" for="eNom">Nombre</label><input class="campo" id="eNom" value="${esc(p.titulo)}"><label class="seccion-t" for="eFecha" style="display:block">Fecha del examen</label><input type="date" class="campo" id="eFecha" value="${esc(p.fecha)}"><button class="bt fuerte ancho" style="margin-top:16px" id="eGuardar">Guardar</button>`);

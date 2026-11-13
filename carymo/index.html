@@ -36,7 +36,9 @@
 
   /* botones */
   .bt{ display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:48px; padding:0 18px; border-radius:14px; border:0;
-    background:var(--sup); color:var(--hueso); font-weight:700; transition:transform .12s, background .2s, opacity .2s }
+    background:var(--sup); color:var(--hueso); font-weight:700; transition:transform .28s cubic-bezier(.3,1.6,.4,1), box-shadow .2s, background .2s, opacity .2s; -webkit-tap-highlight-color:transparent }
+  /* al soltar, el botón rebota tantito (13 nov, «más smooth»); al apretar baja rápido */
+  .bt:active, .nodo:active{ transition-duration:.07s }
   .bt:active{ transform:scale(.97) }
   .bt.fuerte{ background:var(--vino); color:#fff; box-shadow:0 4px 0 var(--vino-osc) }
   .bt.fuerte:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--vino-osc) }
@@ -86,7 +88,7 @@
   .nodos svg.senda path{ fill:none; stroke:#2C173F; stroke-width:30; stroke-linecap:round }
   .nodos svg.senda path.hecha{ stroke:#3A1D55 }
   .nodo{ position:absolute; width:78px; height:78px; margin:-39px 0 0 -39px; border-radius:50%; border:0; display:grid; place-items:center; color:#fff;
-    background:var(--color, var(--vino)); box-shadow:0 7px 0 #00000059, inset 0 -6px 0 #0003, inset 0 3px 0 #ffffff2a; transition:transform .15s, filter .3s }
+    background:var(--color, var(--vino)); box-shadow:0 7px 0 #00000059, inset 0 -6px 0 #0003, inset 0 3px 0 #ffffff2a; transition:transform .3s cubic-bezier(.3,1.6,.4,1), box-shadow .2s, filter .3s; -webkit-tap-highlight-color:transparent }
   .nodo .i{ width:32px; height:32px; stroke-width:2.2 }
   .nodo:active{ transform:translateY(4px); box-shadow:0 3px 0 #00000059, inset 0 -6px 0 #0003 }
   .nodo.cerrado{ background:#2E1A44; color:#5E4B75; box-shadow:0 7px 0 #0000004d, inset 0 -6px 0 #0002 }
@@ -426,6 +428,29 @@
   .aviso{ margin:12px 0; padding:12px 14px; border-radius:14px; background:#3A0F1E; color:#FFD3DA; font-size:14px }
   .cargando-fila{ text-align:center; color:var(--suave); padding:30px 0 }
 
+
+  /* ── Academia Grupo Mazi ── */
+  .academia-bt{ border:1px solid #ffffff22 }
+  .acad-cab{ text-align:center; padding:6px 4px 18px }
+  .acad-cab h1{ font-size:30px; line-height:1.05; margin:14px 0 8px }
+  .acad-cab p{ color:var(--suave); font-size:15px; line-height:1.45 }
+  .acad-cursos{ display:grid; gap:12px }
+  .acad-curso{ display:flex; align-items:center; gap:14px; text-align:left; width:100%; padding:16px; border-radius:20px; border:1px solid #ffffff1c;
+    background:linear-gradient(135deg, color-mix(in srgb, var(--c) 55%, #0000), #ffffff08); color:var(--hueso); box-shadow:0 6px 0 #00000059;
+    transition:transform .3s cubic-bezier(.3,1.6,.4,1), box-shadow .2s; -webkit-tap-highlight-color:transparent }
+  .acad-curso:active{ transform:translateY(4px); box-shadow:0 2px 0 #00000059; transition-duration:.07s }
+  .acad-ico{ width:54px; height:54px; border-radius:16px; display:grid; place-items:center; background:var(--c); font-size:26px; flex:none; box-shadow:inset 0 -4px 0 #0004 }
+  .acad-txt{ flex:1; min-width:0; display:grid; gap:3px }
+  .acad-txt small{ font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--claro-txt) }
+  .acad-txt b{ font:800 18px/1.15 Titulo, Texto, sans-serif }
+  .acad-txt em{ font-style:normal; font-size:13px; color:var(--suave); line-height:1.35 }
+  .acad-barra{ display:block; height:6px; border-radius:99px; background:#ffffff1f; margin-top:6px; overflow:hidden }
+  .acad-barra i{ display:block; height:100%; border-radius:99px; background:var(--claro) }
+  .acad-ir{ font:800 13px/1 Titulo, Texto, sans-serif; color:#fff; flex:none }
+  .acad-material{ display:grid; gap:10px }
+  .acad-doc{ display:flex; align-items:center; gap:12px; padding:14px; border-radius:16px; background:var(--sup); color:var(--hueso); text-decoration:none; font-size:22px }
+  .acad-doc span{ flex:1; display:grid; gap:2px; font-size:15px } .acad-doc small{ color:var(--suave); font-size:13px }
+  .acad-pie{ text-align:center; color:var(--suave); font-size:13px; margin:22px 0 10px }
   @media (prefers-reduced-motion:reduce){ *, *::before, *::after{ animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important } }
 </style>
 </head>
