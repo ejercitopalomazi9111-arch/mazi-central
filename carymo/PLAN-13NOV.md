@@ -21,18 +21,19 @@
 
 **Publicado también:** cuentas propias sin la llave de La Sala (0) y compartir planes por link o código (0-bis).
 
-**En curso (Luna):** los subtítulos rotos del pizarrón en computadora (lo reportó Carlos) y después Apuntes.
+**Publicado también:** subtítulos del pizarrón por frase, el arreglo de estudiar juntos y **Apuntes con el lápiz** (5).
+
+**Sigue:** 9 · varios cursos con pomodoro.
 
 **Avanzado sin publicar:** el motor de dibujo de Apuntes (`carymo/trazo.js`). Le falta la pantalla.
 
 **Después, en este orden:**
-1. 5 · Apuntes.
-2. 9 · Varios cursos con pomodoro.
-3. 11 · Idiomas.
-4. 10 y 8-bis · Imágenes.
-5. 8 · Elementos del pizarrón.
-6. 6 · Personaje de perfil.
-7. 7 · Avisos.
+1. 9 · Varios cursos con pomodoro.
+2. 11 · Idiomas.
+3. 10 y 8-bis · Imágenes.
+4. 8 · Elementos del pizarrón.
+5. 6 · Personaje de perfil.
+6. 7 · Avisos.
 
 ## 0 · Cuentas propias, sin la llave de La Sala (Carlos, 13 nov · lo más urgente)
 
@@ -149,15 +150,30 @@ suscripción de paga dará cubitos diarios por seguir la racha.
 
 ## 5 · Apuntes
 
-- [ ] Una pestaña de **Apuntes** con los puntos importantes de lo que has visto.
-- [ ] Se guardan solos: lo del pizarrón (Explica), lo de las lecciones de tus planes y lo de los cursos.
-- [ ] Hacer tus propios apuntes **con el pizarrón** y a mano.
-- [ ] **Lápiz como ibisPaint / Photoshop:**
+- ✅ Una pestaña de **Apuntes** con los puntos importantes de lo que has visto.
+- ✅ Se guardan solos: lo del pizarrón (Explica), lo de las lecciones de tus planes y lo de los cursos.
+- ✅ Hacer tus propios apuntes **con el pizarrón** y a mano.
+- ✅ **Lápiz como ibisPaint / Photoshop:**
   - grosor, difuminado, transparencia y color;
   - punta que empieza delgada y termina gruesa, o delgada-gruesa-delgada (tinta de pluma);
   - pinceles hechos, y **crear y editar pinceles propios** (forma de la punta, espaciado, dispersión,
     presión, textura);
   - capas, borrador, deshacer, selección y mover.
+
+**Hecho (Luna):**
+- `carymo/apuntes.js` es la pestaña: automáticos de lecciones y del pizarrón, los tuyos con texto y dibujo, buscador y filtros.
+- `carymo/trazo.js` es el motor:
+  - 12 pinceles hechos;
+  - crear y editar pinceles: punta, presión, mezcla, tamaño, opacidad, flujo, dureza o difuminado, espaciado, afilado al empezar y al terminar, grosor mínimo, estabilizador, dispersión y ángulo;
+  - capas con opacidad, modo, bloquear, duplicar, juntar y ordenar;
+  - deshacer y rehacer, cuentagotas, cubeta, borrador, zoom y mover con dos dedos, y 6 papeles.
+- Los apuntes viven en el teléfono (IndexedDB).
+- 22 pruebas: `node carymo/pruebas-apuntes.mjs`.
+
+**Falta:**
+- que los apuntes propios se respalden en el servidor (hoy, si se borra Safari, se pierden);
+- selección y transformar, de lo de Photoshop;
+- insertar una foto en el dibujo.
 
 ## 6 · Tu personaje de perfil
 

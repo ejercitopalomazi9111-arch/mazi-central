@@ -179,7 +179,6 @@ export function crearLienzoDibujo(caja, { ancho = 1080, alto = 1528, fondo = 'bl
     vx.globalAlpha = 1; vx.globalCompositeOperation = 'source-over';
   }
   let vivo = true;
-  (function bucle(){ if(!vivo) return; if(sucio && vista.width > 4) pintar(); requestAnimationFrame(bucle); })();
 
   /* ── el dedo ── */
   const dedos = new Map(); let trazo = null, gesto = null;
@@ -336,6 +335,8 @@ export function crearLienzoDibujo(caja, { ancho = 1080, alto = 1528, fondo = 'bl
   }
 
   ajustar();
+  /* el bucle arranca hasta aquí: antes, `trazo` todavía no existía (zona muerta) y la vista nunca pintaba */
+  (function bucle(){ if(!vivo) return; if(sucio && vista.width > 4) pintar(); requestAnimationFrame(bucle); })();
   return {
     vista,
     get pincel(){ return pincel; }, set pincel(p){ pincel = { ...p }; sucio = true; },
