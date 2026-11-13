@@ -583,6 +583,8 @@ dependemos.
 
    | si el teléfono manda las llaves del push y el cifrado ya está escrito, el aviso llega con texto | el servidor de La Sala guardaba SÓLO `endpoint` al apuntar el teléfono (`{ endpoint: sus.endpoint }`) y tiraba `keys`; sin ellas `empujar` manda el aviso vacío, callado | los avisos del chat llegaban «Escribieron en la sala» desde que existe la vista previa que pidió Carlos; lo vi armando los de CARYMO (13 nov). Una prueba ahora mira que lo GUARDADO traiga `keys`. Y en las pruebas: el Chromium sin pantalla dice `Notification.permission === 'denied'` aunque se le dé el permiso con `grantPermissions`; se finge en la prueba |
 
+   | un trabajador de fondo de `/carymo/` guarda todo lo que la app pide, también el pizarrón que abre en un marco | el marco es OTRA página (`/sala/explica.html`) fuera de su alcance: ni se intercepta ni se guarda, y sin red sale en blanco aunque sus archivos sí estén guardados | CARYMO sin internet (13 nov): el pizarrón se abre como `/carymo/pizarron.html`, que `carymo/sw.js` arma con la página de Explica y un `<base href="/sala/">`; así lo que pide pasa por el trabajador. `carymo/pruebas-sinred.mjs` apaga el servidor de a de veras |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---

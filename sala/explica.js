@@ -20,7 +20,8 @@ import { sacarJSON } from './json-ia.js';
 import { crearVoz, paraDecir, todas, nombreDe, despertar, VOZ_DE_FABRICA } from './voces.js';
 import { sonar, encender as encenderSonidos } from './sonidos/sonidos.js';
 import { llave, ponerLlave, llamar, SERVIDOR, SALA } from '../presentaciones/ia.js';
-import { pedirSala, conAcceso } from './acceso.js';   /* con la llave o con la cuenta de CARYMO (Carlos, 13 nov) */
+import { pedirSala, conAcceso } from './acceso.js';
+import { leerClase, guardarClase, hayClase } from './clases-guardadas.js';   /* para que la clase abra sin internet (Carlos, 13 nov) */   /* con la llave o con la cuenta de CARYMO (Carlos, 13 nov) */
 /* a La Sala directo (no por presentaciones/ia.js#texto) para mandar `espera` y `pensarPoco`: una clase entera tarda */
 async function iaTexto(cuerpo){
   const r = await pedirSala('ia-texto', { metodo: 'POST', cuerpo: { ...cuerpo, espera: 150000, pensarPoco: true }, espera: 165000 });
@@ -448,23 +449,54 @@ async function pedirClase(){
     $('#preparaTxt').innerHTML = `${ESPERA[k % ESPERA.length]}${largaEspera ? ` <small>(${s} s de unos 120)</small>` : ''}<b>${esc(tema || 'tus apuntes')}</b>`; }, 3000);
   try{
     const largo = $('#largo').value, nivelB = `${$('#nivel').value}-${largo}`;
+    /* primero la que ya está en el teléfono (CARYMO la deja lista al crear el plan): abre sin internet */
+    const deGuardada = (d, extra) => { const c = normalizarConNombre(sinCarlos(d)); c.motor = d.motor || motor; c.tema = tema; c.id = Date.now().toString(36); c.fecha = Date.now(); Object.assign(c, extra); guardarHistorial(c); empezar(c); };
+    const local = tema && !fotos.length ? await leerClase(tema, nivelB) : null;
+    const sinRed = typeof navigator !== 'undefined' && navigator.onLine === false;
+    if(local && (!local.basica || sinRed)){ try{ deGuardada(local, { guardada: true }); return; }catch{} }
     /* la biblioteca: si alguien ya pidió esta misma clase (sin fotos), sale de ahí al instante */
-    if(tema && !fotos.length){
+    if(tema && !fotos.length && !sinRed){
       const ya = await biblioteca({ accion: 'memoria', tipo: 'clase', materia: '', titulo: tema, nivel: nivelB });
       if(ya && ya.hallado && ya.hallado.datos){
-        try{ const c = normalizarConNombre(sinCarlos(ya.hallado.datos)); c.motor = ya.hallado.datos.motor || motor; c.tema = tema; c.id = Date.now().toString(36); c.fecha = Date.now(); c.deBiblioteca = true;
-          guardarHistorial(c); empezar(c); return; }catch{}
+        try{ deGuardada(ya.hallado.datos, { deBiblioteca: true }); guardarClase(tema, nivelB, ya.hallado.datos); return; }catch{}
       }
     }
+    /* sin red y sin nada mejor: la básica que armó CARYMO con las ideas de la lección */
+    if(sinRed){ if(local){ deGuardada(local, { guardada: true }); return; } throw new Error('Esta clase todavía no está guardada en tu teléfono. Conéctate a internet una vez y queda lista.'); }
     const c = await pedirJSON({ motor, json: true, tope: 8000, sistema: sistema(motor, $('#nivel').value, largo) + (largo === 'fondo' ? '\n\nESTA ES LA PARTE 1 DE 2 de una clase a fondo: escribe los primeros pasos (los fundamentos y el mecanismo). La parte 2 (aplicaciones, casos, excepciones, errores comunes y cierre) se pide aparte; aquí deja "referencias" y "repaso" vacíos.' : ''),
       mensajes: [{ de: 'tu', texto: tema ? `Explícame: ${tema}` : 'Explícame lo que dicen estas fotos de mis apuntes.' }], imagenes: fotos }, normalizarConNombre);
     c.motor = motor; c.tema = tema; c.id = Date.now().toString(36); c.fecha = Date.now();
     guardarHistorial(c); empezar(c);
-    const guardarla = () => { if(tema && !fotos.length) biblioteca({ accion: 'recordar', tipo: 'clase', materia: '', titulo: tema, nivel: nivelB, datos: aPlantilla({ titulo: c.titulo, visual: c.visual, pasos: c.pasos, referencias: c.referencias, repaso: c.repaso, motor }) }); };
+    const guardarla = () => { if(!tema || fotos.length) return; const datos = aPlantilla({ titulo: c.titulo, visual: c.visual, pasos: c.pasos, referencias: c.referencias, repaso: c.repaso, motor });
+      guardarClase(tema, nivelB, datos); biblioteca({ accion: 'recordar', tipo: 'clase', materia: '', titulo: tema, nivel: nivelB, datos }); };
     if(largo === 'fondo') segundaParte(c, motor, tema).then(guardarla); else guardarla();
   }catch(e){
+    /* se cayó la red a medio pedido: si hay una guardada (aunque sea la básica), mejor eso que un error */
+    const tema2 = $('#tema').value.trim(), local = tema2 && !fotos.length ? await leerClase(tema2, `${$('#nivel').value}-${$('#largo').value}`) : null;
+    if(local){ try{ const c = normalizarConNombre(sinCarlos(local)); c.motor = local.motor || 'groq'; c.tema = tema2; c.id = Date.now().toString(36); c.fecha = Date.now(); c.guardada = true; guardarHistorial(c); empezar(c); return; }catch{} }
     ver('inicio'); aviso(e.message || String(e)); if(e.llave) $('#cajaLlave').hidden = false;
   }finally{ clearInterval(giro); }
+}
+/* ?preparar=1 · CARYMO la pide de antemano, en un marco escondido: se arma (o se saca de la
+   biblioteca), se guarda en el teléfono y se avisa «listo». Sin pantalla, sin voz, sin sonidos. */
+async function prepararCallado(){
+  const tema = $('#tema').value.trim(), largo = $('#largo').value, nivelB = `${$('#nivel').value}-${largo}`;
+  const avisar = (ok, por) => { try{ parent.postMessage({ explica: 'listo', tema, nivel: nivelB, ok, por }, location.origin); }catch{} };
+  if(!tema) return avisar(false, 'sin tema');
+  if(await hayClase(tema, nivelB, { basicaCuenta: false })) return avisar(true, 'ya estaba');
+  if(navigator.onLine === false) return avisar(false, 'sin red');
+  const ya = await biblioteca({ accion: 'memoria', tipo: 'clase', materia: '', titulo: tema, nivel: nivelB });
+  if(ya && ya.hallado && ya.hallado.datos && Array.isArray(ya.hallado.datos.pasos)){ await guardarClase(tema, nivelB, sinCarlos(ya.hallado.datos)); return avisar(true, 'biblioteca'); }
+  if(!conAcceso()) return avisar(false, 'sin cuenta');
+  try{
+    const motor = $('#motor').value;
+    const c = await pedirJSON({ motor, json: true, tope: 8000, sistema: sistema(motor, $('#nivel').value, largo === 'fondo' ? 'normal' : largo),
+      mensajes: [{ de: 'tu', texto: `Explícame: ${tema}` }] }, normalizarConNombre);
+    const datos = aPlantilla({ titulo: c.titulo, visual: c.visual, pasos: c.pasos, referencias: c.referencias, repaso: c.repaso, motor });
+    await guardarClase(tema, nivelB, datos);
+    biblioteca({ accion: 'recordar', tipo: 'clase', materia: '', titulo: tema, nivel: nivelB, datos });
+    avisar(true, 'ia');
+  }catch(e){ avisar(false, e.message || String(e)); }
 }
 /* la segunda mitad de una clase a fondo: se pide en cuanto arranca la primera y se pega al final */
 async function biblioteca(cuerpo){
@@ -573,7 +605,8 @@ document.addEventListener('visibilitychange', () => { if(document.hidden && sona
 const q0 = new URLSearchParams(location.search).get('tema'); if(q0) $('#tema').value = q0;
 /* …y Estudio también dice el nivel y el largo («corta»: un nodo del camino no es una clase de una hora) */
 { const q = new URLSearchParams(location.search); for(const k of ['nivel', 'largo', 'motor']){ const v = q.get(k); if(v && [...$('#' + k).options].some((o) => o.value === v)) $('#' + k).value = v; } }
-botonPlay(); pintarVoces(); pintarHistorial(); ver('inicio');
+if(new URLSearchParams(location.search).has('preparar')) prepararCallado();
+else { botonPlay(); pintarVoces(); pintarHistorial(); ver('inicio'); }
 /* para las pruebas: cargar una clase ya hecha sin pedirla */
 window.__explica = { abrirDicho, empezar: (c) => empezar({ ...normalizar(c), motor: c.motor || 'groq', fecha: Date.now() }), normalizar, normalizarPizarra, abrirApuntes, lienzo,
   estado: () => ({ actual, sonando, pasos: clase && clase.pasos.length, dibujados: lienzo.piezas.length, cursores: lienzo.cursores, libre: lienzo.libre }) };

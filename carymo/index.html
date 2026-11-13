@@ -481,14 +481,6 @@
   .pieza-u.sel{ border-color:var(--claro); background:#2A1245 }
   .pieza-u.hecho{ border-color:var(--par); background:color-mix(in srgb, var(--par) 22%, var(--fondo-2)); color:#fff; box-shadow:none }
   /* imagen */
-  .imagenes{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px }
-  .img-op{ position:relative; display:flex; flex-direction:column; border-radius:18px; border:2px solid var(--borde); background:var(--fondo-2); padding:0; overflow:hidden; box-shadow:0 4px 0 #0005 }
-  .img-op .foto-op{ display:grid; place-items:center; aspect-ratio:1; background:#ffffff0a }
-  .img-op .foto-op img{ width:100%; height:100%; object-fit:cover; display:block }
-  .img-op .dib-op{ width:46%; height:46%; fill:none; stroke:#fff; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round }
-  .img-op .pie-op{ display:block; padding:8px 6px; font:700 13.5px/1.2 Texto; min-height:34px }
-  .img-op.sel{ border-color:var(--claro); transform:translateY(-2px) }
-  .img-op.bien{ border-color:var(--claro); box-shadow:0 0 0 3px var(--claro) } .img-op.mal{ border-color:var(--mal); opacity:.75 }
   /* diagramas: encontrar el error y armarlo */
   .flujo{ display:flex; flex-direction:column; align-items:stretch; gap:2px }
   .caja-f, .hueco-f{ min-height:52px; border-radius:14px; border:2px solid var(--borde); background:var(--fondo-2); padding:10px 14px; font:700 15.5px/1.3 Texto; text-align:center; position:relative }
