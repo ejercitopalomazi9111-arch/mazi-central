@@ -178,7 +178,27 @@ export async function correr({ ok, almacen, atenderEstudio }){
     ok(await desborde() <= 0, 'el camino no se sale de lado');
     await espera(800);
     await foto('05-camino');
-    ok(await pagina.$eval('.masc-camino .masc-cuerpo img', (i) => i.complete && i.naturalWidth > 0 && /tigre-/.test(i.src)).catch(() => false), 'la mascota (el tigre) está junto al nivel que toca');
+    ok(await pagina.$eval('.masc-camino .masc svg [data-p="cabeza"]', () => true).catch(() => false), 'la mascota (el tigre) está junto al nivel que toca');
+    {
+      const m = await pagina.evaluate(async () => {
+        const { crearMascota } = await import('/carymo/mascota.js');
+        const caja = document.createElement('div'); caja.style.cssText = 'position:fixed;left:0;top:200px'; document.body.append(caja);
+        const out = {};
+        for(const q of ['tigre', 'paloma']){
+          const x = crearMascota(caja, { personaje: q, tam: 120 });
+          await new Promise((r) => setTimeout(r, 400)); const quieto = x.parametros;
+          x.play('bien'); await new Promise((r) => setTimeout(r, 480)); const bien = x.parametros;
+          x.play('triste'); await new Promise((r) => setTimeout(r, 900)); const triste = x.parametros;
+          out[q] = { imgs: x.el.querySelectorAll('img').length, piezas: x.el.querySelectorAll('[data-p]').length, respira: quieto.sy !== 1, bienSalta: bien.y < -10, bienFeliz: bien.feliz > .8, tristeLlora: triste.lagrimas > .5 && triste.cejas > .5 && triste.curva < 0 };
+          x.destruir();
+        }
+        caja.remove(); return out;
+      });
+      ok(m.tigre.imgs === 0 && m.paloma.imgs === 0 && m.tigre.piezas > 20 && m.paloma.piezas > 20, `las mascotas están dibujadas por piezas, sin una sola imagen recortada (${m.tigre.piezas} y ${m.paloma.piezas} piezas)`);
+      ok(m.tigre.respira && m.paloma.respira, 'quietas, respiran');
+      ok(m.tigre.bienSalta && m.tigre.bienFeliz && m.paloma.bienSalta && m.paloma.bienFeliz, 'al acertar brincan con los ojos felices');
+      ok(m.tigre.tristeLlora && m.paloma.tristeLlora, 'tristes: cejas caídas, boca hacia abajo y lágrimas');
+    }
     for(let k = 0; k < 30 && !pedidosIA.some((c) => /UNA lección/.test(c.sistema)); k++) await espera(100);
     ok(pedidosIA.some((c) => /UNA lección/.test(c.sistema) && /Sistema circulatorio/.test(c.mensajes[0].texto)), 'el primer nivel se prepara solo mientras ves las cátedras');
 
@@ -253,7 +273,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
     await pagina.click('[data-estrella="5"]');
     ok((await pagina.$$('.estrellas .on')).length === 5, 'se califica con estrellas');
     await foto('09-resultado');
-    ok(await pagina.$eval('#mascFin .masc-cuerpo img', (i) => i.complete && i.naturalWidth > 0).catch(() => false), 'al terminar, la mascota reacciona al resultado');
+    ok(await pagina.$eval('#mascFin .masc svg', () => true).catch(() => false), 'al terminar, la mascota reacciona al resultado');
     await pagina.click('[data-continuar]');
     await pagina.waitForSelector('.camino'); await espera(1200);
     ok(await hechos() === 3, 'el nivel hecho se vuelve moneda');
