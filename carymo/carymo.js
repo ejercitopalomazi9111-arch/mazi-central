@@ -1678,7 +1678,7 @@ if(typeof navigator !== 'undefined' && 'serviceWorker' in navigator && !/[?&]sin
 setTimeout(() => { const p = plan(); if(p && conAcceso() && navigator.onLine !== false) precargar(p); }, 8000);
 document.addEventListener('visibilitychange', () => { if(!document.hidden) sincronizar(); });
 /* amigos, estudiar juntos y «¿cómo te fue?» (amigos.js) */
-amigos = iniciarAmigos({ sala, brindis, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, mascotaEn, $, guardarPlan, colorDe: colorMateria,
+amigos = iniciarAmigos({ sala, brindis, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, mascotaEn, $, guardarPlan, colorDe: colorMateria, alPerfil: ponerPerfil,
   perfil: () => perfil, planes: () => planes, actual: () => actualId, vista: () => vista, cuenta: () => perfil.cuenta, estudiando: () => !!$('#capa') });
 pintar();
 sincronizar();
