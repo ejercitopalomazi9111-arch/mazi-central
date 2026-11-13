@@ -26,6 +26,7 @@ import { iniciarAmigos } from './amigos.js';
 import { iniciarCompanero } from './companero.js';
 import { iniciarCuenta } from './cuenta.js';
 import { iniciarApuntes } from './apuntes.js';
+import { iniciarSesionEstudio } from './sesion.js';
 import { pedirSala, conAcceso } from '../sala/acceso.js';
 import { entrada } from './entrada.js';
 
@@ -99,7 +100,7 @@ encenderSonidos(ajustes.sonido !== false);
 let vista = 'plan';
 let amigos = null;   /* amigos.js; se arranca al final, cuando ya existe todo */
 let companero = null;   /* companero.js: el cuarto, el cuidado y la tienda de palomium */
-let cuentaUI = null, apuntes = null;   /* apuntes.js: la pestaña de Apuntes con el lápiz */   /* cuenta.js: crear cuenta y entrar, sin la llave de La Sala */
+let cuentaUI = null, apuntes = null, sesionEst = null;   /* sesion.js: varios cursos y el pomodoro */   /* apuntes.js: la pestaña de Apuntes con el lápiz */   /* cuenta.js: crear cuenta y entrar, sin la llave de La Sala */
 const plan = () => planes[actualId] || null;
 const guardarLocal = () => { guarda.poner('est.planes', planes); guarda.poner('est.actual', actualId); };
 
@@ -413,6 +414,7 @@ function pintar(){
   if(vista === 'buscar') pintarBuscar();
   if(vista === 'ranking') pintarRanking();
   if(vista === 'perfil') pintarPerfil();
+  sesionEst?.alPintar();
 }
 /* sin cuenta: crear una o entrar (cuenta.js). La llave de La Sala sigue sirviendo para Carlos y Luis, pero ya
    no se le pide a nadie (Carlos, 13 nov: «estarla dando es darle acceso a la gente a la sala»). */
@@ -476,7 +478,8 @@ function pintarPlan(){
   } else {
     html += `<div class="siguiente"><small>Plan completo</small><h3>Llegaste a grado 10. Ya estás listo.</h3><button class="bt blanco ancho" id="bRepasoFinal">Hacer otro simulacro</button></div>`;
   }
-  c.innerHTML = html;
+  /* arriba: tus cursos para cambiar de un toque y la sesión de estudio (sesion.js) */
+  c.innerHTML = (sesionEst ? sesionEst.fila() : '') + html;
   /* la mascota se para junto al nivel que toca, del otro lado del camino */
   if(mascotaPos){
     const nodos = $$('.nodos', c)[mascotaPos.u];
@@ -1602,9 +1605,14 @@ cuentaUI = iniciarCuenta({ hoja, cerrarHoja, esc, ico, brindis, tono, SON, $, pe
   alEntrar: (yo) => { $('#cajaLlave')?.remove(); try{ const pend = sessionStorage.getItem('carymo.planPendiente'); if(pend){ sessionStorage.removeItem('carymo.planPendiente'); setTimeout(() => anadirCurso(pend), 900); } }catch{} if(yo && yo.nombre && (!perfil.nombre || perfil.nombre === 'Tú')){ perfil.nombre = yo.nombre; guarda.poner('est.perfil', perfil); sala({ accion: 'perfil', nombre: yo.nombre }).catch(() => {}); } sincronizar(); amigos.arrancar(); pintar(); },
   alSalir: () => { pintar(); pintarFaltaLlave(); } });
 apuntes = iniciarApuntes({ $, esc, ico, hoja, cerrarHoja, capa, cerrarCapa, brindis, tono, SON, nuevoId, planes: () => planes });
+sesionEst = iniciarSesionEstudio({ $, esc, ico, hoja, cerrarHoja, brindis, tono, SON, dice, avanceDe, colorDe: colorMateria, cuando: cuandoTexto,
+  planes: () => planes, actual: () => actualId, ocupado: () => !!$('#capa'), alCambiar: () => { if(vista === 'plan') pintar(); },
+  cambiarPlan: (id) => { if(!planes[id]) return; actualId = id; guardarLocal(); vista = 'plan'; pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); } });
 companero = iniciarCompanero({ sala, capa, cerrarCapa, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, crearMascota, $, brindis, ponerPerfil,
   perfil: () => perfil, ajustes: () => ajustes, alCerrar: () => pintar() });
 companero.pintarPastilla();
+/* la primera pintada fue antes de que existieran la fila de cursos y la pastilla: otra vez, ya con todo */
+pintar();
 /* la entrada animada (una vez por visita; el telón ya está en el HTML) */
 entrada({ personaje: ajustes.mascota });
 $('#pCubos').addEventListener('click', () => companero.abrir());
