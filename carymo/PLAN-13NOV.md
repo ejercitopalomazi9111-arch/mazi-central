@@ -19,9 +19,9 @@
 - Cuarto del compañero.
 - Entrada animada.
 
-**En curso (Luna):**
-- **Cuentas propias de CARYMO, sin la llave de La Sala** (bloque 0, lo más urgente).
-- **Compartir un plan por link o código** (bloque 0-bis).
+**Publicado también:** cuentas propias sin la llave de La Sala (0) y compartir planes por link o código (0-bis).
+
+**En curso (Luna):** los subtítulos rotos del pizarrón en computadora (lo reportó Carlos) y después Apuntes.
 
 **Avanzado sin publicar:** el motor de dibujo de Apuntes (`carymo/trazo.js`). Le falta la pantalla.
 
@@ -40,22 +40,29 @@
 > gente a la sala y no queremos eso… que haya otra manera de que se creen su usuario, ya sea con correo… encárgate
 > tú de que funcione».
 
-- [ ] Crear cuenta y entrar con **usuario y contraseña** (y correo opcional para recuperarla después). La
+- ✅ Crear cuenta y entrar con **usuario y contraseña** (y correo opcional para recuperarla después). La
       contraseña se guarda con hash y sal (PBKDF2) en el servidor, nunca en claro.
-- [ ] La cuenta da un **token sólo de CARYMO**: sirve para planes, XP, palomium, amigos y la IA de CARYMO
+- ✅ La cuenta da un **token sólo de CARYMO**: sirve para planes, XP, palomium, amigos y la IA de CARYMO
       (con tope diario por cuenta), **no** para leer ni escribir en La Sala.
-- [ ] La llave de La Sala deja de pedirse en CARYMO. Las cuentas viejas (las que entraban con la llave) se
+- ✅ La llave de La Sala deja de pedirse en CARYMO. Las cuentas viejas (las que entraban con la llave) se
       pueden pasar a usuario propio sin perder su avance.
+
+**Hecho (Luna):**
+- Servidor: la puerta `/api/carymo/*` (`sala/servidor/index.js`) y «CARYMO SIN LA LLAVE» (`sala/servidor/sala.js`), con 19 pruebas (`node sala/servidor/pruebas-carymo-cuentas.mjs`).
+- Teléfono: `sala/acceso.js`, para que la llave o la cuenta lleguen por el camino que toca, y `carymo/cuenta.js`, para crear, entrar y recuperar.
+- Las cuentas son las de la comunidad de INKWELL: una cuenta Mazi sirve para las dos. No hay correo, porque mandarlo cuesta; se recupera con un código que se da al crearla.
+- La IA tiene tope por cuenta y por día: 80 de texto y 200 de voz. Quien vincula su llave no tiene tope.
+- De punta a punta en el navegador: 15 pruebas (`node carymo/pruebas-cuenta.mjs`).
 
 ## 0-bis · Compartir un plan por link o código (Carlos, 13 nov)
 
 > «Si yo estoy haciendo un plan para un examen y copio ese link o el código y lo mando a mi grupo, ellos lo
 > ponen en "añadir curso por link" y ya les pone exactamente lo mismo… y así ya no se gastan tokens».
 
-- [ ] Botón «Compartir» en el plan: sale un link y un código corto (6 letras).
-- [ ] «Añadir curso por link o código»: copia el plan entero (camino, lecciones, preguntas, cátedras ya hechas)
+- ✅ Botón «Compartir» en el plan: sale un link y un código corto (6 letras).
+- ✅ «Añadir curso por link o código»: copia el plan entero (camino, lecciones, preguntas, cátedras ya hechas)
       sin gastar IA; el avance empieza en cero para quien lo recibe.
-- [ ] Si quien lo recibe pide algo extra (otro tema, sus fotos), sólo eso gasta IA.
+- ✅ Si quien lo recibe pide algo extra (otro tema, sus fotos), sólo eso gasta IA.
 
 ## 1 · Arreglos rápidos
 

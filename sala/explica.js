@@ -20,9 +20,10 @@ import { sacarJSON } from './json-ia.js';
 import { crearVoz, paraDecir, todas, nombreDe, despertar, VOZ_DE_FABRICA } from './voces.js';
 import { sonar, encender as encenderSonidos } from './sonidos/sonidos.js';
 import { llave, ponerLlave, llamar, SERVIDOR, SALA } from '../presentaciones/ia.js';
+import { pedirSala, conAcceso } from './acceso.js';   /* con la llave o con la cuenta de CARYMO (Carlos, 13 nov) */
 /* a La Sala directo (no por presentaciones/ia.js#texto) para mandar `espera` y `pensarPoco`: una clase entera tarda */
 async function iaTexto(cuerpo){
-  const r = await llamar(`${SERVIDOR}/api/sala/${SALA}/ia-texto`, { metodo: 'POST', cuerpo: { ...cuerpo, espera: 150000, pensarPoco: true }, espera: 165000 });
+  const r = await pedirSala('ia-texto', { metodo: 'POST', cuerpo: { ...cuerpo, espera: 150000, pensarPoco: true }, espera: 165000 });
   const j = await r.json().catch(() => ({}));
   if(r.status === 401 || (r.status === 403 && !/no acepta pedidos/.test(j.error || ''))){ const e = new Error('Falta la llave de La Sala en este teléfono (o ya no sirve).'); e.llave = true; throw e; }
   if(!r.ok || j.bien === false) throw new Error(j.error || `La Sala contestó ${r.status}.`);
@@ -261,7 +262,7 @@ let vozElegida = guarda.leer('explica.voz', VOZ_DE_FABRICA); if(VIEJAS[vozElegid
 let callada = vozElegida === 'no'; if(callada) vozElegida = guarda.leer('explica.vozAntes', VOZ_DE_FABRICA);
 const decible = paraDecir;
 const voz = crearVoz({
-  pedir: async (cuerpo) => { const r = await llamar(`${SERVIDOR}/api/sala/${SALA}/ia-voz`, { metodo: 'POST', cuerpo, espera: 60000 }); return r.json().catch(() => ({})); },
+  pedir: async (cuerpo) => { const r = await pedirSala('ia-voz', { metodo: 'POST', cuerpo, espera: 60000 }); return r.json().catch(() => ({})); },
   alFallar: (e) => aviso(`La voz «${nombreDe(vozElegida)}» no contestó; sigo con la del teléfono. (${e.message})`),
 });
 voz.velocidad = velocidad;
@@ -409,7 +410,7 @@ const ESPERA = ['Armando tu clase…', 'Ordenando las ideas…', 'Buscando bueno
 async function pedirClase(){
   const tema = $('#tema').value.trim();
   if(!tema && !fotos.length){ aviso('Escribe qué quieres que te explique (o sube una foto de tus apuntes).'); $('#tema').focus(); return; }
-  if(!llave()){ aviso('Falta la llave de La Sala en este teléfono.'); $('#cajaLlave').hidden = false; $('#llaveTxt').focus(); return; }
+  if(!conAcceso()){ aviso('Entra a tu cuenta de CARYMO (o pon la llave de La Sala) para que te expliquen.'); $('#cajaLlave').hidden = false; $('#llaveTxt').focus(); return; }
   /* el iPhone sólo deja hablar si la voz arrancó con un toque: se «despierta» aquí, con una pausa vacía */
   despertar();
   let motor = $('#motor').value; if(fotos.length && motor === 'groq'){ motor = 'gemini'; }
@@ -441,7 +442,7 @@ async function pedirClase(){
 /* la segunda mitad de una clase a fondo: se pide en cuanto arranca la primera y se pega al final */
 async function biblioteca(cuerpo){
   try{
-    const r = await Promise.race([llamar(`${SERVIDOR}/api/sala/${SALA}/estudio`, { metodo: 'POST', cuerpo, espera: 8000 }), new Promise((_, no) => setTimeout(() => no(new Error('lento')), 8000))]);
+    const r = await Promise.race([pedirSala('estudio', { metodo: 'POST', cuerpo, espera: 8000 }), new Promise((_, no) => setTimeout(() => no(new Error('lento')), 8000))]);
     return await r.json().catch(() => null);
   }catch{ return null; }
 }

@@ -24,6 +24,8 @@ import { crearVoz, todas as todasLasVoces, VOZ_DE_FABRICA, despertar } from '../
 import { crearMascota, PERSONAJES, NOMBRE_PERSONAJE } from './mascota.js';
 import { iniciarAmigos } from './amigos.js';
 import { iniciarCompanero } from './companero.js';
+import { iniciarCuenta } from './cuenta.js';
+import { pedirSala, conAcceso } from '../sala/acceso.js';
 import { entrada } from './entrada.js';
 
 const $ = (s, d = document) => d.querySelector(s);
@@ -79,8 +81,8 @@ const vozDeMascota = (q = ajustes.mascota) => { const vs = VOCES_MASCOTA[q] || V
 const nombreVoz = (id) => { const v = todasLasVoces().find((x) => x.id === id); return v ? `${v.nombre} · ${v.desc.split(' · ')[0]}` : ''; };
 let vozMascota = null;
 function decirConVoz(texto, q){
-  if(ajustes.mascotaHabla === false || !texto || !llave()) return;
-  vozMascota ||= crearVoz({ pedir: async (c) => (await llamar(`${SERVIDOR}/api/sala/${SALA}/ia-voz`, { metodo: 'POST', cuerpo: c, espera: 30000 })).json().catch(() => ({})) });
+  if(ajustes.mascotaHabla === false || !texto || !conAcceso()) return;
+  vozMascota ||= crearVoz({ pedir: async (c) => (await pedirSala('ia-voz', { metodo: 'POST', cuerpo: c, espera: 30000 })).json().catch(() => ({})) });
   Promise.resolve(vozMascota.decir(texto, vozDeMascota(q || ajustes.mascota))).catch(() => {});
 }
 /* que el aviso lo diga la mascota que está a la vista (con su modo); si no hay ninguna, el letrerito de siempre */
@@ -96,27 +98,28 @@ encenderSonidos(ajustes.sonido !== false);
 let vista = 'plan';
 let amigos = null;   /* amigos.js; se arranca al final, cuando ya existe todo */
 let companero = null;   /* companero.js: el cuarto, el cuidado y la tienda de palomium */
+let cuentaUI = null;   /* cuenta.js: crear cuenta y entrar, sin la llave de La Sala */
 const plan = () => planes[actualId] || null;
 const guardarLocal = () => { guarda.poner('est.planes', planes); guarda.poner('est.actual', actualId); };
 
 /* ══ LA SALA ═════════════════════════════════════════════════════════════ */
 async function sala(cuerpo, q = ''){
-  const r = await llamar(`${SERVIDOR}/api/sala/${SALA}/estudio${q}`, { metodo: cuerpo ? 'POST' : 'GET', cuerpo, espera: 30000 });
+  const r = await pedirSala('estudio', { q, metodo: cuerpo ? 'POST' : 'GET', cuerpo, espera: 30000 });
   const j = await r.json().catch(() => ({}));
-  if(r.status === 401 || (r.status === 403 && !/no acepta pedidos/.test(j.error || ''))){ const e = new Error('Falta la llave de La Sala en este teléfono.'); e.llave = true; throw e; }
+  if(r.status === 401 || (r.status === 403 && !/no acepta pedidos/.test(j.error || ''))){ const e = new Error(j.cuenta ? 'Entra a tu cuenta de CARYMO.' : 'Falta tu cuenta de CARYMO en este teléfono.'); e.llave = true; throw e; }
   if(r.status === 404 && !j.error) throw new Error('La Sala todavía no tiene CARYMO: hay que publicar el servidor.');
   if(!r.ok || j.bien === false){ const e = new Error(j.error || `La Sala contestó ${r.status}.`); e.datos = j; throw e; }
   return j;
 }
 /* la IA: Negro (Groq) de fábrica porque es rápido; Paulina (Gemini) cuando hay fotos */
 async function ia({ sistema, texto, imagenes = [], motor = imagenes.length ? 'gemini' : 'groq', tope = 6000, revisar = (x) => x }){
-  if(!llave()){ const e = new Error('Falta la llave de La Sala en este teléfono.'); e.llave = true; throw e; }
+  if(!conAcceso()){ const e = new Error('Crea tu cuenta (es gratis) para que la IA te arme el plan.'); e.llave = true; throw e; }
   let ultimoError = null;
   for(let intento = 0; intento < 2; intento++){
     const extra = intento ? '\n\nOJO: tu respuesta anterior no era JSON válido o venía incompleta. Contesta SÓLO el JSON, completo, con comillas dobles y sin comas de más.' : '';
-    const r = await llamar(`${SERVIDOR}/api/sala/${SALA}/ia-texto`, { metodo: 'POST', cuerpo: { motor, json: true, tope, sistema: sistema + extra, mensajes: [{ de: 'tu', texto }], imagenes, espera: 150000, pensarPoco: true }, espera: 165000 });
+    const r = await pedirSala('ia-texto', { metodo: 'POST', cuerpo: { motor, json: true, tope, sistema: sistema + extra, mensajes: [{ de: 'tu', texto }], imagenes, espera: 150000, pensarPoco: true }, espera: 165000 });
     const j = await r.json().catch(() => ({}));
-    if(r.status === 401 || (r.status === 403 && !/no acepta pedidos/.test(j.error || ''))){ const e = new Error('Falta la llave de La Sala en este teléfono (o ya no sirve).'); e.llave = true; throw e; }
+    if(r.status === 401 || (r.status === 403 && !/no acepta pedidos/.test(j.error || ''))){ const e = new Error(j.cuenta ? 'Entra a tu cuenta de CARYMO.' : 'Falta tu cuenta de CARYMO en este teléfono.'); e.llave = true; throw e; }
     if(!r.ok || j.bien === false) throw new Error(j.error || `La IA no contestó (${r.status}).`);
     /* se repara lo que se pueda (json-ia.js); si aun así no sirve, otra vuelta */
     try{ return revisar(sacarJSON(j.texto)); }
@@ -321,7 +324,7 @@ function sumarXP(xp, motivo){
 let mandando = null;
 async function mandarCola(){
   if(mandando) return mandando;
-  if(!cola.length || !llave()) return null;
+  if(!cola.length || !conAcceso()) return null;
   mandando = (async () => {
     try{
       const lote = cola.slice(0, 50);
@@ -354,7 +357,7 @@ function guardarPlan(p){
   porGuardar.add(p.id); clearTimeout(reloj); reloj = setTimeout(subirPlanes, 1200);
 }
 async function subirPlanes(){
-  if(!llave()) return;
+  if(!conAcceso()) return;
   for(const id of [...porGuardar]){
     const p = planes[id]; if(!p){ porGuardar.delete(id); continue; }
     try{
@@ -364,7 +367,7 @@ async function subirPlanes(){
   }
 }
 async function sincronizar(){
-  if(!llave()){ pintarFaltaLlave(); return; }
+  if(!conAcceso()){ pintarFaltaLlave(); return; }
   try{
     const r = await sala(null);
     perfil.cuenta = r.perfil.cuenta; ponerPerfil(r.perfil); ponerRanking(r.ranking);
@@ -409,11 +412,17 @@ function pintar(){
   if(vista === 'ranking') pintarRanking();
   if(vista === 'perfil') pintarPerfil();
 }
-function pintarFaltaLlave(){
+/* sin cuenta: crear una o entrar (cuenta.js). La llave de La Sala sigue sirviendo para Carlos y Luis, pero ya
+   no se le pide a nadie (Carlos, 13 nov: «estarla dando es darle acceso a la gente a la sala»). */
+function pintarFaltaLlave(abrirHoja = false){
+  if(abrirHoja) cuentaUI.abrir('crear');
   if($('#cajaLlave')) return;
   const d = document.createElement('div'); d.id = 'cajaLlave'; d.className = 'vista';
-  d.innerHTML = `<div class="aviso">Para guardar tu avance y competir en el ranking, pega aquí una vez el link de La Sala (o la llave):<input class="campo" id="llaveTxt" style="margin-top:10px" autocomplete="off" aria-label="Link o llave de La Sala"></div>`;
+  d.innerHTML = `<div class="aviso cuenta-aviso"><b>Crea tu cuenta gratis</b><span>Para que la IA te arme planes, guardar tu avance y competir con tus amigos.</span>
+    <div class="fila-bt"><button class="bt fuerte" data-cuenta="crear">${ico('user-plus')}Crear cuenta</button><button class="bt" data-cuenta="entrar">Ya tengo cuenta</button></div>
+    <details class="con-llave"><summary>Tengo la llave de La Sala</summary><input class="campo" id="llaveTxt" style="margin-top:10px" autocomplete="off" aria-label="Link o llave de La Sala"></details></div>`;
   $('#app').prepend(d);
+  d.addEventListener('click', (e) => { const b = e.target.closest('[data-cuenta]'); if(b) cuentaUI.abrir(b.dataset.cuenta); });
   $('#llaveTxt').addEventListener('change', () => { if(ponerLlave($('#llaveTxt').value)){ d.remove(); brindis('Listo, ya quedó la llave'); sincronizar(); } });
 }
 
@@ -426,9 +435,11 @@ function pintarPlan(){
       <h1>¿Tienes un examen pronto?<em>Aquí estamos para ayudarte</em></h1>
       <p>Dinos la materia, la fecha y qué temas vienen, o súbele foto a tus apuntes. Te armamos el camino hasta el día del examen.</p>
       <button class="bt fuerte ancho" id="bCrear">${ico('plus')} Crear mi plan</button>
+      <button class="bt ancho" id="bAnadir" style="margin-top:12px">${ico('share-2')} Añadir curso con link o código</button>
       <button class="bt ancho academia-bt" id="bAcademia" style="margin-top:12px">${ico('graduation-cap')} Academia Grupo Mazi</button></div>`;
     $('#bCrear').addEventListener('click', alta);
     $('#bAcademia').addEventListener('click', abrirAcademia);
+    $('#bAnadir').addEventListener('click', () => anadirCurso());
     { const m = mascotaEn($('#mascVacio'), { tam: 120 }); if(m) setTimeout(() => m.play('saluda', { decir: '¡Hola! ¿Qué estudiamos hoy?' }), 500); }
     return;
   }
@@ -618,7 +629,7 @@ async function prepararPlan(datos, anadirA = null){
     const a = $('#prepAviso', c); a.hidden = false; a.textContent = e.message || String(e);
     a.insertAdjacentHTML('afterend', `<div style="display:grid;gap:10px;margin-top:14px"><button class="bt fuerte ancho" id="bReintentar">Intentar otra vez</button><button class="bt ancho" id="bCancelar">Volver</button></div>`);
     $('#bReintentar').addEventListener('click', () => prepararPlan(datos, anadirA)); $('#bCancelar').addEventListener('click', () => { cerrarCapa(); pintar(); });
-    if(e.llave) pintarFaltaLlave();
+    if(e.llave) pintarFaltaLlave(true);
   }
 }
 
@@ -695,7 +706,7 @@ async function abrirLeccion(p, n){
   if(!cont){
     const prep = pantallaPreparando(c, n.titulo);
     try{ cont = await contenidoDe(p, n.tema); prep.fin(); }
-    catch(e){ prep.error(e.message || String(e), () => abrirLeccion(plan(), n)); if(e.llave) pintarFaltaLlave(); return; }
+    catch(e){ prep.error(e.message || String(e), () => abrirLeccion(plan(), n)); if(e.llave) pintarFaltaLlave(true); return; }
     if($('#capa') !== c) return;     /* la cerró mientras esperaba */
   }
   /* LA LECCIÓN, TIPO HISTORIAS (Carlos, 12 nov: «esto está horrible y excesivamente sobrecargado»):
@@ -1203,13 +1214,14 @@ $('#bMenuPlan').innerHTML = ico('ellipsis-vertical');
 $('#bMenuPlan').addEventListener('click', () => {
   const p = plan(); if(!p) return;
   const h = hoja('Configuración', `<div class="menu">
-    <button data-m="nuevo">${ico('plus')}Crear nuevo plan</button><button data-m="editar">${ico('pencil')}Editar plan</button>
+    <button data-m="nuevo">${ico('plus')}Crear nuevo plan</button><button data-m="anadir">${ico('share-2')}Añadir curso con código</button><button data-m="editar">${ico('pencil')}Editar plan</button>
     <button data-m="material">${ico('image-plus')}Añadir material</button><button data-m="compartir">${ico('share-2')}Compartir plan</button>
     <button data-m="borrar" class="peligro">${ico('trash')}Eliminar plan</button></div>`);
   h.addEventListener('click', (e) => {
     const b = e.target.closest('[data-m]'); if(!b) return;
     const m = b.dataset.m;
     if(m === 'nuevo'){ cerrarHoja(); alta(); }
+    if(m === 'anadir'){ cerrarHoja(); anadirCurso(); }
     if(m === 'editar') editarPlan(p);
     if(m === 'material') anadirMaterial(p);
     if(m === 'compartir'){ cerrarHoja(); compartir(p); }
@@ -1243,11 +1255,51 @@ function anadirMaterial(p){
     cerrarHoja(); prepararPlan({ materia: { nombre: p.materia }, fecha: p.fecha, temas, fotos: fotos.filter(Boolean), extra: '' }, p);
   });
 }
+/* ── COMPARTIR UN PLAN CON TU GRUPO (Carlos, 13 nov) ──
+   «copio ese link o el código y lo mando a mi grupo, ellos lo ponen en "añadir curso por link" y ya les pone
+   exactamente lo mismo… y así ya no se gastan tokens». El servidor guarda una copia sin tu avance (estudio.js,
+   «compartir»); quien la recibe se trae camino, lecciones, preguntas y cátedras ya hechas. */
+const linkDePlan = (codigo) => `${location.origin}${location.pathname.replace(/index\.html$/, '')}?plan=${codigo}`;
 async function compartir(p){
-  const a = avanceDe(p);
-  const texto = `${p.titulo} · ${cuandoTexto(p.fecha)}\nVoy en ${a.pct} % (grado ${Math.floor(a.grado)}).\n\n${p.unidades.map((u, i) => `Unidad ${i + 1}: ${u.titulo}\n${u.temas.map((t) => '• ' + t.titulo).join('\n')}`).join('\n\n')}`;
-  try{ if(navigator.share){ await navigator.share({ title: p.titulo, text: texto }); return; } }catch{ return; }
-  try{ await navigator.clipboard.writeText(texto); brindis('Plan copiado para pegarlo donde quieras', '', 'copy'); }catch{ brindis('No se pudo copiar', 'vino', 'x'); }
+  if(!conAcceso()){ pintarFaltaLlave(true); return; }
+  const h = hoja('Compartir este plan', `<p class="cuenta-txt">Sacando el código…</p>`);
+  try{
+    await subirPlanes();
+    const r = await sala({ accion: 'compartir', id: p.id });
+    const link = linkDePlan(r.codigo), texto = `Estudia conmigo para ${p.titulo} en CARYMO: ${link}\n(o en CARYMO → «Añadir curso con código»: ${r.codigo})`;
+    $('.dentro', h).innerHTML = `<div class="agarre"></div><h3>Compartir este plan</h3><p class="cuenta-txt">Quien lo abra tiene el mismo plan que tú, con las lecciones ya hechas (sin gastar IA). Tu avance no se comparte.</p>
+      <div class="codigo-rec grande" aria-label="Código del plan">${esc(r.codigo)}</div>
+      <button class="bt fuerte ancho" id="bMandar">${ico('share-2')}Mandarlo a mi grupo</button>
+      <div class="fila-bt" style="margin-top:10px"><button class="bt" id="bCopLink">${ico('copy')}Copiar link</button><button class="bt" id="bCopCod">${ico('copy')}Copiar código</button></div>`;
+    const copiar = async (t, que) => { try{ await navigator.clipboard.writeText(t); brindis(`${que} copiado`, '', 'copy'); tono(SON.pop); }catch{ brindis('No se pudo copiar', 'vino', 'x'); } };
+    $('#bMandar', h).addEventListener('click', async () => { try{ if(navigator.share){ await navigator.share({ title: p.titulo, text: texto }); return; } }catch{ return; } copiar(texto, 'Mensaje'); });
+    $('#bCopLink', h).addEventListener('click', () => copiar(link, 'Link'));
+    $('#bCopCod', h).addEventListener('click', () => copiar(r.codigo, 'Código'));
+  }catch(e){ $('.dentro', h).innerHTML = `<div class="agarre"></div><h3>Compartir este plan</h3><p class="cuenta-txt">No se pudo: ${esc(e.message)}</p>`; if(e.llave) pintarFaltaLlave(true); }
+}
+/* añadir un plan compartido: con el link entero o con las 6 letras */
+const codigoDe = (t) => { const m = /[?&]plan=([A-Za-z0-9]{6})/.exec(t || '') || /^\s*([A-Za-z0-9]{6})\s*$/.exec(t || ''); return m ? m[1].toUpperCase() : ''; };
+function anadirCurso(pre = ''){
+  if(!conAcceso()){ try{ if(pre) sessionStorage.setItem('carymo.planPendiente', pre); }catch{} pintarFaltaLlave(true); return; }
+  const h = hoja('Añadir curso con link o código', `<p class="cuenta-txt">Pega el link que te mandaron o escribe las 6 letras del código.</p>
+    <input class="campo" id="cCodPlan" autocomplete="off" autocapitalize="characters" placeholder="Link o código" value="${esc(pre)}" aria-label="Link o código del plan">
+    <p class="cuenta-error" id="cErrPlan" role="alert" hidden></p><button class="bt fuerte ancho" id="bTraer" style="margin-top:12px">${ico('plus')}Añadir</button>`);
+  const ir = async () => {
+    const cod = codigoDe($('#cCodPlan', h).value), err = $('#cErrPlan', h);
+    if(!cod){ err.textContent = 'Eso no parece un link de CARYMO ni un código de 6 letras.'; err.hidden = false; return; }
+    const b = $('#bTraer', h); b.disabled = true; b.textContent = 'Trayendo el plan…';
+    try{
+      const r = await sala({ accion: 'traerPlan', codigo: cod });
+      const id = nuevoId(), nuevo = { ...r.plan, id, progreso: {}, compartidoDe: r.de || '', codigo: cod };
+      migrarCamino(nuevo);
+      planes[id] = nuevo; actualId = id; guardarLocal(); guardarPlan(nuevo);
+      cerrarHoja(); vista = 'plan'; pintar(); tono(SON.fin);
+      dice(`¡Listo! Ya tenemos el plan${r.de ? ' de ' + r.de : ''}. A darle.`, 'festeja', { si: () => brindis(`Listo: ${r.plan.titulo}`, '', 'circle-check') });
+    }catch(e){ err.textContent = e.message; err.hidden = false; b.disabled = false; b.innerHTML = `${ico('plus')}Añadir`; }
+  };
+  $('#bTraer', h).addEventListener('click', ir);
+  $('#cCodPlan', h).addEventListener('keydown', (e) => { if(e.key === 'Enter') ir(); });
+  if(pre) setTimeout(ir, 300);
 }
 
 /* ══ 13 · HORARIO ═════════════════════════════════════════════════════════ */
@@ -1451,7 +1503,7 @@ function opcionesVoz(){
 let vozPrueba = null;
 function probarVoz(){
   despertar();
-  vozPrueba ||= crearVoz({ pedir: async (c) => (await llamar(`${SERVIDOR}/api/sala/${SALA}/ia-voz`, { metodo: 'POST', cuerpo: c, espera: 60000 })).json().catch(() => ({})),
+  vozPrueba ||= crearVoz({ pedir: async (c) => (await pedirSala('ia-voz', { metodo: 'POST', cuerpo: c, espera: 60000 })).json().catch(() => ({})),
     alFallar: () => brindis('Esa voz no contestó; te puse la del teléfono', 'vino', 'mic') });
   const v = vozGuardada(); if(v === 'no'){ brindis('Elegiste «Sin voz»', '', 'mic'); return; }
   const nom = (perfil.nombre && perfil.nombre !== 'Tú') ? perfil.nombre.split(' ')[0] : '';
@@ -1466,7 +1518,10 @@ function pintarPerfil(){
       <div class="stat"><span style="color:#8EC5FF">${ico('snowflake')}</span><span><b>${perfil.congeladas || 0}</b><small>rachas congeladas</small></span></div>
       <div class="stat"><span style="color:var(--oro)">${ico('medal')}</span><span><b>${perfil.mejorRacha || 0}</b><small>mejor racha</small></span></div></div>
     <div class="seccion-t">Tus planes</div><div class="resultados">${ps.map((p) => `<button data-abrir-plan="${esc(p.id)}">${ico('notebook-pen')}<span>${esc(p.titulo)}<small>${esc(cuandoTexto(p.fecha))} · ${avanceDe(p).pct} % · grado ${Math.floor(avanceDe(p).grado)}</small></span>${ico('chevron-right')}</button>`).join('') || '<p style="color:var(--tenue)">Todavía no tienes planes.</p>'}
-      <button data-nuevo-plan>${ico('plus')}<span>Crear un plan</span></button></div>
+      <button data-nuevo-plan>${ico('plus')}<span>Crear un plan</span></button><button data-anadir-plan>${ico('share-2')}<span>Añadir curso con link o código</span></button></div>
+    <div class="seccion-t">Tu cuenta</div>
+    ${cuentaUI && cuentaUI.conCuenta() ? `<div class="ajuste">${ico('user')}<span>Entraste como <b>@${esc(cuentaUI.usuario())}</b></span><button class="bt mini" data-cuenta-p="salir">Salir</button></div>`
+      : `<div class="fila-bt" style="margin-bottom:6px"><button class="bt fuerte" data-cuenta-p="crear">${ico('user-plus')}Crear cuenta</button><button class="bt" data-cuenta-p="entrar">Ya tengo cuenta</button></div>`}
     <div class="seccion-t">Tú</div>
     <label class="ajuste">${ico('pencil')}<span>Tu nombre en el ranking</span><input id="pNombre" class="campo" style="max-width:150px;min-height:40px" value="${esc(perfil.nombre || '')}" aria-label="Tu nombre en el ranking"></label>
     <div class="seccion-t">Tu compañero</div>
@@ -1490,15 +1545,17 @@ $('#vPerfil').addEventListener('click', (e) => {
   const a = e.target.closest('[data-aj]'); if(a){ ajustes[a.dataset.aj] = !ajustes[a.dataset.aj]; guarda.poner('est.ajustes', ajustes); a.setAttribute('aria-checked', ajustes[a.dataset.aj]); encenderSonidos(ajustes.sonido !== false); tono(SON.toque); return; }
   const p = e.target.closest('[data-abrir-plan]'); if(p){ actualId = p.dataset.abrirPlan; guardarLocal(); vista = 'plan'; pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); return; }
   if(e.target.closest('[data-nuevo-plan]')) alta();
+  if(e.target.closest('[data-anadir-plan]')) anadirCurso();
+  const cb = e.target.closest('[data-cuenta-p]'); if(cb){ if(cb.dataset.cuentaP === 'salir') cuentaUI.salir(); else cuentaUI.abrir(cb.dataset.cuentaP); return; }
   if(e.target.closest('[data-probar-voz]')) probarVoz();
-  const mb = e.target.closest('[data-masc]'); if(mb){ ajustes.mascota = mb.dataset.masc; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); pintarPlan.saludo = false; if(llave()) sala({ accion: 'mascota', personaje: mb.dataset.masc }).catch(() => {}); }
+  const mb = e.target.closest('[data-masc]'); if(mb){ ajustes.mascota = mb.dataset.masc; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); pintarPlan.saludo = false; if(conAcceso()) sala({ accion: 'mascota', personaje: mb.dataset.masc }).catch(() => {}); }
   if(e.target.closest('[data-abrir-companero]')){ companero.abrir(); return; }
   const vm = e.target.closest('[data-voz-masc]');
   if(vm){
     const i = +vm.dataset.vozMasc, q = ajustes.mascota; despertar();
     ajustes.vozMascota = { ...(ajustes.vozMascota || {}), [q]: i }; guarda.poner('est.ajustes', ajustes);
     perfil.voces = { ...(perfil.voces || {}), [q]: i }; guarda.poner('est.perfil', perfil);
-    if(llave()) sala({ accion: 'mascota', personaje: q, voz: i }).then((r) => ponerPerfil(r.perfil)).catch(() => {});
+    if(conAcceso()) sala({ accion: 'mascota', personaje: q, voz: i }).then((r) => ponerPerfil(r.perfil)).catch(() => {});
     document.querySelectorAll('[data-voz-masc]').forEach((b) => b.setAttribute('aria-checked', String(b === vm)));
     const nom = (perfil.nombre && perfil.nombre !== 'Tú') ? perfil.nombre.split(' ')[0] : '';
     const frase = `¡Hola${nom ? ', ' + nom : ''}! ¿Así te gusta mi voz?`;
@@ -1538,12 +1595,16 @@ amigos = iniciarAmigos({ sala, brindis, hoja, cerrarHoja, esc, ico, tono, SON, v
   perfil: () => perfil, planes: () => planes, actual: () => actualId, vista: () => vista, cuenta: () => perfil.cuenta, estudiando: () => !!$('#capa') });
 pintar();
 sincronizar();
-if(llave()){ amigos.arrancar(); setTimeout(() => { if(vista === 'plan' && !$('#capa')) amigos.preguntarExamen(); }, 2500); }
+if(conAcceso()){ amigos.arrancar(); setTimeout(() => { if(vista === 'plan' && !$('#capa')) amigos.preguntarExamen(); }, 2500); }
+cuentaUI = iniciarCuenta({ hoja, cerrarHoja, esc, ico, brindis, tono, SON, $, perfil: () => perfil,
+  alEntrar: (yo) => { $('#cajaLlave')?.remove(); try{ const pend = sessionStorage.getItem('carymo.planPendiente'); if(pend){ sessionStorage.removeItem('carymo.planPendiente'); setTimeout(() => anadirCurso(pend), 900); } }catch{} if(yo && yo.nombre && (!perfil.nombre || perfil.nombre === 'Tú')){ perfil.nombre = yo.nombre; guarda.poner('est.perfil', perfil); sala({ accion: 'perfil', nombre: yo.nombre }).catch(() => {}); } sincronizar(); amigos.arrancar(); pintar(); },
+  alSalir: () => { pintar(); pintarFaltaLlave(); } });
 companero = iniciarCompanero({ sala, capa, cerrarCapa, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, crearMascota, $, brindis, ponerPerfil,
   perfil: () => perfil, ajustes: () => ajustes, alCerrar: () => pintar() });
 companero.pintarPastilla();
 /* la entrada animada (una vez por visita; el telón ya está en el HTML) */
 entrada({ personaje: ajustes.mascota });
 $('#pCubos').addEventListener('click', () => companero.abrir());
+{ const cod = codigoDe(location.search); if(cod){ history.replaceState(null, '', location.pathname); setTimeout(() => anadirCurso(cod), 3400); } }
 /* para las pruebas */
 window.__estudio = { companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };
