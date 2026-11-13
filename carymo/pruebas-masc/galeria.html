@@ -1,17 +1,19 @@
 <!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mascotas de CARYMO</title>
 <style>
   body{ margin:0; background:#170A26; color:#E9E4F2; font:600 14px system-ui, sans-serif }
-  header{ position:sticky; top:0; z-index:5; display:flex; gap:8px; padding:12px 16px; background:#170A26ee; backdrop-filter:blur(8px) }
-  header button{ flex:1; min-height:44px; border-radius:14px; border:2px solid #ffffff22; background:#ffffff10; color:inherit; font:inherit }
+  header{ position:sticky; top:0; z-index:5; display:flex; flex-wrap:wrap; gap:8px; padding:12px 16px; background:#170A26ee; backdrop-filter:blur(8px) }
+  header button{ flex:1 1 90px; min-height:44px; border-radius:14px; border:2px solid #ffffff22; background:#ffffff10; color:inherit; font:inherit }
   header button[aria-pressed="true"]{ border-color:#AC27FF; background:#AC27FF33 }
   .g{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; padding:40px 16px 30px }
   .c{ display:grid; justify-items:center; gap:6px; padding-top:34px }
   .c button{ min-height:40px; padding:0 14px; border-radius:12px; border:0; background:#7E1735; color:#fff; font:inherit }
 </style></head>
-<body><header><button data-q="tigre">Tigre</button><button data-q="paloma">Paloma</button><button id="todos">Todas a la vez</button></header><div class="g" id="g"></div>
+<body><header id="cab"><button id="todos">Todas a la vez</button></header><div class="g" id="g"></div>
 <script type="module">
 /* Galería de las mascotas: cada botón reproduce su animación. Sirve para revisarlas en el teléfono. */
-import { crearMascota } from '../mascota.js';
+import { crearMascota, PERSONAJES, NOMBRE_PERSONAJE } from '../mascota.js';
+/* ?todas=1 pone un personaje de cada uno (con ?e=estado, todos haciendo lo mismo) */
+document.getElementById('cab').insertAdjacentHTML('afterbegin', PERSONAJES.map((q) => `<button data-q="${q}">${NOMBRE_PERSONAJE[q]}</button>`).join(''));
 const NOMBRES = { saluda: 'Saluda', bien: 'Acierto', festeja: 'Festeja', mal: 'Error', triste: 'Triste', enojado: 'Enojado', sorpresa: 'Sorpresa', piensa: 'Piensa', amor: 'Amor', duerme: 'Duerme', calma: 'Calma', estudia: 'Estudia', juega: 'Juega', corre: 'Corre', vuela: 'Vuela' };
 const params = new URLSearchParams(location.search);
 const estados = params.get('e')?.split(',') || Object.keys(NOMBRES);
@@ -20,6 +22,7 @@ window.masc = [];
 function pintar(){
   for(const [, m] of window.masc) m.destruir(); window.masc = []; document.getElementById('g').innerHTML = '';
   document.querySelectorAll('[data-q]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.q === quien));
+  if(params.get('todas')){ for(const q of PERSONAJES){ const c = document.createElement('div'); c.className = 'c'; document.getElementById('g').append(c); const m = crearMascota(c, { personaje: q, tam: 130 }); const b = document.createElement('button'); b.textContent = NOMBRE_PERSONAJE[q]; b.onclick = () => m.play(estados[0] || 'saluda'); c.append(b); window.masc.push([estados[0] || 'saluda', m]); } return; }
   for(const e of estados){ const c = document.createElement('div'); c.className = 'c'; document.getElementById('g').append(c); const m = crearMascota(c, { personaje: quien, tam: 130 }); const b = document.createElement('button'); b.textContent = NOMBRES[e] || e; b.onclick = () => m.play(e); c.append(b); window.masc.push([e, m]); }
 }
 window.jugar = () => { for(const [e, m] of window.masc) if(e !== 'quieto') m.play(e); };

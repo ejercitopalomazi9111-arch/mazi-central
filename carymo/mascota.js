@@ -23,6 +23,7 @@
  *   · todo se mezcla suave: una reacción entra y sale sin brincos.
  * ===========================================================================*/
 
+import { ZOO } from './zoo.js';   /* la paloma mejorada y los animales nuevos (Luna, 13 nov) */
 const NS = 'http://www.w3.org/2000/svg';
 const lerp = (a, b, k) => a + (b - a) * k;
 const lim = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -230,9 +231,15 @@ let dedo = null;
 addEventListener('pointermove', (e) => { dedo = { x: e.clientX, y: e.clientY, t: performance.now() }; }, { passive: true });
 addEventListener('pointerdown', (e) => { dedo = { x: e.clientX, y: e.clientY, t: performance.now() }; }, { passive: true });
 
+/* todos los personajes: el tigre de aquí y los de zoo.js (la paloma de zoo.js reemplaza a la de aquí) */
+export const PERSONAJES = ['tigre', ...Object.keys(ZOO)];
+export const NOMBRE_PERSONAJE = { tigre: 'Tigre', ...Object.fromEntries(Object.entries(ZOO).map(([k, v]) => [k, v.nombre])) };
+const existe = (q) => q === 'tigre' || !!ZOO[q];
+const pivoteDe = (q) => (ZOO[q] && ZOO[q].pivote) || PIVOTE[q] || PIVOTE.tigre;
+const ojosDe = (q) => (ZOO[q] && ZOO[q].ojos) || OJOS[q] || OJOS.tigre;
 export function crearMascota(caja, op = {}){
   ponerEstilo();
-  let quien = op.personaje === 'paloma' ? 'paloma' : 'tigre';
+  let quien = existe(op.personaje) ? op.personaje : 'tigre';
   const el = document.createElement('div'); el.className = 'masc'; if(op.tam) el.style.setProperty('--tam', op.tam + 'px');
   el.setAttribute('role', 'img');
   caja.append(el);
@@ -241,13 +248,13 @@ export function crearMascota(caja, op = {}){
   let piezas = {}, boca = null, bocaClip = null, lengua = null, ojosEl = {};
   function dibujar(){
     const id = 'm' + (++uid) + '_';
-    el.innerHTML = quien === 'tigre' ? svgTigre(id) : svgPaloma(id);
+    el.innerHTML = ZOO[quien] ? ZOO[quien].svg(id) : quien === 'tigre' ? svgTigre(id) : svgPaloma(id);
     el.append(fx, globo);
     piezas = {}; for(const g of el.querySelectorAll('[data-p]')) piezas[g.dataset.p] = g;
     boca = el.querySelector('[data-boca]'); bocaClip = el.querySelector('[data-boca-clip]'); lengua = el.querySelector('[data-lengua]');
     ojosEl = {};
     for(const lado of ['I', 'D']){ const g = piezas['ojo' + lado]; ojosEl[lado] = { mira: g.querySelector('[data-mira]'), parpado: g.querySelector('[data-parpado]'), pestana: g.querySelector('[data-pestana]'), brillo: g.querySelector('[data-brillo]') }; }
-    el.setAttribute('aria-label', quien === 'tigre' ? 'Tu tigre' : 'Tu paloma');
+    el.setAttribute('aria-label', ZOO[quien] ? ZOO[quien].etiqueta : quien === 'tigre' ? 'Tu tigre' : 'Tu paloma');
   }
   dibujar();
 
@@ -312,25 +319,25 @@ export function crearMascota(caja, op = {}){
   }
 
   const T = (g, s) => { if(g && g._t !== s){ g.setAttribute('transform', s); g._t = s; } };
-  const rot = (nombre, ang, extra = '') => { const [px, py] = PIVOTE[quien][nombre] || [100, 100]; return `${extra}rotate(${ang.toFixed(2)} ${px} ${py})`; };
+  const rot = (nombre, ang, extra = '') => { const [px, py] = pivoteDe(quien)[nombre] || [100, 100]; return `${extra}rotate(${ang.toFixed(2)} ${px} ${py})`; };
   let tAhora = 0;
   function pintar(v){
     tAhora = performance.now();
-    const [rx, ry] = PIVOTE[quien].raiz;
+    const [rx, ry] = pivoteDe(quien).raiz;
     T(piezas.raiz, `translate(${v.x.toFixed(2)} ${v.y.toFixed(2)}) rotate(${v.giro.toFixed(2)} ${rx} ${ry}) translate(${rx} ${ry}) scale(${v.sx.toFixed(4)} ${v.sy.toFixed(4)}) translate(${-rx} ${-ry})`);
     const alto = Math.max(0, -v.y);
     T(piezas.sombra, `translate(100 207) scale(${(1 - alto / 120).toFixed(3)} 1) translate(-100 -207)`); if(piezas.sombra) piezas.sombra.style.opacity = (1 - alto / 90).toFixed(2);
     T(piezas.cabeza, rot('cabeza', v.cabezaGiro, `translate(${v.cabezaX.toFixed(2)} ${v.cabezaY.toFixed(2)}) `));
     /* un brazo que sube se abre hacia afuera: así la pata queda junto a la cara, no encima */
-    const subeI = lim(v.brazoI / 120, 0, 1), subeD = lim(-v.brazoD / 120, 0, 1), ab = quien === 'tigre' ? 14 : 6;
+    const subeI = lim(v.brazoI / 120, 0, 1), subeD = lim(-v.brazoD / 120, 0, 1), ab = ZOO[quien] ? ZOO[quien].abre : quien === 'tigre' ? 14 : 6;
     T(piezas.brazoI, rot('brazoI', v.brazoI, `translate(${(-ab * subeI).toFixed(2)} ${(-4 * subeI).toFixed(2)}) `));
     T(piezas.brazoD, rot('brazoD', v.brazoD, `translate(${(ab * subeD).toFixed(2)} ${(-4 * subeD).toFixed(2)}) `));
-    T(piezas.cola, rot('cola', v.cola)); T(piezas.orejaI, rot('orejaI', v.orejaI)); T(piezas.orejaD, rot('orejaD', v.orejaD));
+    T(piezas.cola, rot('cola', v.cola)); const oj = ZOO[quien] && ZOO[quien].orejasCaen ? -.6 : 1; T(piezas.orejaI, rot('orejaI', v.orejaI * oj)); T(piezas.orejaD, rot('orejaD', v.orejaD * oj));
     T(piezas.pataI, rot('pataI', v.pataI)); T(piezas.pataD, rot('pataD', v.pataD)); T(piezas.copete, rot('copete', v.copete));
     /* ojos: el tamaño, a dónde miran, el párpado, el ojo feliz y el cerrado de dormir */
     const feliz = lim(v.feliz, 0, 1), cerr = lim(v.cerrados, 0, 1);
     for(const lado of ['I', 'D']){
-      const [ox, oy, alto0] = OJOS[quien][lado], o = ojosEl[lado], g = piezas['ojo' + lado];
+      const [ox, oy, alto0] = ojosDe(quien)[lado], o = ojosEl[lado], g = piezas['ojo' + lado];
       const cierra = Math.max(feliz, cerr), aplasta = 1 - .9 * suave(lim(cierra / .75, 0, 1));
       g.style.opacity = (1 - suave(lim((cierra - .55) / .25, 0, 1))).toFixed(2);
       T(g, `translate(${ox} ${oy}) scale(${v.ojosGrandes.toFixed(3)} ${(v.ojosGrandes * aplasta).toFixed(3)}) translate(${-ox} ${-oy})`);
@@ -352,7 +359,7 @@ export function crearMascota(caja, op = {}){
     for(const c of ['cacheteI', 'cacheteD']) if(piezas[c]) piezas[c].setAttribute('opacity', lim(v.cachetes, 0, 1).toFixed(2));
     /* la boca del tigre se DEFORMA: ancho, curva (sonrisa o tristeza) y qué tan abierta */
     if(boca){
-      const w = 9 * v.ancho, y0 = 112, c = 4.5 * v.curva, h = lim(v.abierta, 0, 1) * 15;
+      const w = 9 * v.ancho, y0 = (ZOO[quien] && ZOO[quien].boca) || 112, c = 4.5 * v.curva, h = lim(v.abierta, 0, 1) * 15;
       const L = [100 - w, y0 - c], R = [100 + w, y0 - c];
       const d = `M${L[0].toFixed(2)} ${L[1].toFixed(2)} Q100 ${(y0 + c * .35).toFixed(2)} ${R[0].toFixed(2)} ${R[1].toFixed(2)} Q100 ${(y0 + c * .35 + h * 1.4).toFixed(2)} ${L[0].toFixed(2)} ${L[1].toFixed(2)} Z`;
       if(boca._d !== d){ boca.setAttribute('d', d); bocaClip.setAttribute('d', d); boca._d = d; }
@@ -409,7 +416,7 @@ export function crearMascota(caja, op = {}){
   return {
     el, play, decir, lluvia, icono,
     get estado(){ return estado; }, get quien(){ return quien; }, get parametros(){ return { ...mostrado }; },
-    personaje(q){ if((q !== 'tigre' && q !== 'paloma') || q === quien) return; quien = q; dibujar(); play('saluda'); },
+    personaje(q){ if(!existe(q) || q === quien) return; quien = q; dibujar(); play('saluda'); },
     destruir(){ VIVAS.delete(yo); io?.disconnect(); clearTimeout(globoT); el.remove(); },
   };
 }

@@ -28,17 +28,19 @@
 escrito). Hay que sumar mascotas con la **misma estética** que las de Sylcred: SVG por piezas, articuladas
 como Duolingo, en `carymo/mascota.js`.
 
-- [ ] **Paloma mejorada**, más parecida a la original. La original son las poses que mandó Carlos, que
+- ✅ **Paloma mejorada**, más parecida a la original. La original son las poses que mandó Carlos, que
       están en la historia de git (`git show 453185fd:carymo/mascotas/paloma-parada.webp`).
-- [ ] Pingüino.
-- [ ] Conejo.
-- [ ] Foca.
-- [ ] Ballena.
-- [ ] Gatito.
-- [ ] Perrito.
+- ✅ Pingüino.
+- ✅ Conejo.
+- ✅ Foca.
+- ✅ Ballena.
+- ✅ Gatito.
+- ✅ Perrito.
 - [ ] **3 voces por mascota**. La elegida se guarda en el perfil, así que al volver a entrar sigue la misma.
 - [ ] **La mascota dice las cosas** (si está prendida): avisos, resultados y ánimo, con su modo, no formal.
       Si está apagada, el texto normal.
+
+**Hecho (Luna):** los 7 viven en `carymo/zoo.js` (la paloma de ahí reemplaza a la vieja) y se eligen en el perfil.
 
 **Cómo:** cada animal es una función `svgX(id)` con las mismas piezas `data-p` (raiz, cuerpo, cabeza,
 ojoI/ojoD, brazoI/brazoD, pataI/pataD, cola, cacheteI/D, sombra) más su `PIVOTE` y su `OJOS`. Con eso, el
@@ -104,6 +106,13 @@ suscripción de paga dará cubitos diarios por seguir la racha.
 
 - [ ] Hoy hay 33 tipos (`ELEMENTOS` en `sala/lienzo.js`) y se repiten. Hay que sumar 200 a 300 variantes
       (familias nuevas y variaciones de las que hay) y que la IA no repita el mismo dos veces seguidas.
+
+## 8-bis · Banco de imágenes por curso (Carlos, 13 nov)
+
+- [ ] En el mismo banco de La Sala (`/banco`), una sección por curso con imágenes más específicas, variadas y
+      técnicas (no «un corazón», sino «el sistema eléctrico del corazón»).
+- [ ] Diagramas y **animaciones** que haga la IA: un corazón que late, la sangre que circula, una célula que
+      se divide. Se pueden armar como piezas animadas del pizarrón (`sala/lienzo.js`).
 
 ## 9 · Varios cursos a la vez (semana de exámenes)
 
