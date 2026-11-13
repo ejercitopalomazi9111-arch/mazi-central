@@ -82,6 +82,27 @@ console.log('El servidor');
   ok(r.borrado, 'un teléfono atrasado no revive un plan borrado');
   r = await llamar(s, 'carlos', 'POST', '', { accion: 'plan', plan: { id: 'gordo', titulo: 'x', relleno: 'x'.repeat(1_600_000) } });
   ok(r.error && /grande/.test(r.error), 'un plan gigante se rechaza');
+
+  console.log('La biblioteca: lo que la IA ya armó, para el siguiente que lo pida');
+  const lec = { leccion: { ideas: ['a'] }, preguntas: [{ tipo: 'opcion' }] };
+  r = await llamar(s, 'carlos', 'POST', '', { accion: 'memoria', tipo: 'leccion', materia: 'Historia', titulo: 'Causas de la Revolución Mexicana', nivel: 'prepa' });
+  ok(r.bien && r.hallado === null, 'lo que nadie ha pedido no está');
+  r = await llamar(s, 'carlos', 'POST', '', { accion: 'recordar', tipo: 'leccion', materia: 'Historia', titulo: 'Causas de la Revolución Mexicana', nivel: 'prepa', datos: lec });
+  ok(r.bien, 'se guarda la lección que armó la IA');
+  r = await llamar(s, 'luis', 'POST', '', { accion: 'memoria', tipo: 'leccion', materia: 'historia', titulo: 'la revolucion mexicana: sus causas', nivel: 'prepa' });
+  ok(r.hallado && r.hallado.parecido === 1 && r.hallado.datos.preguntas.length === 1, 'OTRA cuenta la encuentra aunque la escriba distinto (acentos, orden, artículos)');
+  r = await llamar(s, 'luis', 'POST', '', { accion: 'memoria', tipo: 'leccion', materia: 'Historia', titulo: 'Causas de la Revolución Mexicana de 1910', nivel: 'prepa' });
+  ok(r.hallado && r.hallado.parecido >= .75 && r.hallado.parecido < 1, `un tema casi igual también sale (parecido ${r.hallado && r.hallado.parecido})`);
+  r = await llamar(s, 'luis', 'POST', '', { accion: 'memoria', tipo: 'leccion', materia: 'Historia', titulo: 'Consecuencias de la Revolución Mexicana', nivel: 'prepa' });
+  ok(r.hallado === null, 'un tema distinto (consecuencias, no causas) NO se confunde');
+  r = await llamar(s, 'luis', 'POST', '', { accion: 'memoria', tipo: 'leccion', materia: 'Historia', titulo: 'Causas de la Revolución Mexicana', nivel: 'uni' });
+  ok(r.hallado === null, 'otro nivel es otra lección');
+  r = await llamar(s, 'luis', 'POST', '', { accion: 'memoria', tipo: 'leccion', materia: 'Química', titulo: 'Causas de la Revolución Mexicana', nivel: 'prepa' });
+  ok(r.hallado === null, 'otra materia es otra lección');
+  r = await llamar(s, 'carlos', 'POST', '', { accion: 'recordar', tipo: 'leccion', materia: 'X', titulo: 'Gorda', datos: { x: 'y'.repeat(130_000) } });
+  ok(r.error, 'algo gigante no entra a la biblioteca');
+  r = await llamar(s, 'carlos', 'POST', '', { accion: 'biblioteca' });
+  ok(r.leccion.cuantos === 1 && r.leccion.usos >= 2, `la biblioteca cuenta lo guardado y cuántas veces se reusó (${r.leccion.cuantos}, ${r.leccion.usos})`);
 }
 
 if(process.env.SOLO !== 'servidor') await (await import('./pruebas-estudio-pantalla.mjs')).correr({ ok, almacen, atenderEstudio });

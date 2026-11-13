@@ -534,7 +534,14 @@ async function prepararPlan(datos, anadirA = null){
       + (datos.extra ? `Lo que dijo el alumno: ${datos.extra}\n` : '')
       + (datos.fotos.length ? 'Te mando fotos de mis apuntes: arma el plan con lo que dicen.' : '')
       + (anadirA ? `\nYA TENGO estas unidades (no las repitas, arma SÓLO unidades nuevas con lo nuevo): ${anadirA.unidades.map((u) => u.titulo).join(', ')}` : '');
-    const j = await ia({ sistema: sistemaPlan(), texto, imagenes: datos.fotos.map(({ mime, data }) => ({ mime, data })), tope: 4000, revisar: normalizarPlan });
+    /* sin fotos ni comentarios, el mismo temario de la misma materia ya se armó antes: se reusa */
+    const generico = !datos.fotos.length && !datos.extra && !anadirA && datos.temas.length;
+    const claveTemas = datos.temas.map((x) => x.trim()).filter(Boolean).sort().join(' · ');
+    let j = generico ? await deLaBiblioteca('plan', datos.materia.nombre, claveTemas, 'prepa', normalizarPlan) : null;
+    if(!j){
+      j = await ia({ sistema: sistemaPlan(), texto, imagenes: datos.fotos.map(({ mime, data }) => ({ mime, data })), tope: 4000, revisar: normalizarPlan });
+      if(generico) aLaBiblioteca('plan', datos.materia.nombre, claveTemas, 'prepa', j);
+    }
     clearInterval(giro); bolas.forEach((b) => b.classList.add('ve')); lis.forEach((l) => l.classList.add('ya'));
     let p;
     if(anadirA){
@@ -546,7 +553,7 @@ async function prepararPlan(datos, anadirA = null){
       p.unidades.push(...nuevas); p.unidades[p.unidades.length - 1].nodos.push(...finales);
       p.notas = [p.notas, j.notas].filter(Boolean).join('\n').slice(0, 1500);
     } else {
-      p = { id: 'p' + nuevoId(), titulo: j.titulo || `Examen de ${datos.materia.nombre}`, materia: datos.materia.nombre, color: datos.materia.color, fecha: datos.fecha, notas: j.notas, extra: datos.extra,
+      p = { id: 'p' + nuevoId(), titulo: j.titulo || `Examen de ${datos.materia.nombre}`, materia: datos.materia.nombre, color: datos.materia.color, fecha: datos.fecha, notas: j.notas, extra: datos.extra, conFotos: datos.fotos.length > 0,
         creado: Date.now(), unidades: armarCamino(j), contenido: {}, progreso: {}, forma: 2 };
     }
     actualId = p.id; guardarPlan(p);
@@ -564,6 +571,21 @@ async function prepararPlan(datos, anadirA = null){
   }
 }
 
+/* ══ LA BIBLIOTECA (servidor: est:mem) ══════════════════════════════════════
+   Antes de pedirle algo a la IA se busca si alguien ya lo pidió; lo que la IA arma
+   se guarda para el siguiente. Lo que trae fotos o notas del alumno NO se guarda. */
+async function deLaBiblioteca(tipo, materia, titulo, nivel, revisar){
+  try{
+    const r = await Promise.race([sala({ accion: 'memoria', tipo, materia, titulo, nivel }), new Promise((_, no) => setTimeout(() => no(new Error('lento')), 6000))]);
+    if(r && r.hallado && r.hallado.datos){ const d = revisar(r.hallado.datos); d._biblioteca = true; return d; }
+  }catch{}
+  return null;
+}
+function aLaBiblioteca(tipo, materia, titulo, nivel, datos){
+  const limpio = JSON.parse(JSON.stringify(datos)); delete limpio._biblioteca;
+  sala({ accion: 'recordar', tipo, materia, titulo, nivel, datos: limpio }).catch(() => {});
+}
+
 /* ══ 8 · LECCIONES (se piden cuando hacen falta, y la siguiente se prepara sola) ══ */
 const pidiendo = new Map();
 function contenidoDe(p, temaId){
@@ -572,8 +594,13 @@ function contenidoDe(p, temaId){
   const t = temaDe(p, temaId);
   const u = p.unidades.find((x) => x.temas.some((y) => y.id === temaId));
   const pr = (async () => {
-    const j = await ia({ sistema: sistemaLeccion(), tope: 7000, revisar: normalizarLeccion,
-      texto: `Materia: ${p.materia}\nUnidad: ${u ? u.titulo : ''}\nTema: ${t.titulo}\n${t.resumen ? 'De qué trata: ' + t.resumen + '\n' : ''}${p.notas ? 'Lo que traen los apuntes del alumno: ' + p.notas + '\n' : ''}${p.extra ? 'Lo que dijo el alumno: ' + p.extra : ''}` });
+    const nivel = p.academia ? 'academia' : 'prepa';
+    let j = await deLaBiblioteca('leccion', p.materia, t.titulo, nivel, normalizarLeccion);
+    if(!j){
+      j = await ia({ sistema: sistemaLeccion(), tope: 7000, revisar: normalizarLeccion,
+        texto: `Materia: ${p.materia}\nUnidad: ${u ? u.titulo : ''}\nTema: ${t.titulo}\n${t.resumen ? 'De qué trata: ' + t.resumen + '\n' : ''}${p.notas ? 'Lo que traen los apuntes del alumno: ' + p.notas + '\n' : ''}${p.extra ? 'Lo que dijo el alumno: ' + p.extra : ''}` });
+      if(!p.conFotos && !p.extra) aLaBiblioteca('leccion', p.materia, t.titulo, nivel, j);
+    }
     const actual = planes[p.id] || p; actual.contenido = actual.contenido || {}; actual.contenido[temaId] = j; guardarPlan(actual);
     return j;
   })();

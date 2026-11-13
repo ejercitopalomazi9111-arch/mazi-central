@@ -381,20 +381,35 @@ async function pedirClase(){
   const giro = setInterval(() => { k++; const s = Math.round((Date.now() - t0) / 1000);
     $('#preparaTxt').innerHTML = `${ESPERA[k % ESPERA.length]}${largaEspera ? ` <small>(${s} s de unos 120)</small>` : ''}<b>${esc(tema || 'tus apuntes')}</b>`; }, 3000);
   try{
-    const largo = $('#largo').value;
+    const largo = $('#largo').value, nivelB = `${$('#nivel').value}-${largo}`;
+    /* la biblioteca: si alguien ya pidió esta misma clase (sin fotos), sale de ahí al instante */
+    if(tema && !fotos.length){
+      const ya = await biblioteca({ accion: 'memoria', tipo: 'clase', materia: '', titulo: tema, nivel: nivelB });
+      if(ya && ya.hallado && ya.hallado.datos){
+        try{ const c = normalizar(ya.hallado.datos); c.motor = ya.hallado.datos.motor || motor; c.tema = tema; c.id = Date.now().toString(36); c.fecha = Date.now(); c.deBiblioteca = true;
+          guardarHistorial(c); empezar(c); return; }catch{}
+      }
+    }
     const c = await pedirJSON({ motor, json: true, tope: 8000, sistema: sistema(motor, $('#nivel').value, largo) + (largo === 'fondo' ? '\n\nESTA ES LA PARTE 1 DE 2 de una clase a fondo: escribe los primeros pasos (los fundamentos y el mecanismo). La parte 2 (aplicaciones, casos, excepciones, errores comunes y cierre) se pide aparte; aquí deja "referencias" y "repaso" vacíos.' : ''),
       mensajes: [{ de: 'tu', texto: tema ? `Explícame: ${tema}` : 'Explícame lo que dicen estas fotos de mis apuntes.' }], imagenes: fotos }, normalizar);
     c.motor = motor; c.tema = tema; c.id = Date.now().toString(36); c.fecha = Date.now();
     guardarHistorial(c); empezar(c);
-    if(largo === 'fondo') segundaParte(c, motor, tema);
+    const guardarla = () => { if(tema && !fotos.length) biblioteca({ accion: 'recordar', tipo: 'clase', materia: '', titulo: tema, nivel: nivelB, datos: { titulo: c.titulo, visual: c.visual, pasos: c.pasos, referencias: c.referencias, repaso: c.repaso, motor } }); };
+    if(largo === 'fondo') segundaParte(c, motor, tema).then(guardarla); else guardarla();
   }catch(e){
     ver('inicio'); aviso(e.message || String(e)); if(e.llave) $('#cajaLlave').hidden = false;
   }finally{ clearInterval(giro); }
 }
 /* la segunda mitad de una clase a fondo: se pide en cuanto arranca la primera y se pega al final */
+async function biblioteca(cuerpo){
+  try{
+    const r = await Promise.race([llamar(`${SERVIDOR}/api/sala/${SALA}/estudio`, { metodo: 'POST', cuerpo, espera: 8000 }), new Promise((_, no) => setTimeout(() => no(new Error('lento')), 8000))]);
+    return await r.json().catch(() => null);
+  }catch{ return null; }
+}
 function segundaParte(c, motor, tema){
   const resumen = c.pasos.map((x, i) => `${i + 1}. ${x.voz}`).join('\n');
-  c.pendiente = pedirJSON({ motor, json: true, tope: 8000,
+  return c.pendiente = pedirJSON({ motor, json: true, tope: 8000,
     sistema: sistema(motor, $('#nivel').value, 'fondo') + `\n\nESTA ES LA PARTE 2 DE 2. YA DISTE la parte 1 de «${c.titulo}»:\n${resumen}\n\nAhora escribe de 12 a 15 pasos NUEVOS que profundicen sin repetir: aplicaciones, casos reales, excepciones, comparaciones, errores comunes, cómo se conecta con otros temas y un cierre con un "resumen". El primero puede ser un "titulo" de sección. Incluye "referencias" y "repaso" (de 4 a 6 preguntas).`,
     mensajes: [{ de: 'tu', texto: `Sigue con la parte 2 de: ${tema || c.titulo}` }] }, normalizar)
     .then((n2) => {

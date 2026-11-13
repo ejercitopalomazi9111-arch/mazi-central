@@ -254,6 +254,18 @@ export async function correr({ ok, almacen, atenderEstudio }){
     const est = s.m.get('est:perfil:carlos');
     ok(est && est.xp > 0 && est.racha === 1, `el XP y la racha llegaron a La Sala (${est && est.xp} XP)`);
     ok(await pagina.isVisible('#pRacha') && /1/.test(await pagina.textContent('#pRacha')), 'la racha de 1 se ve arriba');
+    /* la biblioteca: la lección que armó la IA quedó guardada para el siguiente que la pida */
+    const enBiblio = [...s.m.keys()].filter((k) => k.startsWith('est:mem:leccion:'));
+    ok(enBiblio.length >= 1 && enBiblio.some((k) => /circulatorio/.test(k)), `la lección quedó en la biblioteca de la sala (${enBiblio.length})`);
+    {
+      const iaAntes = iaVeces;
+      const otra = await pagina.evaluate(async () => { const r = await fetch(new URL('../carymo/index.html', location.href)); return r.ok; });
+      const res = await pagina.evaluate(async (b) => {
+        const r = await fetch(`${b}/api/sala/G/estudio`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ accion: 'memoria', tipo: 'leccion', materia: 'Química y Biología', titulo: 'sistema circulatorio', nivel: 'prepa' }) });
+        return r.json();
+      }, base);
+      ok(otra && res.hallado && res.hallado.datos && res.hallado.datos.preguntas && res.hallado.datos.preguntas.length >= 8, 'otro alumno que pida «sistema circulatorio» la recibe entera de la biblioteca, sin gastar IA (' + JSON.stringify(res).slice(0, 80) + ')');
+    }
 
     /* 4 · tema 2: su cátedra y su nivel… con el JSON mal escrito (comas de más y un comentario) */
     await catedra();
