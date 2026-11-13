@@ -476,13 +476,15 @@ function lienzoSVG(el, w, h, z, ctx){
 const t2 = (svg, d, o) => trazo(svg, d, o);
 
 function armarDiagrama(el, w, z, ctx){
-  const W = w, SALTO = 64, fuente = '700 14px Texto';
+  const W = w, fuente = '700 14px Texto';
   const entra = new Map(z.nodos.map((n) => [n.id, 0])); z.flechas.forEach((f) => entra.set(f.a, (entra.get(f.a) || 0) + 1));
   const nivel = new Map(); const raices = z.nodos.filter((n) => !entra.get(n.id));
   const cola = (raices.length ? raices : [z.nodos[0]]).map((n) => n.id); cola.forEach((id) => nivel.set(id, 0));
   while(cola.length){ const id = cola.shift(); for(const f of z.flechas) if(f.de === id && !nivel.has(f.a)){ nivel.set(f.a, nivel.get(id) + 1); cola.push(f.a); } }
   z.nodos.forEach((n) => { if(!nivel.has(n.id)){ nivel.set(n.id, 0); } });
   const filas = []; z.nodos.forEach((n) => { const l = nivel.get(n.id); (filas[l] = filas[l] || []).push(n); });
+  /* si hay flechas de regreso con letrero, su letrero cae en el mismo hueco que el de las que bajan: el hueco crece para que quepan los dos */
+  const SALTO = z.flechas.some((f) => f.texto && (nivel.get(f.a) ?? 0) <= (nivel.get(f.de) ?? 0)) ? 100 : 64;
   const pos = new Map(); let y = 10;
   filas.filter(Boolean).forEach((fila) => { const g = 12, cw = Math.min(210, (W - g * (fila.length + 1)) / fila.length);
     const rens = fila.map((n) => partir(n.texto, cw - 16, fuente).slice(0, 4)), h = Math.max(46, 16 + Math.max(...rens.map((r) => r.length)) * 18);
@@ -490,21 +492,43 @@ function armarDiagrama(el, w, z, ctx){
     y += h + SALTO; });
   const H = y - SALTO + 14;
   const { svg, defs, mover, tareasTitulo } = lienzoSVG(el, W, H, z, ctx);
-  const t = [];
+  const t = [], etiquetas = [];
   z.nodos.forEach((n, i) => { const p = pos.get(n.id), tn = TINTAS[(ctx.n + nivel.get(n.id)) % TINTAS.length];
     t.push(relleno(svg, caja(p.x, p.y, p.w, p.h, 12, 0), tn.c, 1), t2(svg, caja(p.x, p.y, p.w, p.h, 12), { color: tn.t, fase: 0 }));
     p.ren.forEach((r, k) => t.push(...textoSVG(svg, defs, r, p.x + p.w / 2, p.y + p.h / 2 + (k - (p.ren.length - 1) / 2) * 18, { tam: 14, fase: 2 }).tareas)); });
   for(const f of z.flechas){ const a = pos.get(f.de), b = pos.get(f.a); if(!a || !b) continue;
     const x1 = a.x + a.w / 2, x2 = b.x + b.w / 2;
     if(b.y > a.y){ t.push(t2(svg, flecha(x1, a.y + a.h + 2, x2, b.y - 4, { curva: x1 === x2 ? 0 : .08 }), { color: '#4A4656', ancho: 2.2, fase: 1 }));
-      if(f.texto) t.push(...textoSVG(svg, defs, f.texto, (x1 + x2) / 2 + 8, (a.y + a.h + b.y) / 2, { tam: 15, fam: 'Mano', ancla: 'start', color: ctx.tinta2.t, fase: 3 }).tareas); }
+      /* la etiqueta va del lado hacia donde se abre la flecha (la que baja a la izquierda, a su izquierda): si no, dos flechas que se abren chocan sus letreros en medio */
+      if(f.texto){ const izq = x2 < x1 - 2; etiquetas.push({ texto: f.texto, x: (x1 + x2) / 2 + (izq ? -8 : 8), y: (a.y + a.h + b.y) / 2, ancla: izq ? 'end' : 'start', ymin: a.y + a.h + 10, ymax: b.y - 10 }); } }
+    else if([...pos.values()].some((o) => o !== a && o.y === a.y && o.x < a.x) && [...pos.values()].some((o) => o !== a && o.y === a.y && o.x > a.x) && b.y < a.y){
+      /* una caja de EN MEDIO que regresa: por un lado cruzaría a su vecina; sube directo, a un lado de las que bajan */
+      const sx = a.x + a.w * .78, ex = Math.min(b.x + b.w - 14, Math.max(b.x + 14, b.x + b.w * .72));
+      t.push(t2(svg, flecha(sx, a.y - 4, ex, b.y + b.h + 4, { curva: .18 }), { color: '#4A4656', ancho: 2.2, fase: 1 }));
+      if(f.texto) etiquetas.push({ texto: f.texto, x: Math.max(sx, ex) + 8, y: (a.y + b.y + b.h) / 2, ancla: 'start', ymin: b.y + b.h + 10, ymax: a.y - 10 });
+    }
     else {
       const izq = a.x + a.w / 2 < W / 2;
       const ax = izq ? a.x : a.x + a.w, bx = izq ? b.x - 4 : b.x + b.w + 4, lado = izq ? Math.max(4, Math.min(a.x, b.x) - 22) : Math.min(W - 4, Math.max(a.x + a.w, b.x + b.w) + 22);
       const ay = a.y + a.h / 2, by = b.y + b.h / 2, k = 9, s = izq ? 1 : -1;
       t.push(t2(svg, `M${f1(ax)} ${f1(ay)} C${f1(lado)} ${f1(ay)} ${f1(lado)} ${f1(by)} ${f1(bx)} ${f1(by)} M${f1(bx - k * s)} ${f1(by - k * .6)} L${f1(bx)} ${f1(by)} L${f1(bx - k * s)} ${f1(by + k * .6)}`, { color: '#4A4656', ancho: 2.2, fase: 1 }));
-      if(f.texto) t.push(...textoSVG(svg, defs, f.texto, lado + (izq ? 4 : -4), (ay + by) / 2, { tam: 15, fam: 'Mano', ancla: izq ? 'start' : 'end', color: ctx.tinta2.t, fase: 3 }).tareas);
+      if(f.texto) etiquetas.push({ texto: f.texto, x: lado + (izq ? 4 : -4), y: (ay + by) / 2, ancla: izq ? 'start' : 'end', ymin: Math.min(ay, by), ymax: Math.max(ay, by) });
     } }
+  /* LOS LETREROS DE LAS FLECHAS NO SE ENCIMAN (Carlos, 13 nov: «Alta presión» y «Retorno venoso» salían uno encima del otro).
+     Cada uno se mide; si choca con una caja o con otro letrero, se corre arriba o abajo dentro de su tramo, y nunca se sale del pizarrón. */
+  const FUENTE_ET = "700 15px Mano", ALTO_ET = 15 * 1.25, ocupado = [...pos.values()].map((p) => ({ x: p.x - 4, y: p.y - 4, w: p.w + 8, h: p.h + 8 }));
+  const choca = (r) => ocupado.some((o) => r.x < o.x + o.w && r.x + r.w > o.x && r.y < o.y + o.h && r.y + r.h > o.y);
+  for(const e of etiquetas){
+    const ren = partir(e.texto, Math.max(70, W / 2 - 16), FUENTE_ET), w = Math.max(...ren.map((r) => medirTexto(r, FUENTE_ET))), h = ren.length * ALTO_ET;
+    let x0 = e.ancla === 'end' ? e.x - w : e.x;
+    x0 = Math.max(4, Math.min(W - 4 - w, x0));
+    let mejor = null;
+    for(let k = 0; k <= 12 && !mejor; k++) for(const sgn of k ? [-1, 1] : [1]){
+      const y = e.y + sgn * k * (ALTO_ET * .6); if(y - h / 2 < e.ymin - ALTO_ET || y + h / 2 > e.ymax + ALTO_ET) continue;
+      const r = { x: x0 - 2, y: y - h / 2 - 2, w: w + 4, h: h + 4 }; if(!choca(r)){ mejor = { y, r }; break; } }
+    const y = mejor ? mejor.y : e.y; ocupado.push(mejor ? mejor.r : { x: x0, y: y - h / 2, w, h });
+    t.push(...textoSVG(svg, defs, ren.join(' '), x0, y, { tam: 15, fam: 'Mano', ancla: 'start', color: ctx.tinta2.t, fase: 3, maxAncho: ren.length > 1 ? w + 1 : 0 }).tareas);
+  }
   return [...tareasTitulo, ...mover(t)];
 }
 
