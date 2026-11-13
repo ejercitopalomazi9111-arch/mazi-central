@@ -26,6 +26,7 @@
 import { ZOO } from './zoo.js';   /* la paloma mejorada y los animales nuevos (Luna, 13 nov) */
 import { CABEZAS, svgAccesorio, svgCuello, DEL_CUELLO, svgHuevo } from './mascota-ropa.js';
 import { SKINS } from './crianza-datos.js';
+import { taparia, decirEnMuelle } from './muelle.js';
 const NS = 'http://www.w3.org/2000/svg';
 const lerp = (a, b, k) => a + (b - a) * k;
 const lim = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -218,6 +219,10 @@ function ponerEstilo(){
   .masc-globo{ position:absolute; left:50%; bottom:100%; translate:-50% 0; margin-bottom:6px; max-width:210px; width:max-content; padding:8px 12px; border-radius:14px;
     background:#fff; color:#2A1240; font:700 13px/1.3 system-ui, sans-serif; box-shadow:0 6px 18px #0004; pointer-events:none; opacity:0; text-align:center; z-index:2 }
   .masc-globo::after{ content:""; position:absolute; left:50%; top:100%; translate:-50% -1px; border:7px solid transparent; border-top-color:#fff }
+  /* si arriba tapa algo, el globito se va a un lado o abajo (muelle.js · taparia); si en ningún lado cabe, lo dice el muelle */
+  .masc-globo[data-lado=derecha]{ left:100%; bottom:52%; translate:0 0; margin:0 0 0 4px } .masc-globo[data-lado=izquierda]{ left:auto; right:100%; bottom:52%; translate:0 0; margin:0 4px 0 0 }
+  .masc-globo[data-lado=derecha]::after, .masc-globo[data-lado=izquierda]::after{ display:none }
+  .masc-globo[data-lado=abajo]{ bottom:auto; top:100%; margin:6px 0 0 } .masc-globo[data-lado=abajo]::after{ top:auto; bottom:100%; translate:-50% 1px; border-top-color:transparent; border-bottom-color:#fff }
   .masc > svg{ transform:scale(var(--voltea, 1), 1); transform-origin:50% 94% }
   .masc[data-etapa=bebe] > svg{ transform:scale(calc(var(--voltea, 1) * .78), .78) }
   .masc[data-etapa=joven] > svg{ transform:scale(calc(var(--voltea, 1) * .9), .9) }
@@ -448,9 +453,24 @@ export function crearMascota(caja, op = {}){
     clearTimeout(globoT);
     if(!texto){ globo.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 150, fill: 'forwards' }); return; }
     globo.textContent = texto;
-    /* que el globo no se salga de la pantalla cuando la mascota está en la orilla (Luna, 13 nov) */
-    globo.style.marginLeft = '0px';
-    try{ const g = globo.getBoundingClientRect(), mx = 8; if(g.width){ const dx = g.left < mx ? mx - g.left : g.right > innerWidth - mx ? innerWidth - mx - g.right : 0; if(dx) globo.style.marginLeft = dx + 'px'; } }catch{}
+    /* que el globo no se salga de la pantalla cuando la mascota está en la orilla (Luna, 13 nov) y que NO tape nada
+       (Carlos, 14 nov): se prueba arriba, a los lados y abajo; si en ningún lado cabe, lo dice el muelle de arriba */
+    let lugar = op.globoLibre ? 'arriba' : null;
+    if(!lugar){
+      for(const lado of ['arriba', 'derecha', 'izquierda', 'abajo']){
+        globo.dataset.lado = lado; globo.style.marginLeft = ''; globo.style.maxWidth = '';
+        try{
+          /* de lado se hace angostito para caber entre la mascota y la orilla; si ni así, se brinca ese lado */
+          if(lado === 'derecha' || lado === 'izquierda'){ const r = el.getBoundingClientRect(), hueco = Math.floor(lado === 'derecha' ? innerWidth - r.right - 14 : r.left - 14); if(hueco < 96) continue; globo.style.maxWidth = Math.min(210, hueco) + 'px'; }
+          let g = globo.getBoundingClientRect();
+          if(lado === 'arriba' || lado === 'abajo'){ const mx = 8, dx = g.left < mx ? mx - g.left : g.right > innerWidth - mx ? innerWidth - mx - g.right : 0; if(dx){ globo.style.marginLeft = dx + 'px'; g = globo.getBoundingClientRect(); } }
+          if(!g.width || !taparia(g, [globo, el])){ lugar = lado; break; }
+        }catch{ lugar = lado; break; }
+      }
+    }
+    if(!lugar){ globo.dataset.lado = 'arriba'; globo.getAnimations().forEach((a) => a.cancel()); globo.style.opacity = '0'; op.alDecir && op.alDecir(texto, quien); decirEnMuelle(texto, ms); return; }
+    globo.style.opacity = '';
+    globo.dataset.lado = lugar;
     op.alDecir && op.alDecir(texto, quien);   /* carymo.js lo dice en voz alta con la voz que elegiste para esta mascota */
     globo.animate([{ opacity: 0, transform: 'translateY(6px) scale(.8)' }, { opacity: 1, transform: 'translateY(0) scale(1.04)', offset: .7 }, { opacity: 1, transform: 'none' }],
       { duration: 260, easing: 'cubic-bezier(.3,1.5,.4,1)', fill: 'forwards' });

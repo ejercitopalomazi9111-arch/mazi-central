@@ -15,6 +15,7 @@
  * (perdiste la racha, te pasaron en el ranking), racha, perfecto, regular, sorpresa, guino.
  * Con «reducir movimiento» la cara sí cambia (es información) pero el cuerpo no brinca.
  * ===========================================================================*/
+import { alMuelle } from './muelle.js';
 
 /* las caras: sólo lo que cambia respecto a como lo vestiste */
 const CARAS = {
@@ -195,8 +196,9 @@ let asomado = null;
 function asomarse(tipo){
   if(!cfg.personaje()) return;
   if(asomado){ asomado.v.reaccionar(tipo); clearTimeout(asomado.t); asomado.t = setTimeout(irse, (REACCIONES[tipo]?.ms || 2000) + 900); return; }
-  const caja = document.createElement('div'); caja.className = 'pv-asoma'; document.body.append(caja);
-  const v = personajeVivo(caja, { tam: 92, cameo: true }); if(!v){ caja.remove(); return; }
+  /* se asoma en el muelle de arriba (muelle.js): ya no flota encima de la pantalla */
+  const caja = document.createElement('div'); caja.className = 'pv-asoma'; alMuelle(caja);
+  const v = personajeVivo(caja, { tam: 64, cameo: true }); if(!v){ caja.remove(); return; }
   asomado = { caja, v, t: 0 };
   requestAnimationFrame(() => requestAnimationFrame(() => { caja.classList.add('dentro'); setTimeout(() => v.reaccionar(tipo), 260); }));
   asomado.t = setTimeout(irse, (REACCIONES[tipo]?.ms || 2000) + 1100);
