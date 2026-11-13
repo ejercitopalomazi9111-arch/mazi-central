@@ -1215,6 +1215,25 @@
         "pensarPoco"
       ],
       "vecinas": []
+    },
+    {
+      "id": "prueba-mira-la-marca-ya-cambiada",
+      "titulo": "Una prueba que cambia su marca antes de usarla revisa la respuesta equivocada",
+      "gravedad": "media",
+      "sintoma": "La prueba de «escribir con errores de dedo» de CARYMO fallaba 1 de cada 2 veces, con la app sana.",
+      "causa": "La prueba contesta MAL la primera pregunta y pone falle = true; justo después preguntaba «si es escribir y ya fallé, debe decir Casi perfecto». Cuando escribir salía primero, revisaba la respuesta que se contestó mal a propósito.",
+      "porque": "El orden de las preguntas es al azar: sólo a veces le toca a escribir ser la primera.",
+      "arreglo": "Se guarda «ésta es la que fallé» ANTES de cambiar la marca (estaLaFalle en sala/pruebas-estudio-pantalla.mjs).",
+      "comoCazarlo": "Correr la prueba varias veces seguidas y contar; una intermitente nunca se da por buena con una corrida verde.",
+      "consejo": "Una marca que se cambia a la mitad del ciclo se lee antes, en una variable con nombre.",
+      "senales": [
+        "falla a veces",
+        "corason",
+        "casi perfecto",
+        "prueba intermitente"
+      ],
+      "salioDe": "CARYMO, Academia, 13 de noviembre de 2026.",
+      "vecinas": []
     }
   ]
 }
