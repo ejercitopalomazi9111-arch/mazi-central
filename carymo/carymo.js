@@ -281,7 +281,9 @@ const temaDe = (p, id) => { for(const u of p.unidades) for(const t of u.temas) i
 /* ══ 2 · SONIDO Y VIBRACIÓN ══════════════════════════════════════════════
    Los sonidos son los de sonidos/ (hacer.py los arma; son nuestros). Cada uno con su función:
    toque al tocar, pop al aparecer, whoosh al abrir, bien/mal al verificar, moneda, combo, logro… */
-const SON = { toque: ['toque', .55], pop: ['pop', .45], whoosh: ['whoosh', .32], bien: ['bien', .75], mal: ['mal', .6], fin: ['logro', .75], moneda: ['moneda', .65], combo: ['combo', .6], hielo: ['hielo', .75], voltear: ['voltear', .55], subir: ['subir', .7], golpe: ['golpe', .4] };
+const SON = { toque: ['toque', .55], pop: ['pop', .45], whoosh: ['whoosh', .32], bien: ['bien', .75], mal: ['mal', .6], fin: ['logro', .75], moneda: ['moneda', .65], combo: ['combo', .6], hielo: ['hielo', .75], voltear: ['voltear', .55], subir: ['subir', .7], golpe: ['golpe', .4],
+  /* la segunda tanda (13 nov, «más efectos de sonido»): cada momento con el suyo */
+  comer: ['comer', .6], burbujas: ['burbujas', .55], rebote: ['rebote', .6], compra: ['compra', .6], racha: ['racha', .7], nivel: ['nivel', .75], mensaje: ['mensaje', .55], invita: ['invita', .65], descanso: ['descanso', .6], perdio: ['perdio', .55] };
 function tono(cual, extra = {}){ if(!ajustes.sonido || !cual) return; sonar(cual[0], { vol: cual[1], ...extra }); }
 const vibrar = (ms) => { if(ajustes.vibrar) try{ navigator.vibrate?.(ms); }catch{} };
 
@@ -337,9 +339,11 @@ async function mandarCola(){
       const antes = posicion();
       ponerPerfil(r.perfil); ponerRanking(r.ranking);
       companero?.premios(r);
+      if((r.premios || []).some((x) => x.motivo === 'nivel')) tono(SON.nivel);
+      if(r.eventos.includes('racha-perdida')) tono(SON.perdio);
       if(r.eventos.includes('congelada-ganada')) await fiestaHielo('Ganaste una racha congelada', 'Las rachas congeladas mantienen tu racha viva si un día no estudias.');
       if(r.eventos.includes('congelada-usada')) brindis('Usaste una racha congelada: tu racha sigue', '', 'snowflake');
-      if(r.eventos.includes('racha') && r.perfil.racha > 1){ const n = r.perfil.racha; dice(`¡Llevamos ${n} días seguidos! No le aflojes.`, 'festeja', { si: () => brindis(`Racha de ${n} días`, 'vino', 'flame') }); }
+      if(r.eventos.includes('racha') && r.perfil.racha > 1){ const n = r.perfil.racha; tono(SON.racha); dice(`¡Llevamos ${n} días seguidos! No le aflojes.`, 'festeja', { si: () => brindis(`Racha de ${n} días`, 'vino', 'flame') }); }
       const despues = posicion();
       if(antes && despues && despues < antes) brindis(`Subiste al lugar ${despues} del ranking`, 'oro', 'trophy');
       return r;
