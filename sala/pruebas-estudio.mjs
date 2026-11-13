@@ -158,6 +158,47 @@ console.log('El servidor');
   ok(r.sesion && r.sesion.estado === 'terminada' && r.sesion.salio === 'beto', 'a Ana NO se le esfuma: le llega la sesión terminada para ver el final («salió antes»)');
   r = await pide('beto', 0, { accion: 'latido' }, T0 + 34 * 60_000 + 2);
   ok(!r.sesion, 'Beto ya está libre');
+  /* LOS MODOS COOPERATIVOS (Carlos, 13 nov: «invéntate más maneras… de lo de los cooperativos») */
+  {
+    const juntos = async (modo, t0, minutos = 10) => { await pide('ana', 0, { accion: 'latido' }, t0); await pide('beto', 0, { accion: 'latido' }, t0);
+      const inv = await pide('ana', 0, { accion: 'invitar', a: 'beto', minutos, modo }, t0); await pide('beto', 0, { accion: 'responder', si: true }, t0 + 1); return inv; };
+    const cerrar = async (t) => { const a = await pide('ana', 0, { accion: 'salirSesion' }, t); const b = await pide('beto', 0, { accion: 'salirSesion' }, t); return [a, b]; };
+    const xp = (q, id, n, t) => pide(q, 0, { accion: 'xp', eventos: [{ id, xp: n, dia: '2026-11-13' }] }, t);
+    let t = T0 + 40 * 60_000;
+    let inv = await juntos('equipo', t);
+    ok(inv.sesion.modo === 'equipo' && inv.sesion.meta === 40, 'modo EQUIPO: 10 minutos = meta de 40 XP entre los dos');
+    await xp('ana', 'eq1', 25, t + 60_000); r = await xp('beto', 'eq2', 20, t + 120_000);
+    ok(r.premios.some((p) => p.motivo === 'equipo'), 'al llegar a la meta, el que la cruzó cobra su premio');
+    const [ca, cb] = await cerrar(t + 11 * 60_000);
+    ok(ca.premios.some((p) => p.motivo === 'equipo') && !cb.premios.length, 'y el otro lo cobra al cerrar la sesión (una sola vez cada quien)');
+    t += 20 * 60_000; inv = await juntos('relevo', t);
+    await xp('ana', 'rl1', 20, t + 60_000);            /* turno de Ana (la que invitó) */
+    await xp('beto', 'rl2', 50, t + 2 * 60_000);       /* Beto estudia fuera de su turno: para él sí, para el equipo no */
+    r = await pide('ana', 0, { accion: 'latido' }, t + 2 * 60_000 + 1);
+    ok(r.sesion.equipo === 20 && r.sesion.xp.beto === 50, `modo RELEVO: sólo cuenta para el equipo quien tiene el turno (equipo ${r.sesion.equipo})`);
+    await xp('beto', 'rl3', 12, t + 6 * 60_000);       /* ya es turno de Beto */
+    r = await pide('ana', 0, { accion: 'latido' }, t + 6 * 60_000 + 1);
+    ok(r.sesion.equipo === 32 && r.sesion.logrado, 'a los 5 minutos el turno pasa a Beto y juntos llegan a la meta (30)');
+    await cerrar(t + 11 * 60_000);
+    t += 20 * 60_000; inv = await juntos('jefe', t);
+    ok(inv.sesion.meta === 60, 'modo JEFE: el jefe de 10 minutos tiene 60 de vida');
+    await xp('ana', 'jf1', 30, t + 60_000); await xp('beto', 'jf2', 20, t + 2 * 60_000);
+    r = await pide('ana', 0, { accion: 'latido' }, t + 5 * 60_000);
+    ok(!r.sesion.logrado, 'con 50 XP no cae: se cura solo con el tiempo (1 cada 20 s)');
+    r = await xp('beto', 'jf3', 40, t + 5 * 60_000);
+    ok(r.premios.some((p) => p.motivo === 'jefe'), 'con un empujón más, cae el jefe y hay premio');
+    await cerrar(t + 11 * 60_000);
+    t += 20 * 60_000; inv = await juntos('biblioteca', t);
+    await xp('ana', 'bb1', 10, t + 60_000); await xp('beto', 'bb2', 8, t + 2 * 60_000);
+    const [ba, bb] = await cerrar(t + 11 * 60_000);
+    ok(ba.premios.some((p) => p.motivo === 'biblioteca') && bb.premios.some((p) => p.motivo === 'biblioteca'), 'modo BIBLIOTECA: si los dos estudiaron y nadie se salió, premio para los dos');
+    t += 20 * 60_000; inv = await juntos('biblioteca', t);
+    await xp('ana', 'bb3', 10, t + 60_000);
+    const sale = await pide('beto', 0, { accion: 'salirSesion' }, t + 3 * 60_000), queda = await pide('ana', 0, { accion: 'salirSesion' }, t + 3 * 60_000 + 1);
+    ok(!sale.premios.length && !queda.premios.length, 'y si alguien se sale antes, no hay premio de biblioteca');
+    inv = await juntos('cualquiera', t + 10 * 60_000);
+    ok(inv.sesion.modo === 'duelo', 'un modo que no existe se vuelve duelo'); await cerrar(t + 30 * 60_000);
+  }
   await pide('ana', 0, { accion: 'salirSesion' }, T0 + 34 * 60_000 + 3);
   r = await pide('ana', 0, { accion: 'invitar', a: 'beto', minutos: 15 }, T0 + 34 * 60_000 + 4);
   ok(r.bien && r.sesion.estado === 'invitada', 'y al cerrar el final, Ana puede volver a invitarlo');

@@ -709,6 +709,20 @@
   .barra-sesion .marcador{ flex:1; display:flex; justify-content:center; align-items:center; gap:8px; font-size:13px; font-weight:700; min-width:0 }
   .barra-sesion .marcador span{ padding:3px 8px; border-radius:10px; background:#ffffff1a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:42% } .barra-sesion .marcador .gana{ background:#fff; color:#5B2A86 }
   .barra-sesion .marcador i{ opacity:.7; font-style:normal }
+  /* los modos cooperativos: una barra que se llena (o la vida del jefe que se vacía) */
+  .barra-sesion .marcador .modo-barra, .barra-sesion .marcador .modo-chip{ max-width:100% }
+  .barra-sesion .marcador .modo-barra .txt, .barra-sesion .marcador .modo-chip span{ max-width:none; padding:0; background:none; border-radius:0 }
+  .barra-sesion .modo-barra{ position:relative; flex:1; max-width:100%; display:flex; align-items:center; gap:6px; padding:5px 10px; border-radius:12px; background:#ffffff1f; overflow:hidden }
+  .barra-sesion .modo-barra .txt{ position:relative; z-index:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+  .barra-sesion .modo-barra svg{ position:relative; z-index:1; width:16px; height:16px; flex:none }
+  .barra-sesion .modo-barra i{ position:absolute; inset:0 auto 0 0; width:calc(var(--k) * 100%); background:#ffffff40; transition:width .6s ease }
+  .barra-sesion .modo-barra.jefe i{ background:#E5484D99 } .barra-sesion .modo-barra.logrado{ background:#fff; color:#5B2A86 }
+  .barra-sesion .modo-chip{ display:flex; align-items:center; gap:6px; max-width:100% } .barra-sesion .modo-chip svg{ width:16px; height:16px }
+  .modos-juntos{ display:grid; gap:8px }
+  .modo-op{ display:flex; gap:12px; align-items:center; text-align:left; padding:12px 14px; min-height:64px; border-radius:16px; border:1.5px solid var(--borde); background:var(--fondo-2); color:inherit; font:inherit; cursor:pointer }
+  .modo-op svg{ width:26px; height:26px; flex:none; color:var(--claro-txt) } .modo-op b{ display:block; font-size:16px } .modo-op small{ display:block; color:var(--suave); font-size:13px; line-height:1.35 }
+  .modo-op[aria-pressed="true"]{ border-color:var(--claro); background:#2A1245 }
+  .modo-inv{ display:flex; align-items:center; gap:6px; font-weight:800; margin:0 } .modo-inv svg{ width:18px; height:18px }
   .opciones-ex{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:14px 0 4px } .opciones-ex .chip{ display:flex; align-items:center; justify-content:center; min-height:48px; gap:8px } .opciones-ex .chip .i{ width:18px; height:18px; flex:none }
   /* la mascota (mascota.js): junto al nivel que toca, en cada respuesta y al terminar */
   .masc-camino{ position:absolute; width:84px; height:97px; margin:-70px 0 0 -42px; z-index:2 }

@@ -176,6 +176,27 @@ async function sesionDe(storage, c, ahora){
   if(x.estado === 'activa' && ahora >= x.fin){ x.estado = 'terminada'; await storage.put(kSes(id), x); }
   return x;
 }
+/* ── LOS MODOS DE «ESTUDIAR JUNTOS» (Carlos, 13 nov: «invéntate más maneras de poder hacerlo de lo de los cooperativos»)
+   duelo:      gana el que junte más XP (el de siempre)
+   equipo:     los dos suman a UNA meta (4 XP por minuto); si llegan, premio para los dos
+   jefe:       un jefe con vida (6 por minuto) que se CURA solo (1 cada 20 s): hay que no dormirse
+   relevo:     turnos de 5 minutos; sólo cuenta para el equipo lo que estudia quien tiene el turno (meta: 3 por minuto)
+   biblioteca: sin marcador, en silencio; si los dos estudiaron algo y nadie se salió, premio para los dos */
+export const MODOS_JUNTOS = ['duelo', 'equipo', 'jefe', 'relevo', 'biblioteca'];
+const POR_MINUTO = { equipo: 4, jefe: 6, relevo: 3 };
+export const TURNO_MS = 5 * 60_000;
+export function turnoDe(x, ahora){ if(!x.inicio) return x.de; return Math.floor((Math.min(ahora, x.fin) - x.inicio) / TURNO_MS) % 2 === 0 ? x.de : x.a; }
+export function vidaJefe(x, ahora){ if(x.modo !== 'jefe' || !x.inicio) return x.meta || 0; const cura = Math.floor((Math.min(ahora, x.logrado || x.fin) - x.inicio) / 20_000); return Math.max(0, x.meta + cura - (x.equipo || 0)); }
+function logroDe(x, ahora){
+  if(x.logrado || !['equipo', 'jefe', 'relevo'].includes(x.modo)) return;
+  if(x.modo === 'jefe' ? vidaJefe(x, ahora) <= 0 : (x.equipo || 0) >= x.meta) x.logrado = ahora;
+}
+/* el premio de la sesión: cada quien lo cobra una vez, cuando estudia o cuando la cierra */
+function premioDeSesion(perfil, x, hoy, cuenta){
+  if(x.logrado && ['equipo', 'jefe', 'relevo'].includes(x.modo)) return { motivo: x.modo, cubos: premiarUnaVez(perfil, x.modo, `${x.modo}:${x.id}`, hoy) };
+  if(x.modo === 'biblioteca' && x.estado === 'terminada' && !x.salio && Object.values(x.xp || {}).every((v) => v > 0) && cuenta) return { motivo: 'biblioteca', cubos: premiarUnaVez(perfil, 'biblioteca', `biblioteca:${x.id}`, hoy) };
+  return null;
+}
 async function soltarSesion(storage, x){ for(const c of [x.de, x.a]){ if((await storage.get(kSesAct(c))) === x.id) await storage.delete(kSesAct(c)); } }
 
 async function atenderAmigos(storage, c, cuenta, perfil, ahora){
@@ -234,9 +255,10 @@ async function atenderAmigos(storage, c, cuenta, perfil, ahora){
     if(!pres[otro] || ahora - pres[otro].t > EN_LINEA_MS) return { error: 'Esa persona ya no está en línea.', estado: 409 };
     for(const q of [cuenta, otro]){ const x = await sesionDe(storage, q, ahora); if(x && (x.estado === 'activa' || x.estado === 'invitada')) return { error: q === cuenta ? 'Ya tienes una sesión.' : 'Esa persona ya está estudiando con alguien.', estado: 409 }; }
     const minutos = [10, 15, 25, 45].includes(Number(c.minutos)) ? Number(c.minutos) : 25;
-    const x = { id: 's' + ahora.toString(36) + Math.random().toString(36).slice(2, 6), de: cuenta, a: otro, nombres: { [cuenta]: perfil.nombre, [otro]: suPerfil.nombre }, minutos, estado: 'invitada', creada: ahora, xp: { [cuenta]: 0, [otro]: 0 } };
+    const modo = MODOS_JUNTOS.includes(c.modo) ? c.modo : 'duelo';
+    const x = { modo, meta: (POR_MINUTO[modo] || 0) * minutos, equipo: 0, id: 's' + ahora.toString(36) + Math.random().toString(36).slice(2, 6), de: cuenta, a: otro, nombres: { [cuenta]: perfil.nombre, [otro]: suPerfil.nombre }, minutos, estado: 'invitada', creada: ahora, xp: { [cuenta]: 0, [otro]: 0 } };
     await storage.put(kSes(x.id), x); await storage.put(kSesAct(cuenta), x.id); await storage.put(kSesAct(otro), x.id);
-    await alBuzon(storage, otro, { de: cuenta, nombre: perfil.nombre, tipo: 'invita', texto: `${minutos} minutos`, sesion: x.id }, ahora);
+    await alBuzon(storage, otro, { de: cuenta, nombre: perfil.nombre, tipo: 'invita', texto: `${minutos} minutos`, modo, sesion: x.id }, ahora);
     return { bien: true, sesion: x };
   }
   return null;
@@ -258,7 +280,10 @@ async function atenderSesion(storage, c, cuenta, perfil, ahora){
        quien sale; el otro ve el final («salió antes») y la suelta al cerrarlo. */
     if((await storage.get(kSesAct(cuenta))) === x.id) await storage.delete(kSesAct(cuenta));
     if(x.estado === 'cancelada' || x.estado === 'rechazada') await soltarSesion(storage, x);
-    return { bien: true, sesion: x };
+    /* el premio del modo cooperativo, si se ganó y esta persona no lo había cobrado */
+    const pr = premioDeSesion(perfil, x, diaMexico(ahora), cuenta), premios = pr && pr.cubos ? [{ motivo: pr.motivo, cubos: pr.cubos, que: PREMIOS[pr.motivo].que }] : [];
+    if(premios.length){ perfil.t = ahora; await storage.put(kPerfil(cuenta), perfil); }
+    return { bien: true, sesion: x, premios, perfil: premios.length ? publico(perfil) : undefined };
   }
   return null;
 }
@@ -370,7 +395,10 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
     if(c.nombre) perfil.nombre = limpio(c.nombre, 30) || perfil.nombre;
     dar('nivel', cobrarNivel(perfil, hoy));
     /* si estás en una sesión con alguien, lo que estudias cuenta para su marcador (y paga una vez por sesión) */
-    if(suma > 0){ const x = await sesionDe(storage, cuenta, ahora); if(x && x.estado === 'activa'){ x.xp[cuenta] = (x.xp[cuenta] || 0) + suma; await storage.put(kSes(x.id), x); dar('juntos', premiarUnaVez(perfil, 'juntos', 'juntos:' + x.id, hoy));
+    if(suma > 0){ const x = await sesionDe(storage, cuenta, ahora); if(x && x.estado === 'activa'){ x.xp[cuenta] = (x.xp[cuenta] || 0) + suma;
+      if(x.modo === 'equipo' || x.modo === 'jefe' || (x.modo === 'relevo' && turnoDe(x, ahora) === cuenta)) x.equipo = (x.equipo || 0) + suma;
+      logroDe(x, ahora); { const pr = premioDeSesion(perfil, x, hoy, cuenta); if(pr && pr.cubos){ dar(pr.motivo, pr.cubos); dijo.push('logro-juntos'); } }
+      await storage.put(kSes(x.id), x); dar('juntos', premiarUnaVez(perfil, 'juntos', 'juntos:' + x.id, hoy));
       /* la racha de la pareja: un día más si ayer también estudiaron juntos; cada 7, premio para los dos (cada quien lo cobra una vez) */
       const par = parejaDe(x.de, x.a), kr = 'est:rjuntos:' + par, r = avanzarRachaJuntos(await storage.get(kr), hoy);
       await storage.put(kr, r);

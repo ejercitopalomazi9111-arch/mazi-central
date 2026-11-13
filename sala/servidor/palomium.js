@@ -34,6 +34,11 @@ export const PREMIOS = {
   nivel: { cubos: 5, tope: 15, que: 'Subiste de nivel' },
   juntos: { cubos: 2, tope: 4, que: 'Estudiaste con un amigo' },
   rachaJuntos: { cubos: 3, tope: 6, que: 'Siete días seguidos estudiando con un amigo' },
+  /* los modos cooperativos de «Estudiar juntos» (Carlos, 13 nov: «invéntate más maneras… de lo de los cooperativos») */
+  equipo: { cubos: 3, tope: 9, que: 'Llegaron juntos a la meta' },
+  jefe: { cubos: 5, tope: 10, que: 'Vencieron al jefe del examen' },
+  relevo: { cubos: 3, tope: 9, que: 'Completaron el relevo' },
+  biblioteca: { cubos: 2, tope: 6, que: 'Estudiaron juntos en silencio' },
 };
 export const REGALO_INICIAL = 5;
 
