@@ -134,17 +134,16 @@ try{
     await p.click('#bSub');
     ok(await p.isVisible('#subVoz'), '«CC» los prende');
     await p.click('#bSub');
-    /* pantalla viva: un paso con voz larga, ya dibujado, sigue moviéndose */
+    /* sin halo (Carlos, 13 nov: «se ve horrible y estorba»): ya dibujado, mientras la voz sigue, nadie
+       anda señalando con un círculo; el cursor se va y deja ver la pieza */
     await p.evaluate(() => { document.querySelector('#bPlay').click(); });
     await p.evaluate(() => { const v = document.querySelector('#vozSel'); v.value = 'no'; v.dispatchEvent(new Event('change')); });
-    const larga = { titulo: 'Viva', pasos: [{ voz: Array(60).fill('palabra').join(' '), pizarra: { tipo: 'lista', titulo: 'Partes', items: ['**Núcleo** guarda el ADN', 'Membrana deja pasar cosas', 'Citoplasma donde todo flota'] } }] };
+    const larga = { titulo: 'Quieta', pasos: [{ voz: Array(60).fill('palabra').join(' '), pizarra: { tipo: 'lista', titulo: 'Partes', items: ['**Núcleo** guarda el ADN', 'Membrana deja pasar cosas', 'Citoplasma donde todo flota'] } }] };
     await p.evaluate((c) => window.__explica.empezar(c), larga);
-    await p.waitForFunction(() => document.querySelector('#tablero .halo.v'), null, { timeout: 20000 }).catch(() => {});
-    const posA = await p.evaluate(() => [document.querySelector('#tablero .cur')?.style.transform, document.querySelector('#tablero .halo')?.style.transform]);
-    await p.waitForTimeout(1800);
-    const posB = await p.evaluate(() => [document.querySelector('#tablero .cur')?.style.transform, document.querySelector('#tablero .halo')?.style.transform]);
-    ok(!!posA[1] && (posA[0] !== posB[0] || posA[1] !== posB[1]), 'ya dibujado, mientras sigue la voz el maestro va señalando con un halo: la pantalla no se queda quieta');
-    await foto(p, '00-halo');
+    let vioHalo = false;
+    for(let k = 0; k < 30; k++){ if(await p.evaluate(() => !!document.querySelector('#tablero .halo'))) vioHalo = true; await p.waitForTimeout(200); }
+    ok(!vioHalo, 'ya dibujado, ya no sale el círculo que señalaba mientras habla la voz');
+    await foto(p, '00-sin-halo');
     await ctx.close();
   }
 

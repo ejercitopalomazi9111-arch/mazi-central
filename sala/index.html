@@ -3383,31 +3383,54 @@ function marcarOyendo(id){
     b.innerHTML = (s ? ICO_PARAR : ICO_OIR) + `<span>${s ? 'parar' : 'escuchar'}</span>`;
   }
 }
-function escuchar(id){
+/* Carlos, 13 nov: «que lea el mensaje que hayas activado, el siguiente, etcétera». Al acabar uno sigue con
+   el de abajo, y así hasta el último o hasta que se toque «parar». El que suena se trae a la vista. */
+function siguienteParaOir(id){
+  const k = hilo.findIndex(x => x.id === id);
+  for(let n = k + 1; k >= 0 && n < hilo.length; n++){
+    const e = hilo[n];
+    if(e.tipo !== 'sistema' && ((e.texto || '').trim() || (e.adjuntos || []).length)) return e;
+  }
+  return null;
+}
+function hablarMensaje(ev, turno){
   const sy = window.speechSynthesis;
-  if(!sy || !window.SpeechSynthesisUtterance){ letrero('Este navegador no sabe leer en voz alta.'); return; }
-  const yaEra = oyendo === id;
-  sy.cancel();
-  if(yaEra){ marcarOyendo(null); return; }
-  const ev = hilo.find(x => x.id === id);
-  if(!ev) return;
   const voz = vozEspanol();
   const pedazos = pedazosDeVoz(textoParaOir(ev));
-  const turno = id + ':' + Date.now();
-  escuchar.turno = turno;
   pedazos.forEach((p, i) => {
     const u = new SpeechSynthesisUtterance(p);
     u.lang = voz ? voz.lang : 'es-MX'; if(voz) u.voice = voz;
     u.rate = 1.04;
     if(i === pedazos.length - 1){
-      u.onend = () => { if(escuchar.turno === turno) marcarOyendo(null); };
+      u.onend = () => {
+        if(escuchar.turno !== turno) return;
+        const sig = siguienteParaOir(ev.id);
+        if(sig){ marcarOyendo(sig.id); traerALaVista(sig.id); hablarMensaje(sig, turno); }
+        else marcarOyendo(null);
+      };
     }
     u.onerror = (x) => { if(escuchar.turno === turno && x.error !== 'interrupted' && x.error !== 'canceled') marcarOyendo(null); };
     sy.speak(u);
   });
-  /* el iPhone a veces deja la cola en pausa tras un cancel(): se le da un empujón */
   if(sy.paused) sy.resume();
+}
+function traerALaVista(id){
+  const el = document.querySelector(`[data-ev="${CSS.escape(id)}"]`);
+  if(el) el.scrollIntoView({ block:'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+}
+function escuchar(id){
+  const sy = window.speechSynthesis;
+  if(!sy || !window.SpeechSynthesisUtterance){ letrero('Este navegador no sabe leer en voz alta.'); return; }
+  const yaEra = oyendo === id;
+  escuchar.turno = null;
+  sy.cancel();
+  if(yaEra){ marcarOyendo(null); return; }
+  const ev = hilo.find(x => x.id === id);
+  if(!ev) return;
+  const turno = id + ':' + Date.now();
+  escuchar.turno = turno;
   marcarOyendo(id);
+  hablarMensaje(ev, turno);
 }
 window.escucharMensaje = escuchar;
 
