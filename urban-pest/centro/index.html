@@ -44,7 +44,7 @@ details.nuevo > summary::-webkit-details-marker{ display:none }
 .dos{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:12px }
 .msj{ font-weight:600; font-size:14px; min-height:1.2em } .msj.mal{ color:#C0392B } .msj.bien{ color:var(--acento-texto) }
 .filtro{ display:flex; gap:8px; overflow-x:auto; margin:4px 0 12px; scrollbar-width:none }
-.filtro button{ flex:none; min-height:40px; padding:0 14px; border-radius:999px; background:var(--sup2); font-weight:600; font-size:14px; color:var(--tenue) }
+.filtro button{ flex:none; min-height:44px; padding:0 14px; border-radius:999px; background:var(--sup2); font-weight:600; font-size:14px; color:var(--tenue) }
 .filtro button[aria-pressed="true"]{ background:var(--acento); color:var(--acento-tinta) }
 .mov{ display:grid; grid-template-columns:minmax(0,1fr) 92px; gap:8px; align-items:end }
 .barra-inf{ position:fixed; left:0; right:0; bottom:0; z-index:6; background:var(--sup); box-shadow:0 -1px 0 var(--linea); padding:6px 4px calc(6px + env(safe-area-inset-bottom)); display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)) }
@@ -56,11 +56,15 @@ details.nuevo > summary::-webkit-details-marker{ display:none }
 .barra-inf button{ display:grid; justify-items:center; gap:2px; min-height:52px; font-size:12px; font-weight:600; color:var(--tenue); position:relative }
 .barra-inf button[aria-current="page"]{ color:var(--acento-texto) }
 .barra-inf i{ position:absolute; top:4px; right:calc(50% - 22px); min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--aviso); color:#fff; font:700 11px/18px var(--letra); font-style:normal }
+/* la franja de estado: sin internet, cambios por enviar, datos de muestra (sin-red.js) */
+.red{ position:sticky; top:0; z-index:5; margin:0 0 8px; padding:10px 14px; border-radius:0 0 var(--r) var(--r); background:var(--sup); box-shadow:var(--elev2); border-left:4px solid var(--aviso); font-size:14px; line-height:1.4 }
+.red p{ margin:0 } .red p + p{ margin-top:6px } .red .btn{ margin-top:6px; min-height:44px }
 .entrar{ max-width:440px; margin:12vh auto 0; background:var(--sup); border-radius:var(--r); padding:24px; box-shadow:var(--elev2) }
 .entrar p{ color:var(--tenue); margin:8px 0 16px }
 </style>
 </head>
 <body>
+<div class="red" id="red" role="status" hidden></div>
 <div class="env" id="app"><p class="vacio" style="padding:40px 0">Cargando…</p></div>
 <nav class="barra-inf" id="barra" hidden aria-label="Secciones">
   <button type="button" data-p="hoy" aria-current="page"><span data-ic="sun"></span>Hoy<i id="nHoy" hidden></i></button>
@@ -70,7 +74,14 @@ details.nuevo > summary::-webkit-details-marker{ display:none }
   <button type="button" data-p="numeros"><span data-ic="wallet"></span>Números</button>
 </nav>
 <script type="module">
+/* SIN INTERNET (Godines, 13 nov): toda llamada pasa por sin-red.js. Con señal va al servidor; sin señal
+   contesta la réplica del teléfono con las mismas reglas (motor.js) y lo hecho se manda al volver.
+   Con ?muestra no toca la red: datos de muestra para probarlo de pie. Pruebas: node urban-pest/centro/pruebas.mjs */
+import { crearRed, LLAVE_MUESTRA } from './sin-red.js';
+import * as motor from './motor.js';
+import { muestra } from './muestra.js';
 const q = new URLSearchParams(location.search);
+const DE_MUESTRA = q.has('muestra');
 const guarda = { leer: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, poner: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
 const SERVIDOR = q.get('servidor') || guarda.leer('up_servidor') || 'https://sala.palomazi9111.workers.dev/api/urban';
 if(q.get('acceso')){ guarda.poner('up_acceso', q.get('acceso')); q.delete('acceso'); history.replaceState(null, '', '?' + q.toString()); }
@@ -87,13 +98,39 @@ try { L = (await (await fetch('../../presentaciones/vendor/lucide-1.48.0.json'))
 const ic = (n) => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${L[n] || ''}</svg>`;
 const pintaIconos = (raiz = document) => raiz.querySelectorAll('[data-ic]').forEach(e => { if(!e.firstChild) e.innerHTML = ic(e.dataset.ic); });
 
-async function api(metodo, ruta, cuerpo){
+async function apiRed(metodo, ruta, cuerpo){
   try {
     const r = await fetch(SERVIDOR + ruta, { method: metodo, headers: { 'content-type': 'application/json', 'x-llave': guarda.leer('up_llave') || guarda.leer('salaLlave') || '', 'x-acceso': guarda.leer('up_acceso') || '' }, body: cuerpo ? JSON.stringify(cuerpo) : undefined });
     const j = await r.json().catch(() => ({ bien: false, error: 'El servidor no contestó bien (' + r.status + ').' }));
     if(!r.ok && j.bien !== false) j.bien = false; j.status = r.status; return j;
-  } catch { return { bien: false, error: 'Sin conexión. Revisa tu internet.' }; }
+  } catch { return { bien: false, sinRed: true, error: 'Sin conexión. Revisa tu internet.' }; }
 }
+const caja = { leer: (k) => localStorage.getItem(k), poner: (k, v) => localStorage.setItem(k, v) };
+const R = crearRed({ red: apiRed, motor, caja, hoy: hoyISO, soloLocal: DE_MUESTRA, ...(DE_MUESTRA ? { llave: LLAVE_MUESTRA, semilla: muestra(hoyISO()) } : {}) });
+function api(metodo, ruta, cuerpo){ return R.api(metodo, ruta, cuerpo); }
+const HORA = (t) => { const d = new Date(t); return `${DIAS[d.getDay()]} ${d.getDate()} ${MESES[d.getMonth()]}, ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`; };
+function pintaRed(){
+  const s = R.estado(), el = document.getElementById('red'), p = [];
+  if(s.muestra) p.push('<b>Datos de muestra.</b> Nada de esto es del cliente ni se envía a ningún lado.');
+  else {
+    if(s.sinRed) p.push(`<b>Sin internet.</b> Ves lo guardado${s.al ? ' el ' + HORA(s.al) : ''}. Lo que hagas se envía solo cuando vuelva la señal.`);
+    if(s.pendientes) p.push(`<b>${s.pendientes} ${s.pendientes === 1 ? 'cambio por enviar' : 'cambios por enviar'}:</b> ${s.cola.slice(0, 3).map(esc).join(' · ')}${s.pendientes > 3 ? ' · y más' : ''}`);
+    if(s.detenida) p.push(`No se pudieron enviar todavía: ${esc(s.detenida)}`);
+    if(s.pendientes && !s.sinRed) p.push('<button class="btn b2" type="button" data-enviar>Enviar ahora</button>');
+    for(const r of s.rechazados) p.push(`<b>No entró:</b> ${esc(r.que)}. ${esc(r.error)}`);
+    if(s.rechazados.length) p.push('<button class="btn b2" type="button" data-entendido>Entendido</button>');
+    if(s.sinEspacio) p.push('<b>El teléfono no tiene espacio para guardar.</b> Lo que hagas sin internet se puede perder: libera espacio.');
+    if(s.cajaRota) p.push('Lo que estaba guardado en este teléfono no se pudo leer y se apartó. Con señal se vuelve a bajar.');
+  }
+  el.hidden = !p.length; el.innerHTML = p.map(x => x.startsWith('<button') ? x : `<p>${x}</p>`).join('');
+}
+document.getElementById('red').addEventListener('click', async (e) => {
+  if(e.target.closest('[data-enviar]')){ await R.enviarCola(); ir(actual); }
+  if(e.target.closest('[data-entendido]')){ R.olvidarRechazados(); pintaRed(); }
+});
+addEventListener('online', async () => { await R.enviarCola(); ir(actual); });
+addEventListener('offline', () => ir(actual));
+if('serviceWorker' in navigator && !DE_MUESTRA) navigator.serviceWorker.register('./sw.js').catch(() => {});
 
 const atajos = `<nav class="atajos" aria-label="Atajos">
   <a href="../chat/"><span data-ic="message-circle"></span>Chat central</a>
@@ -114,7 +151,7 @@ async function ir(p){
   actual = p; barra.querySelectorAll('button').forEach(b => b.dataset.p === p ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
   /* el contenedor se recrea en cada pantalla: así no se juntan oyentes viejos (CLAUDE.md, «innerHTML deja la pantalla limpia») */
   const viejo = raiz(), nuevo = viejo.cloneNode(false); viejo.replaceWith(nuevo); window.__app = nuevo;
-  await PANTALLAS[p](nuevo); pintaIconos(nuevo); pintaIconos(barra);
+  await PANTALLAS[p](nuevo); pintaIconos(nuevo); pintaIconos(barra); pintaRed();
   /* los globitos de la barra van al día en cualquier pantalla, no sólo en «Hoy» */
   if(p !== 'hoy') api('GET', '/api/tablero').then(t => { if(t.bien){ marca('nHoy', t.servicios_hoy.length + t.atrasados.length + t.seguimientos.length); marca('nInv', t.insumos_bajos.length); marca('nVeh', t.vehiculo.length); } });
 }
