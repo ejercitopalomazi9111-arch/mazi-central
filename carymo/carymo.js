@@ -71,24 +71,9 @@ if(!ajustes.mascota) ajustes.mascota = 'tigre';
 /* la mascota (tigre o paloma, de las hojas de Carlos): acompaña, reacciona y festeja */
 /* las mascotas que hay en pantalla: la más reciente y visible es la que dice los avisos */
 const enPantalla = new Set();
-const mascotaEn = (caja, op = {}) => { if(ajustes.mascota === 'no' || !caja) return null; const m = crearMascota(caja, { personaje: ajustes.mascota, alDecir: decirConVoz, ...op }); enPantalla.add(m); return m; };
-/* ── LA VOZ DE CADA MASCOTA ──
-   Carlos, 13 nov: «que cada mascota tenga 3 variantes de voz; la que elijas se guarde para que cuando vuelvas
-   a entrar se mantenga». Son voces de estudio de La Sala (voces.js); si se acaba lo gratis, la del teléfono. */
-const VOCES_MASCOTA = {
-  tigre: ['nube:javier', 'nube:sirio', 'google:Puck'], paloma: ['nube:estrella', 'nube:selena', 'google:Aoede'],
-  pinguino: ['nube:aquila', 'nube:alvaro', 'google:Charon'], conejo: ['nube:celeste', 'nube:estrella', 'google:Kore'],
-  foca: ['nube:selena', 'nube:carina', 'google:Aoede'], ballena: ['nube:sirio', 'nube:aquila', 'google:Charon'],
-  gatito: ['nube:carina', 'nube:celeste', 'google:Kore'], perrito: ['nube:javier', 'nube:alvaro', 'google:Puck'],
-};
-const vozDeMascota = (q = ajustes.mascota) => { const vs = VOCES_MASCOTA[q] || VOCES_MASCOTA.tigre; const i = (perfil.voces && Number.isFinite(perfil.voces[q])) ? perfil.voces[q] : ((ajustes.vozMascota || {})[q] ?? 0); return vs[Math.max(0, Math.min(2, i))]; };
-const nombreVoz = (id) => { const v = todasLasVoces().find((x) => x.id === id); return v ? `${v.nombre} · ${v.desc.split(' · ')[0]}` : ''; };
-let vozMascota = null;
-function decirConVoz(texto, q){
-  if(ajustes.mascotaHabla === false || !texto || !conAcceso()) return;
-  vozMascota ||= crearVoz({ pedir: async (c) => (await pedirSala('ia-voz', { metodo: 'POST', cuerpo: c, espera: 30000 })).json().catch(() => ({})) });
-  Promise.resolve(vozMascota.decir(texto, vozDeMascota(q || ajustes.mascota))).catch(() => {});
-}
+const mascotaEn = (caja, op = {}) => { if(ajustes.mascota === 'no' || !caja) return null; const m = crearMascota(caja, { personaje: ajustes.mascota, ...op }); enPantalla.add(m); return m; };
+/* SIN VOZ. Carlos, 13 nov: «quítales la voz a las mascotas». Hablan sólo con su globito; la voz se queda
+   para el pizarrón, que es donde explica. (Antes cada mascota tenía 3 voces: VOCES_MASCOTA, en la historia de git.) */
 /* que el aviso lo diga la mascota que está a la vista (con su modo); si no hay ninguna, el letrerito de siempre */
 function dice(frase, accion = 'bien', { si = null } = {}){
   for(const m of [...enPantalla].reverse()){
@@ -1542,9 +1527,6 @@ function pintarPerfil(){
     <div class="seccion-t">Tu compañero</div>
     <button class="bt fuerte ancho" data-abrir-companero style="margin-bottom:12px">${ico('house')}Su cuarto y la tienda</button>
     <div class="elige-masc" role="radiogroup" aria-label="Tu compañero">${[...PERSONAJES.map((k) => [k, NOMBRE_PERSONAJE[k]]), ['no', 'Ninguno']].map(([k, t]) => `<button role="radio" aria-checked="${ajustes.mascota === k}" data-masc="${k}">${k === 'no' ? ico('x') : `<span class="masc-mini" data-mini="${k}"></span>`}<span>${t}</span></button>`).join('')}</div>
-    ${ajustes.mascota !== 'no' ? `<div class="seccion-t">La voz de tu ${esc((NOMBRE_PERSONAJE[ajustes.mascota] || '').toLowerCase())}</div>
-    <div class="voces-masc" role="radiogroup" aria-label="Voz de tu mascota">${[0, 1, 2].map((i) => `<button role="radio" aria-checked="${(VOCES_MASCOTA[ajustes.mascota] || [])[i] === vozDeMascota()}" data-voz-masc="${i}">${ico('volume-2')}<span>Voz ${i + 1}<small>${esc(nombreVoz((VOCES_MASCOTA[ajustes.mascota] || [])[i]))}</small></span></button>`).join('')}</div>
-    <label class="ajuste">${ico('message-circle')}<span>Que tu mascota hable en voz alta</span><input type="checkbox" id="pHabla" ${ajustes.mascotaHabla === false ? '' : 'checked'}></label>` : ''}
     <div class="seccion-t">La voz que te explica</div>
     <div class="ajuste voz-aj">${ico('mic')}<span>Voz del pizarrón<small style="display:block;color:var(--tenue);font-weight:500">Las «de estudio» suenan como persona</small></span>
       <select id="pVoz" class="campo" style="max-width:170px;min-height:40px" aria-label="Voz del pizarrón">${opcionesVoz()}</select>
@@ -1567,22 +1549,8 @@ $('#vPerfil').addEventListener('click', (e) => {
   if(e.target.closest('[data-probar-voz]')) probarVoz();
   const mb = e.target.closest('[data-masc]'); if(mb){ ajustes.mascota = mb.dataset.masc; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); pintarPlan.saludo = false; if(conAcceso()) sala({ accion: 'mascota', personaje: mb.dataset.masc }).catch(() => {}); }
   if(e.target.closest('[data-abrir-companero]')){ companero.abrir(); return; }
-  const vm = e.target.closest('[data-voz-masc]');
-  if(vm){
-    const i = +vm.dataset.vozMasc, q = ajustes.mascota; despertar();
-    ajustes.vozMascota = { ...(ajustes.vozMascota || {}), [q]: i }; guarda.poner('est.ajustes', ajustes);
-    perfil.voces = { ...(perfil.voces || {}), [q]: i }; guarda.poner('est.perfil', perfil);
-    if(conAcceso()) sala({ accion: 'mascota', personaje: q, voz: i }).then((r) => ponerPerfil(r.perfil)).catch(() => {});
-    document.querySelectorAll('[data-voz-masc]').forEach((b) => b.setAttribute('aria-checked', String(b === vm)));
-    const nom = (perfil.nombre && perfil.nombre !== 'Tú') ? perfil.nombre.split(' ')[0] : '';
-    const frase = `¡Hola${nom ? ', ' + nom : ''}! ¿Así te gusta mi voz?`;
-    const m = [...enPantalla].reverse().find((x) => x.el.isConnected);
-    if(m) m.play('saluda', { decir: frase }); else decirConVoz(frase, q);
-    return;
-  }
 });
 $('#vPerfil').addEventListener('change', (e) => {
-  if(e.target.id === 'pHabla'){ ajustes.mascotaHabla = e.target.checked; guarda.poner('est.ajustes', ajustes); tono(SON.toque); return; }
   if(e.target.id === 'pVoz'){ const v = e.target.value; guarda.poner('explica.voz', v); if(v !== 'no') guarda.poner('explica.vozAntes', v); tono(SON.toque); probarVoz(); return; }
   if(e.target.id !== 'pNombre') return;
   const n = e.target.value.trim().slice(0, 30); if(!n) return;
