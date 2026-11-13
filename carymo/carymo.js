@@ -29,6 +29,9 @@ import { iniciarApuntes } from './apuntes.js';
 import { iniciarSesionEstudio } from './sesion.js';
 import { pedirSala, conAcceso } from '../sala/acceso.js';
 import { entrada } from './entrada.js';
+import { iniciarAvisos } from './avisos.js';
+import { iniciarVestidor } from './vestidor.js';
+import { iniciarYo, SUBVISTAS } from './yo.js';
 
 const $ = (s, d = document) => d.querySelector(s);
 const $$ = (s, d = document) => [...d.querySelectorAll(s)];
@@ -69,24 +72,9 @@ if(!ajustes.mascota) ajustes.mascota = 'tigre';
 /* la mascota (tigre o paloma, de las hojas de Carlos): acompaña, reacciona y festeja */
 /* las mascotas que hay en pantalla: la más reciente y visible es la que dice los avisos */
 const enPantalla = new Set();
-const mascotaEn = (caja, op = {}) => { if(ajustes.mascota === 'no' || !caja) return null; const m = crearMascota(caja, { personaje: ajustes.mascota, alDecir: decirConVoz, ...op }); enPantalla.add(m); return m; };
-/* ── LA VOZ DE CADA MASCOTA ──
-   Carlos, 13 nov: «que cada mascota tenga 3 variantes de voz; la que elijas se guarde para que cuando vuelvas
-   a entrar se mantenga». Son voces de estudio de La Sala (voces.js); si se acaba lo gratis, la del teléfono. */
-const VOCES_MASCOTA = {
-  tigre: ['nube:javier', 'nube:sirio', 'google:Puck'], paloma: ['nube:estrella', 'nube:selena', 'google:Aoede'],
-  pinguino: ['nube:aquila', 'nube:alvaro', 'google:Charon'], conejo: ['nube:celeste', 'nube:estrella', 'google:Kore'],
-  foca: ['nube:selena', 'nube:carina', 'google:Aoede'], ballena: ['nube:sirio', 'nube:aquila', 'google:Charon'],
-  gatito: ['nube:carina', 'nube:celeste', 'google:Kore'], perrito: ['nube:javier', 'nube:alvaro', 'google:Puck'],
-};
-const vozDeMascota = (q = ajustes.mascota) => { const vs = VOCES_MASCOTA[q] || VOCES_MASCOTA.tigre; const i = (perfil.voces && Number.isFinite(perfil.voces[q])) ? perfil.voces[q] : ((ajustes.vozMascota || {})[q] ?? 0); return vs[Math.max(0, Math.min(2, i))]; };
-const nombreVoz = (id) => { const v = todasLasVoces().find((x) => x.id === id); return v ? `${v.nombre} · ${v.desc.split(' · ')[0]}` : ''; };
-let vozMascota = null;
-function decirConVoz(texto, q){
-  if(ajustes.mascotaHabla === false || !texto || !conAcceso()) return;
-  vozMascota ||= crearVoz({ pedir: async (c) => (await pedirSala('ia-voz', { metodo: 'POST', cuerpo: c, espera: 30000 })).json().catch(() => ({})) });
-  Promise.resolve(vozMascota.decir(texto, vozDeMascota(q || ajustes.mascota))).catch(() => {});
-}
+const mascotaEn = (caja, op = {}) => { if(ajustes.mascota === 'no' || !caja) return null; const m = crearMascota(caja, { personaje: ajustes.mascota, ...op }); enPantalla.add(m); return m; };
+/* SIN VOZ. Carlos, 13 nov: «quítales la voz a las mascotas». Hablan sólo con su globito; la voz se queda
+   para el pizarrón, que es donde explica. (Antes cada mascota tenía 3 voces: VOCES_MASCOTA, en la historia de git.) */
 /* que el aviso lo diga la mascota que está a la vista (con su modo); si no hay ninguna, el letrerito de siempre */
 function dice(frase, accion = 'bien', { si = null } = {}){
   for(const m of [...enPantalla].reverse()){
@@ -100,6 +88,9 @@ encenderSonidos(ajustes.sonido !== false);
 let vista = 'plan';
 let amigos = null;   /* amigos.js; se arranca al final, cuando ya existe todo */
 let companero = null;   /* companero.js: el cuarto, el cuidado y la tienda de palomium */
+let avisos = null;   /* avisos.js: los recordatorios con notificación */
+let vestidor = null;   /* vestidor.js: tu personaje de perfil, su ropa y sus accesorios */
+let yo = null;   /* yo.js: la pestaña «Tú» */
 let cuentaUI = null, apuntes = null, sesionEst = null;   /* sesion.js: varios cursos y el pomodoro */   /* apuntes.js: la pestaña de Apuntes con el lápiz */   /* cuenta.js: crear cuenta y entrar, sin la llave de La Sala */
 const plan = () => planes[actualId] || null;
 const guardarLocal = () => { guarda.poner('est.planes', planes); guarda.poner('est.actual', actualId); };
@@ -279,7 +270,9 @@ const temaDe = (p, id) => { for(const u of p.unidades) for(const t of u.temas) i
 /* ══ 2 · SONIDO Y VIBRACIÓN ══════════════════════════════════════════════
    Los sonidos son los de sonidos/ (hacer.py los arma; son nuestros). Cada uno con su función:
    toque al tocar, pop al aparecer, whoosh al abrir, bien/mal al verificar, moneda, combo, logro… */
-const SON = { toque: ['toque', .55], pop: ['pop', .45], whoosh: ['whoosh', .32], bien: ['bien', .75], mal: ['mal', .6], fin: ['logro', .75], moneda: ['moneda', .65], combo: ['combo', .6], hielo: ['hielo', .75], voltear: ['voltear', .55], subir: ['subir', .7], golpe: ['golpe', .4] };
+const SON = { toque: ['toque', .55], pop: ['pop', .45], whoosh: ['whoosh', .32], bien: ['bien', .75], mal: ['mal', .6], fin: ['logro', .75], moneda: ['moneda', .65], combo: ['combo', .6], hielo: ['hielo', .75], voltear: ['voltear', .55], subir: ['subir', .7], golpe: ['golpe', .4],
+  /* la segunda tanda (13 nov, «más efectos de sonido»): cada momento con el suyo */
+  comer: ['comer', .6], burbujas: ['burbujas', .55], rebote: ['rebote', .6], compra: ['compra', .6], racha: ['racha', .7], nivel: ['nivel', .75], mensaje: ['mensaje', .55], invita: ['invita', .65], descanso: ['descanso', .6], perdio: ['perdio', .55] };
 function tono(cual, extra = {}){ if(!ajustes.sonido || !cual) return; sonar(cual[0], { vol: cual[1], ...extra }); }
 const vibrar = (ms) => { if(ajustes.vibrar) try{ navigator.vibrate?.(ms); }catch{} };
 
@@ -335,9 +328,11 @@ async function mandarCola(){
       const antes = posicion();
       ponerPerfil(r.perfil); ponerRanking(r.ranking);
       companero?.premios(r);
+      if((r.premios || []).some((x) => x.motivo === 'nivel')) tono(SON.nivel);
+      if(r.eventos.includes('racha-perdida')) tono(SON.perdio);
       if(r.eventos.includes('congelada-ganada')) await fiestaHielo('Ganaste una racha congelada', 'Las rachas congeladas mantienen tu racha viva si un día no estudias.');
       if(r.eventos.includes('congelada-usada')) brindis('Usaste una racha congelada: tu racha sigue', '', 'snowflake');
-      if(r.eventos.includes('racha') && r.perfil.racha > 1){ const n = r.perfil.racha; dice(`¡Llevamos ${n} días seguidos! No le aflojes.`, 'festeja', { si: () => brindis(`Racha de ${n} días`, 'vino', 'flame') }); }
+      if(r.eventos.includes('racha') && r.perfil.racha > 1){ const n = r.perfil.racha; tono(SON.racha); dice(`¡Llevamos ${n} días seguidos! No le aflojes.`, 'festeja', { si: () => brindis(`Racha de ${n} días`, 'vino', 'flame') }); }
       const despues = posicion();
       if(antes && despues && despues < antes) brindis(`Subiste al lugar ${despues} del ranking`, 'oro', 'trophy');
       return r;
@@ -404,9 +399,12 @@ function pintarCabeza(){
   $('#avanceExamen').textContent = d == null ? 'Sin fecha de examen' : d < 0 ? 'El examen ya pasó' : d === 0 ? 'El examen es HOY' : d === 1 ? 'El examen es mañana' : `El examen es en ${d} días`;
 }
 function pintar(){
-  for(const v of ['plan', 'horario', 'pizarron', 'apuntes', 'buscar', 'ranking', 'perfil']) $('#v' + v[0].toUpperCase() + v.slice(1)).hidden = v !== vista;
+  for(const v of ['plan', 'yo', 'horario', 'pizarron', 'apuntes', 'buscar', 'ranking', 'perfil']) $('#v' + v[0].toUpperCase() + v.slice(1)).hidden = v !== vista;
+  /* abajo sólo hay tres: lo de «Tú» enciende «Tú», con su barrita para regresar */
+  const pestana = SUBVISTAS[vista] ? 'yo' : vista;
+  $('#subBarra').hidden = !SUBVISTAS[vista]; if(SUBVISTAS[vista]) $('#subTitulo').textContent = SUBVISTAS[vista];
   if(vista === 'pizarron' && !$('#vPizarron iframe')){ const f = document.createElement('iframe'); f.title = 'El pizarrón'; f.allow = 'autoplay; clipboard-write'; f.src = EXPLICA + (location.search ? location.search + '&' : '?') + 'nombre=' + encodeURIComponent(perfil.nombre || ''); $('#vPizarron').append(f); }
-  $$('#nav button').forEach((b) => { if(b.dataset.ir === vista) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+  $$('#nav button').forEach((b) => { if(b.dataset.ir === pestana) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
   pintarCabeza();
   if(vista === 'plan') pintarPlan();
   if(vista === 'horario') pintarHorario();
@@ -414,6 +412,7 @@ function pintar(){
   if(vista === 'buscar') pintarBuscar();
   if(vista === 'ranking') pintarRanking();
   if(vista === 'perfil') pintarPerfil();
+  if(vista === 'yo') yo?.pintar();
   sesionEst?.alPintar();
 }
 /* sin cuenta: crear una o entrar (cuenta.js). La llave de La Sala sigue sirviendo para Carlos y Luis, pero ya
@@ -485,7 +484,9 @@ function pintarPlan(){
     const nodos = $$('.nodos', c)[mascotaPos.u];
     if(nodos){ const d = document.createElement('div'); d.className = 'masc-camino'; d.style.left = mascotaPos.x + '%'; d.style.top = (mascotaPos.y + (mascotaPos.y < 120 ? 56 : 0)) + 'px'; nodos.append(d);
       const m = mascotaEn(d, { tam: 84 });
-      if(m && !pintarPlan.saludo){ pintarPlan.saludo = true; setTimeout(() => m.play('saluda', { decir: a.hechos ? '¡A seguirle!' : '¡Empecemos!' }), 600); } }
+      /* saluda UNA vez por visita (Carlos, 13 nov: al salir y volver, el iPhone recarga la página y volvía a saludar) */
+      let yaSaludo = pintarPlan.saludo; try{ yaSaludo = yaSaludo || sessionStorage.getItem('carymo.saludo') === '1'; }catch{}
+      if(m && !yaSaludo){ pintarPlan.saludo = true; try{ sessionStorage.setItem('carymo.saludo', '1'); }catch{} setTimeout(() => m.play('saluda', { decir: a.hechos ? '¡A seguirle!' : '¡Empecemos!' }), 600); } }
   }
   $('#bRepasoFinal')?.addEventListener('click', () => { const n = todosLosNodos(p).find((x) => x.tipo === 'simulacro'); if(n) abrirNodo(n.id, true); });
   /* el nodo actual a la vista */
@@ -1141,11 +1142,16 @@ function abrirPizarra(p, n){
     q.set('contexto', [`Prepara su ${p.titulo} (${cuandoTexto(p.fecha).toLowerCase()}).`, t && t.resumen ? `Este tema trata de: ${t.resumen}` : '', p.notas ? `Sus apuntes dicen: ${p.notas.slice(0, 400)}` : '',
       vistos.length ? `Ya estudió: ${vistos.join(', ')}.` : '', costo.length ? `Le costó trabajo: ${costo.join(', ')}: refuérzalo con ejemplos.` : ''].filter(Boolean).join(' '));
   }
-  c.innerHTML = `<div class="arriba"><button class="bt redondo fantasma" data-cerrar aria-label="Cerrar la clase">${ico('x')}</button><div style="flex:1;min-width:0"><small style="display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--claro-txt)">${unidad ? 'Panorama de la unidad' : n.id ? 'Cátedra' : 'Explícame'}</small><b style="font:800 16px/1.2 Titulo">${esc(n.titulo)}</b></div>${n.id ? `<button class="bt fuerte" data-vista>${ico('check')}Ya la vi</button>` : ''}</div>
-    <iframe title="Clase en el pizarrón" src="${EXPLICA}?${q}&nombre=${encodeURIComponent(perfil.nombre || '')}" allow="autoplay; clipboard-write"></iframe>`;
-  const alTerminar = (e) => { if(e.origin === location.origin && e.data && e.data.explica === 'fin' && n.id){ const b = $('[data-vista]', c); if(b){ b.classList.add('blanco'); b.textContent = 'Terminar'; brindis('Clase completa', '', 'presentation'); } } };
+  c.innerHTML = `<button class="piz-abrir" data-plegar aria-label="Ver título y opciones de la clase" aria-expanded="false">${ico('chevron-down')}</button><div class="arriba"><button class="bt redondo fantasma" data-cerrar aria-label="Cerrar la clase">${ico('x')}</button><div style="flex:1;min-width:0"><small style="display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--claro-txt)">${unidad ? 'Panorama de la unidad' : n.id ? 'Cátedra' : 'Explícame'}</small><b style="font:800 16px/1.2 Titulo">${esc(n.titulo)}</b></div>${n.id ? `<button class="bt fuerte" data-vista>${ico('check')}Ya la vi</button>` : ''}<button class="bt redondo fantasma" data-plegar aria-label="Esconder esta barra" aria-expanded="true">${ico('chevron-up')}</button></div>
+    <iframe title="Clase en el pizarrón" src="${EXPLICA}?${q}&en=capa&nombre=${encodeURIComponent(perfil.nombre || '')}" allow="autoplay; clipboard-write"></iframe>`;
+  /* LA CABECERA SE DOBLA (Carlos, 13 nov: «el de "sí, ya la vi"… que se pueda guardar como un menú desplegable… me quita espacio
+     preciado en teléfono»). Se dobla sola a los 4 s; la flechita de arriba la vuelve a abrir; al terminar la clase se abre sola. */
+  const plegar = (si) => { c.classList.toggle('plegada', si); $$('[data-plegar]', c).forEach((b) => b.setAttribute('aria-expanded', String(!si))); };
+  let tocoCabeza = false; setTimeout(() => { if(!tocoCabeza && c.isConnected) plegar(true); }, 4000);
+  const alTerminar = (e) => { if(e.origin === location.origin && e.data && e.data.explica === 'fin' && n.id){ plegar(false); const b = $('[data-vista]', c); if(b){ b.classList.add('blanco'); b.textContent = 'Terminar'; brindis('Clase completa', '', 'presentation'); } } };
   addEventListener('message', alTerminar);
   c.addEventListener('click', (e) => {
+    if(e.target.closest('[data-plegar]')){ tocoCabeza = true; plegar(!c.classList.contains('plegada')); tono(SON.toque); return; }
     if(e.target.closest('[data-cerrar]')){ removeEventListener('message', alTerminar); cerrarCapa(); pintar(); return; }
     if(e.target.closest('[data-vista]')){ removeEventListener('message', alTerminar); completarNodo(planes[p.id], n, { xp: unidad ? 15 : 12 }); }
   });
@@ -1318,6 +1324,17 @@ function colorMateria(nombre){ const m = listaMaterias().find((x) => quitarAcent
 let horarioEditando = false, relojHorario = 0;
 const hhmm = (m) => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`;
 const faltaTexto = (m) => m < 60 ? `${m} min` : `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ''}`;
+/* LA LÍNEA DEL EXAMEN (Carlos, 13 nov: «que aparezca una línea en el horario que te marque cuánto falta para tu examen»):
+   de hoy (izquierda) al examen (derecha), un puntito por día; hoy late. Con más de 21 días, la línea va sin puntitos. */
+function lineaExamen(p){
+  const d = diasHasta(p.fecha), f = new Date(p.fecha + 'T12:00:00'), c = colorMateria(p.materia || p.titulo), listo = avanceDe(p).pct;
+  const falta = d === 0 ? '<b>Es HOY</b>' : d === 1 ? 'Es <b>mañana</b>' : `Faltan <b>${d}</b> días`;
+  const puntos = d > 0 && d <= 21 ? Array.from({ length: d - 1 }, (_, k) => `<i class="cx-dia" style="left:${((k + 1) / d * 100).toFixed(2)}%"></i>`).join('') : '';
+  return `<div class="cuenta-ex${d <= 1 ? ' urge' : ''}" style="--c:${c}" role="img" aria-label="${esc(p.titulo)}: ${d === 0 ? 'es hoy' : d === 1 ? 'es mañana' : `faltan ${d} días`}">
+    <div class="cx-cab"><b>${esc(p.titulo)}</b><span>${falta}</span></div>
+    <div class="cx-linea"><i class="cx-riel"></i>${puntos}${d > 0 ? '<span class="cx-hoy"></span>' : ''}<span class="cx-meta">${ico('graduation-cap')}</span></div>
+    <div class="cx-pie"><small>Hoy</small><small>${DIAS[f.getDay()]} ${f.getDate()} de ${MESES[f.getMonth()]} · ${listo} % listo</small></div></div>`;
+}
 function pintarHorario(){
   const v = $('#vHorario'), hz = horario(), d = new Date(), hoyI = d.getDay() - 1, ahora = d.getHours() * 60 + d.getMinutes();
   const deDia = (i) => hz.clases.filter((x) => x.dia === i).sort((a, b) => aMin(a.inicio) - aMin(b.inicio));
@@ -1343,13 +1360,15 @@ function pintarHorario(){
   const dias = DIAS_ESC.map((n, i) => {
     const cl = deDia(i), hoy = i === hoyI;
     const resumen = cl.length ? `${cl.length} ${cl.length === 1 ? 'clase' : 'clases'} · ${esc(cl[0].inicio)} a ${esc(cl[cl.length - 1].fin)}` : 'Sin clases';
-    return `<details class="hz-dia${hoy ? ' hoy' : ''}"${hoy ? ' open' : ''}><summary><span class="hz-n">${n}${hoy ? '<em>hoy</em>' : ''}</span><small>${resumen}</small>${ico('chevron-right', 'hz-flecha')}</summary>
+    /* si un examen cae en este día de esta semana, el día lo dice */
+    const exDia = examenes.filter((p) => { const k = diasHasta(p.fecha); return k <= 6 && (hoyI + k) % 7 === i; });
+    return `<details class="hz-dia${hoy ? ' hoy' : ''}"${hoy ? ' open' : ''}><summary><span class="hz-n">${n}${hoy ? '<em>hoy</em>' : ''}${exDia.length ? '<em class="hz-ex">examen</em>' : ''}</span><small>${resumen}</small>${ico('chevron-right', 'hz-flecha')}</summary>
       <div class="hz-clases">${cl.map((x) => { const pasada = hoy && aMin(x.fin) <= ahora;
         return `<div class="clase-h${hoy && x === enCurso ? ' ahora' : ''}${pasada ? ' pasada' : ''}" style="--c:${colorMateria(x.materia)}"><span class="hr">${esc(x.inicio)}<small>${esc(x.fin)}</small></span><b>${esc(x.materia)}</b>${hoy && x === enCurso ? '<span class="hz-chip">ahora</span>' : hoy && x === sig ? '<span class="hz-chip sig">sigue</span>' : ''}<button data-quitar-clase="${hz.clases.indexOf(x)}" aria-label="Quitar ${esc(x.materia)} del ${n.toLowerCase()}">${ico('x')}</button></div>`; }).join('') || '<p class="hz-vacio">Sin clases este día</p>'}</div></details>`;
   }).join('');
   v.innerHTML = `<h1 class="titulo-vista">Tu horario</h1>${hz.clases.length ? '' : '<p class="sub-vista">Agrégalo una vez y listo, siempre lo vas a tener. Tarda 30 segundos.</p>'}
     ${ahoraHtml}
-    ${examenes.length ? `<div class="seccion-t">Próximos exámenes</div><div class="examenes"><ul>${examenes.map((p) => { const f = new Date(p.fecha + 'T12:00:00'); return `<li><span class="fecha-mini"><small>${MESES[f.getMonth()].slice(0, 3)}</small><b>${f.getDate()}</b></span><span style="flex:1"><b>${esc(p.titulo)}</b><br><small style="color:var(--suave)">${esc(cuandoTexto(p.fecha))} · ${avanceDe(p).pct} % listo</small></span></li>`; }).join('')}</ul></div>` : ''}
+    ${examenes.length ? `<div class="seccion-t">Cuánto falta para tus exámenes</div><div class="cuentas-ex">${examenes.slice(0, 4).map(lineaExamen).join('')}</div>` : ''}
     ${hz.clases.length ? `<div class="seccion-t hz-cab">La semana<button class="bt mini" id="bEditarHorario" aria-pressed="${horarioEditando}">${ico(horarioEditando ? 'check' : 'pencil')}${horarioEditando ? 'Listo' : 'Editar'}</button></div>
     <div class="horario${horarioEditando ? ' editando' : ''}">${dias}</div>` : ''}
     <div style="display:grid;gap:10px;margin:22px 0 30px"><button class="bt fuerte ancho" id="bAgregarClase">${ico('plus')}Agregar una clase</button><label class="bt ancho" id="bFotoHorario">${ico('camera')}Subir foto de mi horario<input type="file" accept="image/*" hidden id="fFotoHorario"></label><button class="bt ancho" id="bPegarHorario">${ico('clipboard-paste')}Pegar desde Excel</button></div>`;
@@ -1529,22 +1548,23 @@ function pintarPerfil(){
       : `<div class="fila-bt" style="margin-bottom:6px"><button class="bt fuerte" data-cuenta-p="crear">${ico('user-plus')}Crear cuenta</button><button class="bt" data-cuenta-p="entrar">Ya tengo cuenta</button></div>`}
     <div class="seccion-t">Tú</div>
     <label class="ajuste">${ico('pencil')}<span>Tu nombre en el ranking</span><input id="pNombre" class="campo" style="max-width:150px;min-height:40px" value="${esc(perfil.nombre || '')}" aria-label="Tu nombre en el ranking"></label>
+    <div class="seccion-t">Tu personaje</div>
+    <button class="bt ancho" data-abrir-vestidor style="margin-bottom:12px">${ico('shirt')}Vístelo: cara, pelo, ropa y accesorios</button>
     <div class="seccion-t">Tu compañero</div>
     <button class="bt fuerte ancho" data-abrir-companero style="margin-bottom:12px">${ico('house')}Su cuarto y la tienda</button>
     <div class="elige-masc" role="radiogroup" aria-label="Tu compañero">${[...PERSONAJES.map((k) => [k, NOMBRE_PERSONAJE[k]]), ['no', 'Ninguno']].map(([k, t]) => `<button role="radio" aria-checked="${ajustes.mascota === k}" data-masc="${k}">${k === 'no' ? ico('x') : `<span class="masc-mini" data-mini="${k}"></span>`}<span>${t}</span></button>`).join('')}</div>
-    ${ajustes.mascota !== 'no' ? `<div class="seccion-t">La voz de tu ${esc((NOMBRE_PERSONAJE[ajustes.mascota] || '').toLowerCase())}</div>
-    <div class="voces-masc" role="radiogroup" aria-label="Voz de tu mascota">${[0, 1, 2].map((i) => `<button role="radio" aria-checked="${(VOCES_MASCOTA[ajustes.mascota] || [])[i] === vozDeMascota()}" data-voz-masc="${i}">${ico('volume-2')}<span>Voz ${i + 1}<small>${esc(nombreVoz((VOCES_MASCOTA[ajustes.mascota] || [])[i]))}</small></span></button>`).join('')}</div>
-    <label class="ajuste">${ico('message-circle')}<span>Que tu mascota hable en voz alta</span><input type="checkbox" id="pHabla" ${ajustes.mascotaHabla === false ? '' : 'checked'}></label>` : ''}
     <div class="seccion-t">La voz que te explica</div>
     <div class="ajuste voz-aj">${ico('mic')}<span>Voz del pizarrón<small style="display:block;color:var(--tenue);font-weight:500">Las «de estudio» suenan como persona</small></span>
       <select id="pVoz" class="campo" style="max-width:170px;min-height:40px" aria-label="Voz del pizarrón">${opcionesVoz()}</select>
       <button class="bt redondo" data-probar-voz aria-label="Oír la voz">${ico('play')}</button></div>
+    <div class="seccion-t">Avisos</div><div id="pAvisos"></div>
     <div class="seccion-t">App</div>
     <div class="ajuste">${ico('volume-2')}<span>Efectos de sonido</span><button class="interruptor" role="switch" data-aj="sonido" aria-checked="${!!ajustes.sonido}" aria-label="Efectos de sonido"></button></div>
     <div class="ajuste">${ico('vibrate')}<span>Vibración</span><button class="interruptor" role="switch" data-aj="vibrar" aria-checked="${!!ajustes.vibrar}" aria-label="Vibración"></button></div>
     <p class="version">${esc(VERSION_ESTUDIO)} · ${cola.length ? `${cola.length} logros por mandar a La Sala` : 'todo guardado en La Sala'}</p>`;
   /* el selector de compañero con las mascotas vivas (sin imágenes recortadas) */
   $$('[data-mini]', v).forEach((d) => crearMascota(d, { personaje: d.dataset.mini, tam: 62 }));
+  avisos?.pintar(v.querySelector('#pAvisos'));
 }
 $('#vPerfil').addEventListener('click', (e) => {
   const a = e.target.closest('[data-aj]'); if(a){ ajustes[a.dataset.aj] = !ajustes[a.dataset.aj]; guarda.poner('est.ajustes', ajustes); a.setAttribute('aria-checked', ajustes[a.dataset.aj]); encenderSonidos(ajustes.sonido !== false); tono(SON.toque); return; }
@@ -1553,24 +1573,10 @@ $('#vPerfil').addEventListener('click', (e) => {
   if(e.target.closest('[data-anadir-plan]')) anadirCurso();
   const cb = e.target.closest('[data-cuenta-p]'); if(cb){ if(cb.dataset.cuentaP === 'salir') cuentaUI.salir(); else cuentaUI.abrir(cb.dataset.cuentaP); return; }
   if(e.target.closest('[data-probar-voz]')) probarVoz();
-  const mb = e.target.closest('[data-masc]'); if(mb){ ajustes.mascota = mb.dataset.masc; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); pintarPlan.saludo = false; if(conAcceso()) sala({ accion: 'mascota', personaje: mb.dataset.masc }).catch(() => {}); }
+  const mb = e.target.closest('[data-masc]'); if(mb){ ajustes.mascota = mb.dataset.masc; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); pintarPlan.saludo = false; try{ sessionStorage.removeItem('carymo.saludo'); }catch{} if(conAcceso()) sala({ accion: 'mascota', personaje: mb.dataset.masc }).catch(() => {}); }
   if(e.target.closest('[data-abrir-companero]')){ companero.abrir(); return; }
-  const vm = e.target.closest('[data-voz-masc]');
-  if(vm){
-    const i = +vm.dataset.vozMasc, q = ajustes.mascota; despertar();
-    ajustes.vozMascota = { ...(ajustes.vozMascota || {}), [q]: i }; guarda.poner('est.ajustes', ajustes);
-    perfil.voces = { ...(perfil.voces || {}), [q]: i }; guarda.poner('est.perfil', perfil);
-    if(conAcceso()) sala({ accion: 'mascota', personaje: q, voz: i }).then((r) => ponerPerfil(r.perfil)).catch(() => {});
-    document.querySelectorAll('[data-voz-masc]').forEach((b) => b.setAttribute('aria-checked', String(b === vm)));
-    const nom = (perfil.nombre && perfil.nombre !== 'Tú') ? perfil.nombre.split(' ')[0] : '';
-    const frase = `¡Hola${nom ? ', ' + nom : ''}! ¿Así te gusta mi voz?`;
-    const m = [...enPantalla].reverse().find((x) => x.el.isConnected);
-    if(m) m.play('saluda', { decir: frase }); else decirConVoz(frase, q);
-    return;
-  }
 });
 $('#vPerfil').addEventListener('change', (e) => {
-  if(e.target.id === 'pHabla'){ ajustes.mascotaHabla = e.target.checked; guarda.poner('est.ajustes', ajustes); tono(SON.toque); return; }
   if(e.target.id === 'pVoz'){ const v = e.target.value; guarda.poner('explica.voz', v); if(v !== 'no') guarda.poner('explica.vozAntes', v); tono(SON.toque); probarVoz(); return; }
   if(e.target.id !== 'pNombre') return;
   const n = e.target.value.trim().slice(0, 30); if(!n) return;
@@ -1582,8 +1588,9 @@ $('#vPerfil').addEventListener('change', (e) => {
 if(migrarAlArrancar){ for(const p of Object.values(planes)) if(migrarCamino(p)) porGuardar.add(p.id); guardarLocal(); }
 $$('[data-ico]').forEach((s) => { s.outerHTML = ico(s.dataset.ico); });
 /* cambiar de pestaña se desliza hacia el lado de la pestaña nueva (View Transitions donde existan) */
-const ORDEN_VISTAS = ['plan', 'horario', 'pizarron', 'buscar', 'ranking', 'perfil'];
-$('#nav').addEventListener('click', (e) => {
+const ORDEN_VISTAS = ['plan', 'ranking', 'yo', 'horario', 'apuntes', 'pizarron', 'buscar', 'perfil'];
+/* cualquier botón con data-ir: los tres de abajo, los de «Tú» y el de regresar */
+document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-ir]'); if(!b || b.dataset.ir === vista) return;
   const dir = ORDEN_VISTAS.indexOf(b.dataset.ir) > ORDEN_VISTAS.indexOf(vista) ? 1 : -1;
   vista = b.dataset.ir; tono(SON.toque); vibrar(8);
@@ -1611,6 +1618,13 @@ sesionEst = iniciarSesionEstudio({ $, esc, ico, hoja, cerrarHoja, brindis, tono,
 companero = iniciarCompanero({ sala, capa, cerrarCapa, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, crearMascota, $, brindis, ponerPerfil,
   perfil: () => perfil, ajustes: () => ajustes, alCerrar: () => pintar() });
 companero.pintarPastilla();
+yo = iniciarYo({ esc, ico, $, tono, SON, crearMascota, perfil: () => perfil, ajustes: () => ajustes, planes: () => planes,
+  cuantosApuntes: () => apuntes?.cuantos?.() || 0, pintarCubos: (el) => { if(el) el.innerHTML = $('#pCubos')?.innerHTML || ''; },
+  svgPersonaje: (p) => vestidor.svgPersonaje(p), abrirVestidor: () => vestidor.abrir(), abrirCompanero: () => companero.abrir() });
+vestidor = iniciarVestidor({ sala, capa, cerrarCapa, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, brindis, $, ponerPerfil, conAcceso, perfil: () => perfil });
+/* tocar un aviso abre lo que dice: el cuarto del compañero o el plan del examen */
+avisos = iniciarAvisos({ sala, esc, ico, brindis, tono, SON,
+  alAbrir: ({ plan: id, abrir }) => { if(abrir === 'companero'){ companero.abrir(); return; } if(id && planes[id]){ actualId = id; guardarLocal(); vista = 'plan'; pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); } } });
 /* la primera pintada fue antes de que existieran la fila de cursos y la pastilla: otra vez, ya con todo */
 pintar();
 /* la entrada animada (una vez por visita; el telón ya está en el HTML) */
@@ -1618,4 +1632,4 @@ entrada({ personaje: ajustes.mascota });
 $('#pCubos').addEventListener('click', () => companero.abrir());
 { const cod = codigoDe(location.search); if(cod){ history.replaceState(null, '', location.pathname); setTimeout(() => anadirCurso(cod), 3400); } }
 /* para las pruebas */
-window.__estudio = { companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };
+window.__estudio = { ir: (v) => { vista = v; pintar(); }, yo: () => yo, vestidor: () => vestidor, avisos: () => avisos, companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };

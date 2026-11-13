@@ -96,7 +96,7 @@ export function iniciarCompanero(h){
     $('#barras', c).innerHTML = barra('hambre', 'Llenito', 'heart') + barra('limpieza', 'Limpio', 'sparkles') + barra('animo', 'Contento', 'party-popper');
     if(masc && primera){
       const accion = { feliz: 'saluda', normal: 'calma', hambre: 'triste', sucio: 'triste', triste: 'triste', 'muy-mal': 'triste' }[q];
-      setTimeout(() => masc.play(accion, { decir: azar(FRASES[q]), decirMs: 3200 }), 450);
+      setTimeout(() => masc?.play(accion, { decir: azar(FRASES[q]), decirMs: 3200 }), 450);
     }
     pintarTienda();
     pintarPastilla();
@@ -123,7 +123,7 @@ export function iniciarCompanero(h){
       const k = b.dataset.comprar, it = tienda[k];
       if(cubos() < it.precio){ tono(SON.mal); h.brindis(`Te faltan ${it.precio - cubos()} cubitos`, 'vino', 'circle-x'); masc?.play('piensa_corto', { decir: 'Sigue estudiando y juntamos más.' }); return; }
       b.disabled = true;
-      try{ await pedir({ accion: 'comprar', item: k }); tono(SON.moneda); vibrar(15); masc?.play('bien', { decir: it.tipo === 'mueble' ? '¡Me encanta para mi cuarto!' : it.tipo === 'racha' ? 'Tu racha está protegida.' : '¡Gracias!' }); pintarCuarto(); }
+      try{ await pedir({ accion: 'comprar', item: k }); tono(SON.compra || SON.moneda); vibrar(15); masc?.play('bien', { decir: it.tipo === 'mueble' ? '¡Me encanta para mi cuarto!' : it.tipo === 'racha' ? 'Tu racha está protegida.' : '¡Gracias!' }); pintarCuarto(); }
       catch(err){ tono(SON.mal); h.brindis(err.message, 'vino', 'circle-x'); pintarCuarto(); }
       return;
     }
@@ -146,9 +146,9 @@ export function iniciarCompanero(h){
   async function cuidar(que, item){
     try{
       await pedir({ accion: 'cuidar', que, item });
-      if(que === 'comer'){ tono(SON.pop); masc?.play('bien', { decir: azar(['¡Qué rico!', '¡Mmm, delicioso!', 'Ya me siento mejor.']) }); }
-      if(que === 'banar'){ tono(SON.whoosh); masc?.lluvia(['gota', 'chispa'], 12); masc?.play('amor', { decir: '¡Ya estoy limpiecito!' }); }
-      if(que === 'jugar'){ tono(SON.combo); masc?.play('juega', { decir: azar(['¡Otra vez!', '¡Jajaja!', '¡Qué divertido!']) }); }
+      if(que === 'comer'){ tono(SON.comer || SON.pop); masc?.play('bien', { decir: azar(['¡Qué rico!', '¡Mmm, delicioso!', 'Ya me siento mejor.']) }); }
+      if(que === 'banar'){ tono(SON.burbujas || SON.whoosh); masc?.lluvia(['gota', 'chispa'], 12); masc?.play('amor', { decir: '¡Ya estoy limpiecito!' }); }
+      if(que === 'jugar'){ tono(SON.rebote || SON.combo); masc?.play('juega', { decir: azar(['¡Otra vez!', '¡Jajaja!', '¡Qué divertido!']) }); }
       vibrar(12); pintarCuarto();
     }catch(err){ masc?.play('piensa_corto', { decir: err.message }); }
   }

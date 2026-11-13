@@ -91,7 +91,7 @@ export function iniciarSesionEstudio(h){
       const ultimo = s.i >= s.bloques.length - 1;
       if(ultimo){ terminar(true); return; }
       s.fase = 'descanso'; s.hasta = Date.now() + s.pausa * 60_000; guardar();
-      tono(SON.subir); try{ navigator.vibrate?.([60, 80, 60]); }catch{}
+      tono(SON.descanso || SON.subir); try{ navigator.vibrate?.([60, 80, 60]); }catch{}
       h.dice(`¡Descanso de ${s.pausa} minutos! Estírate, toma agua. Luego sigue ${nombre(s.bloques[s.i + 1])}.`, 'amor', { si: () => brindis(`Descanso de ${s.pausa} min · luego ${nombre(s.bloques[s.i + 1])}`, 'oro', 'cloud-rain') });
     } else {
       s.fase = 'estudio'; s.i += 1; s.hasta = Date.now() + s.min * 60_000; guardar();

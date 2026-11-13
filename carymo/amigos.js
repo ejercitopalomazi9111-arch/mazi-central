@@ -45,12 +45,12 @@ export function iniciarAmigos(h){
     if(m.tipo === 'invita'){ invitacion(m); return; }
     const t = m.tipo === 'saludo' ? `${m.nombre} te saludó${m.texto ? ': ' + m.texto : ''}` : m.tipo === 'felicita' ? `${m.nombre} te felicitó${m.texto ? ': ' + m.texto : ''}`
       : m.tipo === 'examen' ? `${m.nombre} · ${m.texto}. ¡Felicítalo!` : `${m.nombre} ${MSG[m.tipo] || ''}`;
-    tono(m.tipo === 'felicita' || m.tipo === 'amigos' ? SON.moneda : SON.pop); vibrar(12);
+    tono(m.tipo === 'felicita' || m.tipo === 'amigos' ? SON.moneda : SON.mensaje || SON.pop); vibrar(12);
     brindis(t, m.tipo === 'rechaza' ? 'vino' : '', { saludo: 'hand', felicita: 'party-popper', amistad: 'user-plus', amigos: 'users', examen: 'graduation-cap', acepta: 'timer', rechaza: 'clock', fin: 'flag' }[m.tipo] || 'sparkles');
   }
   function invitacion(m){
     if(invitacionVista === m.sesion) return; invitacionVista = m.sesion;
-    tono(SON.subir); vibrar([30, 40, 30]);
+    tono(SON.invita || SON.subir); vibrar([30, 40, 30]);
     const hh = hoja('', `<div style="display:grid;justify-items:center;gap:8px;text-align:center"><div class="masc-prep" id="mascInv"></div>
       <h3 style="margin:0">${esc(m.nombre)} te invita a estudiar juntos</h3><p style="color:var(--suave)">${esc(m.texto || '25 minutos')}. Los dos estudian al mismo tiempo y gana el que junte más XP.</p>
       <div style="display:grid;gap:10px;width:100%;margin-top:6px"><button class="bt fuerte ancho" id="invSi">${ico('timer')}¡Va!</button><button class="bt ancho" id="invNo">Ahorita no</button></div></div>`);
@@ -96,8 +96,8 @@ export function iniciarAmigos(h){
 
   /* la sección «Amigos», dentro de Ranking */
   function fila(x, acciones){
-    return `<div class="amigo"><span class="av" style="background:${h.colorDe(x.cuenta)}">${esc((x.nombre || '?').charAt(0).toUpperCase())}${x.enLinea || x.estado ? '<i class="punto"></i>' : ''}</span>
-      <span class="quien"><b>${esc(x.nombre || x.cuenta)}</b><small>@${esc(x.cuenta)}${x.estado === 'estudiando' ? ' · estudiando' + (x.materia ? ' ' + esc(x.materia) : '') : x.enLinea || x.estado ? ' · en línea' : ''}</small></span>
+    return `<div class="amigo" data-cuenta="${esc(x.cuenta)}"><span class="av" style="background:${h.colorDe(x.cuenta)}">${esc((x.nombre || '?').charAt(0).toUpperCase())}${x.enLinea || x.estado ? '<i class="punto"></i>' : ''}</span>
+      <span class="quien"><b>${esc(x.nombre || x.cuenta)}${x.rachaJuntos > 0 ? `<span class="rj" title="Días seguidos estudiando juntos" aria-label="${x.rachaJuntos} ${x.rachaJuntos === 1 ? 'día' : 'días'} seguidos estudiando juntos">${ico('flame')}${x.rachaJuntos}</span>` : ''}</b><small>@${esc(x.cuenta)}${x.estado === 'estudiando' ? ' · estudiando' + (x.materia ? ' ' + esc(x.materia) : '') : x.enLinea || x.estado ? ' · en línea' : ''}</small></span>
       <span class="acc">${acciones}</span></div>`;
   }
   const btn = (accion, cuenta, icono, texto) => `<button class="bt mini" data-am="${accion}" data-cuenta="${esc(cuenta)}" aria-label="${esc(texto)}">${ico(icono)}<span>${esc(texto)}</span></button>`;

@@ -581,6 +581,8 @@ dependemos.
    | la instrucción de la IA puede decir para quién es («la maestra particular de Carlos») porque la usa Carlos | la usan TODOS los alumnos, y además la clase se guarda en la biblioteca y se le sirve al siguiente: el nombre se queda pegado en el texto guardado | el pizarrón de CARYMO le decía «Carlos» a cualquiera. La IA escribe `{nombre}`, se cambia al pintarla (`conNombre` en `sala/explica.js`), la biblioteca guarda la plantilla y lo viejo se limpia al leerlo (`sinCarlos`) |
    | para que alguien use la app basta con pasarle la llave de La Sala | la llave abre TODA la sala (chat, banco, llaves): darla a alumnos es darles la casa | CARYMO ahora usa cuentas propias (las de la comunidad) y una puerta `/api/carymo/*` que sólo abre estudio e IA con tope diario; la sala la recibe por el host «interno», que nadie de fuera puede poner (`sala/servidor/pruebas-carymo-cuentas.mjs`) |
 
+   | si el teléfono manda las llaves del push y el cifrado ya está escrito, el aviso llega con texto | el servidor de La Sala guardaba SÓLO `endpoint` al apuntar el teléfono (`{ endpoint: sus.endpoint }`) y tiraba `keys`; sin ellas `empujar` manda el aviso vacío, callado | los avisos del chat llegaban «Escribieron en la sala» desde que existe la vista previa que pidió Carlos; lo vi armando los de CARYMO (13 nov). Una prueba ahora mira que lo GUARDADO traiga `keys`. Y en las pruebas: el Chromium sin pantalla dice `Notification.permission === 'denied'` aunque se le dé el permiso con `grantPermissions`; se finge en la prueba |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---

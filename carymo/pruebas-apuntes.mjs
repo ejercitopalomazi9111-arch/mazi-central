@@ -25,7 +25,7 @@ await pg.addInitScript(() => {
 });
 await pg.goto(`http://127.0.0.1:${PUERTO}/carymo/?servidor=http://localhost:1&sala=G`, { waitUntil: 'load' });
 await pg.waitForFunction(() => window.__estudio);
-await pg.click('#nav [data-ir="apuntes"]');
+await pg.click('#nav [data-ir="yo"]').then(() => pg.click('#vYo [data-ir="apuntes"]'));
 await pg.waitForSelector('.ap-card');
 
 console.log('Los apuntes que salen solos');
@@ -37,6 +37,13 @@ await foto('01-lista');
 await pg.fill('#apBuscar', 'fotosintesis'); await pg.waitForTimeout(450);
 ok((await pg.$$('.ap-card')).length === 1, 'el buscador encuentra sin acentos');
 await pg.fill('#apBuscar', ''); await pg.waitForTimeout(450);
+/* carpetas: tipo y luego materia (Carlos, 13 nov) */
+ok(await pg.locator('.ap-carpeta[data-apf]').count() === 3, 'la entrada son tres carpetas: tuyos, de tus lecciones y del pizarrón');
+ok(/1/.test(await pg.textContent('.ap-carpeta[data-apf="leccion"] .ap-n')), 'cada carpeta dice cuántos apuntes trae');
+await pg.click('.ap-carpeta[data-apf="leccion"]'); await pg.waitForTimeout(300);
+ok(await pg.locator('.ap-card:has-text("Membrana celular")').count() === 1 && await pg.locator('.ap-card:has-text("La fotosíntesis")').count() === 0, 'adentro de «De tus lecciones» sólo salen esos (con una sola materia, directo a la lista)');
+await pg.click('.ap-migas [data-apf="todos"]'); await pg.waitForTimeout(300);
+ok(await pg.locator('.ap-carpeta[data-apf]').count() === 3, '«‹ Apuntes» regresa a las carpetas');
 await pg.click('.ap-card:has-text("La fotosíntesis")');
 const puntos = await pg.$$eval('.ap-puntos li', (x) => x.map((e) => e.textContent));
 ok(puntos.some((p) => /Necesita: Luz · Agua · CO₂/.test(p)) && puntos.some((p) => /Repaso/.test(p)), 'el apunte del pizarrón trae lo que se escribió y el repaso (sin las marcas **)');

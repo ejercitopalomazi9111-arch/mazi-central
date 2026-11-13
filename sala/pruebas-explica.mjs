@@ -10,6 +10,8 @@ const raiz = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..')
 const { chromium } = await import(path.join(execSync('npm root -g').toString().trim(), 'playwright/index.mjs'));
 let bien = 0, mal = 0;
 const ok = (c, t) => { if(c){ bien++; console.log('  ✓', t); } else { mal++; console.log('  ✗', t); } };
+/* subtítulos, velocidad, volumen, preguntar, «Lo dicho» y «Apuntes» viven en «más» */
+const abrirMas = async (p) => { if(await p.isHidden('#mas')) await p.click('#bMas'); };
 
 export const CLASE = { titulo: 'El sistema circulatorio', visual: true, motor: 'groq', pasos: [
   { voz: 'Hoy vemos el sistema circulatorio.', pizarra: { tipo: 'titulo', texto: 'El sistema **circulatorio**', sub: 'Cómo viaja la sangre por tu cuerpo', icono: 'heart-pulse' } },
@@ -131,6 +133,13 @@ try{
     await p.waitForTimeout(600);
     ok(pedidas.length >= 1 && pedidas.every((x) => x.voz === 'nube:javier' && !/maestra|Explícalo|JSON|Eres /i.test(x.texto)) && pedidas[0].texto === CLASE.pasos[0].voz.replace(/\*\*/g, ''), 'la voz elegida (Javier) recibe sólo lo que dice el paso, sin instrucciones (' + String(JSON.stringify(pedidas[0])).slice(0, 90) + ')');
     ok(await p.isHidden('#subVoz'), 'los subtítulos vienen apagados: no tapan el pizarrón');
+    /* abajo, a la vista, sólo atrás, play/pausa y siguiente (Carlos, 13 nov); lo demás, en «más» */
+    ok(await p.isVisible('#bAtras') && await p.isVisible('#bPlay') && await p.isVisible('#bSig') && await p.isHidden('#bSub') && await p.isHidden('#bVel') && await p.isHidden('#bVoz') && await p.isHidden('#bDicho'),
+      'a la vista sólo quedan atrás, play y siguiente; subtítulos, velocidad, volumen y «Lo dicho» están guardados');
+    const altoAntes = await p.evaluate(() => document.querySelector('#mando').offsetHeight);
+    await abrirMas(p);
+    ok(await p.isVisible('#bSub') && await p.isVisible('#bVel') && await p.isVisible('#bApuntes') && (await p.getAttribute('#bMas', 'aria-expanded')) === 'true', '«más» enseña lo guardado');
+    ok(altoAntes < await p.evaluate(() => document.querySelector('#mando').offsetHeight), 'y guardado, la barra ocupa menos pantalla');
     await p.click('#bSub');
     ok(await p.isVisible('#subVoz'), '«CC» los prende');
     await p.click('#bSub');
@@ -183,7 +192,7 @@ try{
     ok(fin.tipos.length >= 32, `${fin.tipos.length} tipos distintos de elemento dibujados`);
     const tamaños = await p.evaluate(() => [...document.querySelectorAll('#tablero .el')].map((e) => ({ t: e.classList[1], w: e.offsetWidth, h: e.offsetHeight })));
     ok(tamaños.every((x) => x.h > 20 && x.w > 200), 'ningún elemento salió vacío ni aplastado' + (tamaños.filter((x) => x.h <= 20 || x.w <= 200).map((x) => ` ${x.t}:${x.w}x${x.h}`).join('')));
-    ok(await p.isVisible('#bApuntes'), 'al terminar se puede abrir los apuntes');
+    await abrirMas(p); ok(await p.isVisible('#bApuntes'), 'al terminar se pueden abrir los apuntes (en «más»)');
     /* la foto cargó aunque su primera dirección no existía */
     const foto0 = await p.evaluate(() => { const i = document.querySelector('#tablero .el.imagen img'); return i ? { ok: i.complete && i.naturalWidth > 0, src: i.src } : null; });
     ok(foto0 && foto0.ok && /planta/.test(foto0.src), 'si la foto grande de Wikipedia no existe, carga la siguiente (no un recuadro vacío)');
@@ -192,7 +201,7 @@ try{
     const fuera = await p.evaluate(() => { const c = document.querySelector('#tablero .cur'); if(!c) return true; const r = c.getBoundingClientRect(), v = document.querySelector('#tablero').getBoundingClientRect(); return r.left < v.left - 5 || r.right > v.right + 5 || r.top < v.top - 5 || r.bottom > v.bottom + 5; });
     ok(fuera, 'el cursor de Negro se retira cuando ya no hay nada que dibujar');
     /* todo lo que se dijo, en lista, con la pregunta */
-    await p.click('#bDicho');
+    await abrirMas(p); await p.click('#bDicho');
     await p.waitForSelector('#hojaDicho .lista-dicho');
     const dicho = await p.evaluate(() => ({ n: document.querySelectorAll('#hojaDicho .lista-dicho li:not(.preg-dicho)').length, preg: [...document.querySelectorAll('#hojaDicho .preg-dicho')].map((x) => x.textContent), ancho: document.documentElement.scrollWidth }));
     ok(dicho.n === CLASE.pasos.filter((x) => x.voz).length, `«Lo dicho» trae TODO lo que se dijo, en lista (${dicho.n})`);
@@ -212,7 +221,7 @@ try{
     await p.click('#bSeguir');
     ok(!(await p.evaluate(() => window.__explica.lienzo.libre)), '«Seguir la clase» regresa la cámara a los cursores');
     /* apuntes */
-    await p.click('#bApuntes');
+    await abrirMas(p); await p.click('#bApuntes');
     await p.waitForSelector('#hojaApuntes .portada-ap');
     const ap = await p.evaluate(() => ({ bloques: document.querySelectorAll('#apCuerpo .bloque-ap').length, els: document.querySelectorAll('#apCuerpo .el').length, sinLetra: document.querySelectorAll('#apCuerpo .c:not(.v)').length, ancho: document.documentElement.scrollWidth, refs: document.querySelectorAll('.refs-ap li').length }));
     ok(ap.bloques === CLASE.pasos.length && ap.els === conPizarra, `los apuntes traen cada paso con su dibujo (${ap.els})`);
