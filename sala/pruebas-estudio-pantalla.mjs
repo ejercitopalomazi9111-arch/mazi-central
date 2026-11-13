@@ -99,6 +99,8 @@ export async function correr({ ok, almacen, atenderEstudio }){
   /* Wikipedia de mentiras (aquí no hay internet): la foto del corazón es una del repo */
   await ctx.route(/wikipedia\.org/, (r) => r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ title: 'Corazón humano', thumbnail: { source: `${base}/urban-pest/web/img/planta.webp` } }) }));
   const pagina = await ctx.newPage();
+  /* cuando tu mascota crece sale su fiesta (carymo/companero.js · crecio): aquí se cierra sola para seguir el recorrido */
+  await pagina.addLocatorHandler(pagina.locator('.fiesta-crece button'), async (b) => { await b.click(); });
   const errores = [];
   pagina.on('pageerror', (e) => errores.push(e.message));
   pagina.on('console', (m) => { if(m.type() === 'error' && !/favicon|404/.test(m.text())) errores.push(m.text()); });
@@ -525,6 +527,6 @@ export async function correr({ ok, almacen, atenderEstudio }){
     ok(await desborde() <= 0, 'a 320 px el camino no se sale de lado');
 
     ok(!errores.length, 'sin errores en la consola' + (errores.length ? ': ' + errores.slice(0, 3).join(' | ') : ''));
-  }catch(e){ ok(false, 'la prueba tronó: ' + e.message.split('\n')[0]); if(process.env.FOTOS) await foto('99-error'); }
+  }catch(e){ ok(false, 'la prueba tronó: ' + e.message.split('\n')[0]); if(process.env.PILA) console.log(e.message); if(process.env.FOTOS) await foto('99-error'); }
   finally{ await nav.close(); servidor.close(); }
 }

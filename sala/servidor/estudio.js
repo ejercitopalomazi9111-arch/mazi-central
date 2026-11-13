@@ -27,7 +27,8 @@
 import { atenderAvisos, avisoDePrueba } from './avisos-estudio.js';
 import { atenderVestidor } from './vestidor.js';
 import { LIGAS, grupoDe, reglasDe, resultadoSemana, TAM_GRUPO } from '../../carymo/ligas.js';
-import { conEconomia, premiar, premiarUnaVez, cobrarNivel, estudioAnima, comprar, cuidar, PREMIOS, TIENDA, nivelDe, animoDe, parejaDe, avanzarRachaJuntos, rachaJuntosHoy } from './palomium.js';
+import { conEconomia, premiar, premiarUnaVez, cobrarNivel, estudioAnima, comprar, cuidar, PREMIOS, TIENDA, nivelDe, animoDe, parejaDe, avanzarRachaJuntos, rachaJuntosHoy, crecer, crianza, vivas } from './palomium.js';
+import { ESPECIES } from '../../carymo/crianza-datos.js';
 export const MAX_PLAN = 1_500_000;
 const kPerfil = (c) => `est:perfil:${c}`;
 const kSem = (s) => `est:sem:${s}`;
@@ -56,7 +57,7 @@ export function semanaDe(dia){
 function perfilNuevo(cuenta){
   return { cuenta, nombre: cuenta.charAt(0).toUpperCase() + cuenta.slice(1), xp: 0, racha: 0, mejorRacha: 0, ultimoDia: '', congeladas: 0, horario: null, ids: [], t: 0, liga: 0, ligaMax: 0, vitrina: { bronce: { semanas: 0, podios: 0, mejor: 0 } } };
 }
-const publico = (p) => { const { ids, premiados, ligaAviso, ...resto } = p; return { ...resto, nivel: nivelDe(p.xp || 0), siente: p.cuidado ? animoDe(p.cuidado) : 'feliz' }; };
+const publico = (p) => { const { ids, premiados, ligaAviso, avisoMascota, mimosDia, ...resto } = p; return { ...resto, nivel: nivelDe(p.xp || 0), siente: p.cuidado ? animoDe(p.cuidado) : 'feliz' }; };
 
 /* la racha: qué pasa al estudiar el día `dia` */
 export function avanzarRacha(p, dia){
@@ -347,6 +348,8 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
   }
   /* el aviso de liga se entrega una sola vez */
   const avisoLiga = async () => { const a = perfil.ligaAviso; if(!a) return undefined; delete perfil.ligaAviso; await storage.put(kPerfil(cuenta), perfil); return a; };
+  /* si tu mascota se murió mientras no estabas, se avisa una sola vez */
+  const avisoMasc = async () => { const a = perfil.avisoMascota; if(!a) return undefined; delete perfil.avisoMascota; await storage.put(kPerfil(cuenta), perfil); return a; };
 
   if(pedido.method === 'GET'){
     const id = url.searchParams.get('plan');
@@ -358,7 +361,8 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
     if(url.searchParams.get('tienda')) return Response.json({ bien: true, tienda: TIENDA, premios: PREMIOS, perfil: publico(perfil) });
     await apuntarMiembro(storage, cuenta, perfil.nombre, perfil.liga);
     const ligaAviso = await avisoLiga();
-    return Response.json({ bien: true, hoy, perfil: publico(perfil), planes: Object.values(indice), ranking: await ranking(storage, semanaDe(hoy), cuenta, perfil, hoy, ahora), liga: ligaAviso, hora: ahora });
+    const mascotaAviso = await avisoMasc();
+    return Response.json({ bien: true, hoy, perfil: publico(perfil), planes: Object.values(indice), ranking: await ranking(storage, semanaDe(hoy), cuenta, perfil, hoy, ahora), liga: ligaAviso, mascota: mascotaAviso, hora: ahora });
   }
   if(pedido.method !== 'POST') return Response.json({ error: 'Usa GET o POST.' }, { status: 405 });
 
@@ -426,7 +430,7 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
   if(c.accion === 'xp'){
     const eventos = (Array.isArray(c.eventos) ? c.eventos : [c]).slice(0, 50);
     const vistos = new Set(perfil.ids || []);
-    let suma = 0; const dijo = [], premios = [];
+    let suma = 0, mascotaSube = null; const dijo = [], premios = [];
     const dar = (motivo, n) => { if(n) premios.push({ motivo, cubos: n, que: PREMIOS[motivo].que }); };
     for(const e of eventos){
       if(!e || !idValido(e.id) || vistos.has(e.id)) continue;
@@ -444,6 +448,7 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
       /* lo que terminaste: la página dice QUÉ fue; cuánto vale y el tope del día lo pone el servidor */
       if(['leccion', 'grado', 'plan'].includes(e.motivo)) dar(e.motivo, premiar(perfil, e.motivo, dia));
       estudioAnima(perfil, xp);
+      { const sube = crecer(perfil, xp); if(sube) mascotaSube = sube; }
       const sem = semanaDe(dia), tabla = (await storage.get(kSem(sem))) || {};
       tabla[cuenta] = { xp: (tabla[cuenta]?.xp || 0) + xp, nombre: perfil.nombre, liga: tabla[cuenta] ? (tabla[cuenta].liga | 0) : (perfil.liga | 0) };
       await storage.put(kSem(sem), tabla);
@@ -465,7 +470,7 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
     await storage.put(kPerfil(cuenta), perfil);
     await apuntarMiembro(storage, cuenta, perfil.nombre, perfil.liga);
     const ligaAviso = await avisoLiga();
-    return Response.json({ bien: true, sumado: suma, premios, eventos: [...new Set(dijo)], perfil: publico(perfil), ranking: await ranking(storage, semanaDe(hoy), cuenta, perfil, hoy, ahora), liga: ligaAviso });
+    return Response.json({ bien: true, sumado: suma, premios, eventos: [...new Set(dijo)], perfil: publico(perfil), ranking: await ranking(storage, semanaDe(hoy), cuenta, perfil, hoy, ahora), liga: ligaAviso, mascotaSube });
   }
 
   /* ── COMPARTIR UN PLAN (Carlos, 13 nov) ──
@@ -503,8 +508,21 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
     return Response.json({ ...r, perfil: publico(perfil) });
   }
   /* la mascota que elegiste y su voz (0, 1 o 2), para que al volver siga igual */
+  /* la crianza: adoptar, cambiar, vestir, comprar ropa y ponerle nombre (palomium.js) */
+  if(c.accion === 'crianza'){
+    const r = crianza(perfil, c, ahora);
+    if(r.error) return Response.json({ ...r, perfil: publico(perfil) }, { status: 400 });
+    perfil.t = ahora; await storage.put(kPerfil(cuenta), perfil);
+    return Response.json({ ...r, perfil: publico(perfil) });
+  }
   if(c.accion === 'mascota'){
-    if(typeof c.personaje === 'string' && /^[a-z]{1,20}$/.test(c.personaje)) perfil.mascota = c.personaje;
+    /* elegir: si ya es tuya (y vive), queda como tu compañera; si no tienes ninguna viva, la primera es gratis; si no, hay que adoptarla */
+    if(typeof c.personaje === 'string' && /^[a-z]{1,20}$/.test(c.personaje)){
+      const q = c.personaje, m = perfil.mascotas[q];
+      if(q === 'no' || (m && !m.muerta)) perfil.mascota = q;
+      else if(ESPECIES[q] && !vivas(perfil).length) crianza(perfil, { que: 'adoptar', especie: q }, ahora);
+      else if(ESPECIES[q]) return Response.json({ error: `Primero adopta a tu ${ESPECIES[q].nombre.toLowerCase()} en el cuarto de tu compañero.`, adoptar: q, precio: ESPECIES[q].precio, perfil: publico(perfil) }, { status: 400 });
+    }
     if(c.voz != null && typeof c.personaje === 'string' && /^[a-z]{1,20}$/.test(c.personaje)) perfil.voces[c.personaje] = Math.max(0, Math.min(2, Math.round(Number(c.voz)) || 0));
     perfil.t = ahora; await storage.put(kPerfil(cuenta), perfil);
     return Response.json({ bien: true, perfil: publico(perfil) });

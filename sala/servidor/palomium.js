@@ -24,6 +24,8 @@
    Sin `cloudflare:workers`: las pruebas cargan esto en Node.
    ═════════════════════════════════════════════════════════════════════════ */
 
+import { ESPECIES, ACCESORIOS, SKINS, MAX_ACCESORIOS, MUERE_HORAS, NIVEL_LENTO, FACTOR_LENTO, nivelMascota, etapaDe } from '../../carymo/crianza-datos.js';
+
 /* cuánto vale cada cosa (pocos, a propósito) y cuánto se puede ganar por día de cada una */
 export const PREMIOS = {
   leccion: { cubos: 1, tope: 4, que: 'Terminaste una lección' },
@@ -93,9 +95,97 @@ export function conEconomia(p, ahora){
   if(!p.inv || typeof p.inv !== 'object') p.inv = {};
   if(!p.cuarto || typeof p.cuarto !== 'object' || !Array.isArray(p.cuarto.puestos)) p.cuarto = { puestos: [] };
   if(!p.voces || typeof p.voces !== 'object') p.voces = {};
+  const antes = p.cuidado && Number.isFinite(p.cuidado.t) ? { ...p.cuidado } : null;
   p.cuidado = cuidadoAhora(p.cuidado, ahora);
   if(!Number.isFinite(p.nivelCobrado)) p.nivelCobrado = nivelDe(p.xp || 0);
+  conCrianza(p, ahora, antes);
   return p;
+}
+
+/* ══ LA CRIANZA (carymo/crianza-datos.js): varias mascotas, cada una con su XP, que crecen y se pueden morir ══
+     mascotas   { especie: { xp, nacio, skin, acc: [], nombre?, muerta? } }
+     armario    [ accesorios y colores comprados ]
+     cielo      [ { especie, nivel, muerta } ]       las que se fueron (Carlos: «si se te muere, mamaste»)
+     peligroDesde  desde cuándo tu mascota activa está en cero de algo */
+const nuevaMascota = (ahora) => ({ xp: 0, nacio: ahora, skin: 'normal', acc: [] });
+export const vivas = (p) => Object.entries(p.mascotas || {}).filter(([, m]) => !m.muerta).map(([k]) => k);
+/* cuándo llegó a cero lo primero (hambre, limpieza o ánimo), con lo guardado ANTES de recalcular */
+function ceroDesde(antes, ya, ahora){
+  let cero = null;
+  for(const k of ['hambre', 'limpieza', 'animo']){
+    const v = antes[k];
+    const t = v <= 0 ? (ya ?? antes.t) : antes.t + (v / BAJA_HORA[k]) * 36e5;
+    if(t <= ahora && (cero == null || t < cero)) cero = t;
+  }
+  return cero;
+}
+export function conCrianza(p, ahora, antes = null){
+  if(!p.mascotas || typeof p.mascotas !== 'object') p.mascotas = {};
+  if(!Array.isArray(p.armario)) p.armario = [];
+  if(!Array.isArray(p.cielo)) p.cielo = [];
+  /* la que ya tenías elegida (de antes de que hubiera crianza) es tuya, gratis */
+  if(ESPECIES[p.mascota] && !p.mascotas[p.mascota]) p.mascotas[p.mascota] = nuevaMascota(ahora);
+  const m = ESPECIES[p.mascota] && p.mascotas[p.mascota];
+  if(!m || m.muerta || !antes) return p;
+  const cero = ceroDesde(antes, p.peligroDesde, ahora);
+  if(cero == null){ p.peligroDesde = null; return p; }
+  p.peligroDesde = cero;
+  if(ahora - cero >= MUERE_HORAS * 36e5){
+    m.muerta = Math.round(cero + MUERE_HORAS * 36e5);
+    p.cielo = [...p.cielo, { especie: p.mascota, nivel: nivelMascota(m.xp), muerta: m.muerta }].slice(-30);
+    p.avisoMascota = { tipo: 'murio', especie: p.mascota, nivel: nivelMascota(m.xp) };
+    p.peligroDesde = null;
+    p.cuidado = { hambre: 80, limpieza: 90, animo: 80, t: ahora };
+  }
+  return p;
+}
+/* lo que estudias también lo gana tu mascota activa (después de nivel 10, sólo un tercio) */
+export function crecer(p, xp){
+  const m = p.mascotas && p.mascotas[p.mascota];
+  if(!m || m.muerta || !(xp > 0)) return null;
+  const antes = nivelMascota(m.xp);
+  m.xp += Math.max(1, Math.round(antes >= NIVEL_LENTO ? xp * FACTOR_LENTO : xp));
+  const despues = nivelMascota(m.xp);
+  return despues > antes ? { especie: p.mascota, nivel: despues, etapa: etapaDe(p.mascota, despues), etapaAntes: etapaDe(p.mascota, antes) } : null;
+}
+/* adoptar, cambiar, vestir, comprar ropa, ponerle nombre */
+export function crianza(p, c, ahora){
+  const especie = String(c.especie || '');
+  if(c.que === 'adoptar'){
+    const E = ESPECIES[especie]; if(!E) return { error: 'Esa mascota no existe.' };
+    const ya = p.mascotas[especie]; if(ya && !ya.muerta) return { error: 'Ya la tienes.' };
+    /* la primera (o la que sigue cuando ya no te queda ninguna viva) es gratis */
+    const precio = vivas(p).length ? E.precio : 0;
+    if(p.cubos < precio) return { error: `Te faltan ${precio - p.cubos} cubitos.`, falta: precio - p.cubos };
+    p.cubos -= precio; p.mascotas[especie] = nuevaMascota(ahora); p.mascota = especie;
+    p.cuidado = { hambre: 85, limpieza: 95, animo: 90, t: ahora }; p.peligroDesde = null;
+    return { bien: true, gastado: precio };
+  }
+  if(c.que === 'activa'){
+    const m = p.mascotas[especie]; if(!m || m.muerta) return { error: 'Esa mascota no la tienes.' };
+    p.mascota = especie; return { bien: true };
+  }
+  if(c.que === 'comprarRopa'){
+    const item = String(c.item || ''), A = ACCESORIOS[item] || SKINS[item];
+    if(!A || A.precio == null) return { error: 'Eso no está en la tienda.' };
+    if(p.armario.includes(item)) return { error: 'Ya lo tienes.' };
+    if(p.cubos < A.precio) return { error: `Te faltan ${A.precio - p.cubos} cubitos.`, falta: A.precio - p.cubos };
+    p.cubos -= A.precio; p.armario = [...p.armario, item];
+    return { bien: true, gastado: A.precio };
+  }
+  if(c.que === 'vestir'){
+    const m = p.mascotas[especie]; if(!m || m.muerta) return { error: 'Esa mascota no la tienes.' };
+    if('skin' in c){ const k = String(c.skin || 'normal'); if(!SKINS[k] || (SKINS[k].precio !== 0 && !p.armario.includes(k))) return { error: 'Ese color no lo tienes.' }; m.skin = k; }
+    if('acc' in c){ const acc = [...new Set((Array.isArray(c.acc) ? c.acc : []).map(String))].filter((k) => ACCESORIOS[k] && p.armario.includes(k));
+      /* uno por lugar (no dos gorros) y hasta 3 */
+      const lugares = new Set(); m.acc = acc.filter((k) => { const l = ACCESORIOS[k].lugar; if(lugares.has(l)) return false; lugares.add(l); return true; }).slice(0, MAX_ACCESORIOS); }
+    return { bien: true };
+  }
+  if(c.que === 'nombre'){
+    const m = p.mascotas[especie]; if(!m || m.muerta) return { error: 'Esa mascota no la tienes.' };
+    m.nombre = String(c.nombre || '').replace(/\s+/g, ' ').trim().slice(0, 20); return { bien: true };
+  }
+  return { error: 'No sé hacer eso.' };
 }
 
 /* da un premio respetando el tope del día; devuelve lo que se dio (0 si ya no cabía) */
@@ -182,6 +272,14 @@ export function cuidar(p, que, item){
     const sube = p.inv.pelota ? TIENDA.pelota.animo : 8;
     if(c.animo >= 98) return { error: 'Ya está muy contento.' };
     c.animo = lim(c.animo + sube); c.hambre = lim(c.hambre - 3);
+    return { bien: true };
+  }
+  /* acariciarla (con el dedo) o jugar a la pelota: sube poquito, con tope por día para que no sea trampa */
+  if(que === 'caricia' || que === 'pelota'){
+    const dia = new Date(c.t || Date.now()).toISOString().slice(0, 10);
+    if(!p.mimosDia || p.mimosDia.dia !== dia) p.mimosDia = { dia, n: 0 };
+    if(p.mimosDia.n >= 20) return { bien: true, tope: true };
+    p.mimosDia.n += 1; c.animo = lim(c.animo + (que === 'pelota' ? 4 : 2)); if(que === 'pelota') c.hambre = lim(c.hambre - 1);
     return { bien: true };
   }
   if(que === 'mueble'){
