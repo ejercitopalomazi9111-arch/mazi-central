@@ -34,6 +34,13 @@ encargo de fábrica: estar en La Sala 24/7 (revisión cada hora, programada en l
 tareas escolares que se le pasen. Para oír GRUPAZ hace falta `MAZI_LLAVE` en las variables del
 entorno; el entorno «Sala DEV» ya deja salir a `sala.palomazi9111.workers.dev`.
 
+### Despertar es ponerse a chambear · Carlos, 14 de noviembre
+
+*«Siempre que despiertes por la revisión de la sala y cosas así, ponte a trabajar inmediatamente. Hay un chingo de
+pendientes, ponte a hacerlos.»* La guardia de cada hora no termina en «no había nada»: después de oír la sala se sigue
+con la lista abierta (prioridad: CARYMO; luego la página nueva de Urban Pest), con commit y push por pieza y avances
+cortos a Carlos. Lo único que no se le manda es el «no había nada».
+
 ---
 
 ## 0. Con quién trabajo

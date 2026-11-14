@@ -1,5 +1,7 @@
 /* Pruebas de las reglas y de la máquina de los juegos de mesa.   node carymo/juegos/pruebas-motores.mjs */
 import { MOTORES, ajedrez, damas, reversi, conecta4, domino, deFEN, perft, elegir, azar } from './motores.js';
+import { CLASES } from './clases.js';
+import { cumple, clave } from './revisar.js';
 
 let bien = 0, mal = 0;
 const ok = (c, t) => { if(c){ bien++; console.log('  ✓ ' + t); } else { mal++; console.log('  ✗ ' + t); } };
@@ -18,9 +20,10 @@ ok(perft(ajedrez, deFEN('8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1'), 4) === 432
   const ah = deFEN('7k/5Q2/6K1/8/8/8/8/8 b - - 0 1');
   ok(ajedrez.fin(ah)?.motivo === 'ahogado', 'ahogado es tablas');
   ok(ajedrez.fin(deFEN('8/8/8/4k3/8/8/2KB4/8 w - - 0 1'))?.motivo === 'no alcanza para dar mate', 'rey y alfil contra rey: tablas');
-  const cuelga = deFEN('rnb1kbnr/pppp1ppp/8/4p3/4P1q1/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3');
-  const j3 = elegir(ajedrez, cuelga, 'medio');
-  ok(ajedrez.texto(j3) === 'f3g5' ? false : true, 'no deja piezas colgadas sin necesidad');
+  const cuelga = deFEN('rnb1kbnr/ppp1pppp/8/3p4/4Q3/8/PPPP1PPP/RNB1KBNR w KQkq - 0 3');   // la dama blanca está atacada por el peón de d5
+  const n3 = ajedrez.aplicar(cuelga, elegir(ajedrez, cuelga, 'medio'));
+  const dama = n3.b.indexOf('Q');
+  ok(dama >= 0 && !ajedrez.jugadas(n3).some((j) => j.a === dama), 'la máquina no deja su dama atacada');
 }
 
 console.log('\nDamas');
@@ -61,6 +64,18 @@ console.log('\nDominó');
   ok(e.manos[0].length === 7 && e.manos[1].length === 7 && e.pozo.length === 14, '7 y 7, y 14 en el pozo');
   const v = domino.vista(e, 0);
   ok(v.manos[1].every((x) => x === null) && v.pozo.every((x) => x === null) && v.semilla === undefined, 'la vista tapa las fichas del otro, el pozo y la semilla');
+}
+
+console.log('\nLas clases: cada reto tiene solución y no cualquier jugada lo pasa');
+for(const [juego, clases] of Object.entries(CLASES)){
+  const m = MOTORES[juego];
+  for(const c of clases) for(const [i, p] of c.pasos.entries()){
+    const js = m.jugadas(p.e);
+    if(juego === 'damas') ok(p.e.b.every((x, k) => !x || (Math.floor(k / 8) + k % 8) % 2 === 1), `${c.id}·${i + 1}: las fichas van en casillas oscuras`);
+    const si = js.filter((j) => cumple(m, p.e, j, p.meta));
+    const trivial = p.meta.tipo !== 'cualquiera' && !p.forzada && si.length === js.length;
+    ok(si.length > 0 && !trivial, `${c.id}·${i + 1}: ${si.length} de ${js.length} jugadas lo resuelven (${si.slice(0, 3).map((j) => clave(m, j)).join(', ')})`);
+  }
 }
 
 console.log('\nPartidas completas máquina contra máquina (que siempre terminen y sin jugadas ilegales)');
