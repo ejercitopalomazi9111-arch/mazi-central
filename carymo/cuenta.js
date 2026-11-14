@@ -71,5 +71,32 @@ export function iniciarCuenta(h){
     });
   }
   async function salir(){ try{ await cuenta('salir', {}); }catch{} cerrarSesion(); h.alSalir?.(); }
-  return { abrir, salir, usuario: usuarioCuenta, conCuenta: () => !!tokenCuenta() };
+
+  /* BORRAR LA CUENTA desde la app (App Store y Play Store lo exigen, 14 nov). Con la contraseña:
+     1) se comprueba entrando con ella, 2) se borra todo el avance (servidor de estudio), 3) se borra la cuenta.
+     En ese orden, para que una contraseña equivocada no se lleve el avance y deje la cuenta viva. */
+  function borrar(){
+    const usuario = usuarioCuenta();
+    hoja('Borrar cuenta', `<form class="form-cuenta" id="fBorrar" novalidate>
+      <p class="cuenta-txt">Se borran tu avance, tus planes, tus mascotas, tus amigos y la cuenta <b>@${esc(usuario)}</b>. No se puede deshacer.</p>
+      <label>Contraseña<input class="campo" id="bClave" type="password" autocomplete="current-password"></label>
+      <p class="cuenta-error" id="bErr" role="alert" hidden></p>
+      <button class="bt fuerte ancho peligro" id="bBorrar" type="submit">${ico('trash')}Borrar para siempre</button>
+    </form>`, (hj) => {
+      const err = (t) => { const e = $('#bErr', hj); e.textContent = t; e.hidden = !t; };
+      $('#fBorrar', hj).addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        const clave = $('#bClave', hj).value, b = $('#bBorrar', hj);
+        if(!clave) return err('Escribe tu contraseña.');
+        b.disabled = true; err('');
+        try{
+          await cuenta('entrar', { usuario, clave });
+          await h.borrarDatos();
+          await cuenta('borrarCuenta', { clave });
+          cerrarSesion(); h.alBorrar?.();
+        }catch(e){ err(e.message || 'No se pudo. Prueba otra vez.'); b.disabled = false; }
+      });
+    });
+  }
+  return { abrir, salir, borrar, usuario: usuarioCuenta, conCuenta: () => !!tokenCuenta() };
 }

@@ -169,4 +169,19 @@ ok((await pide('reciente')).comentarios.length > 0, '«reciente» trae lo últim
 await pide('salir', { token: ana.token, datos: {} });
 ok((await pide('yo', { token: ana.token })).yo === null, 'salir cierra la sesión');
 
+console.log('borrar la cuenta (App Store y Play Store lo exigen)');
+{
+  const b = await pide('registro', { datos: { usuario: 'borrame', nombre: 'Borra', clave: 'clave-borrable' } });
+  await pide('comentar', { token: b.token, datos: { obra: 'w:1', texto: 'un comentario que se va' } });
+  await pide('seguir', { token: b.token, datos: { usuario: 'palomazi' } });
+  r = await pide('borrarCuenta', { token: b.token, datos: { clave: 'otra-cosa' } });
+  ok(r.status === 401 && q('SELECT 1 FROM cuentas WHERE usuario = ?', 'borrame').length === 1, 'con la contraseña mala no se borra nada');
+  r = await pide('borrarCuenta', { datos: { clave: 'clave-borrable' } });
+  ok(r.status === 401, 'sin entrar no se puede borrar ninguna cuenta');
+  r = await pide('borrarCuenta', { token: b.token, datos: { clave: 'clave-borrable' } });
+  const quedan = ['cuentas', 'sesiones', 'comentarios', 'siguiendo', 'respaldos'].map((t) => q(`SELECT COUNT(*) n FROM ${t} WHERE ${t === 'siguiendo' ? 'quien' : 'usuario'} = ?`, 'borrame')[0].n);
+  ok(r.bien && quedan.every((n) => n === 0), 'con su contraseña se borran la cuenta, sus sesiones, comentarios y a quién seguía');
+  ok((await pide('yo', { token: b.token })).yo === null && (await pide('entrar', { datos: { usuario: 'borrame', clave: 'clave-borrable' } })).status === 401, 'después ya no entra ni con su token ni con su contraseña');
+}
+
 console.log(`\n${bien} bien · ${mal} mal`); process.exit(mal ? 1 : 0);

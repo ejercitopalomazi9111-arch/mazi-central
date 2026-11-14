@@ -360,6 +360,21 @@ console.log('Títulos, regalos y el perfil de otro (Carlos, 14 nov)');
   ok(r.error, 'de quien no está en la comunidad no se ve nada');
 }
 
+console.log('Borrar la cuenta');
+{
+  const s = almacen();
+  await llamar(s, 'borrame', 'GET', '');
+  await llamar(s, 'borrame', 'POST', '', { accion: 'perfil', nombre: 'Borra' });
+  await llamar(s, 'otro', 'GET', '');
+  const antes = [...s.m.keys()].filter((k) => k.includes('borrame')).length;
+  const r = await llamar(s, 'borrame', 'POST', '', { accion: 'borrarTodo' });
+  const quedan = [...s.m.keys()].filter((k) => k.includes(':borrame'));
+  const miembros = (await s.get('est:miembros')) || {};
+  ok(antes > 0 && r.borrado && quedan.length === 0 && !miembros.borrame, `«borrarTodo» se lleva el perfil, los planes y su lugar en el ranking (quedan ${quedan.length})`);
+  ok((await s.get('est:perfil:otro')) && 'otro' in miembros, 'y no toca a nadie más');
+  ok((await llamar(s, 'invitado', 'POST', '', { accion: 'borrarTodo' })).error, 'sin cuenta no hay nada que borrar');
+}
+
 if(process.env.SOLO !== 'servidor') await (await import('./pruebas-estudio-pantalla.mjs')).correr({ ok, almacen, atenderEstudio });
 
 console.log(`\n${bien} pasan · ${mal} fallan`);
