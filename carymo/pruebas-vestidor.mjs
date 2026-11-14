@@ -46,7 +46,7 @@ await pg.click('#nav [data-ir="yo"]').then(() => pg.click('#vYo [data-ir="perfil
 ok(await pg.locator('.perfil-cab .av svg').count() === 0, 'sin personaje, en tu perfil sigue la letra de siempre');
 await pg.click('[data-abrir-vestidor]');
 await pg.waitForSelector('#pjGrande svg', { timeout: 8000 });
-ok(await pg.locator('.pj-tabs [data-tab]').count() === 6, 'se abre con tu personaje en grande y 6 pestañas: cara, pelo, ropa, gorros, lentes y fondo');
+ok(await pg.locator('.pj-tabs [data-tab]').count() === 7, 'se abre con tu personaje en grande y 7 pestañas: cara, pelo, ropa, gorros, lentes, extras y fondo');
 await foto('vest-1-cara');
 await pg.click('[data-tab="pelo"]'); await pg.waitForTimeout(1200);
 ok(await pg.locator('[data-parte="pelo"] .pj-mini svg').count() >= 25, 'cada peinado sale como miniatura de TU personaje con ese peinado');

@@ -12,17 +12,22 @@
  * no adorno, y no se venden.
  * ===========================================================================*/
 
-export const PIELES = ['ffdbb4', 'edb98a', 'f8d25c', 'fd9841', 'd08b5b', 'ae5d29', '614335'];
-export const COLORES_PELO = ['2c1b18', '4a312c', '724133', 'a55728', 'b58143', 'd6b370', 'c93305', 'e8e1e1', 'ecdcbf', 'f59797'];
+/* muchos más tonos de piel (Carlos, 14 nov): los 7 de Avataaars y 15 más, del más claro al más oscuro, con tonos fríos y cálidos */
+export const PIELES = ['ffdbb4', 'edb98a', 'f8d25c', 'fd9841', 'd08b5b', 'ae5d29', '614335',
+  'fff0e6', 'fbe3d3', 'f6d2b8', 'f0c8a0', 'e7b98f', 'dfa679', 'c99064', 'b77b4f', 'a06a45', '8a5638', '73452c', '5e3a26', '4b2e1f', '3a2418', '2b1b12'];
+export const COLORES_PELO = ['2c1b18', '4a312c', '724133', 'a55728', 'b58143', 'd6b370', 'c93305', 'e8e1e1', 'ecdcbf', 'f59797',
+  '0b0806', '5a3a22', '8b5a2b', 'e2c290', 'f5ecd5', 'ffffff', '9aa3ad', 'ac27ff', '6c5ce7', '3498db', '00b894', 'fd79a8', 'e84393', 'ff7675', 'fdcb6e'];
 export const PEINADOS = ['shortFlat', 'shortRound', 'shortWaved', 'shortCurly', 'sides', 'theCaesar', 'theCaesarAndSidePart', 'shavedSides', 'frizzle', 'shaggy', 'shaggyMullet',
   'dreads01', 'dreads02', 'dreads', 'fro', 'froBand', 'curly', 'curvy', 'bob', 'bun', 'bigHair', 'longButNotTooLong', 'miaWallace', 'straight01', 'straight02', 'straightAndStrand', 'frida', 'hijab', 'turban', ''];
-export const OJOS = ['default', 'happy', 'wink', 'side', 'squint', 'surprised', 'hearts', 'closed'];
-export const CEJAS = ['defaultNatural', 'default', 'raisedExcitedNatural', 'flatNatural', 'upDownNatural', 'sadConcernedNatural', 'unibrowNatural', 'frownNatural', 'angryNatural'];
-export const BOCAS = ['smile', 'default', 'twinkle', 'serious', 'tongue', 'eating', 'concerned', 'disbelief'];
+export const OJOS = ['default', 'happy', 'wink', 'side', 'squint', 'surprised', 'hearts', 'closed', 'eyeRoll', 'cry', 'xDizzy'];
+export const CEJAS = ['defaultNatural', 'default', 'raisedExcitedNatural', 'flatNatural', 'upDownNatural', 'sadConcernedNatural', 'unibrowNatural', 'frownNatural', 'angryNatural', 'angry', 'raisedExcited', 'sadConcerned', 'upDown'];
+export const BOCAS = ['smile', 'default', 'twinkle', 'serious', 'tongue', 'eating', 'concerned', 'disbelief', 'grimace', 'sad', 'screamOpen'];
 export const BARBAS = ['', 'beardLight', 'beardMedium', 'beardMajestic', 'moustacheFancy', 'moustacheMagnum'];
 export const ROPA_LIBRE = ['shirtCrewNeck', 'shirtScoopNeck', 'shirtVNeck', 'hoodie'];
-export const COLORES_ROPA = ['7e1735', 'ac27ff', '170a26', '262e33', '3c4f5c', '5199e4', '65c9ff', '25557c', 'a7ffc4', 'ffffb1', 'ffafb9', 'ff5c5c', 'e6e6e6', 'ffffff'];
-export const FONDOS = ['170a26', '2a1a3d', '7e1735', 'ac27ff', 'c77dff', '25557c', '1f5e4a', 'd69a2d', 'e9e4e4'];
+export const COLORES_ROPA = ['7e1735', 'ac27ff', '170a26', '262e33', '3c4f5c', '5199e4', '65c9ff', '25557c', 'a7ffc4', 'ffffb1', 'ffafb9', 'ff5c5c', 'e6e6e6', 'ffffff',
+  'c77dff', '6c5ce7', '00b894', '16a085', '2d6a4f', 'fdcb6e', 'f39c12', 'd35400', 'c0392b', 'fd79a8', '8d6e63', '000000'];
+export const FONDOS = ['170a26', '2a1a3d', '7e1735', 'ac27ff', 'c77dff', '25557c', '1f5e4a', 'd69a2d', 'e9e4e4',
+  '0f3d3e', '1b2a49', '3b1f5c', '5c1a33', 'f6b4cf', 'a7ffc4', '65c9ff', 'ffd166', 'ff7675', '000000', 'ffffff'];
 
 /* lo que se compra con cubitos. `parte` es la pieza de Avataaars, `valor` lo que se le pone */
 export const TIENDA_ROPA = {
@@ -54,6 +59,16 @@ export const TIENDA_ROPA = {
   /* DE REGALO (precio null): no se venden; los da la casa (Carlos, 14 nov: «yo debo tener una gorra que le salga cabello
      por los lados y tenga estampado de Grupo Mazi, y la camisa o sudadera con estampado de la marca»). Los dibuja
      extrasMazi() encima de Avataaars, porque Avataaars no trae gorra de beisbol ni nuestro logo. */
+  'estampa:resist': { nombre: 'Resiste', grupo: 'Estampados', parte: 'estampa', valor: 'resist', precio: 8 },
+  'estampa:skull': { nombre: 'Calavera', grupo: 'Estampados', parte: 'estampa', valor: 'skull', precio: 10 },
+  /* LOS EXTRAS (Carlos, 14 nov: «muchos más cosméticos»): Avataaars no los trae; se dibujan encima en extrasMazi() */
+  'extra:chispas': { nombre: 'Chispas', grupo: 'Extras', parte: 'extra', valor: 'chispas', precio: 12 },
+  'extra:flor': { nombre: 'Flor en el pelo', grupo: 'Extras', parte: 'extra', valor: 'flor', precio: 14 },
+  'extra:gato': { nombre: 'Orejas de gato', grupo: 'Extras', parte: 'extra', valor: 'gato', precio: 18 },
+  'extra:audifonos': { nombre: 'Audífonos', grupo: 'Extras', parte: 'extra', valor: 'audifonos', precio: 20 },
+  'extra:cuernitos': { nombre: 'Cuernitos', grupo: 'Extras', parte: 'extra', valor: 'cuernitos', precio: 22 },
+  'extra:aureola': { nombre: 'Aureola', grupo: 'Extras', parte: 'extra', valor: 'aureola', precio: 25 },
+  'extra:corona': { nombre: 'Corona', grupo: 'Extras', parte: 'extra', valor: 'corona', precio: 40 },
   'gorro:gorraMazi': { nombre: 'Gorra Grupo Mazi', grupo: 'Gorros', parte: 'gorro', valor: 'gorraMazi', precio: null, regalo: true },
   'estampa:mazi': { nombre: 'Grupo Mazi', grupo: 'Estampados', parte: 'estampa', valor: 'mazi', precio: null, regalo: true },
 };
@@ -69,6 +84,7 @@ export const OPCIONES = {
   gorro: ['', ...Object.values(TIENDA_ROPA).filter((a) => a.parte === 'gorro').map((a) => a.valor)],
   colorGorro: COLORES_ROPA,
   lentes: ['', ...Object.values(TIENDA_ROPA).filter((a) => a.parte === 'lentes').map((a) => a.valor)],
+  extra: ['', ...Object.values(TIENDA_ROPA).filter((a) => a.parte === 'extra').map((a) => a.valor)],
   fondo: FONDOS,
 };
 
@@ -78,7 +94,7 @@ export function personajeDeArranque(cuenta = ''){
   /* ⚠ el `>>> 0` va ANTES del módulo: un XOR puede dar negativo, y lista[-3] es undefined */
   const de = (lista, sal) => lista[(((h >>> sal) ^ Math.imul(h, sal + 7)) >>> 0) % lista.length];
   return { piel: de(PIELES, 1), pelo: de(PEINADOS.slice(0, 27), 3), colorPelo: de(COLORES_PELO.slice(0, 7), 5), ojos: 'happy', cejas: 'defaultNatural', boca: 'smile', barba: '',
-    ropa: de(ROPA_LIBRE, 7), colorRopa: de(COLORES_ROPA.slice(0, 8), 9), estampa: '', gorro: '', colorGorro: '25557c', lentes: '', fondo: de(FONDOS.slice(0, 6), 11) };
+    ropa: de(ROPA_LIBRE, 7), colorRopa: de(COLORES_ROPA.slice(0, 8), 9), estampa: '', gorro: '', colorGorro: '25557c', lentes: '', extra: '', fondo: de(FONDOS.slice(0, 6), 11) };
 }
 
 /* deja sólo lo que existe y lo que es tuyo; lo demás se queda como lo tenías (o como el de arranque) */
@@ -88,10 +104,10 @@ export function normalizarPersonaje(cfg, comprados = [], cuenta = '', anterior =
   for(const [k, lista] of Object.entries(OPCIONES)){
     const v = cfg && typeof cfg[k] === 'string' ? cfg[k] : undefined;
     let ok = v !== undefined && lista.includes(v);
-    const art = ok && ['ropa', 'estampa', 'gorro', 'lentes'].includes(k) ? articuloDe(k, v) : '';
+    const art = ok && ['ropa', 'estampa', 'gorro', 'lentes', 'extra'].includes(k) ? articuloDe(k, v) : '';
     if(art && !tengo.has(art)) ok = false;
     /* lo de paga que ya no es tuyo tampoco se queda por venir de antes */
-    const artBase = ['ropa', 'estampa', 'gorro', 'lentes'].includes(k) ? articuloDe(k, base[k]) : '';
+    const artBase = ['ropa', 'estampa', 'gorro', 'lentes', 'extra'].includes(k) ? articuloDe(k, base[k]) : '';
     r[k] = ok ? v : (artBase && !tengo.has(artBase) ? personajeDeArranque(cuenta)[k] : base[k]);
   }
   return r;
@@ -126,6 +142,17 @@ const oscurecer = (hex, k) => '#' + [0, 2, 4].map((i) => Math.round(parseInt(hex
 /* lo que va ENCIMA del dibujo de Avataaars (mismas medidas: lienzo de 280, la cabeza va de x 84 a 196 y arriba en y 36) */
 export function extrasMazi(p){
   let s = '';
+  /* los extras dibujados (mismo lienzo de 280: la cabeza va de x 84 a 196 y su coronilla en y ~36) */
+  const ex = {
+    chispas: () => [[70, 60, 9], [210, 48, 7], [62, 140, 6], [218, 128, 8]].map(([x, y, r]) => `<path d="M${x} ${y - r} Q${x + r * .2} ${y - r * .2} ${x + r} ${y} Q${x + r * .2} ${y + r * .2} ${x} ${y + r} Q${x - r * .2} ${y + r * .2} ${x - r} ${y} Q${x - r * .2} ${y - r * .2} ${x} ${y - r}Z" fill="#FFE27A"/>`).join(''),
+    flor: () => `<g transform="translate(182 56)">${[0, 72, 144, 216, 288].map((a) => `<ellipse cx="0" cy="-9" rx="6" ry="9" fill="#FF8FB8" transform="rotate(${a})"/>`).join('')}<circle r="5.5" fill="#FFD166"/></g>`,
+    gato: () => `<path d="M92 52 L98 14 L124 38 Z" fill="#2B2033"/><path d="M98 44 L101 24 L115 37 Z" fill="#F6B4CF"/><path d="M188 52 L182 14 L156 38 Z" fill="#2B2033"/><path d="M182 44 L179 24 L165 37 Z" fill="#F6B4CF"/>`,
+    audifonos: () => `<path d="M80 122 C76 50 108 24 140 24 C172 24 204 50 200 122" fill="none" stroke="#2B2033" stroke-width="9" stroke-linecap="round"/><rect x="68" y="104" width="22" height="40" rx="10" fill="#AC27FF"/><rect x="190" y="104" width="22" height="40" rx="10" fill="#AC27FF"/><rect x="72" y="110" width="8" height="28" rx="4" fill="#C77DFF"/><rect x="200" y="110" width="8" height="28" rx="4" fill="#C77DFF"/>`,
+    cuernitos: () => `<path d="M104 46 C96 30 98 18 106 8 C108 22 114 32 120 40 Z" fill="#E2506A"/><path d="M176 46 C184 30 182 18 174 8 C172 22 166 32 160 40 Z" fill="#E2506A"/>`,
+    aureola: () => `<ellipse cx="140" cy="14" rx="40" ry="9" fill="none" stroke="#FFE27A" stroke-width="6"/><ellipse cx="140" cy="14" rx="40" ry="9" fill="none" stroke="#FFF6C9" stroke-width="2"/>`,
+    corona: () => `<path d="M104 40 L100 6 L120 24 L140 0 L160 24 L180 6 L176 40 Z" fill="#F5C542" stroke="#C99A1C" stroke-width="2.5" stroke-linejoin="round"/><circle cx="140" cy="28" r="5" fill="#E2506A"/><circle cx="118" cy="32" r="3.5" fill="#AC27FF"/><circle cx="162" cy="32" r="3.5" fill="#AC27FF"/>`,
+  };
+  if(ex[p.extra]) s += `<g data-extra="${p.extra}">${ex[p.extra]()}</g>`;
   if(p.estampa === 'mazi'){
     /* el logo en el pecho, con «GRUPO MAZI» abajo */
     /* el cubo en el pecho y «MAZI» abajo: angosto, para que quepa entre los cordones de la sudadera y dentro del círculo */
