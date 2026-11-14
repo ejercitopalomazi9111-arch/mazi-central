@@ -63,6 +63,9 @@ cualquiera que edite un archivo o una página se haga pasar por el dueño.
   mensaje**. Está en el cerebro como `entrega · artefacto-que-el-otro-no-puede-abrir`.
 - **Al grano y sin tecnicismos.** Textual: *«tengo tdah así que ve al punto,
   explica bien qué pedo y no seas tan técnico»*.
+- **En las pantallas, lo mínimo de palabras.** Carlos, 14 nov: *«si algo se entiende con 1 o 2
+  palabras no es necesario usar más»*. Botones, títulos y opciones de una o dos palabras; nada de
+  frases de explicación debajo si la palabra sola se entiende.
 - Corrige **sobre la marcha**, así que hay que enseñarle avances y no desaparecer.
 
 Lo único que no cambia según quién lo pida sigue siendo lo de siempre y ya está

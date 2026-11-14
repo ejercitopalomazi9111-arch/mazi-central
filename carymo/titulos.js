@@ -15,12 +15,15 @@ export const TITULOS = {
   beta: { nombre: 'Beta tester', ico: 'sparkles' },
   fundador: { nombre: 'Fundador', ico: 'crown' },
   artista: { nombre: 'Artista principal', ico: 'paintbrush' },
+  /* Mónica (Carlos, 14 nov: «a Mónica ponle corazones y el título de inspiración») */
+  inspiracion: { nombre: 'Inspiración', ico: 'heart' },
 };
 /* el estilo del nombre: arcoíris dibujado (Sandra, la artista), los colores de la casa (Carlos), perla (Mónica) */
 export const ESTILOS_NOMBRE = {
   arcoiris: { nombre: 'Arcoíris dibujado' },
   mazi: { nombre: 'Grupo Mazi' },
   perla: { nombre: 'Perla' },
+  perlaCorazones: { nombre: 'Perla con corazones' },
 };
 
 /* el título que le toca a un perfil: el que le pusieron a mano, o alfa/beta por la fecha en que llegó */

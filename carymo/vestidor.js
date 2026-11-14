@@ -62,7 +62,7 @@ export function iniciarVestidor(h){
     c.addEventListener('click', alTocar);
     pintarSaldo(); pintarGrande(); pintarOpciones();
   }
-  function pintarSaldo(){ const e = $('#cubosVest'); if(e) e.innerHTML = `<span class="cubo-ico">${CUBO}</span>${h.perfil().cubos || 0}`; }
+  function pintarSaldo(){ const e = $('#cubosVest'); if(e) e.innerHTML = `<span class="cubo-ico">${CUBO}</span>${h.perfil().infinito ? '∞' : (h.perfil().cubos || 0)}`; }
   async function pintarGrande(){
     const e = $('#pjGrande'); if(!e) return;
     const svg = await svgPersonaje(borrador); e.innerHTML = svg;

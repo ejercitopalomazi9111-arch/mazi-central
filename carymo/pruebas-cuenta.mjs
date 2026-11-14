@@ -74,7 +74,7 @@ await ana.click('#cListo');
 ok(await ana.isVisible('#cError') && /8 caracteres/.test(await ana.textContent('#cError')), 'una contraseña corta se avisa ahí mismo, sin regañar');
 await ana.fill('#cClave', 'contrasena-segura');
 await ana.click('#cListo');
-ok(await ana.isVisible('#cError') && /qué estás estudiando/i.test(await ana.textContent('#cError')), 'sin decir qué estudia, le pide el dato (Carlos, 14 nov)');
+ok(await ana.isVisible('#cError') && /qué estudias/i.test(await ana.textContent('#cError')), 'sin decir qué estudia, le pide el dato (Carlos, 14 nov)');
 await ana.click('.escolar-op input[value="secundaria"]');
 await ana.click('#cListo');
 await ana.waitForSelector('#codRec');

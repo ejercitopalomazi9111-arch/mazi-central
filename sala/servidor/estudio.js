@@ -549,6 +549,7 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
       const k = limpio(c.cuenta, 40).toLowerCase(), o = k && await storage.get(kPerfil(k));
       if(!o) return Response.json({ error: 'No encontré esa cuenta.' }, { status: 404 });
       if('titulo' in c){ if(c.titulo && !TITULOS[c.titulo]) return Response.json({ error: 'Ese título no existe.' }, { status: 400 }); o.titulo = c.titulo || null; }
+      if('cubosInfinitos' in c){ o.infinito = !!c.cubosInfinitos; if(o.infinito) o.cubos = Math.max(o.cubos || 0, 999999); }
       if('estilo' in c){ if(c.estilo && !ESTILOS_NOMBRE[c.estilo]) return Response.json({ error: 'Ese estilo no existe.' }, { status: 400 }); o.estiloNombre = c.estilo || ''; }
       const pedidos = (Array.isArray(c.regalos) ? c.regalos : []).map(String);
       const regalos = pedidos.filter((x) => ACCESORIOS[x] || SKINS[x]);
@@ -579,7 +580,7 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
       }
       o.t = ahora; await storage.put(kPerfil(k), o);
       await apuntarMiembro(storage, k, o.nombre, o.liga, o);
-      return Response.json({ bien: true, cuenta: k, titulos: titulosDe(o), estilo: o.estiloNombre, armario: o.armario, ropa: o.ropa, personaje: o.personaje, mascotas: o.mascotas, mascota: o.mascota });
+      return Response.json({ bien: true, cuenta: k, titulos: titulosDe(o), estilo: o.estiloNombre, armario: o.armario, infinito: !!o.infinito, cubos: o.cubos, ropa: o.ropa, personaje: o.personaje, mascotas: o.mascotas, mascota: o.mascota });
     }
     return Response.json({ error: 'No sé hacer eso.' }, { status: 400 });
   }

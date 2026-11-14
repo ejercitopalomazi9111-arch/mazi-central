@@ -37,6 +37,8 @@ export function iniciarCompanero(h){
   let masc = null;
 
   const cubos = () => h.perfil().cubos ?? 0;
+  /* la cuenta de Carlos tiene cubos infinitos (Carlos, 14 nov): se enseña «∞» */
+  const verCubos = () => h.perfil().infinito ? '∞' : cubos();
   const cuidado = () => h.perfil().cuidado || { hambre: 80, limpieza: 90, animo: 80 };
   function quePasa(c){
     if(Math.min(c.hambre, c.limpieza, c.animo) < 15) return 'muy-mal';
@@ -65,9 +67,9 @@ export function iniciarCompanero(h){
     b.classList.toggle('sin-masc', !conMasc);
     b.style.setProperty('--salud', salud);
     b.dataset.salud = muerta || salud < 25 ? 'peligro' : salud < 50 ? 'baja' : 'bien';
-    const n = b.querySelector('.pm-cubos b'); if(n.textContent !== String(cubos())) n.textContent = cubos();
+    const n = b.querySelector('.pm-cubos b'); if(n.textContent !== String(verCubos())) n.textContent = verCubos();
     const como = { 'muy-mal': 'está muy mal', hambre: 'tiene hambre', sucio: 'necesita un baño', triste: 'está triste', normal: 'está bien', feliz: 'está feliz' }[q];
-    b.setAttribute('aria-label', muerta ? `Tu compañero se fue. Toca para adoptar otro. ${cubos()} cubitos de palomium` : `Tu compañero ${como} (${salud} %). ${cubos()} cubitos de palomium. Toca para entrar a su cuarto`);
+    b.setAttribute('aria-label', muerta ? `Tu compañero se fue. Toca para adoptar otro. ${cubos()} cubitos de palomium` : `Tu compañero ${como} (${salud} %). ${verCubos()} cubitos de palomium. Toca para entrar a su cuarto`);
     b.classList.toggle('aviso', muerta || salud < 50);
   }
 
@@ -178,7 +180,7 @@ export function iniciarCompanero(h){
   function pintarCuarto(primera = false){
     const c = $('#capa.companero'); if(!c) return;
     const p = h.perfil(), cu = cuidado(), q = quePasa(cu);
-    $('#cubosCuarto', c).innerHTML = `<span class="cubo-ico">${CUBO}</span>${cubos()}`;
+    $('#cubosCuarto', c).innerHTML = `<span class="cubo-ico">${CUBO}</span>${verCubos()}`;
     $('#muebles', c).innerHTML = ((p.cuarto && p.cuarto.puestos) || []).filter((k) => COSAS[k] && LUGAR[k]).map((k) => `<span class="mueble" data-mueble="${k}" style="left:${LUGAR[k].x}%;top:${LUGAR[k].y}%;width:${LUGAR[k].w}%">${COSAS[k]}</span>`).join('');
     const barra = (k, t, icono) => { const v = Math.round(cu[k] ?? 0); return `<div class="barra-c ${v < 35 ? 'baja' : ''}"><span>${ico(icono)}${t}</span><i><i style="width:${v}%"></i></i><b>${v}</b></div>`; };
     $('#barras', c).innerHTML = barra('hambre', 'Llenito', 'heart') + barra('limpieza', 'Limpio', 'sparkles') + barra('animo', 'Contento', 'party-popper');

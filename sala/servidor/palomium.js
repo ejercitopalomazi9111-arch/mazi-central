@@ -88,8 +88,11 @@ export function animoDe(c){
 }
 
 /* asegura que el perfil traiga lo de la economía (los perfiles viejos no lo tienen) */
+export const CUBOS_INFINITOS = 999999;
 export function conEconomia(p, ahora){
   if(!Number.isFinite(p.cubos)) p.cubos = REGALO_INICIAL;
+  /* cubos infinitos (los pone la casa; Carlos, 14 nov): se rellena cada vez que se lee, así nunca le falta */
+  if(p.infinito) p.cubos = Math.max(p.cubos, CUBOS_INFINITOS);
   if(!p.cubosDia || typeof p.cubosDia !== 'object') p.cubosDia = { dia: '', por: {} };
   if(!Array.isArray(p.premiados)) p.premiados = [];
   if(!p.inv || typeof p.inv !== 'object') p.inv = {};

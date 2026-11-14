@@ -2,7 +2,11 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<script>/* SIN ZOOM (Carlos, 14 nov: «bloquea el zoom porque molesta»). Safari del iPhone no hace caso a user-scalable=no:
+   se le corta el pellizco (gesturestart) y el doble toque (touch-action en el CSS). El pizarrón sigue acercándose con
+   su propio pellizco, que no es el zoom de la página. */
+for(const ev of ['gesturestart', 'gesturechange']) document.addEventListener(ev, (e) => e.preventDefault(), { passive: false });</script>
 <meta name="theme-color" content="#170A26">
 <title>CARYMO · Learn. Explore. Grow.</title>
 <link rel="icon" type="image/png" href="marca/favicon-64.png">
@@ -23,6 +27,7 @@
      Plan de examen → camino por unidades → lección y cuestionario con combo → grado, XP, racha y ranking de la semana.
      La IA (Negro y Paulina) pasa por La Sala; el progreso vive en La Sala (servidor/estudio.js). Lógica en carymo.js; lo compartido con La Sala (pizarrón, sonidos, JSON de la IA) vive en ../sala/. -->
 <style>
+  html{ touch-action:manipulation; -webkit-text-size-adjust:100% }
   @font-face{ font-family:Titulo; src:url(../sala/letra/montserrat.woff2) format("woff2"); font-weight:100 900; font-display:swap }
   @font-face{ font-family:Texto; src:url(../sala/letra/nunito-600.woff2) format("woff2"); font-weight:600; font-display:swap }
   @font-face{ font-family:Texto; src:url(../sala/letra/nunito-700.woff2) format("woff2"); font-weight:700; font-display:swap }
@@ -170,7 +175,6 @@
   .form-cuenta .escolar-op label{ display:block; gap:0; position:relative }
   .escolar-op input{ position:absolute; opacity:0; inset:0; margin:0 }
   .escolar-op span{ display:flex; align-items:center; min-height:44px; padding:8px 12px; border-radius:12px; border:2px solid #ffffff1a; background:#ffffff0d; color:var(--hueso, #fff); font-weight:700; font-size:14px; line-height:1.2; overflow-wrap:anywhere }
-  .escolar-op label:last-child{ grid-column:1 / -1 }
   .escolar-op input:checked + span{ border-color:var(--claro); background:#AC27FF22 }
   .escolar-op input:focus-visible + span{ outline:2px solid var(--claro); outline-offset:2px }
   .cuenta-txt{ color:var(--suave); margin:0 0 4px; line-height:1.45 }
@@ -580,7 +584,7 @@
   @keyframes aparece{ from{ opacity:0 } }
   .hoja{ position:fixed; left:0; right:0; bottom:0; z-index:91; max-height:min(85dvh, calc(100dvh - var(--muelle, 0px) - 12px)); overflow-y:auto; padding:10px 16px calc(18px + env(safe-area-inset-bottom)); border-radius:24px 24px 0 0; background:var(--fondo-2); animation:sube .3s cubic-bezier(.2,.9,.3,1) }
   .hoja .dentro{ max-width:560px; margin:0 auto }
-  .hoja .agarre{ width:42px; height:5px; border-radius:3px; background:#ffffff30; margin:0 auto 12px }
+  .hoja .agarre{ width:46px; height:5px; border-radius:3px; background:#ffffff59; margin:0 auto 14px }
   .hoja h3{ font:800 18px/1.2 Titulo; text-align:center; margin-bottom:12px }
   .menu{ display:grid; gap:4px }
   .menu button{ display:flex; align-items:center; gap:12px; width:100%; min-height:52px; padding:0 12px; border:0; border-radius:12px; background:none; text-align:left; font-weight:700 }
@@ -653,7 +657,11 @@
   .nom-perla{ background:linear-gradient(100deg, #FFFFFF 20%, #E7DDF6 38%, #FFFFFF 50%, #F3E9DA 64%, #FFFFFF 80%) 0 0 / 220% 100%; -webkit-background-clip:text; background-clip:text; color:transparent;
     font-weight:800; animation:nom-perla 5s ease-in-out infinite alternate; filter:drop-shadow(0 0 5px #ffffff55) }
   @keyframes nom-perla{ to{ background-position:-120% 0 } }
-  @media (prefers-reduced-motion: reduce){ .nom-arcoiris, .nom-perla{ animation:none } }
+  .nom-corazones{ display:inline-flex; align-items:center; gap:4px; max-width:100% } .nom-corazones .nom-perla{ min-width:0; overflow:hidden; text-overflow:ellipsis }
+  .nom-corazon{ width:.95em; height:.95em; flex:none; animation:nom-late 1.6s ease-in-out infinite } .nom-corazon + .nom-perla + .nom-corazon{ animation-delay:.25s }
+  @keyframes nom-late{ 0%, 60%, 100%{ transform:scale(1) } 20%{ transform:scale(1.22) } 35%{ transform:scale(.96) } }
+  .ins-inspiracion{ color:#FFB3C8 } .ins-inspiracion .i{ color:#F0477A; fill:#F0477A }
+  @media (prefers-reduced-motion: reduce){ .nom-arcoiris, .nom-perla, .nom-corazon{ animation:none } }
   .insignias{ display:inline-flex; flex-wrap:wrap; gap:4px; flex:none }
   .insignia{ display:inline-flex; align-items:center; gap:3px; padding:2px 7px 2px 5px; border-radius:99px; font-size:11px; font-weight:800; line-height:1.3; white-space:nowrap;
     background:#AC27FF22; color:var(--claro-txt); border:1px solid #AC27FF55 }

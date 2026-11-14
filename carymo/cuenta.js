@@ -9,7 +9,7 @@ import { cuenta, guardarSesion, cerrarSesion, usuarioCuenta, tokenCuenta, llave,
 
 /* QUÉ ESTUDIAS (Carlos, 14 nov: «que al crear tu cuenta te pida el dato de qué estás estudiando: kínder, primaria,
    secundaria…»). Decide el nivel con el que explica la IA (kids / secu / prepa / uni). */
-export const ESCOLAR = [['kinder', 'Kínder'], ['primaria', 'Primaria'], ['secundaria', 'Secundaria'], ['prepa', 'Prepa'], ['uni', 'Universidad'], ['otro', 'Ya trabajo o estudio por mi cuenta']];
+export const ESCOLAR = [['kinder', 'Kínder'], ['primaria', 'Primaria'], ['secundaria', 'Secundaria'], ['prepa', 'Prepa'], ['uni', 'Universidad'], ['otro', 'Otro']];
 export const NIVEL_DE_ESCOLAR = { kinder: 'kids', primaria: 'kids', secundaria: 'secu', prepa: 'prepa', uni: 'uni', otro: 'uni' };
 
 export function iniciarCuenta(h){
@@ -26,7 +26,7 @@ export function iniciarCuenta(h){
     hoja(titulo, `<form class="form-cuenta" id="fCuenta" novalidate>
       <p class="cuenta-txt">${modo === 'crear' ? 'Así se guarda tu avance en todos tus teléfonos y puedes competir con tus amigos. Es gratis.' : modo === 'entrar' ? 'Con tu usuario y tu contraseña.' : 'Con el código de recuperación que te dimos al crear tu cuenta.'}</p>
       ${modo === 'crear' ? `<label>Tu nombre<input class="campo" id="cNombre" autocomplete="given-name" value="${esc(nombre)}" placeholder="Cómo quieres que te diga" maxlength="40"></label>
-      <fieldset class="escolar"><legend>¿Qué estás estudiando?</legend><div class="escolar-op">${ESCOLAR.map(([k, t]) => `<label><input type="radio" name="cEscolar" value="${k}"${(h.escolar?.() || '') === k ? ' checked' : ''}><span>${t}</span></label>`).join('')}</div></fieldset>` : ''}
+      <fieldset class="escolar"><legend>¿Qué estudias?</legend><div class="escolar-op">${ESCOLAR.map(([k, t]) => `<label><input type="radio" name="cEscolar" value="${k}"${(h.escolar?.() || '') === k ? ' checked' : ''}><span>${t}</span></label>`).join('')}</div></fieldset>` : ''}
       <label>Usuario<input class="campo" id="cUsuario" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="sin espacios ni acentos" maxlength="20"></label>
       ${modo === 'recuperar' ? '<label>Código de recuperación<input class="campo" id="cCodigo" autocapitalize="characters" autocomplete="off" placeholder="12 letras"></label>' : ''}
       <label>${modo === 'recuperar' ? 'Contraseña nueva' : 'Contraseña'}<input class="campo" id="cClave" type="password" autocomplete="${modo === 'entrar' ? 'current-password' : 'new-password'}" placeholder="al menos 8 caracteres"></label>
@@ -42,7 +42,7 @@ export function iniciarCuenta(h){
         if(!/^[a-z0-9_]{3,20}$/.test(usuario)){ error('El usuario va de 3 a 20 letras sin acentos ni espacios (puede llevar números y guion bajo).'); $('#cUsuario', hj).focus(); return; }
         if(clave.length < 8){ error('La contraseña necesita al menos 8 caracteres.'); $('#cClave', hj).focus(); return; }
         const escolar = modo === 'crear' ? hj.querySelector('[name="cEscolar"]:checked')?.value : null;
-        if(modo === 'crear' && !escolar){ error('Dinos qué estás estudiando: así te explico a tu nivel.'); hj.querySelector('[name="cEscolar"]').focus(); return; }
+        if(modo === 'crear' && !escolar){ error('Elige qué estudias.'); hj.querySelector('[name="cEscolar"]').focus(); return; }
         const b = $('#cListo', hj); b.disabled = true; b.textContent = 'Un momento…';
         try{
           let j;
