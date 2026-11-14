@@ -63,7 +63,9 @@ details.nuevo > summary::-webkit-details-marker{ display:none }
 .entrar p{ color:var(--tenue); margin:8px 0 16px }
 /* MOVIMIENTO Y ACABADO (Godines, 13 nov; lo pidió Luis: «llénalo de animaciones, premium y agradable»).
    Nombres con «up» porque en CSS todo es global y esta página comparte ../chat/estilo.css.
-   Sólo transform: nada de opacidad sobre texto, y nada que cambie el tamaño de un botón al medirlo. */
+   Sólo transform: nada de opacidad sobre texto, y nada que cambie el tamaño de un botón al medirlo.
+   Con «reducir movimiento» se mueve igual, más corto y sin lo que se repite: muchas compus lo traen
+   encendido sin saberlo (Windows con «Efectos de animación» apagado) y quieto del todo parecía roto. */
 .env{ overflow-x:clip }
 .cifra{ position:relative; overflow:hidden; background-image:linear-gradient(160deg, color-mix(in srgb, var(--acento) 9%, transparent), transparent 58%) }
 .cifra.alerta{ background-image:linear-gradient(160deg, color-mix(in srgb, var(--aviso) 16%, transparent), transparent 62%) }
@@ -87,7 +89,7 @@ details.nuevo > summary::-webkit-details-marker{ display:none }
 .up-esq{ display:grid; gap:10px; padding-top:64px } .up-esq i{ display:block; height:74px; border-radius:var(--r); background:linear-gradient(100deg, var(--sup2) 30%, var(--sup) 50%, var(--sup2) 70%) 0 0 / 300% 100% }
 .up-esq i:first-child{ height:40px; width:52% }
 .up-solo-lector{ position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%) }
-@media (prefers-reduced-motion: no-preference){
+@media screen{
   .env > *, .cifra, .lista-c > .item, .atajos a{ animation:upEntra .55s cubic-bezier(.2,.85,.25,1) both; animation-delay:calc(var(--up-i, 0) * 45ms) }
   .env > *:nth-child(2){ animation-delay:40ms } .env > *:nth-child(3){ animation-delay:80ms } .env > *:nth-child(n+4){ animation-delay:120ms }
   @keyframes upEntra{ from{ transform:translateY(18px) } }
@@ -98,6 +100,20 @@ details.nuevo > summary::-webkit-details-marker{ display:none }
   .up-sale{ animation:upSale .23s ease-in forwards !important } @keyframes upSale{ to{ transform:translateX(110%) } }
   .up-esq i{ animation:upBrilla 1.3s linear infinite } @keyframes upBrilla{ to{ background-position:-150% 0 } }
   @media (hover:hover){ .item:hover{ transform:translateY(-2px); box-shadow:var(--elev2) } }
+}
+/* ../chat/estilo.css apaga TODO con «reducir movimiento» (*{ animation:none !important }). Esa hoja es
+   de Sylcred y la comparten otras páginas, así que no se toca: aquí se devuelve sólo lo del centro, más
+   corto y sin lo que se repite (el latido de los números y el brillo del esqueleto se quedan quietos).
+   Cada regla lleva !important porque compite con aquélla; gana por ser más específica que «*». */
+@media (prefers-reduced-motion: reduce){
+  .env > *, .cifra, .lista-c > .item, .atajos a{ animation:upEntraSuave .4s cubic-bezier(.2,.85,.25,1) calc(var(--up-i, 0) * 35ms) both !important }
+  @keyframes upEntraSuave{ from{ transform:translateY(8px) } }
+  .up-nivel span{ animation:upLlena .7s cubic-bezier(.2,.8,.2,1) .1s both !important }
+  .barra-inf button[aria-current="page"] .ic{ animation:upBrinca .4s cubic-bezier(.3,1.6,.5,1) !important }
+  .red:not([hidden]){ animation:upBaja .35s cubic-bezier(.2,.85,.25,1) !important }
+  .up-luz{ transition:transform .35s cubic-bezier(.3,1.3,.5,1), width .25s !important }
+  .up-aviso{ transition:transform .3s cubic-bezier(.2,.9,.3,1.15) !important }
+  .btn, .filtro button, .atajos a{ transition:transform .14s ease, background-color .2s, color .2s !important }
 }
 </style>
 </head>
@@ -188,7 +204,6 @@ const formEnvio = (f, alListo) => f.addEventListener('submit', async (e) => {
 
 let actual = q.get('p') || 'hoy';
 /* ── movimiento y acabado ── */
-const QUIETO = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let tAviso;
 function avisa(texto){ const a = document.getElementById('upAviso'); a.textContent = texto; a.classList.add('ve'); clearTimeout(tAviso); tAviso = setTimeout(() => a.classList.remove('ve'), 3200); }
 function moverLuz(){ const b = barra.querySelector('[aria-current="page"]'), l = document.getElementById('upLuz'); if(!b || !l) return; l.style.width = b.offsetWidth + 'px'; l.style.transform = `translateX(${b.offsetLeft}px)`; }
@@ -197,7 +212,6 @@ function acabado(el){
   /* cada tarjeta entra un poco después que la anterior */
   el.querySelectorAll('.cifras, .lista-c, .atajos').forEach(g => [...g.children].forEach((h, i) => h.style.setProperty('--up-i', Math.min(i, 9))));
   moverLuz();
-  if(QUIETO) return;
   /* las cifras suben contando */
   el.querySelectorAll('.cifra b').forEach(b => { const m = /^(\$?)([\d,]+)$/.exec(b.textContent.trim()); if(!m) return; const n = Number(m[2].replace(/,/g, '')); if(n < 1) return;
     const t0 = performance.now(), dura = 450 + Math.min(n, 20) * 18, final = b.textContent;
@@ -226,7 +240,7 @@ const conAcciones = (el) => el.addEventListener('click', async (e) => {
   if(!j.bien){ b.disabled = false; alert(j.error); return; }
   avisa((b.dataset.est === 'hecho' ? `Hecho. Seguimiento el ${dia(j.cita?.seguimiento?.fecha)}.` : b.dataset.est === 'cerrado' ? 'Cobrado.' : b.dataset.est === 'cancelado' ? 'Cancelado.'
     : j.garantia ? `Garantía agendada para el ${dia(j.garantia.fecha)}.` : 'Seguimiento cerrado.') + (j.pendiente ? ' Se envía al volver la señal.' : ''));
-  const tarjeta = b.closest('.item'); if(tarjeta && !QUIETO){ tarjeta.classList.add('up-sale'); await new Promise(r => setTimeout(r, 230)); }
+  const tarjeta = b.closest('.item'); if(tarjeta){ tarjeta.classList.add('up-sale'); await new Promise(r => setTimeout(r, 230)); }
   ir(actual);
 });
 
