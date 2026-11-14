@@ -33,6 +33,15 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+        <!-- Widgets de la pantalla de inicio (carymo/widget.js les deja la foto y los datos) -->
+        <receiver android:name=".WidgetMascota" android:exported="true" android:label="Mascota">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_mascota_info" />
+        </receiver>
+        <receiver android:name=".WidgetRacha" android:exported="true" android:label="Racha y mascota">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_racha_info" />
+        </receiver>
     </application>
 
     <!-- Permissions -->

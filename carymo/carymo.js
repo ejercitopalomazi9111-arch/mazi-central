@@ -27,6 +27,7 @@ import { iniciarAmigos } from './amigos.js';
 import { nombreHTML, insigniasHTML } from './nombre.js';
 import { iniciarPerfilOtro } from './perfil-otro.js';
 import { iniciarCompanero } from './companero.js';
+import { iniciarWidget } from './widget.js';
 import { iniciarCuenta, ESCOLAR, NIVEL_DE_ESCOLAR } from './cuenta.js';
 import { iniciarApuntes } from './apuntes.js';
 import { iniciarSesionEstudio } from './sesion.js';
@@ -439,7 +440,7 @@ async function mandarCola(){
   return mandando;
 }
 function posicion(){ const i = ranking.filas.findIndex((f) => f.yo); return i < 0 ? 0 : i + 1; }
-function ponerPerfil(p){ if(!p) return; perfil = { ...perfil, ...p }; delete perfil._localRacha; guarda.poner('est.perfil', perfil);
+function ponerPerfil(p){ if(!p) return; perfil = { ...perfil, ...p }; delete perfil._localRacha; guarda.poner('est.perfil', perfil); try{ widget?.avisar(); }catch{}
   /* la mascota activa la decide el servidor (la crianza vive allá); si la tuya de antes todavía no está allá, se le manda una vez */
   if(perfil.mascotas){
     const q = perfil.mascota;
@@ -1900,6 +1901,8 @@ companero = iniciarCompanero({ sala, capa, cerrarCapa, hoja, cerrarHoja, esc, ic
   perfil: () => perfil, ajustes: () => ajustes, activa: mascotaActiva, vestidoDe, confeti,
   elegir: (q) => { ajustes.mascota = q; guarda.poner('est.ajustes', ajustes); refrescarVestidos(); }, alCerrar: () => pintar() });
 companero.pintarPastilla();
+/* los widgets de la pantalla de inicio (sólo dentro de la app de las tiendas): mascota en su cuarto, racha y cómo está */
+const widget = iniciarWidget({ perfil: () => perfil, activa: mascotaActiva, hoy: hoyLocal, crearMascota });
 yo = iniciarYo({ esc, ico, $, tono, SON, crearMascota, perfil: () => perfil, ajustes: () => ajustes, planes: () => planes,
   cuantosApuntes: () => apuntes?.cuantos?.() || 0, pintarCubos: (el) => { if(el) el.innerHTML = $('#pCubos .pm-cubos')?.innerHTML || $('#pCubos')?.innerHTML || ''; },
   svgPersonaje: (p) => vestidor.svgPersonaje(p), personajeVivo, hoja, abrirVestidor: () => vestidor.abrir(), abrirCompanero: () => companero.abrir() });

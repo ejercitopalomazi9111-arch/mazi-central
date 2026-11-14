@@ -4,4 +4,6 @@
     <string name="title_activity_main">CARYMO</string>
     <string name="package_name">mx.grupomazi.carymo</string>
     <string name="custom_url_scheme">mx.grupomazi.carymo</string>
+    <string name="widget_mascota_desc">Tu mascota en su cuarto y tu racha</string>
+    <string name="widget_racha_desc">Racha, cómo está tu mascota, XP y cubitos</string>
 </resources>
