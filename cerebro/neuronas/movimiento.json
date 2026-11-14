@@ -250,6 +250,20 @@
       "vecinas": [
         "observador-llega-tarde-al-fling"
       ]
+    },
+    {
+      "id": "tablero-que-parpadea",
+      "titulo": "El tablero parpadea en cada toque y las piezas se teletransportan",
+      "gravedad": "alta",
+      "sintoma": "En el teléfono, cada vez que tocas una pieza o se hace una jugada, el tablero entero da un parpadeo blanco; las piezas aparecen en su lugar nuevo sin moverse.",
+      "causa": "Cada toque rehacía el tablero con innerHTML: 64 casillas y 32 imágenes nuevas.",
+      "porque": "Una <img> nueva se pinta vacía un instante antes de decodificarse, aunque venga de la caché; y como la pieza es otra, no hay de dónde a dónde animarla.",
+      "arreglo": "El tablero se crea una vez; en cada cambio sólo se tocan las clases que cambiaron y las piezas que se movieron. La pieza que se mueve es el mismo nodo: se cambia de casilla y se desliza con animate() desde donde estaba (actualizar8 en carymo/juegos/juegos.js).",
+      "comoCazarlo": "En la prueba de pantalla, guardar los nodos de las piezas, tocar y mover, y comprobar que siguen siendo los mismos y que la que se movió tiene una animación corriendo.",
+      "vecinas": [],
+      "consejo": "Lo que molesta es el movimiento que uno no pidió, no el que uno está causando con el dedo.",
+      "senales": [],
+      "salioDe": "El banco de pruebas: la barra de progreso se quedaba en scaleX(0) para siempre, y lo cazó la prueba de «nada desplazado»."
     }
   ]
 }

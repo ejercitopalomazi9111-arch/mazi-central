@@ -417,6 +417,25 @@ const PROF = {
   conecta4: { facil: 2, medio: 4, dificil: 7 },
 };
 const GANAR = 1e7;
+/* EL AJEDREZ POR ELO (Carlos, 14 nov: «el fácil como en 150 de elo, medio 600 y difícil 1000»). Un motor que siempre
+   juega su mejor jugada no se parece a una persona de 600: se le pone la forma de equivocarse de cada nivel.
+   · 150: mueve casi a lo que salga; come lo que le dejan colgado la mitad de las veces y no ve los mates.
+   · 600: ve la jugada y la respuesta (profundidad 2), pero se le va una pieza de vez en cuando y juega imprecisiones.
+   · 1000: ve tres jugadas y los cambios hasta que se calman; rara vez regala algo.
+   Se elige con «temperatura»: la mejor sale más, las cercanas a veces, las malas casi nunca; y un tanto de jugadas
+   al azar (el descuido). Medido jugando niveles entre sí (pruebas-elo.mjs), no contra gente con rating. */
+export const ELO = {
+  facil: { elo: 150, temp: 260, descuido: .45, malas: Infinity, quies: 0 },
+  medio: { elo: 600, temp: 75, descuido: .1, malas: 320, quies: 2 },
+  dificil: { elo: 1000, temp: 22, descuido: .03, malas: 160, quies: 4 },
+};
+function elegirPorElo(cal, n, rnd){
+  if(rnd() < n.descuido){ const pool = cal.filter((c) => Math.max(-2e3, Math.min(2e3, c.v)) >= Math.max(-2e3, Math.min(2e3, cal[0].v)) - n.malas); return pool[Math.floor(rnd() * pool.length)].j; }
+  const v0 = Math.max(-2e3, Math.min(2e3, cal[0].v));
+  const pesos = cal.map((c) => Math.exp((Math.max(-2e3, Math.min(2e3, c.v)) - v0) / n.temp)), tot = pesos.reduce((a, b) => a + b, 0);
+  let r = rnd() * tot; for(let i = 0; i < cal.length; i++){ r -= pesos[i]; if(r <= 0) return cal[i].j; }
+  return cal[0].j;
+}
 function minimax(m, e, prof, alfa, beta, yo, quies){
   const f = m.fin(e);
   if(f) return f.ganador === null ? 0 : (f.ganador === yo ? GANAR + prof : -GANAR - prof);
@@ -442,16 +461,17 @@ function minimax(m, e, prof, alfa, beta, yo, quies){
   return mejor;
 }
 /* calificar cada jugada (sirve para la máquina y para las clases: «¿cuál es la mejor?») */
-export function calificar(m, e, prof){
+export function calificar(m, e, prof, quies = m.id === 'ajedrez' ? 4 : 0){
   const yo = m.turno(e), js = m.ordenar(e, m.jugadas(e));
-  return js.map((j) => ({ j, v: minimax(m, m.aplicar(e, j, true), prof - 1, -Infinity, Infinity, yo, m.id === 'ajedrez' ? 4 : 0) }));
+  return js.map((j) => ({ j, v: minimax(m, m.aplicar(e, j, true), prof - 1, -Infinity, Infinity, yo, quies) }));
 }
 export function elegir(m, e, nivel = 'medio', rnd = Math.random){
   const js = m.jugadas(e);
   if(js.length <= 1) return js[0] || null;
   if(m.id === 'domino') return elegirDomino(e, nivel, rnd);
   const prof = PROF[m.id][nivel] ?? 2;
-  const cal = calificar(m, e, prof).sort((a, b) => b.v - a.v);
+  const cal = calificar(m, e, prof, m.id === 'ajedrez' ? (ELO[nivel] || ELO.medio).quies : undefined).sort((a, b) => b.v - a.v);
+  if(m.id === 'ajedrez') return elegirPorElo(cal, ELO[nivel] || ELO.medio, rnd);
   if(nivel === 'facil' && rnd() < 0.35) return cal[Math.floor(rnd() * cal.length)].j;     // se distrae
   const top = cal.filter((c) => c.v >= cal[0].v - (nivel === 'dificil' ? 0 : 15));
   return top[Math.floor(rnd() * top.length)].j;

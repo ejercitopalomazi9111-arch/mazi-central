@@ -37,7 +37,7 @@ export async function crearPaloma(contenedor, { reloj = 'auto', brillo = true, f
      una sombra de color sobre todo el dibujo, que sí sigue a cada cristal */
   svg.querySelector('g[filter]')?.remove();
   if(brillo) svg.style.filter = 'drop-shadow(0 0 14px rgba(172,39,255,.55))';
-  const VB = svg.viewBox.baseVal, centro = { x: VB.x + VB.width / 2, y: VB.y + VB.height * .42 };
+  const VB = svg.viewBox.baseVal, centro = { x: VB.x + VB.width / 2, y: VB.y + VB.height * .42 }, X0 = 565;   /* el eje del dibujo */
 
   /* las piezas, con su centro, su eje largo y su papel (estrella, ala/cola = plumas, letras) */
   const piezas = [];
@@ -51,7 +51,9 @@ export async function crearPaloma(contenedor, { reloj = 'auto', brillo = true, f
     const b = p.el.getBBox(); p.c = { x: b.x + b.width / 2, y: b.y + b.height / 2 }; p.w = b.width; p.h = b.height;
     const dx = p.c.x - centro.x, dy = p.c.y - centro.y; p.dist = Math.hypot(dx, dy) || 1; p.dir = { x: dx / p.dist, y: dy / p.dist };
     p.ang0 = eje(p.el);
-    p.papel = i < 3 ? 'estrella' : (p.c.y < yGrupo || p.c.y > yCola) && p.el.tagName === 'polygon' && Math.max(b.width, b.height) > 60 ? 'pluma' : 'letra';
+    /* la CABEZA (cuerpo y mejilla) es el ícono y la que manda: nunca es pluma ni ladrillo (Carlos, 14 nov) */
+    const esCabeza = p.el.tagName === 'polygon' && (p.el.getAttribute('fill') === '#F6ECFF' || (b.x < X0 && X0 < b.x + b.width && b.y < centro.y && centro.y < b.y + b.height && b.width > 200));
+    p.papel = i < 3 ? 'estrella' : esCabeza ? 'cabeza' : (p.c.y < yGrupo || p.c.y > yCola) && p.el.tagName === 'polygon' && Math.max(b.width, b.height) > 60 ? 'pluma' : 'letra';
     p.fase = p.dist * .0045 + Math.atan2(dy, dx) * .5 + i * .37;
     p.x = p.y = p.r = 0; p.s = 1; p.vx = p.vy = p.vr = p.vs = 0;
     p.forma = null;
@@ -73,14 +75,16 @@ export async function crearPaloma(contenedor, { reloj = 'auto', brillo = true, f
     for(const p of piezas){
       /* 1 · reposo: respira (se aleja y vuelve en ola, del centro hacia fuera) y se mece un poquito */
       const ola = .5 + .5 * Math.sin(t * 1.15 - p.fase);
-      let tx = p.dir.x * 14 * E.respira * ola, ty = p.dir.y * 14 * E.respira * ola;
+      const manda = p.papel === 'cabeza' || p.papel === 'estrella';
+      let tx = p.dir.x * 14 * E.respira * ola * (manda ? .35 : 1), ty = p.dir.y * 14 * E.respira * ola * (manda ? .35 : 1);
       let tr = Math.sin(t * .7 + p.fase * 2) * 1.6 * E.respira, ts = 1;
       if(p.papel === 'estrella') ts = 1 + .07 * E.respira * Math.sin(t * 2.2);
       /* 2 · abrirse: cada cristal se va hacia fuera y gira un poco, como hechizo que se expande */
-      if(E.abre){ const a = E.abre; tx += p.dir.x * (60 + p.dist * .38) * a - p.dir.y * 40 * a * Math.sin(p.fase); ty += p.dir.y * (60 + p.dist * .38) * a + p.dir.x * 40 * a * Math.sin(p.fase);
+      if(E.abre && !manda){ const a = E.abre; tx += p.dir.x * (60 + p.dist * .38) * a - p.dir.y * 40 * a * Math.sin(p.fase); ty += p.dir.y * (60 + p.dist * .38) * a + p.dir.x * 40 * a * Math.sin(p.fase);
         tr += 22 * a * Math.sin(p.fase * 3); }
       /* 3 · estirar la forma del ave (los cristales no se deforman: cambia dónde están) */
-      tx += (p.c.x - centro.x) * (E.sx - 1); ty += (p.c.y - centro.y) * (E.sy - 1);
+      if(!manda){ tx += (p.c.x - centro.x) * (E.sx - 1); ty += (p.c.y - centro.y) * (E.sy - 1); }
+      else if(E.abre) ty -= 30 * E.abre;                                  /* la cabeza se alza un poco y dirige */
       /* 4 · el dedo: los cristales cercanos se apartan */
       if(E.punt){ const dx = p.c.x + p.x - E.punt.x, dy = p.c.y + p.y - E.punt.y, d = Math.hypot(dx, dy), R = 260;
         if(d < R){ const f = Math.pow(1 - d / R, 2) * 90; tx += dx / (d || 1) * f; ty += dy / (d || 1) * f; tr += f * .15; } }
@@ -146,10 +150,14 @@ export async function crearPaloma(contenedor, { reloj = 'auto', brillo = true, f
         let r = ((ang - p.ang0) % 180 + 270) % 180 - 90;                                 /* el giro más corto para quedar sobre la orilla */
         p.forma = { x, y, r, s: escala, desde: t0 + i * .045 };
       });
-      /* lo que no traza (estrella, cuerpo, letras) se junta arriba del recuadro como emblema chiquito */
-      const resto = piezas.filter((p) => !usar.includes(p)), k = .3;
-      if(resto.length){ const abajo = Math.max(...resto.map((p) => p.c.y + p.h / 2));
-        resto.forEach((p, i) => { p.forma = { x: a.x + W / 2 + (p.c.x - centro.x) * k, y: a.y - 18 / (svg.getScreenCTM()?.a || 1) - (abajo - centro.y) * k + (p.c.y - centro.y) * k, r: 0, s: k, desde: t0 + .15 + i * .008 }; }); }
+      /* la CABEZA y la estrella no trazan: dirigen. Se quedan enteras, arriba del recuadro, más grandes que lo demás;
+         las letras se hacen firma chiquita abajo */
+      const px = 1 / (svg.getScreenCTM()?.a || 1), mando = piezas.filter((p) => p.papel === 'cabeza' || p.papel === 'estrella');
+      const letras = piezas.filter((p) => !usar.includes(p) && !mando.includes(p));
+      if(mando.length){ const k = .55, abajo = Math.max(...mando.map((p) => p.c.y + p.h / 2)), cx = Math.min(...mando.map((p) => p.c.x - p.w / 2)) / 2 + Math.max(...mando.map((p) => p.c.x + p.w / 2)) / 2;
+        mando.forEach((p) => { p.forma = { x: a.x + W / 2 + (p.c.x - cx) * k, y: a.y - 14 * px - (abajo - p.c.y) * k, r: 0, s: k, desde: t0 }; }); }
+      if(letras.length){ const k = .2, arriba = Math.min(...letras.map((p) => p.c.y - p.h / 2));
+        letras.forEach((p, i) => { p.forma = { x: a.x + W / 2 + (p.c.x - centro.x) * k, y: b.y + 16 * px + (p.c.y - arriba) * k, r: 0, s: k, desde: t0 + .15 + i * .008 }; }); }
       if(conMarco){ marco.setAttribute('x', a.x); marco.setAttribute('y', a.y); marco.setAttribute('width', W); marco.setAttribute('height', H);
         marco.setAttribute('rx', Math.min(W, H) * .06); marco.style.strokeDasharray = per; E.marco = { desde: t0 + usar.length * .045 + .2, largo: per }; }
       await espera(usar.length * .045 + 1.1);

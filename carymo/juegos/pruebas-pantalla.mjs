@@ -75,7 +75,13 @@ await pg.click('.jg-juego[data-juego="ajedrez"]'); await pg.click('.hoja [data-n
 ok(await pg.locator('.jg-tab img').count() === 32 && await pg.locator('.jg-tab .jg-c').count() === 64, 'tablero de 64 con sus 32 piezas');
 ok(await pg.evaluate(() => { const c = [...document.querySelectorAll('.jg-tab .jg-c')].slice(0, 2).map((x) => getComputedStyle(x).backgroundColor); return c[0] !== c[1] && !c.some((x) => /rgba\(0, 0, 0, 0\)|transparent/.test(x)); }), 'las casillas van a dos colores (claras y oscuras), no transparentes');
 ok(await pg.evaluate(() => { const hs = [...document.querySelectorAll('.jg-tab .jg-c')].map((x) => Math.round(x.getBoundingClientRect().height)); return Math.max(...hs) - Math.min(...hs) <= 1; }), 'las 64 casillas miden lo mismo (el tablero es cuadrado)');
-await pg.click(`.jg-c[data-i="${indice('e2')}"]`); await pg.click(`.jg-c[data-i="${indice('e4')}"]`);
+/* SIN PARPADEO (Carlos, 14 nov: «que nunca, jamás, de los jamases pase»): tocar una pieza y mover NO vuelven a crear
+   las piezas; son los mismos nodos. Y la que se mueve se desliza (tiene una animación corriendo), no se teletransporta */
+await pg.evaluate(() => { window.__pz = [...document.querySelectorAll('.jg-tab img')]; window.__peon = document.querySelector('.jg-c[data-i="52"] img'); });
+await pg.click(`.jg-c[data-i="${indice('e2')}"]`);
+ok(await pg.evaluate(() => { const ya = [...document.querySelectorAll('.jg-tab img')]; return ya.length === 32 && ya.every((x) => window.__pz.includes(x)); }), 'tocar una pieza no vuelve a crear ninguna (cero parpadeo)');
+await pg.click(`.jg-c[data-i="${indice('e4')}"]`);
+ok(await pg.evaluate(() => { const n = document.querySelector('.jg-c[data-i="36"] img'); return n === window.__peon && n.getAnimations().length > 0; }), 'el peón que mueves es la misma pieza y se desliza a e4 (no se teletransporta)');
 ok(await esperar(() => document.querySelector(`.jg-c[data-i="${36}"] img`) && /Te toca/.test(document.querySelector('.jg-estado').textContent) && document.querySelectorAll('.jg-c.ult').length === 2 && !document.querySelector('.jg-c[data-i="52"] img')), 'e2-e4 y la máquina contesta (piensa aparte y te regresa el turno)');
 await foto('juegos-4-ajedrez');
 await pg.click('[data-accion="deshacer"]'); ok(await esperar(() => document.querySelector('.jg-c[data-i="52"] img')), 'Deshacer regresa tu jugada y la suya');
@@ -110,7 +116,13 @@ await foto('juegos-8-domino'); await sinDesborde('el dominó cabe en 390');
 console.log('\nEl entrenador de ajedrez');
 await pg.click('[data-salir]'); await pg.waitForSelector('.jg-juego');
 await pg.click('.jg-juego[data-juego="ajedrez"]'); await pg.click('.hoja [data-nivel="medio"]'); await pg.waitForSelector('.jg-tab .jg-c img');
-await pg.click(`.jg-c[data-i="${indice('e2')}"]`); await pg.click(`.jg-c[data-i="${indice('e4')}"]`);
+/* SIN PARPADEO (Carlos, 14 nov: «que nunca, jamás, de los jamases pase»): tocar una pieza y mover NO vuelven a crear
+   las piezas; son los mismos nodos. Y la que se mueve se desliza (tiene una animación corriendo), no se teletransporta */
+await pg.evaluate(() => { window.__pz = [...document.querySelectorAll('.jg-tab img')]; window.__peon = document.querySelector('.jg-c[data-i="52"] img'); });
+await pg.click(`.jg-c[data-i="${indice('e2')}"]`);
+ok(await pg.evaluate(() => { const ya = [...document.querySelectorAll('.jg-tab img')]; return ya.length === 32 && ya.every((x) => window.__pz.includes(x)); }), 'tocar una pieza no vuelve a crear ninguna (cero parpadeo)');
+await pg.click(`.jg-c[data-i="${indice('e4')}"]`);
+ok(await pg.evaluate(() => { const n = document.querySelector('.jg-c[data-i="36"] img'); return n === window.__peon && n.getAnimations().length > 0; }), 'el peón que mueves es la misma pieza y se desliza a e4 (no se teletransporta)');
 ok(await esperar(() => /Te toca/.test(document.querySelector('.jg-estado').textContent) && /Defensa|Apertura|Gambito|Partida|Peón/.test(document.querySelector('.jg-apertura')?.textContent || ''), 9000), 'la máquina contesta de libro y la mesa dice qué apertura es: ' + await pg.textContent('.jg-apertura').catch(() => ''));
 /* el mate pastor, jugando tú con negras: 3…Cf6?? deja el mate */
 await pg.evaluate(async () => {
@@ -138,7 +150,8 @@ await pg.click('.jg-juego[data-juego="conecta4"]'); await pg.click('.hoja [data-
 ok(await esperar(() => document.querySelector('.jg-c4')), 'Buscar rival: el servidor arma la partida y se abre el tablero');
 ok(/Beto/.test(await pg.textContent('.jg-mesa')), 'sale el nombre del rival');
 await pg.locator('.jg-c4 [data-col="2"]').first().click();
-ok(await esperar(() => linea && linea.v === 1, 4000) === false ? linea?.v === 1 : true, 'tu jugada se manda al servidor');
+for(let k = 0; k < 40 && !(linea && linea.v === 1); k++) await pg.waitForTimeout(100);   /* linea vive en Node, no en la página: se espera aquí */
+ok(linea?.v === 1, 'tu jugada se manda al servidor');
 ok(linea?.ultimaJugada?.col === 2 && pedidos.includes('juegoMover'), 'el servidor recibe la columna que tocaste');
 ok(/Le toca/.test(await pg.textContent('.jg-estado')), 'y ahora le toca al rival');
 await foto('juegos-9-linea');

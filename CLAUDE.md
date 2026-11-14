@@ -616,7 +616,16 @@ dependemos.
 
    | una clase corta para el estado de una pieza nueva (`.oculto`, `.mal`, `.puesto`) es sólo mía | `.oculto` ya era la de lectores de pantalla de CARYMO (`position:absolute` y recortada): las cajas vacías del diagrama se pintaban y **no se podían tocar** | lo cazó la prueba que toca los huecos de «Completa» («svg intercepts pointer events»). Las clases de estado van con el prefijo del componente (`dg-vacia`, `dg-mal`), como ya decía el renglón de los `@keyframes` |
 
+   | un tablero que se vuelve a pintar entero en cada toque se ve igual que antes | se ve igual EN LA CAPTURA; en el iPhone cada `<img>` nueva se pinta en blanco un instante antes de cargar, aunque venga de la caché | el ajedrez de CARYMO parpadeaba con cada toque y cada jugada, y las piezas se teletransportaban. Ahora el tablero se crea una vez, cada pieza es el mismo nodo toda la partida y se desliza con `animate()` (`actualizar8` en `carymo/juegos/juegos.js`); regla 13 |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
+
+13. **CERO PARPADEO. Nunca, jamás, de los jamases** (Carlos, 14 nov, por el ajedrez de CARYMO). Tocar algo o que
+   algo cambie NO vuelve a crear lo que ya está en pantalla. Rehacer con `innerHTML` un tablero, una lista o una mesa
+   en cada toque vuelve a crear sus imágenes, y el iPhone las pinta en blanco un instante: eso es el parpadeo. Lo que
+   se ve se crea UNA vez y luego sólo se cambia lo que cambió (una clase, un texto, una pieza). Lo que se mueve es el
+   MISMO nodo y se desliza a su lugar nuevo; nada se teletransporta. Cada pantalla con piezas lleva una prueba que
+   guarda los nodos, toca y comprueba que siguen siendo los mismos (`carymo/juegos/pruebas-pantalla.mjs`).
 
 ---
 

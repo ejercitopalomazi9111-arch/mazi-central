@@ -72,6 +72,8 @@ for(const p of piezas){
   p.classList.add('pz');
   const b = p.getBBox(); p._c = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
   p._d = Math.hypot(p._c.x - centro.x, p._c.y - centro.y); p._dir = { x: (p._c.x - centro.x) / (p._d || 1), y: (p._c.y - centro.y) / (p._d || 1) };
+  /* la cabeza y la estrella mandan (Carlos, 14 nov): nunca vuelan como pluma; aparecen primero en el centro */
+  p._manda = piezas.indexOf(p) < 3 || (p.tagName === 'polygon' && (p.getAttribute('fill') === '#F6ECFF' || (b.x < 565 && 565 < b.x + b.width && b.width > 200 && b.y < centro.y && centro.y < b.y + b.height)));
   p._a = azar() * Math.PI * 2; p._r = 620 + azar() * 520; p._giro = (azar() - .5) * 720; p._esc = .55 + azar() * .3; p._orbita = (azar() < .5 ? -1 : 1) * (.12 + azar() * .12);
 }
 /* aparecen al azar; vuelan del centro hacia afuera (el cuerpo primero, las alas al último) */
@@ -116,6 +118,8 @@ window.pintar = (t) => {
 
   /* 2 · las piezas: aparecen en órbita, vuelan a su lugar */
   for(const p of piezas){
+    if(p._manda){ const um = sale(tramo(t, T.rompe + .35, T.rompe + 1.4)), late = 1 + .05 * Math.sin(t * 3) * (1 - tramo(t, T.vuelan, T.completa));
+      p.style.opacity = um.toFixed(3); p.style.transform = `translateY(${((1 - um) * 40).toFixed(1)}px) scale(${(late * (.85 + .15 * um)).toFixed(3)})`; continue; }
     const ua = sale(tramo(t, p._aparece, p._aparece + .35));
     if(ua <= 0){ p.style.opacity = 0; continue; }
     const ang = p._a + p._orbita * (Math.min(t, p._vuela) - p._aparece);
