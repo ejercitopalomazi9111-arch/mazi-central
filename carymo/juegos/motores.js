@@ -429,6 +429,20 @@ export const ELO = {
   medio: { elo: 600, temp: 75, descuido: .1, malas: 320, quies: 2 },
   dificil: { elo: 1000, temp: 22, descuido: .03, malas: 160, quies: 4 },
 };
+/* EL SLIDER (Carlos, 14 nov: «la dificultad en ajedrez debe seleccionarse con un slider que marque cuánto elo tiene y
+   qué dificultad es»): cualquier ELO de 100 a 1600 sale de mezclar los niveles de arriba; 1600 ya no se descuida */
+export const ELO_MIN = 100, ELO_MAX = 1600;
+const ANCLAS = [[100, 300, .5, Infinity], [150, 260, .45, Infinity], [600, 75, .1, 320], [1000, 22, .03, 160], [1600, 5, 0, 70]];
+export function nombreElo(elo){ return elo < 400 ? 'Fácil' : elo < 850 ? 'Medio' : elo < 1300 ? 'Difícil' : 'Experto'; }
+export function claveElo(elo){ return elo < 400 ? 'facil' : elo < 850 ? 'medio' : 'dificil'; }
+export function nivelElo(elo){
+  elo = Math.max(ELO_MIN, Math.min(ELO_MAX, Math.round(elo)));
+  let k = 0; while(k < ANCLAS.length - 2 && elo > ANCLAS[k + 1][0]) k++;
+  const [e0, t0, d0, m0] = ANCLAS[k], [e1, t1, d1, m1] = ANCLAS[k + 1], u = Math.max(0, Math.min(1, (elo - e0) / (e1 - e0)));
+  const log = (a, b) => Math.exp(Math.log(a) + (Math.log(b) - Math.log(a)) * u);
+  return { elo, temp: log(t0, t1), descuido: d0 + (d1 - d0) * u, malas: m0 === Infinity ? (u < 1 ? Infinity : m1) : m0 + (m1 - m0) * u,
+    prof: elo < 380 ? 1 : elo < 820 ? 2 : 3, quies: elo < 380 ? 0 : elo < 820 ? 2 : elo < 1300 ? 4 : 6 };
+}
 function elegirPorElo(cal, n, rnd){
   if(rnd() < n.descuido){ const pool = cal.filter((c) => Math.max(-2e3, Math.min(2e3, c.v)) >= Math.max(-2e3, Math.min(2e3, cal[0].v)) - n.malas); return pool[Math.floor(rnd() * pool.length)].j; }
   const v0 = Math.max(-2e3, Math.min(2e3, cal[0].v));
@@ -469,9 +483,13 @@ export function elegir(m, e, nivel = 'medio', rnd = Math.random){
   const js = m.jugadas(e);
   if(js.length <= 1) return js[0] || null;
   if(m.id === 'domino') return elegirDomino(e, nivel, rnd);
+  if(m.id === 'ajedrez'){
+    const n = nivelElo(typeof nivel === 'number' ? nivel : (ELO[nivel] || ELO.medio).elo);
+    return elegirPorElo(calificar(m, e, n.prof, n.quies).sort((a, b) => b.v - a.v), n, rnd);
+  }
+  if(typeof nivel === 'number') nivel = claveElo(nivel);
   const prof = PROF[m.id][nivel] ?? 2;
-  const cal = calificar(m, e, prof, m.id === 'ajedrez' ? (ELO[nivel] || ELO.medio).quies : undefined).sort((a, b) => b.v - a.v);
-  if(m.id === 'ajedrez') return elegirPorElo(cal, ELO[nivel] || ELO.medio, rnd);
+  const cal = calificar(m, e, prof).sort((a, b) => b.v - a.v);
   if(nivel === 'facil' && rnd() < 0.35) return cal[Math.floor(rnd() * cal.length)].j;     // se distrae
   const top = cal.filter((c) => c.v >= cal[0].v - (nivel === 'dificil' ? 0 : 15));
   return top[Math.floor(rnd() * top.length)].j;

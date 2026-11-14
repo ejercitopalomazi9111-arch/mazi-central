@@ -8,7 +8,7 @@
    Las reglas viven en motores.js (las mismas que usa el servidor), las clases
    en clases.js y la máquina piensa aparte en maquina.js.
    ═════════════════════════════════════════════════════════════════════════ */
-import { MOTORES, elegir, enJaque, ELO } from './motores.js';
+import { MOTORES, elegir, enJaque, ELO, ELO_MIN, ELO_MAX, nombreElo, claveElo } from './motores.js';
 import { CLASES } from './clases.js';
 import { cumple, pista } from './revisar.js';
 import { armarLibro, aperturaDe, deLibro, enLibroHasta, analizar, resumen, perfil, CLASES as CLASE_JUGADA } from './entrenador.js';
@@ -98,6 +98,14 @@ const CSS = `
 .jg-dom-mano button.puede{ transform:translateY(-6px); filter:drop-shadow(0 0 8px #AC27FF) } .jg-dom-mano button:disabled{ opacity:.45 } .jg-dom-mano button.pista{ filter:drop-shadow(0 0 10px #E8B54A) }
 .jg-dom-otro{ display:flex; gap:3px; justify-content:center; flex-wrap:wrap } .jg-dom-otro .jg-ficha{ width:16px; height:32px }
 .jg-dom-info{ display:flex; justify-content:center; gap:14px; color:var(--suave); font:700 13px/1 Titulo }
+.jg-elo{ display:grid; gap:10px; padding:14px; border-radius:18px; background:var(--sup) }
+.jg-elo-dato{ text-align:center; font:700 16px/1.2 Titulo; color:var(--suave) } .jg-elo-dato b{ font:900 34px/1 Titulo; color:var(--claro-txt, #fff); font-variant-numeric:tabular-nums }
+.jg-elo input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:44px; background:transparent; margin:0 }
+.jg-elo input[type=range]::-webkit-slider-runnable-track{ height:10px; border-radius:5px; background:linear-gradient(90deg, #3FCB8A, #E8B54A 40%, #E2506A 70%, #AC27FF) }
+.jg-elo input[type=range]::-moz-range-track{ height:10px; border-radius:5px; background:linear-gradient(90deg, #3FCB8A, #E8B54A 40%, #E2506A 70%, #AC27FF) }
+.jg-elo input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:30px; height:30px; margin-top:-10px; border-radius:50%; background:#fff; border:4px solid #AC27FF; box-shadow:0 4px 12px #0008 }
+.jg-elo input[type=range]::-moz-range-thumb{ width:24px; height:24px; border-radius:50%; background:#fff; border:4px solid #AC27FF }
+.jg-elo-marcas{ display:flex; justify-content:space-between; font-size:12px; color:var(--suave); margin-top:-6px }
 .jg-botones{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center } .jg-botones .bt{ min-height:44px }
 .jg-fin{ position:fixed; inset:0; z-index:90; display:grid; place-items:center; background:#170A26cc; padding:16px; animation:jgEntra .3s ease }
 .jg-fin > div{ width:min(100%, 380px); padding:24px 20px; border-radius:24px; background:var(--fondo-2); text-align:center; box-shadow:0 30px 80px #000 }
@@ -189,13 +197,22 @@ export function iniciarJuegos(h){
       ${CLASES[id].map((k) => `<button class="jg-clase-f ${guardado.clases[k.id] ? 'hecha' : ''}" data-clase="${k.id}">${ico(guardado.clases[k.id] ? 'circle-check' : 'graduation-cap')}<span>${esc(k.titulo)}</span></button>`).join('')}
       ${id === 'ajedrez' ? `<div class="jg-seccion">Tu juego</div><button class="jg-clase-f" data-perfil>${ico('chart-line')}<span>Cómo juegas · ${guardado.repasos.length} repasadas</span></button>` : ''}
       <div class="jg-seccion">Contra la máquina</div>
-      <div class="jg-niveles">${Object.entries(NIVEL).map(([k, v]) => `<button class="bt" data-nivel="${k}">${v}</button>`).join('')}</div>
+      ${id === 'ajedrez' ? `<div class="jg-elo"><div class="jg-elo-dato"><b data-elo-num>${guardado.elo || 600}</b> ELO · <span data-elo-nom>${nombreElo(guardado.elo || 600)}</span></div>
+        <input type="range" min="${ELO_MIN}" max="${ELO_MAX}" step="50" value="${guardado.elo || 600}" data-elo aria-label="Dificultad en ELO">
+        <div class="jg-elo-marcas"><span>Fácil</span><span>Medio</span><span>Difícil</span><span>Experto</span></div>
+        <button class="bt fuerte ancho" data-nivel-elo>Jugar</button></div>`
+      : `<div class="jg-niveles">${Object.entries(NIVEL).map(([k, v]) => `<button class="bt" data-nivel="${k}">${v}</button>`).join('')}</div>`}
       <div class="jg-seccion">En línea</div>
       <div class="jg-niveles" style="grid-template-columns:1fr 1fr"><button class="bt fuerte" data-linea="buscar">${ico('search')}Buscar rival</button><button class="bt" data-linea="retar">${ico('swords')}Retar</button></div></div>`, (hj) => {
+      hj.querySelector('[data-elo]')?.addEventListener('input', (ev) => { const v = +ev.target.value;
+        hj.querySelector('[data-elo-num]').textContent = v; hj.querySelector('[data-elo-nom]').textContent = nombreElo(v);
+        ev.target.style.setProperty('--p', ((v - ELO_MIN) / (ELO_MAX - ELO_MIN) * 100).toFixed(1) + '%'); });
+      hj.querySelector('[data-elo]')?.dispatchEvent(new Event('input'));
       hj.addEventListener('click', (ev) => {
         const k = ev.target.closest('[data-clase]'); if(k){ h.cerrarHoja(); empezarClase(id, k.dataset.clase); return; }
         if(ev.target.closest('[data-perfil]')){ h.cerrarHoja(); verPerfil(); return; }
         const n = ev.target.closest('[data-nivel]'); if(n){ h.cerrarHoja(); empezarMaquina(id, n.dataset.nivel); return; }
+        if(ev.target.closest('[data-nivel-elo]')){ const elo = +hj.querySelector('[data-elo]').value; guardado.elo = elo; guardar(); h.cerrarHoja(); empezarMaquina(id, elo); return; }
         const l = ev.target.closest('[data-linea]'); if(!l) return;
         if(!h.conAcceso()){ h.cerrarHoja(); brindis('Crea tu cuenta para jugar en línea', 'vino', 'user-plus'); return; }
         h.cerrarHoja(); if(l.dataset.linea === 'buscar') buscarRival(id); else elegirRival(id);
@@ -274,7 +291,7 @@ export function iniciarJuegos(h){
   function empezarMaquina(juego, nivel, e0 = null, meta = null){
     parar();
     const m = MOTORES[juego], e = e0 ? JSON.parse(JSON.stringify(e0)) : m.inicial({});
-    P = { juego, m, modo: 'maquina', nivel, e, e0, yo: 0, hist: [], reg: [], nombres: ['Tú', `Máquina · ${NIVEL[nivel]}${juego === 'ajedrez' && ELO[nivel] ? ` · ${ELO[nivel].elo} ELO` : ''}`], meta };
+    P = { juego, m, modo: 'maquina', nivel, e, e0, yo: 0, hist: [], reg: [], nombres: ['Tú', typeof nivel === 'number' ? `Máquina · ${nivel} ELO` : `Máquina · ${NIVEL[nivel]}${juego === 'ajedrez' && ELO[nivel] ? ` · ${ELO[nivel].elo} ELO` : ''}`], meta };
     if(juego === 'ajedrez') cargarLibro().then(() => { if(P && P.juego === 'ajedrez') pintarEstado(); });
     // en ajedrez y damas a veces te toca con negras
     if(!e0 && (juego === 'ajedrez' || juego === 'damas' || juego === 'reversi') && Math.random() < .5) P.yo = 1;
@@ -290,7 +307,7 @@ export function iniciarJuegos(h){
       const t0 = performance.now(), yo = P;
       /* en ajedrez, Medio y Difícil abren como los libros (Fácil juega a lo que salga) */
       let j = null;
-      if(P.juego === 'ajedrez' && P.nivel !== 'facil' && !P.e0 && libro){ const u = deLibro(libro, movsDe()); if(u) j = m.jugadas(P.e).find((x) => m.texto(x) === u) || null; }
+      if(P.juego === 'ajedrez' && (typeof P.nivel === 'number' ? P.nivel >= 400 : P.nivel !== 'facil') && !P.e0 && libro){ const u = deLibro(libro, movsDe()); if(u) j = m.jugadas(P.e).find((x) => m.texto(x) === u) || null; }
       if(!j) j = await pensar(P.juego, P.e, P.nivel || 'medio');
       await new Promise((ok) => setTimeout(ok, Math.max(0, 450 - (performance.now() - t0))));
       if(P !== yo || !j) return;
@@ -369,7 +386,7 @@ export function iniciarJuegos(h){
     if(!P || P.cerrada) return; P.cerrada = true; parar();
     const gane = f.ganador === P.yo, empate = f.ganador === null;
     if(P.modo === 'maquina' && P.meta){ /* práctica de una clase: se gana o se repite */ }
-    const xp = gane ? (P.modo === 'linea' ? XP_GANAR.linea : XP_GANAR[P.nivel] || 5) : empate ? 3 : 0;
+    const xp = gane ? (P.modo === 'linea' ? XP_GANAR.linea : XP_GANAR[typeof P.nivel === 'number' ? claveElo(P.nivel) : P.nivel] || 5) : empate ? 3 : 0;
     if(xp) h.sumarXP?.(xp, 'juego');
     if(gane){ tono(SON.fin); h.confeti?.(); } else if(!empate) tono(SON.perdio || SON.mal);
     const elo = P.modo === 'linea' && P.linea.final ? P.linea.final.cambioElo[P.yo] : null;

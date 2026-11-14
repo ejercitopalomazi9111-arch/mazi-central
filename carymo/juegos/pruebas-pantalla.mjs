@@ -71,7 +71,16 @@ await sinDesborde('la clase no se sale de lado');
 
 console.log('\nAjedrez contra la máquina');
 await pg.click('[data-salir]'); await pg.waitForSelector('.jg-juego');
-await pg.click('.jg-juego[data-juego="ajedrez"]'); await pg.click('.hoja [data-nivel="facil"]'); await pg.waitForSelector('.jg-tab .jg-c img');
+await pg.click('.jg-juego[data-juego="ajedrez"]');
+/* el slider de ELO (Carlos, 14 nov): al arrastrarlo dice cuánto ELO y qué dificultad es */
+await pg.locator('.hoja [data-elo]').fill('150');
+ok(/150/.test(await pg.textContent('.hoja [data-elo-num]')) && /Fácil/.test(await pg.textContent('.hoja [data-elo-nom]')), 'el slider en 150 dice «150 ELO · Fácil»');
+await pg.locator('.hoja [data-elo]').fill('1400');
+ok(/1400/.test(await pg.textContent('.hoja [data-elo-num]')) && /Experto/.test(await pg.textContent('.hoja [data-elo-nom]')), 'y en 1400 dice «Experto»');
+await pg.locator('.hoja [data-elo]').fill('150');
+await foto('juegos-elo');
+await pg.click('.hoja [data-nivel-elo]'); await pg.waitForSelector('.jg-tab .jg-c img');
+ok(/150 ELO/.test(await pg.textContent('.jg-mesa')), 'la máquina juega con el ELO que elegiste');
 ok(await pg.locator('.jg-tab img').count() === 32 && await pg.locator('.jg-tab .jg-c').count() === 64, 'tablero de 64 con sus 32 piezas');
 ok(await pg.evaluate(() => { const c = [...document.querySelectorAll('.jg-tab .jg-c')].slice(0, 2).map((x) => getComputedStyle(x).backgroundColor); return c[0] !== c[1] && !c.some((x) => /rgba\(0, 0, 0, 0\)|transparent/.test(x)); }), 'las casillas van a dos colores (claras y oscuras), no transparentes');
 ok(await pg.evaluate(() => { const hs = [...document.querySelectorAll('.jg-tab .jg-c')].map((x) => Math.round(x.getBoundingClientRect().height)); return Math.max(...hs) - Math.min(...hs) <= 1; }), 'las 64 casillas miden lo mismo (el tablero es cuadrado)');
@@ -115,7 +124,7 @@ await foto('juegos-8-domino'); await sinDesborde('el dominó cabe en 390');
 
 console.log('\nEl entrenador de ajedrez');
 await pg.click('[data-salir]'); await pg.waitForSelector('.jg-juego');
-await pg.click('.jg-juego[data-juego="ajedrez"]'); await pg.click('.hoja [data-nivel="medio"]'); await pg.waitForSelector('.jg-tab .jg-c img');
+await pg.click('.jg-juego[data-juego="ajedrez"]'); await pg.locator('.hoja [data-elo]').fill('600'); await pg.click('.hoja [data-nivel-elo]'); await pg.waitForSelector('.jg-tab .jg-c img');
 /* SIN PARPADEO (Carlos, 14 nov: «que nunca, jamás, de los jamases pase»): tocar una pieza y mover NO vuelven a crear
    las piezas; son los mismos nodos. Y la que se mueve se desliza (tiene una animación corriendo), no se teletransporta */
 await pg.evaluate(() => { window.__pz = [...document.querySelectorAll('.jg-tab img')]; window.__peon = document.querySelector('.jg-c[data-i="52"] img'); });
