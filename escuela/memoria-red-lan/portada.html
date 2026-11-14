@@ -1,57 +1,50 @@
 <!doctype html>
 <html lang="es"><head><meta charset="utf-8"><title>Portada</title>
+<!-- Portada en formato institucional (Carlos, 14 nov): fondo blanco, logo de la UTEQ arriba al centro, datos al pie -->
 <style>
 @page{ size:A4; margin:0 }
 *{ box-sizing:border-box }
 html,body{ margin:0; width:210mm; height:297mm; -webkit-print-color-adjust:exact; print-color-adjust:exact }
-body{ font-family:Inter, sans-serif; color:#1C2533; background:#fff; position:relative; overflow:hidden }
-.banda{ position:absolute; left:0; top:0; width:210mm; height:96mm; background:#0B2545 }
-.banda svg{ position:absolute; inset:0; width:100%; height:100% }
-.logo{ position:absolute; left:20mm; top:20mm; width:40mm; height:40mm; background:#fff; border-radius:3mm; display:grid; place-items:center }
-.logo img{ width:36mm; height:36mm }
-.inst{ position:absolute; left:68mm; top:24mm; right:20mm; color:#fff }
-.inst b{ display:block; font:800 17pt/1.15 "Inter Display", Inter; letter-spacing:.01em }
-.inst span{ display:block; margin-top:2.5mm; font:500 10pt Inter; color:#B9CCE6 }
-.campo-asig{ position:absolute; left:68mm; top:46mm; right:20mm; color:#fff; font:500 10pt Inter }
-.campo-asig i{ font-style:normal; color:#B9CCE6 }
-.campo-asig .raya{ display:inline-block; width:82mm; border-bottom:0.8pt solid #7FA6D6; height:4.5mm; vertical-align:bottom; margin-left:2mm }
-.titulo{ position:absolute; left:20mm; right:20mm; top:118mm }
-.titulo small{ display:block; font:700 10pt Inter; letter-spacing:.18em; color:#1565C0; text-transform:uppercase; margin-bottom:5mm }
-.titulo h1{ margin:0; font:800 30pt/1.08 "Inter Display", Inter; color:#0B2545 }
-.titulo p{ margin:6mm 0 0; font:400 12pt/1.45 Inter; color:#5B6675; max-width:150mm }
-.linea-az{ position:absolute; left:20mm; top:112mm; width:22mm; height:2.2mm; background:#0EA5E9 }
-.datos{ position:absolute; left:20mm; right:20mm; bottom:28mm; display:grid; grid-template-columns:1fr 1fr; gap:7mm 12mm }
-.dato small{ display:block; font:600 8pt Inter; letter-spacing:.12em; text-transform:uppercase; color:#5B6675; margin-bottom:2mm }
-.dato .v{ display:block; font:600 11.5pt Inter; color:#0B2545; border-bottom:0.8pt solid #9AA8BA; min-height:8mm; padding-bottom:1.5mm }
-.dato .v.vacio{ color:#9AA8BA; font-weight:400; font-style:italic; font-size:9.5pt }
-.pie{ position:absolute; left:20mm; right:20mm; bottom:12mm; font:500 8.5pt Inter; color:#8A94A3; display:flex; justify-content:space-between; border-top:0.6pt solid #D5DCE6; padding-top:3mm }
+body{ font-family:Inter, sans-serif; color:#1C2533; background:#fff; position:relative; overflow:hidden; text-align:center }
+.marco{ position:absolute; inset:12mm; border:1.2pt solid #0B2545 }
+.marco::after{ content:""; position:absolute; inset:1.6mm; border:0.5pt solid #9AA8BA }
+.logo{ position:absolute; left:0; right:0; top:24mm; text-align:center }
+.logo img{ width:46mm; height:46mm }
+.inst{ position:absolute; left:20mm; right:20mm; top:74mm }
+.inst b{ display:block; font:800 18pt/1.2 "Inter Display", Inter; color:#0B2545; letter-spacing:.02em; text-transform:uppercase }
+.inst .lin{ font:500 11pt/1.6 Inter; color:#3E4A5C; margin-top:3mm }
+.inst .lin i{ font-style:normal; display:inline-block; min-width:80mm; border-bottom:0.7pt solid #9AA8BA }
+.sep{ width:40mm; height:1.6pt; background:#1565C0; margin:9mm auto }
+.titulo{ position:absolute; left:24mm; right:24mm; top:122mm }
+.titulo small{ display:block; font:700 10pt Inter; letter-spacing:.16em; color:#1565C0; text-transform:uppercase; margin-bottom:5mm }
+.titulo h1{ margin:0; font:800 24pt/1.15 "Inter Display", Inter; color:#0B2545 }
+.titulo p{ margin:5mm auto 0; font:400 11pt/1.45 Inter; color:#5B6675; max-width:140mm }
+.datos{ position:absolute; left:34mm; right:34mm; top:186mm; text-align:left; font:500 10.5pt/1 Inter }
+.fila{ display:grid; grid-template-columns:42mm 1fr; align-items:end; margin-bottom:5.2mm }
+.fila span{ color:#5B6675; font-weight:600 }
+.fila b{ font-weight:600; color:#0B2545; border-bottom:0.7pt solid #9AA8BA; padding-bottom:1.4mm; min-height:6mm }
+.pie{ position:absolute; left:0; right:0; bottom:22mm; font:500 10pt Inter; color:#3E4A5C }
 </style></head>
 <body>
-<div class="banda">
-  <svg viewBox="0 0 210 96" preserveAspectRatio="none" aria-hidden="true">
-    <g stroke="#1B3A63" stroke-width=".35" fill="none">
-      <path d="M120 82 L150 60 L182 72 L204 40 M150 60 L160 26 L196 14 M160 26 L130 10 M182 72 L210 88 M204 40 L210 34"/>
-    </g>
-    <g fill="#1565C0"><circle cx="150" cy="60" r="1.6"/><circle cx="182" cy="72" r="1.6"/><circle cx="204" cy="40" r="1.6"/><circle cx="160" cy="26" r="1.6"/><circle cx="196" cy="14" r="1.6"/><circle cx="130" cy="10" r="1.6"/><circle cx="120" cy="82" r="1.6"/></g>
-    <rect x="0" y="93.6" width="210" height="2.4" fill="#0EA5E9"/>
-  </svg>
-  <div class="logo"><img src="logo-uteq-opaco.png" alt="Logotipo de la UTEQ"></div>
-  <div class="inst"><b>Universidad Tecnológica de Querétaro</b><span>UTEQ · Universidad Líder</span></div>
-  <div class="campo-asig"><i>Asignatura:</i><span class="raya"></span></div>
+<div class="marco"></div>
+<div class="logo"><img src="logo-uteq-opaco.png" alt="Logotipo de la Universidad Tecnológica de Querétaro"></div>
+<div class="inst">
+  <b>Universidad Tecnológica de Querétaro</b>
+  <div class="lin">Carrera: <i>&nbsp;</i></div>
+  <div class="lin">Asignatura: <i>&nbsp;</i></div>
 </div>
-<div class="linea-az"></div>
 <div class="titulo">
-  <small>Memoria técnica</small>
+  <small>Evaluación de la primera unidad</small>
   <h1>Memoria Técnica de Diseño e Implementación de una Red LAN</h1>
-  <p>Propuesta de red de área local para Distribuidora Técnica del Bajío, S. A. de C. V. (empresa ficticia): arquitectura, cableado estructurado, direccionamiento, VLAN, configuración de equipos y confiabilidad.</p>
+  <p>Caso de estudio: Distribuidora Técnica del Bajío, S. A. de C. V. (empresa ficticia)</p>
 </div>
 <div class="datos">
-  <div class="dato"><small>Estudiante</small><span class="v vacio">Escribir nombre completo</span></div>
-  <div class="dato"><small>Docente</small><span class="v vacio">Escribir nombre del docente</span></div>
-  <div class="dato"><small>Unidad de evaluación</small><span class="v">Primera unidad</span></div>
-  <div class="dato"><small>Fecha de entrega</small><span class="v vacio">dd / mm / aaaa</span></div>
-  <div class="dato"><small>Grupo / matrícula</small><span class="v vacio">Escribir grupo y matrícula</span></div>
-  <div class="dato"><small>Carrera</small><span class="v vacio">Escribir carrera</span></div>
+  <div class="fila"><span>Estudiante:</span><b></b></div>
+  <div class="fila"><span>Matrícula:</span><b></b></div>
+  <div class="fila"><span>Grupo:</span><b></b></div>
+  <div class="fila"><span>Docente:</span><b></b></div>
+  <div class="fila"><span>Unidad:</span><b>Primera unidad</b></div>
+  <div class="fila"><span>Fecha de entrega:</span><b></b></div>
 </div>
-<div class="pie"><span>Querétaro, Qro.</span><span>Evaluación de la primera unidad</span></div>
+<div class="pie">Santiago de Querétaro, Qro.</div>
 </body></html>

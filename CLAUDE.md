@@ -233,7 +233,11 @@ básicas y variadas. **En la portada de CUALQUIER PDF va el logo de la UTEQ** (U
 de Querétaro: el águila azul con «Universidad Líder»; OJO, la UTEQ verde de «Quevedo» es otra escuela,
 de Ecuador). De dónde se baja, porque la red de aquí sólo alcanza GitHub:
 `raw.githubusercontent.com/Jonathancraxker/ecoparking_web/main/src/assets/images/Logo_uteq.png`
-(225 px; no hay uno más grande a la mano). **Al terminar cada tarea se apunta en el documento de
+(225 px; no hay uno más grande a la mano). **La portada va en formato institucional** (Carlos, 14 nov): fondo blanco, logo de
+la UTEQ arriba y centrado, nombre de la universidad, carrera/asignatura, título al centro y el bloque de datos (alumna, docente,
+grupo, fecha, lugar); nada de bandas de color ni portadas «de diseño». **Si la tarea no pide un formato, va en APA 7** (página,
+márgenes de 2.54 cm, Times New Roman 12 o Calibri 11, interlineado doble, citas y referencias APA); si el encargo pide otro
+formato, manda el encargo. **Al terminar cada tarea se apunta en el documento de
 recapitulación** (Claude Docs «Tareas de Lorena · recapitulación»), por materia y número de actividad.
 El nombre de la alumna y sus datos NO van en este repo: es público.
 
