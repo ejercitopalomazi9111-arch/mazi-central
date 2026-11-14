@@ -574,6 +574,31 @@ for(const ev of ['gesturestart', 'gesturechange']) document.addEventListener(ev,
   .tarjeta .reves b{ display:block; font:900 24px/1.2 Titulo; margin-bottom:10px }
   .tarjeta small{ position:absolute; bottom:16px; font-size:12px; color:#ffffffa0; font-family:Texto; font-weight:700 }
 
+  /* diagramas (diagrama.js) */
+  .capa.diagrama .cuerpo{ text-align:center }
+  .dg-titulo{ font:800 24px/1.15 Titulo; margin:4px 0 12px }
+  .dg-espera,.dg-pista{ color:var(--suave); margin:12px 0 }
+  .dg{ width:100%; max-width:440px; height:auto; display:block; margin:8px auto 0; overflow:visible }
+  .dg-rama{ stroke:#ffffff2e; stroke-width:2; pointer-events:none }
+  .dg-flecha, .dg text{ pointer-events:none }
+  .dg-flecha{ stroke:#C77DFF; stroke-width:2.5; fill:none }
+  .dg-n{ cursor:pointer }
+  .dg-n rect{ fill:#2A1640; stroke:var(--c); stroke-width:2 }
+  .dg-n text{ fill:#F1ECF4; font:800 14px Texto, sans-serif }
+  .dg-centro rect{ fill:#AC27FF; stroke:#C77DFF } .dg-centro{ cursor:default }
+  .dg-n.dg-elegida rect{ fill:#4A2470; stroke-width:3.5 }
+  .dg-n.dg-vacia rect{ fill:#170A26; stroke-dasharray:6 5 } .dg-n.dg-vacia text{ fill:#C77DFF; font-size:22px }
+  .dg-n.dg-puesta rect{ fill:#1E4B3A; stroke:#3FCB8A }
+  .dg-n.dg-mal rect{ fill:#5A1726; stroke:#F0566E }
+  .dg-modo{ display:inline-flex; background:var(--sup); border:1px solid var(--borde); border-radius:999px; padding:3px; margin-bottom:4px }
+  .dg-modo button{ border:0; background:none; padding:8px 18px; border-radius:999px; min-height:40px; color:var(--suave); font-weight:800 }
+  .dg-modo button[aria-pressed="true"]{ background:var(--morado, #AC27FF); color:#fff }
+  .dg-ficha{ text-align:left; background:var(--sup); border:1px solid var(--borde); border-radius:18px; padding:14px 16px; margin-top:14px }
+  .dg-ficha b{ font:800 18px Titulo; display:block; margin-bottom:4px }
+  .dg-ficha p{ margin:0 }
+  .dg-opciones{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center }
+  .chip-op{ border:1px solid var(--borde); background:var(--sup); border-radius:999px; padding:8px 14px; min-height:44px; font-weight:800 }
+  .chip-op[aria-pressed="true"]{ background:#AC27FF; color:#fff; border-color:#C77DFF }
   /* modelos 3D (modelos/visor.html dentro, sin barra: el visor trae su propia X) */
   .capa.modelo3d{ padding:0 }
   .capa.modelo3d iframe{ position:absolute; inset:var(--muelle, 0px) 0 0 0; width:100%; height:calc(100% - var(--muelle, 0px)); border:0; background:#170A26 }

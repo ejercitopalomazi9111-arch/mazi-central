@@ -21,6 +21,7 @@ import { llave, ponerLlave, llamar, SERVIDOR, SALA } from '../presentaciones/ia.
 import { CURSOS, MATERIAL, HECHOS, planDeCurso } from './academia.js';
 import { IDIOMAS, planDeIdioma } from './idiomas.js';
 import { MODELOS } from './modelos/modelos.js';
+import { SISTEMA_DIAGRAMA, normalizarDiagrama, diagramaBasico, svgDiagrama, elegirOcultos } from './diagrama.js';
 import { crearVoz, todas as todasLasVoces, VOZ_DE_FABRICA, despertar } from '../sala/voces.js';
 import { alMuelle, muelleArriba } from './muelle.js';
 import { crearMascota, PERSONAJES, NOMBRE_PERSONAJE, configurarVestido, refrescarVestidos } from './mascota.js';
@@ -926,7 +927,7 @@ async function abrirLeccion(p, n){
         <div class="aro-dib">${dibujoDe(t.icono, k)}</div>
         ${t.titulo ? `<h2>${esc(t.titulo)}</h2>` : ''}
         <p class="txt-hist">${p.idioma && t.tipo === 'idea' ? conVoz(t.texto) : negritas(t.texto)}</p>
-        ${ultima ? `<div class="acciones-mini"><button data-gusta="1" aria-label="Me sirvió" aria-pressed="false">${ico('thumbs-up')}</button><button data-gusta="0" aria-label="No me sirvió" aria-pressed="false">${ico('thumbs-down')}</button><button data-copiar aria-label="Copiar la lección">${ico('copy')}</button><button data-pizarron aria-label="Que me lo expliquen en el pizarrón">${ico('presentation')}</button>${modeloDe(l.titulo + ' ' + n.titulo + ' ' + tarjetas.map((x) => x.texto).join(' ')) ? `<button data-modelo aria-label="Verlo en 3D">${ico('rotate-3d')}</button>` : ''}</div>` : ''}
+        ${ultima ? `<div class="acciones-mini"><button data-gusta="1" aria-label="Me sirvió" aria-pressed="false">${ico('thumbs-up')}</button><button data-gusta="0" aria-label="No me sirvió" aria-pressed="false">${ico('thumbs-down')}</button><button data-copiar aria-label="Copiar la lección">${ico('copy')}</button><button data-pizarron aria-label="Que me lo expliquen en el pizarrón">${ico('presentation')}</button><button data-diagrama aria-label="Verlo en diagrama">${ico('network')}</button>${modeloDe(l.titulo + ' ' + n.titulo + ' ' + tarjetas.map((x) => x.texto).join(' ')) ? `<button data-modelo aria-label="Verlo en 3D">${ico('rotate-3d')}</button>` : ''}</div>` : ''}
       </article>
       <button class="zona-atras" data-atras aria-label="Idea anterior" ${k ? '' : 'hidden'}></button>
       <div class="abajo">${ultima ? '<button class="bt blanco ancho" data-empezar>Empezar cuestionario</button>' : '<button class="bt blanco ancho" data-sig>Siguiente</button>'}</div>`;
@@ -939,6 +940,7 @@ async function abrirLeccion(p, n){
     const g = e.target.closest('[data-gusta]'); if(g){ $$('[data-gusta]', c).forEach((x) => x.setAttribute('aria-pressed', x === g)); const pp = plan(); pp.progreso[n.id] = { ...(pp.progreso[n.id] || {}), gusto: +g.dataset.gusta }; guardarPlan(pp); brindis('Gracias, eso nos ayuda a explicar mejor', '', 'sparkles'); return; }
     if(e.target.closest('[data-copiar]')){ try{ await navigator.clipboard.writeText([l.titulo, ...tarjetas.map((x) => (x.titulo ? x.titulo + ': ' : '') + x.texto.replace(/\*\*/g, ''))].filter(Boolean).join('\n\n')); brindis('Copiada', '', 'copy'); }catch{ brindis('No se pudo copiar', 'vino', 'x'); } return; }
     if(e.target.closest('[data-pizarron]')){ abrirPizarra(plan(), { id: null, titulo: n.titulo, tema: n.tema }); return; }
+    if(e.target.closest('[data-diagrama]')){ abrirDiagrama(p, n, cont, () => abrirLeccion(p, n)); return; }
     if(e.target.closest('[data-modelo]')){ const m = modeloDe(l.titulo + ' ' + n.titulo + ' ' + tarjetas.map((x) => x.texto).join(' ')); if(m) abrirModelo(m.id, () => abrirLeccion(p, n)); return; }
     if(e.target.closest('[data-empezar]')) cuestionario(plan(), n, cont.preguntas, { leccion: true });
   });
@@ -1434,6 +1436,61 @@ function abrirIdiomas(){
     const id = 'p-' + k.id;
     if(!planes[id]){ guardarPlan(planDeIdioma(k, armarCamino)); brindis(`Empezaste «${k.titulo}»`, 'vino', 'languages'); }
     actualId = id; guardarLocal(); cerrarCapa(); vista = 'plan'; pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 });
+  });
+}
+
+/* ══ DIAGRAMAS INTELIGENTES (diagrama.js) ═══════════════════════════════
+   Carlos, 14 nov. El tema se vuelve un mapa, un ciclo o un proceso que se toca; en «Completa» se borran cajas y se
+   regresan a su lugar (5 XP). La IA elige la forma; sin red sale un mapa con las ideas de la lección. Se guarda en el plan. */
+async function diagramaDe(p, n, cont){
+  if(cont.diagrama) return cont.diagrama;
+  const l = cont.leccion || {};
+  let d = null;
+  if(navigator.onLine !== false){
+    try{
+      d = await ia({ sistema: SISTEMA_DIAGRAMA, tope: 2500, revisar: normalizarDiagrama,
+        texto: `Materia: ${p.materia}\nTema: ${n.titulo}\nLo que dice la lección: ${(l.ideas || []).map((x) => String(x.texto || '').replace(/\*\*/g, '')).join(' ')}` });
+    }catch{ d = null; }
+  }
+  if(!d){ try{ d = diagramaBasico(l, n.titulo); }catch{ return null; } }
+  cont.diagrama = d; if(planes[p.id]) guardarPlan(planes[p.id]);
+  return d;
+}
+async function abrirDiagrama(p, n, cont, alSalir){
+  const c = capa('diagrama');
+  const salir = () => { if(alSalir) alSalir(); else { cerrarCapa(); pintar(); } };
+  c.innerHTML = `<div class="arriba"><button class="bt redondo fantasma" data-cerrar aria-label="Cerrar">${ico('x')}</button><div style="flex:1"></div></div><div class="cuerpo"><p class="dg-espera">Armando el diagrama…</p></div>`;
+  c.addEventListener('click', (e) => { if(e.target.closest('[data-cerrar]')) salir(); });
+  const d = await diagramaDe(p, n, cont);
+  if(!c.isConnected) return;
+  if(!d){ $('.cuerpo', c).innerHTML = '<p class="dg-espera">No se pudo armar el diagrama de este tema.</p>'; return; }
+  let modo = 'ver', elegido = null, ocultos = new Set(), puestos = new Set(), mal = null, toca = null;
+  const NOMBRE = { mapa: 'Mapa', ciclo: 'Ciclo', proceso: 'Proceso' };
+  const pinta = () => {
+    const x = elegido && d.nodos.find((y) => y.id === elegido);
+    const faltan = [...ocultos].filter((id) => !puestos.has(id));
+    let abajo = '';
+    if(modo === 'ver') abajo = x ? `<div class="dg-ficha entra"><b>${esc(x.texto)}</b><p>${esc(x.detalle || 'Toca otra caja.')}</p></div>` : '<p class="dg-pista">Toca una caja.</p>';
+    else if(!faltan.length) abajo = `<div class="dg-ficha entra"><b>¡Completo!</b><p>Regresaste todas las cajas.</p></div>`;
+    else abajo = `<p class="dg-pista">${toca ? 'Ahora toca su lugar.' : 'Elige una palabra.'}</p><div class="dg-opciones">${faltan.slice().sort().map((id) => { const y = d.nodos.find((z) => z.id === id); return `<button class="chip-op" data-op="${id}" aria-pressed="${toca === id}">${esc(y.texto)}</button>`; }).join('')}</div>`;
+    $('.cuerpo', c).innerHTML = `<p class="tema-hist">${esc(NOMBRE[d.tipo])}</p><h2 class="dg-titulo">${esc(d.titulo)}</h2>
+      <div class="dg-modo" role="group" aria-label="Modo"><button data-modo="ver" aria-pressed="${modo === 'ver'}">Ver</button><button data-modo="completa" aria-pressed="${modo === 'completa'}">Completa</button></div>
+      ${svgDiagrama(d, { ocultos: modo === 'completa' ? ocultos : new Set(), elegido, puestos, mal })}<div class="dg-abajo">${abajo}</div>`;
+  };
+  pinta();
+  c.addEventListener('click', (e) => {
+    const m = e.target.closest('[data-modo]');
+    if(m){ modo = m.dataset.modo; elegido = null; toca = null; mal = null; puestos = new Set(); ocultos = modo === 'completa' ? elegirOcultos(d) : new Set(); tono(SON.toque); pinta(); return; }
+    const op = e.target.closest('[data-op]'); if(op){ toca = op.dataset.op; tono(SON.toque); pinta(); return; }
+    const nd = e.target.closest('[data-n]'); if(!nd) return;
+    const id = nd.dataset.n;
+    if(modo === 'ver'){ elegido = elegido === id ? null : id; tono(SON.toque); pinta(); return; }
+    if(!ocultos.has(id) || puestos.has(id) || !toca) return;
+    if(id === toca){
+      puestos.add(id); toca = null; mal = null; tono(SON.bien || SON.toque);
+      if([...ocultos].every((k) => puestos.has(k))){ sumarXP(5, 'diagrama'); brindis('Diagrama completo · +5 XP', 'oro', 'zap'); tono(SON.moneda); }
+    } else { mal = id; tono(SON.mal || SON.toque); setTimeout(() => { mal = null; if(c.isConnected) pinta(); }, 700); }
+    pinta();
   });
 }
 
@@ -2025,4 +2082,4 @@ $('#pCubos').addEventListener('click', () => companero.abrir());
     history.back();
   });
 })();
-window.__estudio = { prueba: { brindis, dice, comboVFX, reaccion, nodo: abrirNodo }, hoja, cerrarHoja, ir: (v) => { vista = v; pintar(); }, yo: () => yo, vestidor: () => vestidor, avisos: () => avisos, companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };
+window.__estudio = { prueba: { brindis, dice, comboVFX, reaccion, nodo: abrirNodo, diagrama: abrirDiagrama }, hoja, cerrarHoja, ir: (v) => { vista = v; pintar(); }, yo: () => yo, vestidor: () => vestidor, avisos: () => avisos, companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };

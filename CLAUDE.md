@@ -614,6 +614,8 @@ dependemos.
 
    | un modelo GLB que carga sin errores y cuyas piezas ya se pueden tocar se ve en pantalla | el atlas BodyParts3D viene en **milímetros** (1,700 de alto) y la cámara cortaba a 100: todo quedaba fuera del alcance, sin un solo error, y además acostado (su «arriba» es +z) | los tres modelos de CARYMO salieron en negro con las fichas funcionando. El visor escala cada modelo a 2 unidades y lo endereza (`carymo/modelos/visor.html`) |
 
+   | una clase corta para el estado de una pieza nueva (`.oculto`, `.mal`, `.puesto`) es sólo mía | `.oculto` ya era la de lectores de pantalla de CARYMO (`position:absolute` y recortada): las cajas vacías del diagrama se pintaban y **no se podían tocar** | lo cazó la prueba que toca los huecos de «Completa» («svg intercepts pointer events»). Las clases de estado van con el prefijo del componente (`dg-vacia`, `dg-mal`), como ya decía el renglón de los `@keyframes` |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---
