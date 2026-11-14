@@ -648,6 +648,34 @@
   .insignia.ins-artista{ background:#F5E04A1F; color:#F5E04A; border-color:#F5E04A55 }
   .insignia.ins-fundador{ background:#E8B54A22; color:var(--oro); border-color:#E8B54A66 }
   .yo-quien .insignias{ margin:2px 0 6px }
+
+  /* ── el perfil de otra persona (perfil-otro.js) ── */
+  .fila-rank[role="button"]{ cursor:pointer; transition:transform .15s }
+  .fila-rank[role="button"]:active{ transform:scale(.98) }
+  .po-carga{ display:flex; align-items:center; gap:8px; color:var(--suave); padding:20px 0 }
+  .po-cab{ display:flex; align-items:center; gap:14px; margin-bottom:14px }
+  .po-av{ width:72px; height:72px; flex:none; border-radius:50%; display:grid; place-items:center; overflow:hidden; background:var(--sup-2); font:800 28px Titulo, sans-serif; color:var(--hueso) }
+  .po-av svg{ width:100%; height:100% }
+  .po-quien{ min-width:0 }
+  .po-quien h4{ margin:0 0 4px; font:800 22px/1.15 Titulo, sans-serif }
+  .po-datos{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; margin-bottom:10px }
+  .po-datos > div{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:10px 4px; border-radius:14px; background:var(--sup); text-align:center; min-width:0 }
+  .po-datos b{ font:800 20px/1 Titulo, sans-serif }
+  .po-datos small{ font-size:11px; color:var(--suave); line-height:1.2 }
+  .po-semana{ display:flex; align-items:center; gap:6px; margin:0 0 6px; color:var(--claro-txt); font-size:14px }
+  .po-semana .i{ width:16px; height:16px }
+  .hoja h5{ display:flex; align-items:center; gap:6px; margin:16px 0 8px; font:800 15px Titulo, sans-serif }
+  .hoja h5 .i{ width:18px; height:18px; color:var(--claro-txt) }
+  .po-materias{ display:flex; flex-wrap:wrap; gap:6px }
+  .po-materias .pastilla small{ margin-left:6px; color:var(--suave) }
+  .po-cursos{ list-style:none; margin:0; padding:0; display:grid; gap:6px }
+  .po-cursos li{ display:flex; justify-content:space-between; gap:10px; padding:9px 12px; border-radius:12px; background:var(--sup); min-width:0 }
+  .po-cursos small{ color:var(--suave); flex:none }
+  .po-nada{ color:var(--tenue); margin:4px 0; font-size:14px }
+  .po-mascotas{ display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:8px }
+  .po-masc{ display:flex; flex-direction:column; align-items:center; text-align:center; padding:8px 4px; border-radius:16px; background:var(--sup); min-width:0 }
+  .po-dib{ width:78px; height:84px; display:grid; place-items:center }
+  .po-masc small{ color:var(--suave); font-size:11px }
   .fila-rank .nom small{ color:var(--suave); font-weight:600 }
   .fila-rank:has(.mini-liga){ grid-template-columns:minmax(30px, max-content) 40px minmax(0, 1fr) auto auto }
   .mini-liga{ display:grid; place-items:center }
