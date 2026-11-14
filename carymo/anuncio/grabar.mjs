@@ -174,6 +174,24 @@ if(TOMA === 'pizarron'){
     await tocar(pg, '[data-tab="color"]', K); await espera(0.5); await tocar(pg, '#vestirG [data-prenda="dorado"]', K); await espera(1.0);
     await tocar(pg, '[data-vestir-listo]', K); await espera(1.8); marca('fin');
   }
+  /* los juegos de mesa (14 nov): una clase de táctica jugando y una partida de Conecta 4 contra la máquina */
+  if(TOMA === 'juegos'){
+    await espera(1.0); marca('inicio');
+    await tocar(pg, 'nav [data-ir="yo"]', K); await espera(0.9);
+    await tocar(pg, '#vYo [data-yo="juegos"]', K); await pg.waitForSelector('.jg-juego'); await espera(1.4); marca('menu');
+    await tocar(pg, '.jg-juego[data-juego="ajedrez"]', K); await espera(0.9);
+    await tocar(pg, '.hoja [data-clase="aj-tactica"]', K); await pg.waitForSelector('.jg-tab .jg-c'); await espera(2.4); marca('clase');
+    await tocar(pg, '.jg-c[data-i="27"]', K); await espera(0.8);           // d5: el caballo
+    await tocar(pg, '.jg-c[data-i="12"]', K); await espera(0.4); marca('horquilla');   // e7: jaque y ataca la torre
+    await espera(2.2);
+    await tocar(pg, '[data-salir]', K); await pg.waitForSelector('.jg-juego'); await espera(0.6);
+    await tocar(pg, '.jg-juego[data-juego="conecta4"]', K); await espera(0.7); await tocar(pg, '.hoja [data-nivel="medio"]', K); await pg.waitForSelector('.jg-c4'); await espera(0.9); marca('c4');
+    for(const col of [3, 2, 4, 3]){
+      await pg.waitForFunction(() => /Te toca/.test(document.querySelector('.jg-estado')?.textContent || ''), null, { timeout: 30000 * K });
+      await tocar(pg, `.jg-c4 [data-col="${col}"]`, K); await espera(1.4);
+    }
+    await espera(1.2); marca('fin');
+  }
   if(TOMA === 'ligas'){
     await espera(1.0); marca('camino');
     await tocar(pg, 'nav [data-ir="ranking"]', K); await espera(1.8); marca('tabla');

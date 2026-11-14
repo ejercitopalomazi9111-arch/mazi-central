@@ -1,0 +1,18 @@
+{
+  "titulo": "CARYMO · Esto es CARYMO (publicidad)",
+  "voces": { "Narrador": "google:Charon" },
+  "lento": { "Narrador": 1.02 },
+  "voz_de_la_casa": "Voz de Google por La Sala porque Chris (ElevenLabs) no tiene saldo; cuando haya, el narrador va con Chris y se vuelve a armar.",
+  "lineas": [
+    { "id": "01", "voz": "Narrador", "txt": "Esto es *CARYMO.*", "dice": "Esto es Carimo." },
+    { "id": "02", "voz": "Narrador", "txt": "Tu nueva forma de *estudiar.*" },
+    { "id": "03", "voz": "Narrador", "txt": "Dile qué examen tienes y te arma el plan, *tema por tema.*" },
+    { "id": "04", "voz": "Narrador", "txt": "Te lo explica en un pizarrón *que se dibuja solo.*" },
+    { "id": "05", "voz": "Narrador", "txt": "Practicas como juego: *combos, rachas y premios.*" },
+    { "id": "06", "voz": "Narrador", "txt": "Aprendes estrategia jugando: *ajedrez, damas, dominó y más.*" },
+    { "id": "07", "voz": "Narrador", "txt": "Cada semana compites en tu liga, *con tus amigos.*" },
+    { "id": "08", "voz": "Narrador", "txt": "Y tu mascota *crece contigo.*" },
+    { "id": "09", "voz": "Narrador", "txt": "Funciona *hasta sin internet.*" },
+    { "id": "10", "voz": "Narrador", "txt": "CARYMO. *Pruébalo ya.*", "dice": "Carimo. Pruébalo ya." }
+  ]
+}
