@@ -165,6 +165,22 @@ for (const [w, h] of [[320, 640], [1440, 900]]) {
     v('en computadora el pedido está a un lado, sin botón flotante', /Texano/.test(await p.textContent('#ladoCuerpo')) && !(await p.isVisible('#flota'))); }
   await p.close();
 }
+console.log('§8 · la hoja del pedido no se aplasta (lo reportó el cliente en iPhone, 14 nov)');
+for (const [w, h, nom] of [[390, 844, 'iPhone'], [320, 568, 'iPhone SE'], [390, 380, 'con el teclado abierto']]) {
+  const p = await pagina(2, w, h); await p.evaluate(() => localStorage.clear()); await p.reload({ waitUntil: 'networkidle' });
+  for (const b of (await p.$$('.plato .mas')).slice(0, 9)) { await b.scrollIntoViewIfNeeded(); await b.click(); await p.waitForTimeout(150); if (await p.isVisible('#hojaPlato')) { await p.click('#hplAgregar'); await p.waitForTimeout(150); } }
+  await p.evaluate(() => scrollTo(0, document.documentElement.scrollHeight)); await p.waitForTimeout(400);
+  const f = await p.evaluate(() => { const r = document.querySelector('#flota').getBoundingClientRect(); return r.height >= 56 && r.bottom <= innerHeight; });
+  v(`${nom}: hasta abajo de la página, la barra «Ver pedido» entera y en pantalla`, f);
+  await p.click('#flota'); await p.waitForTimeout(400);
+  await p.$eval('#hojaPedido .hoja__cuerpo', c => { c.scrollTop = c.scrollHeight; }); await p.waitForTimeout(200);
+  const m = await p.evaluate(() => { const d = document.querySelector('#hojaPedido'), c = d.querySelector('.hoja__cuerpo'), b = d.querySelector('#enviar').getBoundingClientRect(), r = d.getBoundingClientRect();
+    return { boton: b.height >= 48 && b.bottom <= innerHeight, dentro: r.top >= 0 && r.bottom <= innerHeight + 1, baja: c.scrollHeight > c.clientHeight && c.clientHeight > 100, fija: getComputedStyle(document.documentElement).overflow === 'hidden' }; });
+  v(`${nom}: el botón de WhatsApp completo, sin aplastarse`, m.boton);
+  v(`${nom}: la hoja cabe en la pantalla y lo de en medio baja con el dedo`, m.dentro && m.baja);
+  v(`${nom}: la página de atrás no se mueve con la hoja abierta`, m.fija);
+  await p.close();
+}
 console.log(ok, 'bien ·', mal, 'mal');
 await br.close();
 process.exit(mal ? 1 : 0);
