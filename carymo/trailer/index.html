@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>CARYMO · Tráiler</title>
+<!-- EL TRÁILER DE CARYMO · ~65 s · 9:16. Carlos, 14 nov: «un tráiler mamoncísimo… imágenes de la vida real… alguien
+     levantando su teléfono y en el teléfono se abre un efecto de luz hacia el cielo… tu racha ha aumentado o tu
+     mascota está eclosionando… como para una película… todo empezó con un chavito, que su novia quería estudiar, y él
+     le construyó una aplicación… con amor inspirado por Mónica… que no sepan qué estás viendo hasta el final: Grupo
+     Mazi presenta CARYMO». Guion y por qué está armado así: GUION.md.
+     Pietaje real de Mixkit (preparar.py, licencia Mixkit: uso comercial libre). Música: «Heroic Age», Kevin MacLeod
+     (incompetech.com), CC BY 4.0. Voz: Google (Charon) por La Sala; con saldo se rehace con Chris.
+     node herramientas/video/armar.mjs carymo/trailer/index.html marca/anuncios/salida/carymo-trailer.mp4 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;500;700;800;900&family=Space+Grotesk:wght@500;700&family=Cormorant+Garamond:ital,wght@1,500&display=block">
+<link rel="stylesheet" href="../../marca/anuncios/comun.css">
+<script>window.listo = new Promise(r => window._listo = r);</script>
+<script type="importmap">{ "imports": { "three": "../../marca/anuncios/vendor/three.module.min.js" } }</script>
+<style>
+body{ background:#000 }
+#c{ z-index:1 }
+#ui{ z-index:4 }
+.barra{ position:absolute; left:0; right:0; height:150px; background:#000; z-index:8 }
+#arriba{ top:0 } #abajo{ bottom:0 }
+.tarjeta{ position:absolute; left:60px; right:60px; top:880px; text-align:center; color:#F6F0FA; opacity:0; z-index:6;
+  font:800 76px/1.08 "Inter Tight", sans-serif; text-transform:uppercase; letter-spacing:.3em; text-shadow:0 0 40px #000, 0 0 18px #AC27FF55 }
+.tarjeta .chica{ display:block; font-size:46px; letter-spacing:.26em; font-weight:500; margin-bottom:18px; color:#E2D6EE }
+.tarjeta .v{ color:#D9A6FF }
+.chip{ position:absolute; display:flex; align-items:center; gap:16px; padding:22px 34px; border-radius:999px; background:#170A26e6; border:2px solid #C77DFF;
+  box-shadow:0 0 50px #AC27FFaa, inset 0 0 22px #AC27FF55; color:#fff; font:800 46px/1 "Inter Tight", sans-serif; opacity:0; z-index:6; white-space:nowrap; transform-origin:50% 50% }
+.chip svg{ width:48px; height:48px; stroke:#FFB13B; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round }
+.chip.oro{ border-color:#FFD166; box-shadow:0 0 60px #FFB13Baa, inset 0 0 22px #FFB13B44 }
+.reloj{ position:absolute; left:90px; top:200px; font:500 40px/1 ui-monospace, Menlo, monospace; color:#E9E0F2; letter-spacing:.08em; opacity:0; z-index:6; text-shadow:0 0 18px #000 }
+.reloj small{ display:block; margin-top:12px; font-size:28px; color:#C77DFF }
+.burbuja{ position:absolute; max-width:640px; padding:24px 32px; border-radius:36px; font:600 42px/1.25 "Inter Tight", sans-serif; opacity:0; z-index:6 }
+.burbuja.izq{ left:80px; background:#2A2433ee; color:#fff; border-bottom-left-radius:10px }
+.burbuja.der{ right:80px; background:#8E2FD6; color:#fff; border-bottom-right-radius:10px }
+#huevo{ position:absolute; left:50%; top:960px; width:360px; height:456px; margin-left:-260px; opacity:0; z-index:6 }
+#presenta{ position:absolute; left:0; right:0; top:760px; text-align:center; opacity:0; z-index:6 }
+#presenta img{ width:300px; height:auto; display:block; margin:0 auto 34px; filter:drop-shadow(0 0 30px #AC27FF) }
+#presenta div{ font:700 46px/1 "Inter Tight", sans-serif; letter-spacing:.5em; color:#F1E8F8; padding-left:.5em }
+#logo{ position:absolute; left:50%; top:600px; width:640px; margin-left:-320px; opacity:0; z-index:6; filter:drop-shadow(0 0 60px #AC27FFcc) }
+#lema{ position:absolute; left:0; right:0; top:1300px; text-align:center; opacity:0; z-index:6; font:800 62px/1 "Inter Tight", sans-serif; letter-spacing:.24em; color:#fff; padding-left:.24em }
+#dedica{ position:absolute; left:0; right:0; top:1420px; text-align:center; opacity:0; z-index:6; font:italic 500 56px/1.2 "Cormorant Garamond", serif; color:#F3D9FF; text-shadow:0 0 24px #AC27FF }
+#cta{ position:absolute; left:0; right:0; top:1540px; text-align:center; opacity:0; z-index:6 }
+#cta span{ display:inline-block; padding:22px 40px; border-radius:999px; border:2px solid #C77DFF; font:700 40px/1 "Inter Tight", sans-serif; color:#fff; letter-spacing:.06em; background:#170A26cc }
+#destello{ position:absolute; inset:0; background:#fff; opacity:0; z-index:7; pointer-events:none; mix-blend-mode:screen }
+#vineta{ position:absolute; inset:0; z-index:5; pointer-events:none; background:radial-gradient(120% 75% at 50% 48%, transparent 55%, #000c 100%) }
+</style>
+</head>
+<body>
+<canvas id="c" class="capa" width="1080" height="1920"></canvas>
+<div id="ui" class="capa">
+  <div id="vineta"></div>
+  <div class="tarjeta" data-t="4.3,7.4"><span class="chica">Toda historia grande</span>empieza con algo pequeño</div>
+  <div class="tarjeta" data-t="8.6,10.8">Ella tenía<br>un examen</div>
+  <div class="tarjeta" data-t="11.4,13.7">Y no le alcanzaba<br>la noche</div>
+  <div class="tarjeta" data-t="14.4,16.5">Él no sabía<br>enseñar</div>
+  <div class="tarjeta" data-t="16.8,19.2"><span class="v">Pero sabía<br>construir</span></div>
+  <div class="tarjeta" data-t="19.8,21.5">Noches<br>sin dormir</div>
+  <div class="tarjeta" data-t="21.8,24.5">Cientos de<br>intentos</div>
+  <div class="tarjeta" data-t="25.5,28.3"><span class="chica">Hasta que estudiar</span><span class="v">se sintió como jugar</span></div>
+  <div class="tarjeta" data-t="39.0,42.0">Lo hizo para<br>una persona</div>
+  <div class="tarjeta" data-t="42.6,45.3"><span class="v">Ahora es<br>para todos</span></div>
+  <div class="chip" id="racha"></div>
+  <div class="chip" id="xp" style="left:120px; top:420px"></div>
+  <div class="chip" id="combo" style="right:110px; top:600px"></div>
+  <div class="chip oro" id="racha30" style="left:150px; top:1300px"></div>
+  <div class="chip" id="nacio" style="left:50%; top:900px"></div>
+  <div class="reloj" id="reloj"></div>
+  <div class="burbuja izq" id="b1" style="top:1180px">¿Sigues despierto?</div>
+  <div class="burbuja der" id="b2" style="top:1330px">Ya casi. Es para ti.</div>
+  <svg id="huevo" viewBox="0 0 300 380"><defs><radialGradient id="hg" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".55" stop-color="#E9D4FF"/><stop offset="1" stop-color="#9B5BD6"/></radialGradient></defs>
+    <g id="cascaron"><path d="M150 20 C230 20 280 160 280 240 C280 320 220 370 150 370 C80 370 20 320 20 240 C20 160 70 20 150 20 Z" fill="url(#hg)"/>
+    <path id="grieta" d="M70 200 L110 180 L130 215 L160 185 L185 220 L215 190 L232 210" fill="none" stroke="#5B2A86" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="320" stroke-dashoffset="320"/>
+    <circle cx="100" cy="270" r="16" fill="#C77DFF" opacity=".5"/><circle cx="200" cy="120" r="12" fill="#C77DFF" opacity=".5"/></g></svg>
+  <div id="presenta"><img src="../../marca/paloma-2026/logo-icono.svg" alt=""><div>GRUPO MAZI PRESENTA</div></div>
+  <img id="logo" src="../marca/logo-1024.png" alt="">
+  <div id="lema">ESTUDIA COMO JUEGAS</div>
+  <div id="dedica">Con amor, inspirado por Mónica.</div>
+  <div id="cta"><span>Muy pronto · Sé alfa tester</span></div>
+  <div id="destello"></div>
+</div>
+<div class="barra" id="arriba"></div><div class="barra" id="abajo"></div>
+<div id="grano"></div>
+<script type="module">
+import { W, H, cl, tramo, suave, sale, entra, mezcla, vida, azar, guion, sonidosVoz, grano } from '../../marca/anuncios/motor.js';
+import { Pietaje, indice } from '../../marca/anuncios/pietaje.js';
+import { ICONOS } from '../iconos.js';
+const $ = (s) => document.querySelector(s);
+const ico = (n) => `<svg viewBox="0 0 24 24">${ICONOS[n] || ''}</svg>`;
+const G = await guion('.');
+const IDX = await indice('cuadros/');
+const P = Object.fromEntries(Object.entries(IDX).map(([k, n]) => [k, new Pietaje(`cuadros/${k}/`, n)]));
+
+/* ── el montaje: [toma, entra, sale, zoom de, zoom a, corrimiento x] ── */
+const TOMAS = [
+  ['gancho', 0, 3.7, 1.02, 1.16, 0], ['cielo', 3.7, 7.7, 1.18, 1.0, 0],
+  ['ella', 8.1, 10.9, 1.0, 1.08, -20], ['frustra', 10.9, 13.8, 1.1, 1.0, 20],
+  ['el', 14.0, 19.3, 1.0, 1.1, 0],
+  ['codigo', 19.3, 20.5, 1.15, 1.25, 0], ['cian', 20.5, 21.6, 1.2, 1.05, 30], ['ciudad', 21.6, 23.4, 1.0, 1.12, 0], ['cafe', 23.4, 24.6, 1.1, 1.2, 0],
+  ['ella_tel', 28.4, 34.2, 1.0, 1.1, 0], ['cama', 34.2, 38.5, 1.08, 1.0, -10],
+  ['via', 38.5, 42.2, 1.0, 1.15, 0], ['fuegos', 42.2, 45.4, 1.0, 1.1, 0], ['campus', 45.4, 48.0, 1.05, 1.2, 0],
+];
+const T = { rayo: 1.75, racha: 2.05, xp: 29.6, combo: 30.6, racha30: 31.8, huevo: 34.6, nace: 37.2, presenta: 48.4, logo: 52.7, lema: 55.5, dedica: 58.0, cta: 61.0 };
+const FIN = 65;
+const fx = (n) => `../../herramientas/video/efectos/${n}.wav`;
+window.VIDEO = { w: W, h: H, fps: 30, dur: FIN,
+  musica: { archivo: '/tmp/claude-0/musica/Heroic_Age.mp3', desde: 6, vol: .42, entrada: .4, fin: 3 },
+  sonidos: [...sonidosVoz(G, 1.1),
+    [fx('subida'), .6, .5], [fx('golpe'), T.rayo, .9], [fx('whoosh'), T.rayo + .1, .6], [fx('ding'), T.racha + .1, .35],
+    [fx('golpe'), 8.1, .7], [fx('golpe'), 14.0, .8], ...[19.3, 20.5, 21.6, 23.4].map((t) => [fx('whoosh'), t - .05, .4]),
+    [fx('latido'), 24.8, .7], [fx('latido'), 26.2, .6], [fx('golpe'), 28.4, .7],
+    [fx('toque'), T.xp, .4], [fx('toque'), T.combo, .4], [fx('ding'), T.racha30, .4], [fx('ding'), T.nace, .5], [fx('subida'), 35.8, .4],
+    [fx('golpe'), 38.5, .6], [fx('golpe'), 42.2, .7], [fx('subida'), 45.6, .6],
+    [fx('golpe'), T.presenta, 1], [fx('golpe'), T.logo, 1], [fx('whoosh'), T.logo - .1, .6], [fx('ding'), T.dedica, .3]] };
+
+await Promise.all(['800 64px "Inter Tight"', '500 42px "Inter Tight"', 'italic 500 56px "Cormorant Garamond"'].map((f) => document.fonts.load(f)));
+await Promise.all([...document.images].map((im) => im.decode().catch(() => {})));
+$('#racha').innerHTML = `${ico('flame')}RACHA DE 100 DÍAS`;
+$('#xp').innerHTML = `${ico('sparkles')}+15 XP`;
+$('#combo').innerHTML = `${ico('zap')}COMBO x5`;
+$('#racha30').innerHTML = `${ico('flame')}¡30 DÍAS SEGUIDOS!`;
+$('#nacio').innerHTML = `${ico('heart')}¡NACIÓ TU MASCOTA!`;
+
+const x = $('#c').getContext('2d'), gr = grano($('#grano'), .07);
+azar(5); const motas = Array.from({ length: 90 }, () => ({ x: azar(), y: azar(), v: .2 + azar() * .8, r: 1 + azar() * 3.5, f: azar() * 6 }));
+const tarjetas = [...document.querySelectorAll('.tarjeta')].map((el) => { const [a, b] = el.dataset.t.split(',').map(Number); return { el, a, b }; });
+const poner = (el, k, v) => { if(el.style[k] !== v) el.style[k] = v; };
+
+/* la columna de luz que sale del teléfono hacia el cielo */
+function rayo(cx, cy, u, ancho, alto, fuerza){
+  if(u <= 0) return;
+  x.save(); x.globalCompositeOperation = 'lighter';
+  const top = cy - alto * sale(Math.min(1, u * 1.6));
+  const g = x.createLinearGradient(0, cy, 0, top); g.addColorStop(0, `rgba(255,255,255,${.95 * fuerza})`); g.addColorStop(.25, `rgba(226,184,255,${.75 * fuerza})`); g.addColorStop(1, 'rgba(172,39,255,0)');
+  for(const [w, a] of [[ancho * 4.5, .18], [ancho * 2, .35], [ancho, 1]]){
+    x.globalAlpha = a; x.fillStyle = g; x.beginPath(); x.moveTo(cx - w * .25, cy); x.lineTo(cx - w, top); x.lineTo(cx + w, top); x.lineTo(cx + w * .25, cy); x.fill();
+  }
+  x.globalAlpha = 1;
+  const h = x.createRadialGradient(cx, cy, 0, cx, cy, 380 * fuerza); h.addColorStop(0, 'rgba(255,255,255,.95)'); h.addColorStop(.3, 'rgba(199,125,255,.5)'); h.addColorStop(1, 'rgba(172,39,255,0)');
+  x.fillStyle = h; x.fillRect(0, 0, W, H);
+  for(const m of motas){ const y = cy - ((u * m.v * 1400 + m.y * 900) % 1600), xx = cx + (m.x - .5) * ancho * 3 + Math.sin(u * 4 + m.f) * 30;
+    x.globalAlpha = .8 * fuerza * (1 - tramo(cy - y, 0, 1600)); x.fillStyle = '#F3E0FF'; x.beginPath(); x.arc(xx, y, m.r, 0, 7); x.fill(); }
+  x.restore();
+}
+
+window.pintar = async (t) => {
+  x.fillStyle = '#000'; x.fillRect(0, 0, W, H);
+  /* 1 · la toma que toca */
+  const tm = TOMAS.find(([, a, b]) => t >= a && t < b);
+  if(tm){ const [k, a, b, z0, z1, dx] = tm, u = tramo(t, a, b);
+    await P[k].en(t - a);
+    const entra_ = tramo(t, a, a + .25), sale_ = 1 - tramo(t, b - .2, b);
+    P[k].pintar(x, { zoom: mezcla(z0, z1, suave(u)), dx: dx * u, alfa: Math.min(entra_ < 1 && a > 0 ? .3 + .7 * entra_ : 1, sale_ < 1 ? .4 + .6 * sale_ : 1) }); }
+  /* 2 · el gancho: la pantalla se enciende y la luz sube al cielo */
+  if(t < 7.7){
+    const enc = tramo(t, 1.0, T.rayo), sube = tramo(t, T.rayo, 7.4);
+    if(t < 3.7){ x.save(); x.globalCompositeOperation = 'lighter'; const g = x.createRadialGradient(560, 1040, 0, 560, 1040, 520); g.addColorStop(0, `rgba(240,220,255,${.85 * enc})`); g.addColorStop(1, 'rgba(172,39,255,0)'); x.fillStyle = g; x.fillRect(0, 0, W, H); x.restore(); }
+    rayo(t < 3.7 ? 560 : 540, t < 3.7 ? 1040 : 1940, t < 3.7 ? sube * 2.2 : .6 + sube, t < 3.7 ? 70 : 140, t < 3.7 ? 1200 : 2100, t < 3.7 ? 1 : .8 * (1 - tramo(t, 6.6, 7.7)));
+  }
+  poner($('#destello'), 'opacity', String((.9 * (1 - tramo(t, T.rayo, T.rayo + .35)) * (t >= T.rayo ? 1 : 0) + .8 * (1 - tramo(t, T.logo, T.logo + .5)) * (t >= T.logo ? 1 : 0) + .5 * (1 - tramo(t, T.nace, T.nace + .4)) * (t >= T.nace ? 1 : 0)).toFixed(3)));
+  const ur = vida(t, T.racha, 3.75, .5, .25), uS = sale(tramo(t, T.racha, T.racha + .7));
+  poner($('#racha'), 'opacity', ur.toFixed(3));
+  poner($('#racha'), 'transform', `translate(-50%, ${(-uS * 260).toFixed(1)}px) scale(${(.5 + .5 * uS).toFixed(3)})`); $('#racha').style.left = '50%'; $('#racha').style.top = '940px';
+  /* 3 · las tarjetas de tráiler: el espaciado se abre despacio, entran desenfocadas */
+  for(const c of tarjetas){ const v = vida(t, c.a, c.b, .45, .4), u = tramo(t, c.a, c.b);
+    poner(c.el, 'opacity', v.toFixed(3)); poner(c.el, 'letterSpacing', (.16 + .12 * u).toFixed(3) + 'em'); poner(c.el, 'filter', `blur(${((1 - sale(tramo(t, c.a, c.a + .5))) * 12).toFixed(1)}px)`); }
+  /* 4 · el montaje de las noches: reloj, intentos y el mensaje */
+  const horas = [[19.3, '1:12 a.m.', 'PRUEBA 12'], [20.5, '2:47 a.m.', 'PRUEBA 29'], [21.6, '3:58 a.m.', 'PRUEBA 37'], [23.4, '4:31 a.m.', 'PRUEBA 41']];
+  const hr = [...horas].reverse().find(([a]) => t >= a);
+  poner($('#reloj'), 'opacity', String(t >= 19.3 && t < 24.6 ? 1 : 0)); if(hr) { const html = `${hr[1]}<small>${hr[2]}</small>`; if($('#reloj').dataset.h !== html){ $('#reloj').innerHTML = html; $('#reloj').dataset.h = html; } }
+  for(const [id, a, b] of [['#b1', 21.8, 23.4], ['#b2', 22.4, 23.4]]){ const v = vida(t, a, b, .25, .2); poner($(id), 'opacity', v.toFixed(3)); poner($(id), 'transform', `translateY(${((1 - sale(tramo(t, a, a + .3))) * 40).toFixed(1)}px)`); }
+  /* 5 · lo que pasa en su teléfono (sin decir todavía qué es) */
+  for(const [id, a, b] of [['#xp', T.xp, 33.9], ['#combo', T.combo, 33.9], ['#racha30', T.racha30, 34.1]]){
+    const v = vida(t, a, b, .3, .3), s = sale(tramo(t, a, a + .4)); poner($(id), 'opacity', v.toFixed(3)); poner($(id), 'transform', `scale(${(.6 + .4 * s + .06 * Math.sin((t - a) * 7) * (1 - tramo(t, a, a + 1))).toFixed(3)}) translateY(${(-(t - a) * 18).toFixed(1)}px)`); }
+  /* el huevo: tiembla, se agrieta y nace (luz) */
+  const vh = vida(t, T.huevo, T.nace + .25, .4, .2);
+  poner($('#huevo'), 'opacity', vh.toFixed(3));
+  const tiembla = tramo(t, 35.4, T.nace) * Math.sin(t * 38) * 9;
+  poner($('#cascaron'), 'transform', `rotate(${tiembla.toFixed(2)}deg)`); $('#cascaron').style.transformOrigin = '150px 360px';
+  $('#grieta').setAttribute('stroke-dashoffset', (320 * (1 - tramo(t, 35.8, T.nace))).toFixed(0));
+  if(t > T.nace - .1 && t < 38.6){ x.save(); x.globalCompositeOperation = 'lighter'; const u = tramo(t, T.nace - .1, 38.6), g = x.createRadialGradient(540, 1200, 0, 540, 1200, 900 * sale(u));
+    g.addColorStop(0, `rgba(255,240,200,${.9 * (1 - u)})`); g.addColorStop(.4, `rgba(199,125,255,${.5 * (1 - u)})`); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, W, H); x.restore(); }
+  const vn = vida(t, T.nace, 38.4, .3, .2); poner($('#nacio'), 'opacity', vn.toFixed(3)); poner($('#nacio'), 'transform', `translate(-50%, 0) scale(${(.6 + .4 * sale(tramo(t, T.nace, T.nace + .4))).toFixed(3)})`);
+  /* 6 · la revelación: Grupo Mazi presenta… CARYMO */
+  const vp = vida(t, T.presenta, T.logo - .2, .8, .4);
+  poner($('#presenta'), 'opacity', vp.toFixed(3)); poner($('#presenta'), 'transform', `scale(${(1.08 - .08 * sale(tramo(t, T.presenta, T.presenta + 3))).toFixed(4)})`);
+  const vl = sale(tramo(t, T.logo, T.logo + 1.2));
+  poner($('#logo'), 'opacity', vl.toFixed(3)); poner($('#logo'), 'transform', `scale(${(1.25 - .25 * vl + .015 * Math.sin(t * 1.3) * vl).toFixed(4)})`);
+  if(t >= T.logo){ const u = tramo(t, T.logo, FIN); x.save(); x.globalCompositeOperation = 'lighter';
+    const g = x.createRadialGradient(540, 900, 0, 540, 900, 900); g.addColorStop(0, `rgba(172,39,255,${.35 + .1 * Math.sin(t * 2)})`); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+    for(const m of motas){ const y = (m.y * H - u * m.v * 900 + H) % H; x.globalAlpha = .5 * (.5 + .5 * Math.sin(t * 2 + m.f)); x.fillStyle = '#E9D4FF'; x.beginPath(); x.arc(m.x * W, y, m.r, 0, 7); x.fill(); }
+    x.restore(); }
+  for(const [id, a] of [['#lema', T.lema], ['#dedica', T.dedica], ['#cta', T.cta]]){ const u = sale(tramo(t, a, a + .9)); poner($(id), 'opacity', u.toFixed(3)); poner($(id), 'transform', `translateY(${((1 - u) * 30).toFixed(1)}px)`); }
+  poner($('#cta'), 'top', t > T.cta ? '1540px' : '1540px');
+  /* 7 · las franjas de cine: se abren al empezar y se cierran al final */
+  const franja = 150 * (1 - .0 * tramo(t, 0, 1)) * (t > FIN - 1.2 ? 1 + 6 * tramo(t, FIN - 1.2, FIN) : 1);
+  poner($('#arriba'), 'height', franja.toFixed(0) + 'px'); poner($('#abajo'), 'height', franja.toFixed(0) + 'px');
+  gr(t);
+};
+await window.pintar(0);
+window._listo();
+</script>
+</body>
+</html>
