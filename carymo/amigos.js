@@ -54,6 +54,7 @@ export function iniciarAmigos(h){
   /* lo que llega al buzón */
   function avisar(m){
     if(m.tipo === 'invita'){ invitacion(m); return; }
+    if(['reta', 'retoAcepta', 'retoRechaza', 'juegoFin'].includes(m.tipo)){ h.alJuego?.(m); return; }
     const t = m.tipo === 'saludo' ? `${m.nombre} te saludó${m.texto ? ': ' + m.texto : ''}` : m.tipo === 'felicita' ? `${m.nombre} te felicitó${m.texto ? ': ' + m.texto : ''}`
       : m.tipo === 'examen' ? `${m.nombre} · ${m.texto}. ¡Felicítalo!` : `${m.nombre} ${MSG[m.tipo] || ''}`;
     tono(m.tipo === 'felicita' || m.tipo === 'amigos' ? SON.moneda : SON.mensaje || SON.pop); vibrar(12);

@@ -610,6 +610,8 @@ dependemos.
 
    | una hoja `<dialog>` en columna (`flex`) con `max-height` y el cuerpo en `flex:1` reparte bien el alto | en el iPhone el cuerpo se quedaba a su alto natural y Safari **encogía el pie**: el botón de WhatsApp aplastado y el pedido cortado; en Chromium se ve perfecto | lo reportó el cliente de District Roll, que ya había comprado. Cabeza y pie con `flex:none`, cuerpo con `min-height:0`, alto con `visualViewport` (`--vv`, `--vvb`) y la página quieta con `html:has(dialog[open]){overflow:hidden}`. Aquí no hay WebKit: lo de Safari se prueba en el teléfono |
 
+   | una variable de CSS (`--casilla-l`) puesta en la clase de la pantalla de juegos llega a todo lo de los juegos | llega sólo a lo que vive DENTRO de ese contenedor: el menú era `.jg` y la mesa `.jg-mesa`, hermanos, y en la mesa la variable no existía: casillas transparentes | el tablero de ajedrez salió negro sin un solo error y las 28 pruebas de pantalla en verde (contaban casillas y piezas, no su color). Lo vio la captura; la variable va en el propio tablero (`.jg-tab`) y la prueba mide que las casillas tengan dos colores y midan lo mismo (`carymo/juegos/pruebas-pantalla.mjs`) |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---

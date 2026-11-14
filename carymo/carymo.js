@@ -28,6 +28,7 @@ import { nombreHTML, insigniasHTML } from './nombre.js';
 import { iniciarPerfilOtro } from './perfil-otro.js';
 import { iniciarCompanero } from './companero.js';
 import { iniciarWidget } from './widget.js';
+import { iniciarJuegos } from './juegos/juegos.js';
 import { iniciarCuenta, ESCOLAR, NIVEL_DE_ESCOLAR } from './cuenta.js';
 import { iniciarApuntes } from './apuntes.js';
 import { iniciarSesionEstudio } from './sesion.js';
@@ -109,6 +110,7 @@ function dice(frase, accion = 'bien', { si = null } = {}){
 encenderSonidos(ajustes.sonido !== false);
 let vista = 'plan';
 let amigos = null;   /* amigos.js; se arranca al final, cuando ya existe todo */
+let juegos = null;   /* juegos/juegos.js */
 let companero = null;   /* companero.js: el cuarto, el cuidado y la tienda de palomium */
 let avisos = null;   /* avisos.js: los recordatorios con notificación */
 let vestidor = null;   /* vestidor.js: tu personaje de perfil, su ropa y sus accesorios */
@@ -545,8 +547,10 @@ function pintarPlan(){
       <p>Dinos la materia, la fecha y qué temas vienen, o súbele foto a tus apuntes. Te armamos el camino hasta el día del examen.</p>
       <button class="bt fuerte ancho" id="bCrear">${ico('plus')} Crear mi plan</button>
       <button class="bt ancho" id="bAnadir" style="margin-top:12px">${ico('share-2')} Añadir curso con link o código</button>
+      <button class="bt ancho" id="bJuegos" style="margin-top:12px">${ico('swords')} Juegos de mesa</button>
       <button class="bt ancho academia-bt" id="bAcademia" style="margin-top:12px">${ico('graduation-cap')} Academia Grupo Mazi</button></div>`;
     $('#bCrear').addEventListener('click', alta);
+    $('#bJuegos').addEventListener('click', () => juegos.abrir());
     $('#bAcademia').addEventListener('click', abrirAcademia);
     $('#bAnadir').addEventListener('click', () => anadirCurso());
     { const m = mascotaEn($('#mascVacio'), { tam: 120 }); if(m) setTimeout(() => m.play('saluda', { decir: '¡Hola! ¿Qué estudiamos hoy?' }), 500); }
@@ -1444,8 +1448,9 @@ $('#bPlanes').addEventListener('click', () => {
   const lista = Object.values(planes).sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
   const h = hoja('Tus planes', `<div class="menu">${lista.map((p) => `<button data-plan="${esc(p.id)}">${ico('notebook-pen')}<span>${esc(p.titulo)}<br><small style="color:var(--suave);font-weight:600">${esc(cuandoTexto(p.fecha))} · ${avanceDe(p).pct} %</small></span>${p.id === actualId ? `<span class="sel">${ico('circle-check')}</span>` : ''}</button>`).join('')}</div>
     <button class="bt blanco ancho" style="margin-top:12px" data-plan="nuevo">${ico('plus')}Crear un nuevo plan</button>
+    <button class="bt ancho" style="margin-top:10px" data-plan="juegos">${ico('swords')}Juegos de mesa</button>
     <button class="bt ancho" style="margin-top:10px" data-plan="academia">${ico('graduation-cap')}Academia Grupo Mazi</button>`);
-  h.addEventListener('click', (e) => { const b = e.target.closest('[data-plan]'); if(!b) return; cerrarHoja(); if(b.dataset.plan === 'nuevo') alta(); else if(b.dataset.plan === 'academia') abrirAcademia(); else { actualId = b.dataset.plan; guardarLocal(); pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); } });
+  h.addEventListener('click', (e) => { const b = e.target.closest('[data-plan]'); if(!b) return; cerrarHoja(); if(b.dataset.plan === 'nuevo') alta(); else if(b.dataset.plan === 'academia') abrirAcademia(); else if(b.dataset.plan === 'juegos') juegos.abrir(); else { actualId = b.dataset.plan; guardarLocal(); pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); } });
 });
 function editarPlan(p){
   const h = hoja('Editar plan', `<label class="seccion-t" for="eNom">Nombre</label><input class="campo" id="eNom" value="${esc(p.titulo)}"><label class="seccion-t" for="eFecha" style="display:block">Fecha del examen</label><input type="date" class="campo" id="eFecha" value="${esc(p.fecha)}"><button class="bt fuerte ancho" style="margin-top:16px" id="eGuardar">Guardar</button>`);
@@ -1884,7 +1889,9 @@ if(typeof navigator !== 'undefined' && 'serviceWorker' in navigator && !/[?&]sin
 setTimeout(() => { const p = plan(); if(p && conAcceso() && navigator.onLine !== false) precargar(p); }, 8000);
 document.addEventListener('visibilitychange', () => { if(!document.hidden) sincronizar(); });
 /* amigos, estudiar juntos y «¿cómo te fue?» (amigos.js) */
-amigos = iniciarAmigos({ sala, brindis, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, mascotaEn, $, guardarPlan, colorDe: colorMateria, alPerfil: ponerPerfil,
+/* juegos de mesa (juegos/juegos.js): clases jugando, contra la máquina y en línea */
+juegos = iniciarJuegos({ capa, cerrarCapa, hoja, cerrarHoja, ico, esc, sala, tono, SON, brindis, mascotaEn, confeti, sumarXP, conAcceso, amigos: () => amigos?.estado });
+amigos = iniciarAmigos({ sala, brindis, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, mascotaEn, $, guardarPlan, colorDe: colorMateria, alPerfil: ponerPerfil, alJuego: (m) => juegos?.avisoDeJuego(m),
   perfil: () => perfil, planes: () => planes, actual: () => actualId, vista: () => vista, cuenta: () => perfil.cuenta, estudiando: () => !!$('#capa') });
 pintar();
 sincronizar();
@@ -1908,7 +1915,7 @@ companero.pintarPastilla();
 const widget = iniciarWidget({ perfil: () => perfil, activa: mascotaActiva, hoy: hoyLocal, crearMascota });
 yo = iniciarYo({ esc, ico, $, tono, SON, crearMascota, perfil: () => perfil, ajustes: () => ajustes, planes: () => planes,
   cuantosApuntes: () => apuntes?.cuantos?.() || 0, pintarCubos: (el) => { if(el) el.innerHTML = $('#pCubos .pm-cubos')?.innerHTML || $('#pCubos')?.innerHTML || ''; },
-  svgPersonaje: (p) => vestidor.svgPersonaje(p), personajeVivo, hoja, abrirVestidor: () => vestidor.abrir(), abrirCompanero: () => companero.abrir() });
+  svgPersonaje: (p) => vestidor.svgPersonaje(p), personajeVivo, hoja, abrirVestidor: () => vestidor.abrir(), abrirCompanero: () => companero.abrir(), abrirJuegos: () => juegos?.abrir() });
 /* tu personaje vivo: el mismo del vestidor, con lo que te pusiste (personaje-vivo.js) */
 configurarPersonaje({ personaje: () => normalizarPersonaje(perfil.personaje || personajeDeArranque(perfil.cuenta || perfil.nombre || ''), perfil.ropa || [], perfil.cuenta || ''), svg: (p) => vestidor.svgPersonaje(p) });
 iniciarPerfilOtro({ sala, hoja, esc, ico, tono, SON, svgPersonaje: (p) => vestidor.svgPersonaje(p) });
