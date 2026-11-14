@@ -132,6 +132,17 @@ try{
     /* una clase con voz de la nube (de mentiras): la voz pedida es SÓLO la del paso */
     const pedidas = [];
     await ctx.route(/ia-voz/, async (r) => { pedidas.push(JSON.parse(r.request().postData())); await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ bien: true, mime: 'audio/wav', data: 'UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=' }) }); });
+    /* QUÉ TAN FUERTE (Carlos, 14 nov): tres opciones a la vista y lo demás plegado en «Ajustes avanzados» */
+    ok(await p.isVisible('[data-fuerza="esencial"]') && await p.isHidden('#motor') && await p.isHidden('#cursores'), 'a la vista sólo «Superficial / Esencial / A profundidad»; quién explica, cursores y lo demás van plegados');
+    ok((await p.getAttribute('[data-fuerza="esencial"]', 'aria-checked')) === 'true', 'de fábrica viene «Esencial» marcado');
+    await p.click('[data-fuerza="profundo"]');
+    ok(await p.inputValue('#profundidad') === 'detalle' && await p.inputValue('#largo') === 'fondo', '«A profundidad» pone la clase a detalle y larga');
+    await p.click('[data-fuerza="superficial"]');
+    ok(await p.inputValue('#profundidad') === 'general' && await p.inputValue('#largo') === 'corta', '«Superficial» la pone general y corta');
+    await p.click('#avanzado > summary');
+    ok(await p.isVisible('#motor') && await p.isVisible('#vozSel'), '«Ajustes avanzados» despliega el resto');
+    await p.selectOption('#largo', 'normal');
+    ok(await p.evaluate(() => [...document.querySelectorAll('[data-fuerza]')].every((b) => b.getAttribute('aria-checked') === 'false')), 'si mueves el largo a mano, ya no se marca ninguna de las tres');
     await p.selectOption('#vozSel', 'nube:javier');
     await p.evaluate((c) => window.__explica.empezar(c), CLASE);
     await p.waitForFunction(() => window.__explica.estado().dibujados >= 1);

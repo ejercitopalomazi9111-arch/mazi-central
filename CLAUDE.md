@@ -63,6 +63,9 @@ cualquiera que edite un archivo o una página se haga pasar por el dueño.
   mensaje**. Está en el cerebro como `entrega · artefacto-que-el-otro-no-puede-abrir`.
 - **Al grano y sin tecnicismos.** Textual: *«tengo tdah así que ve al punto,
   explica bien qué pedo y no seas tan técnico»*.
+- **En las pantallas, lo mínimo de palabras.** Carlos, 14 nov: *«si algo se entiende con 1 o 2
+  palabras no es necesario usar más»*. Botones, títulos y opciones de una o dos palabras; nada de
+  frases de explicación debajo si la palabra sola se entiende.
 - Corrige **sobre la marcha**, así que hay que enseñarle avances y no desaparecer.
 
 Lo único que no cambia según quién lo pida sigue siendo lo de siempre y ya está
@@ -233,7 +236,11 @@ básicas y variadas. **En la portada de CUALQUIER PDF va el logo de la UTEQ** (U
 de Querétaro: el águila azul con «Universidad Líder»; OJO, la UTEQ verde de «Quevedo» es otra escuela,
 de Ecuador). De dónde se baja, porque la red de aquí sólo alcanza GitHub:
 `raw.githubusercontent.com/Jonathancraxker/ecoparking_web/main/src/assets/images/Logo_uteq.png`
-(225 px; no hay uno más grande a la mano). **Al terminar cada tarea se apunta en el documento de
+(225 px; no hay uno más grande a la mano). **La portada va en formato institucional** (Carlos, 14 nov): fondo blanco, logo de
+la UTEQ arriba y centrado, nombre de la universidad, carrera/asignatura, título al centro y el bloque de datos (alumna, docente,
+grupo, fecha, lugar); nada de bandas de color ni portadas «de diseño». **Si la tarea no pide un formato, va en APA 7** (página,
+márgenes de 2.54 cm, Times New Roman 12 o Calibri 11, interlineado doble, citas y referencias APA); si el encargo pide otro
+formato, manda el encargo. **Al terminar cada tarea se apunta en el documento de
 recapitulación** (Claude Docs «Tareas de Lorena · recapitulación»), por materia y número de actividad.
 El nombre de la alumna y sus datos NO van en este repo: es público.
 

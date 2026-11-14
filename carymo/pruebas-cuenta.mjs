@@ -74,6 +74,9 @@ await ana.click('#cListo');
 ok(await ana.isVisible('#cError') && /8 caracteres/.test(await ana.textContent('#cError')), 'una contraseña corta se avisa ahí mismo, sin regañar');
 await ana.fill('#cClave', 'contrasena-segura');
 await ana.click('#cListo');
+ok(await ana.isVisible('#cError') && /qué estudias/i.test(await ana.textContent('#cError')), 'sin decir qué estudia, le pide el dato (Carlos, 14 nov)');
+await ana.click('.escolar-op input[value="secundaria"]');
+await ana.click('#cListo');
 await ana.waitForSelector('#codRec');
 const rec = (await ana.textContent('#codRec')).replace(/\s/g, '');
 ok(/^[A-Z0-9]{12}$/.test(rec), 'al crearla le da su código de recuperación (una sola vez)');
@@ -81,6 +84,7 @@ await foto(ana, '02-codigo');
 await ana.click('#bYaRec');
 ok(!(await ana.$('#cajaLlave')), 'con su cuenta, ya no sale el aviso');
 ok(await ana.evaluate(() => !localStorage.getItem('salaLlave') && !!localStorage.getItem('carymo.token')), 'en su teléfono hay token de CARYMO y NINGUNA llave de La Sala');
+{ const aj = await ana.evaluate(() => JSON.parse(localStorage.getItem('est.ajustes') || '{}')); ok(aj.escolar === 'secundaria' && aj.nivel === 'secu', `y lo que estudia pone el nivel con el que le explican (${aj.escolar} → ${aj.nivel})`); }
 
 console.log('Arma un plan con la IA (por la puerta de CARYMO)');
 await ana.click('#bCrear');
@@ -107,7 +111,7 @@ const iaAntes = pedidosIA;
 await beto.goto(`${base}/carymo/?servidor=${encodeURIComponent(base)}&plan=${codigo}`, { waitUntil: 'load' });
 await beto.waitForSelector('#fCuenta', { timeout: 6000 });
 ok(true, 'sin cuenta, el link le pide crear una primero');
-await beto.fill('#cNombre', 'Beto'); await beto.fill('#cUsuario', 'beto_q'); await beto.fill('#cClave', 'otra-contrasena');
+await beto.fill('#cNombre', 'Beto'); await beto.fill('#cUsuario', 'beto_q'); await beto.fill('#cClave', 'otra-contrasena'); await beto.click('.escolar-op input[value="secundaria"]');
 await beto.click('#cListo'); await beto.waitForSelector('#bYaRec'); await beto.click('#bYaRec');
 await beto.waitForSelector('.camino', { timeout: 8000 });
 ok(/Química/.test(await beto.textContent('#planNombre')), 'y en cuanto entra, se le agrega el plan que le mandaron');

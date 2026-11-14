@@ -27,9 +27,10 @@
 import { atenderAvisos, avisoDePrueba } from './avisos-estudio.js';
 import { atenderVestidor } from './vestidor.js';
 import { LIGAS, grupoDe, reglasDe, resultadoSemana, TAM_GRUPO } from '../../carymo/ligas.js';
-import { conEconomia, premiar, premiarUnaVez, cobrarNivel, estudioAnima, comprar, cuidar, PREMIOS, TIENDA, nivelDe, animoDe, parejaDe, avanzarRachaJuntos, rachaJuntosHoy, crecer, crianza, vivas } from './palomium.js';
-import { ESPECIES, nivelMascota, etapaDe, ACCESORIOS, SKINS } from '../../carymo/crianza-datos.js';
+import { conEconomia, premiar, premiarUnaVez, cobrarNivel, estudioAnima, comprar, cuidar, PREMIOS, TIENDA, nivelDe, animoDe, parejaDe, avanzarRachaJuntos, rachaJuntosHoy, crecer, crianza, vivas, conCrianza } from './palomium.js';
+import { ESPECIES, nivelMascota, etapaDe, ACCESORIOS, SKINS, xpDeNivel } from '../../carymo/crianza-datos.js';
 import { titulosDe, TITULOS, ESTILOS_NOMBRE } from '../../carymo/titulos.js';
+import { TIENDA_ROPA, personajeDeArranque, normalizarPersonaje } from '../../carymo/ropa.js';
 export const MAX_PLAN = 1_500_000;
 const kPerfil = (c) => `est:perfil:${c}`;
 const kSem = (s) => `est:sem:${s}`;
@@ -548,15 +549,38 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
       const k = limpio(c.cuenta, 40).toLowerCase(), o = k && await storage.get(kPerfil(k));
       if(!o) return Response.json({ error: 'No encontré esa cuenta.' }, { status: 404 });
       if('titulo' in c){ if(c.titulo && !TITULOS[c.titulo]) return Response.json({ error: 'Ese título no existe.' }, { status: 400 }); o.titulo = c.titulo || null; }
+      if('cubosInfinitos' in c){ o.infinito = !!c.cubosInfinitos; if(o.infinito) o.cubos = Math.max(o.cubos || 0, 999999); }
       if('estilo' in c){ if(c.estilo && !ESTILOS_NOMBRE[c.estilo]) return Response.json({ error: 'Ese estilo no existe.' }, { status: 400 }); o.estiloNombre = c.estilo || ''; }
-      const regalos = (Array.isArray(c.regalos) ? c.regalos : []).map(String).filter((x) => ACCESORIOS[x] || SKINS[x]);
+      const pedidos = (Array.isArray(c.regalos) ? c.regalos : []).map(String);
+      const regalos = pedidos.filter((x) => ACCESORIOS[x] || SKINS[x]);
       if(regalos.length) o.armario = [...new Set([...(o.armario || []), ...regalos])];
+      /* ropa de regalo para su personaje (la gorra y el estampado de Grupo Mazi) */
+      const ropaRegalo = pedidos.filter((x) => TIENDA_ROPA[x]);
+      if(ropaRegalo.length){ o.ropa = [...new Set([...(o.ropa || []), ...ropaRegalo])];
+        if(c.ponerle){ const pj = { ...(o.personaje || personajeDeArranque(k)) }; for(const x of ropaRegalo) pj[TIENDA_ROPA[x].parte] = TIENDA_ROPA[x].valor;
+          if(ropaRegalo.includes('estampa:mazi') && !['hoodie', 'shirtCrewNeck', 'shirtScoopNeck', 'shirtVNeck', 'graphicShirt'].includes(pj.ropa)) pj.ropa = 'hoodie';
+          o.personaje = normalizarPersonaje(pj, o.ropa, k, o.personaje); } }
       /* y se los pone a su mascota activa, para que los vea luego luego */
       if(c.ponerle && o.mascota && o.mascotas?.[o.mascota]){ const m = o.mascotas[o.mascota], acc = regalos.filter((x) => ACCESORIOS[x]);
         const lugares = new Set(acc.map((x) => ACCESORIOS[x].lugar)); m.acc = [...acc, ...(m.acc || []).filter((x) => !lugares.has(ACCESORIOS[x]?.lugar))].slice(0, 3); }
+      /* UNA MASCOTA ESPECIAL YA CRECIDA (Carlos, 14 nov: «dame a mí una pet ya full crecida y especial para mí»):
+         se la da la casa con el nivel que diga, su color y sus accesorios de regalo, y queda como su compañera */
+      if(c.mascotaEspecial && typeof c.mascotaEspecial === 'object'){
+        const e = c.mascotaEspecial, esp = String(e.especie || '');
+        if(!ESPECIES[esp]) return Response.json({ error: 'Esa mascota no existe.' }, { status: 400 });
+        conCrianza(o, ahora);
+        const nivel = Math.max(1, Math.min(30, Math.round(Number(e.nivel) || 15)));
+        const skin = SKINS[e.skin] ? String(e.skin) : 'normal';
+        const acc = (Array.isArray(e.acc) ? e.acc : []).map(String).filter((x) => ACCESORIOS[x]).slice(0, 3);
+        o.armario = [...new Set([...(o.armario || []), ...(skin !== 'normal' ? [skin] : []), ...acc])];
+        const ya = o.mascotas[esp] || {};
+        o.mascotas[esp] = { ...ya, xp: Math.max(xpDeNivel(nivel), ya.muerta ? 0 : (ya.xp || 0)), nacio: ya.nacio || ahora, skin, acc, especial: true, ...(e.nombre ? { nombre: limpio(e.nombre, 20) } : {}) };
+        delete o.mascotas[esp].muerta;
+        o.mascota = esp; o.cuidado = { hambre: 100, limpieza: 100, animo: 100, t: ahora }; o.peligroDesde = null;
+      }
       o.t = ahora; await storage.put(kPerfil(k), o);
       await apuntarMiembro(storage, k, o.nombre, o.liga, o);
-      return Response.json({ bien: true, cuenta: k, titulos: titulosDe(o), estilo: o.estiloNombre, armario: o.armario });
+      return Response.json({ bien: true, cuenta: k, titulos: titulosDe(o), estilo: o.estiloNombre, armario: o.armario, infinito: !!o.infinito, cubos: o.cubos, ropa: o.ropa, personaje: o.personaje, mascotas: o.mascotas, mascota: o.mascota });
     }
     return Response.json({ error: 'No sé hacer eso.' }, { status: 400 });
   }

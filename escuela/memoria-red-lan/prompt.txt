@@ -1,0 +1,231 @@
+PROMPT: DESARROLLO DE MEMORIA TÉCNICA – EVALUACIÓN DE LA PRIMERA UNIDAD
+Actúa como un ingeniero en redes y telecomunicaciones, especialista en infraestructura de redes LAN, arquitectura de redes, protocolos de comunicación y documentación técnica. También tienes experiencia en elaboración de proyectos académicos universitarios.
+Necesito que desarrolles un trabajo académico completo para mi evaluación de la primera unidad. El entregable debe ser una MEMORIA TÉCNICA SOBRE EL DISEÑO E IMPLEMENTACIÓN DE UNA RED LAN, elaborada con rigor técnico, información confiable y una presentación visual profesional.
+1. ESCENARIO DEL PROYECTO
+Primero, plantea un escenario realista para desarrollar el proyecto.
+Utiliza como escenario una empresa mediana de aproximadamente 25 a 35 empleados, que necesita implementar una red LAN para conectar computadoras, impresoras, servidores, dispositivos inalámbricos y otros equipos de comunicación.
+La empresa debe contar con diferentes áreas de trabajo, como:
+
+Administración.
+Recursos Humanos.
+Atención al cliente.
+Dirección.
+Área de sistemas.
+Sala de juntas.
+El diseño debe responder a las necesidades de comunicación, intercambio de información, seguridad, conectividad y crecimiento futuro de la organización.
+Puedes establecer características adicionales del escenario siempre que sean técnicamente coherentes.
+2. ESTRUCTURA DEL DOCUMENTO
+Desarrolla el documento con los siguientes apartados:
+A. Portada
+Incluye:
+
+Nombre de la institución educativa.
+Nombre de la asignatura.
+Título: Memoria Técnica de Diseño e Implementación de una Red LAN.
+Nombre del estudiante.
+Nombre del docente.
+Unidad de evaluación.
+Fecha de entrega.
+Deja espacios editables cuando no conozcas los datos.
+B. Índice
+Elabora un índice organizado con numeración de apartados y subapartados.
+C. Introducción
+Explica qué es una red LAN, su importancia en las organizaciones y el propósito de elaborar esta memoria técnica.
+D. Descripción del escenario
+Describe detalladamente la empresa ficticia, sus necesidades tecnológicas, cantidad de usuarios, distribución de áreas y requerimientos de conectividad.
+E. Diseño de la red LAN
+Desarrolla una propuesta técnica que incluya:
+
+Arquitectura general de la red.
+Distribución de los equipos.
+Diagrama de la topología física.
+Diagrama de la topología lógica.
+Distribución de puntos de red.
+Medio de transmisión utilizado.
+Cableado estructurado.
+Direccionamiento IP.
+Segmentación de la red, si corresponde.
+Justificación de las decisiones de diseño.
+Los diagramas deben ser claros, profesionales, legibles y representar correctamente las conexiones entre dispositivos.
+F. Características de todos los componentes del sistema de comunicación
+Identifica y explica cada componente utilizado en el escenario.
+Incluye, como mínimo:
+
+Emisor.
+Receptor.
+Mensaje o información.
+Medio de transmisión.
+Protocolo de comunicación.
+Interfaz de red.
+Computadoras y estaciones de trabajo.
+Switches.
+Router.
+Punto de acceso inalámbrico.
+Servidor.
+Impresoras de red.
+Cableado Ethernet.
+Conectores RJ45.
+Rack y panel de parcheo, cuando corresponda.
+Para cada dispositivo físico especifica:
+
+Nombre del componente.
+Función dentro de la red.
+Características técnicas.
+Importancia dentro del sistema.
+Ejemplo de aplicación en el escenario.
+G. Configuración básica de los dispositivos de red
+Presenta ejemplos de configuración técnica para los dispositivos principales.
+Incluye:
+
+Configuración de direcciones IPv4.
+Máscara de subred.
+Puerta de enlace predeterminada.
+Servidor DNS.
+Configuración básica de switches.
+Configuración de router.
+Configuración de puntos de acceso.
+Configuración de DHCP.
+VLAN, si se utiliza.
+Cuando sea apropiado, utiliza comandos reales de configuración de Cisco IOS y explica brevemente para qué sirve cada uno.
+Los comandos deben ser coherentes entre sí y corresponder al diseño de red propuesto. No inventes comandos ni presentes configuraciones incompatibles.
+H. Identificación de topologías físicas y lógicas
+Explica detalladamente:
+Topología física:
+
+Tipo de topología utilizada.
+Cómo están conectados físicamente los dispositivos.
+Justificación de su elección.
+Ventajas y posibles desventajas.
+Topología lógica:
+
+Forma en que circulan los datos.
+Organización de la comunicación.
+Protocolos involucrados.
+Funcionamiento de la transmisión de información.
+Incluye diagramas para facilitar su comprensión y explica las diferencias entre ambas.
+I. Clasificación de dispositivos según los modelos de referencia
+Clasifica los dispositivos y protocolos de la red utilizando:
+Modelo OSI:
+Explica las siete capas:
+
+Física.
+Enlace de datos.
+Red.
+Transporte.
+Sesión.
+Presentación.
+Aplicación.
+Identifica los dispositivos, tecnologías y protocolos que intervienen en cada capa.
+Modelo TCP/IP:
+Explica sus capas y relaciona sus funciones con los dispositivos y protocolos del escenario.
+Incluye una tabla comparativa entre ambos modelos y evita confundir los dispositivos físicos con los protocolos.
+J. Línea del tiempo: evolución de las redes de datos
+Elabora una línea del tiempo visual y cronológica que presente los principales acontecimientos en la evolución de las redes de datos.
+Incluye acontecimientos relevantes como:
+
+Primeras redes de comunicación informática.
+ARPANET.
+Desarrollo de Ethernet.
+Estandarización IEEE 802.3.
+Aparición y expansión de TCP/IP.
+Desarrollo de redes LAN comerciales.
+Evolución de switches y routers.
+Wi-Fi.
+Redes Gigabit Ethernet.
+Redes de fibra óptica.
+Virtualización y redes definidas por software.
+Redes modernas de alta velocidad.
+Énfasis especial: CONFIABILIDAD DE LAS REDES.
+Explica cómo ha evolucionado la confiabilidad mediante:
+
+Redundancia de enlaces.
+Protocolos de recuperación ante fallos.
+Spanning Tree Protocol (STP).
+Agregación de enlaces.
+Tolerancia a fallos.
+Sistemas de respaldo.
+Seguridad de red.
+Monitoreo y administración.
+Alta disponibilidad.
+La línea del tiempo debe incluir fechas, acontecimientos, descripción breve e importancia de cada avance para la confiabilidad.
+K. Conclusiones
+Redacta conclusiones que demuestren la comprensión del diseño, los componentes, las configuraciones y la importancia de la confiabilidad en una red LAN.
+L. Fuentes de consulta
+Incluye referencias bibliográficas y fuentes técnicas reales, verificables y preferentemente oficiales.
+Prioriza:
+
+IEEE.
+Cisco Networking Academy.
+Documentación oficial de Cisco.
+RFC del IETF.
+Documentación de fabricantes.
+Libros especializados en redes de computadoras.
+Utiliza formato APA, séptima edición. Incluye enlaces funcionales y no inventes autores, publicaciones, fechas ni referencias.
+3. REQUISITOS DE CALIDAD
+
+Utiliza lenguaje académico, técnico y profesional, pero fácil de comprender.
+Desarrolla todos los apartados con profundidad suficiente.
+Evita explicaciones superficiales o definiciones copiadas sin contexto.
+Mantén coherencia entre el escenario, los diagramas, las direcciones IP y las configuraciones.
+Utiliza tablas comparativas cuando ayuden a organizar la información.
+Incluye diagramas de calidad profesional.
+Utiliza imágenes únicamente cuando aporten valor técnico.
+Explica los conceptos con tus propias palabras y fundamenta la información con fuentes confiables.
+No inventes datos técnicos ni fuentes bibliográficas.
+Cuida la ortografía y la redacción.
+DISEÑO Y PRESENTACIÓN DEL PDF
+Genera un documento PDF con las siguientes características:
+Formato de página A4.
+Diseño profesional, moderno y académico.
+Portada formal.
+Paleta de colores basada en azul oscuro, azul tecnológico, blanco y gris.
+Tipografía clara y legible.
+Encabezados y pies de página.
+Numeración de páginas.
+Tablas bien organizadas.
+Diagramas de red legibles.
+Línea del tiempo visual.
+Índice organizado.
+Referencias bibliográficas al final.
+Evita que parezca una presentación de diapositivas. Debe tener apariencia de un informe técnico universitario formal.
+5. ENTREGA FINAL
+Genera el documento completo y entrégalo como un archivo PDF descargable.
+Antes de finalizar, verifica:
+
+Que todos los puntos solicitados en la evaluación estén desarrollados.
+Que los diagramas coincidan con las configuraciones.
+Que las direcciones IP sean válidas y coherentes.
+Que la línea del tiempo sea cronológicamente correcta.
+Que las fuentes existan y puedan consultarse.
+Que el documento tenga portada, índice, conclusiones y bibliografía.
+Que el PDF no tenga errores de formato, páginas cortadas o elementos ilegibles.
+No entregues únicamente un esquema o una explicación de cómo hacerlo. Desarrolla el trabajo completo.
+
+NOTA SOBRE EL USO DE INTELIGENCIA ARTIFICIAL Y FUENTES DE CONSULTA
+La evaluación establece la siguiente indicación:
+"Si usas una IA incluye el prompt utilizado como referencia y solicita tus fuentes de consulta en español".
+Por lo tanto, debes cumplir obligatoriamente con los siguientes requisitos:
+A. Evidencia del uso de IA
+Incluye un apartado al final del documento, antes de las referencias bibliográficas, titulado "Anexo: Uso de Inteligencia Artificial".
+Incorpora íntegramente el prompt utilizado para generar y desarrollar este trabajo.
+Presenta el prompt de manera ordenada, indicando que se utilizó como referencia para apoyar la elaboración de la memoria técnica.
+Explica brevemente qué tareas se apoyaron mediante inteligencia artificial, como la organización de información, investigación, elaboración de diagramas y estructuración del documento.
+No afirmes que se realizaron actividades que realmente no se hayan llevado a cabo.
+B. Fuentes de consulta en español
+
+Todas las fuentes bibliográficas deben estar preferentemente en español.
+Prioriza documentos técnicos, manuales, libros, artículos académicos y documentación oficial disponible en español.
+Busca fuentes relacionadas con redes LAN, modelos OSI y TCP/IP, configuración de dispositivos, topologías, Ethernet, protocolos y confiabilidad de redes.
+Utiliza fuentes confiables, verificables y con enlaces funcionales.
+Si una fuente oficial solamente está disponible en inglés, busca primero una alternativa equivalente en español.
+No inventes referencias, autores, títulos, fechas ni enlaces.
+Organiza todas las referencias utilizando las normas APA, séptima edición.
+C. Verificación final
+Antes de entregar el PDF, comprueba que:
+
+El prompt utilizado esté incluido íntegramente como evidencia.
+Las fuentes de consulta estén en español siempre que sea posible.
+Todas las referencias bibliográficas sean reales y verificables.
+El anexo de inteligencia artificial esté separado del desarrollo técnico.
+El documento cumpla con todas las indicaciones de la evaluación.
+Este apartado es obligatorio y debe formar parte del PDF final.

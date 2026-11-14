@@ -51,6 +51,11 @@ export const TIENDA_ROPA = {
   'lentes:sunglasses': { nombre: 'Lentes de sol', grupo: 'Lentes', parte: 'lentes', valor: 'sunglasses', precio: 14 },
   'lentes:kurt': { nombre: 'Lentes de rockero', grupo: 'Lentes', parte: 'lentes', valor: 'kurt', precio: 16 },
   'lentes:eyepatch': { nombre: 'Parche de pirata', grupo: 'Lentes', parte: 'lentes', valor: 'eyepatch', precio: 12 },
+  /* DE REGALO (precio null): no se venden; los da la casa (Carlos, 14 nov: «yo debo tener una gorra que le salga cabello
+     por los lados y tenga estampado de Grupo Mazi, y la camisa o sudadera con estampado de la marca»). Los dibuja
+     extrasMazi() encima de Avataaars, porque Avataaars no trae gorra de beisbol ni nuestro logo. */
+  'gorro:gorraMazi': { nombre: 'Gorra Grupo Mazi', grupo: 'Gorros', parte: 'gorro', valor: 'gorraMazi', precio: null, regalo: true },
+  'estampa:mazi': { nombre: 'Grupo Mazi', grupo: 'Estampados', parte: 'estampa', valor: 'mazi', precio: null, regalo: true },
 };
 /* de una parte y un valor, el artículo de la tienda (si es de paga) */
 export const articuloDe = (parte, valor) => Object.entries(TIENDA_ROPA).find(([, a]) => a.parte === parte && a.valor === valor)?.[0] || '';
@@ -94,14 +99,51 @@ export function normalizarPersonaje(cfg, comprados = [], cuenta = '', anterior =
 
 /* el personaje → las opciones de Avataaars */
 export function opcionesAvataaars(p){
-  const top = p.gorro || p.pelo;
+  /* la gorra Mazi va encima del pelo: debajo se pinta un peinado corto que asome por los lados */
+  const gorraMazi = p.gorro === 'gorraMazi', estampaMazi = p.estampa === 'mazi';
+  const top = gorraMazi ? 'sides' : (p.gorro || p.pelo);
   return {
     skinColor: [p.piel], hairColor: [p.colorPelo], facialHairColor: [p.colorPelo], hatColor: [p.colorGorro],
     top: top ? [top] : ['shortFlat'], topProbability: top ? 100 : 0,
     eyes: [p.ojos], eyebrows: [p.cejas], mouth: [p.boca],
     facialHair: p.barba ? [p.barba] : ['beardLight'], facialHairProbability: p.barba ? 100 : 0,
-    clothing: [p.ropa], clothesColor: [p.colorRopa], clothingGraphic: [p.estampa || 'bear'],
+    clothing: [estampaMazi && p.ropa === 'graphicShirt' ? 'shirtCrewNeck' : p.ropa], clothesColor: [p.colorRopa], clothingGraphic: [estampaMazi ? 'bear' : (p.estampa || 'bear')],
     accessories: p.lentes ? [p.lentes] : ['round'], accessoriesProbability: p.lentes ? 100 : 0, accessoriesColor: ['262e33'],
     backgroundColor: [p.fondo], radius: 50,
   };
+}
+
+
+/* el cubo de la marca (la M cubo): techo morado claro, cara vino, cara oscura y la M en hueso */
+function cuboMazi(cx, cy, r){
+  const h = r * .5, R = (n) => n.toFixed(1);
+  return `<path d="M${R(cx)} ${R(cy - r)} L${R(cx + r)} ${R(cy - h)} L${R(cx)} ${R(cy)} L${R(cx - r)} ${R(cy - h)}Z" fill="#AC27FF"/>`
+    + `<path d="M${R(cx - r)} ${R(cy - h)} L${R(cx)} ${R(cy)} L${R(cx)} ${R(cy + r)} L${R(cx - r)} ${R(cy + h)}Z" fill="#7E1735"/>`
+    + `<path d="M${R(cx + r)} ${R(cy - h)} L${R(cx)} ${R(cy)} L${R(cx)} ${R(cy + r)} L${R(cx + r)} ${R(cy + h)}Z" fill="#2A1640"/>`
+    + `<path d="M${R(cx - r * .74)} ${R(cy + h * .95)} V${R(cy - h * .12)} L${R(cx - r * .37)} ${R(cy + h * .5)} L${R(cx)} ${R(cy + h * .08)} V${R(cy + r * .82)}" fill="none" stroke="#F1ECF4" stroke-width="${R(r * .13)}" stroke-linejoin="round" stroke-linecap="round"/>`;
+}
+const oscurecer = (hex, k) => '#' + [0, 2, 4].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * k).toString(16).padStart(2, '0')).join('');
+/* lo que va ENCIMA del dibujo de Avataaars (mismas medidas: lienzo de 280, la cabeza va de x 84 a 196 y arriba en y 36) */
+export function extrasMazi(p){
+  let s = '';
+  if(p.estampa === 'mazi'){
+    /* el logo en el pecho, con «GRUPO MAZI» abajo */
+    /* el cubo en el pecho y «MAZI» abajo: angosto, para que quepa entre los cordones de la sudadera y dentro del círculo */
+    s += `<g data-extra="estampaMazi">${cuboMazi(140, 234, 13)}<text x="140" y="261" text-anchor="middle" font-family="Montserrat, Titulo, Arial, sans-serif" font-weight="900" font-size="9" letter-spacing="1.4" fill="#F1ECF4">MAZI</text></g>`;
+  }
+  if(p.gorro === 'gorraMazi'){
+    const c = /^[0-9a-f]{6}$/i.test(p.colorGorro || '') ? p.colorGorro : '170a26', base = '#' + c, sombra = oscurecer(c, .72), visera = oscurecer(c, .55);
+    const pelo = '#' + (/^[0-9a-f]{6}$/i.test(p.colorPelo || '') ? p.colorPelo : '2c1b18');
+    /* el pelo que asoma por los lados (patillas y mechones arriba de las orejas), luego la copa, la costura, el botón
+       y la visera vista de frente, más angosta que la copa para que el pelo se vea */
+    const mechones = (x, d) => `<path d="M${x} 84 C${x - 9 * d} 92 ${x - 10 * d} 104 ${x - 5 * d} 116 C${x - 3 * d} 108 ${x + 1 * d} 104 ${x + 3 * d} 110 C${x + 2 * d} 102 ${x + 6 * d} 98 ${x + 9 * d} 104 C${x + 10 * d} 96 ${x + 8 * d} 88 ${x + 4 * d} 84 Z" fill="${pelo}"/>`;
+    s += `<g data-extra="gorraMazi">${mechones(86, 1)}${mechones(194, -1)}`
+      + `<path d="M78 90 C78 46 106 22 140 22 C174 22 202 46 202 90 Z" fill="${base}"/>`
+      + `<path d="M78 90 C78 62 90 40 110 30 C100 48 98 68 99 90 Z" fill="${sombra}" opacity=".55"/>`
+      + `<path d="M140 23 V84" stroke="${sombra}" stroke-width="1.6"/><circle cx="140" cy="23.5" r="3.4" fill="${sombra}"/>`
+      + `<path d="M92 89 C92 81 114 78 140 78 C166 78 188 81 188 89 C188 98 166 102 140 102 C114 102 92 98 92 89 Z" fill="${visera}"/>`
+      + `<path d="M98 88 C110 84 124 83 140 83 C156 83 170 84 182 88" fill="none" stroke="#ffffff" stroke-opacity=".18" stroke-width="1.4"/>`
+      + cuboMazi(140, 54, 15) + `</g>`;
+  }
+  return s;
 }

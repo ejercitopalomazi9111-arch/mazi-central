@@ -24,7 +24,7 @@
    Sin `cloudflare:workers`: las pruebas cargan esto en Node.
    ═════════════════════════════════════════════════════════════════════════ */
 
-import { ESPECIES, ACCESORIOS, SKINS, MAX_ACCESORIOS, MUERE_HORAS, NIVEL_LENTO, FACTOR_LENTO, nivelMascota, etapaDe } from '../../carymo/crianza-datos.js';
+import { ESPECIES, ACCESORIOS, SKINS, MAX_ACCESORIOS, MUERE_HORAS, NIVEL_LENTO, FACTOR_LENTO, nivelMascota, etapaDe, precioRegreso } from '../../carymo/crianza-datos.js';
 
 /* cuánto vale cada cosa (pocos, a propósito) y cuánto se puede ganar por día de cada una */
 export const PREMIOS = {
@@ -88,8 +88,11 @@ export function animoDe(c){
 }
 
 /* asegura que el perfil traiga lo de la economía (los perfiles viejos no lo tienen) */
+export const CUBOS_INFINITOS = 999999;
 export function conEconomia(p, ahora){
   if(!Number.isFinite(p.cubos)) p.cubos = REGALO_INICIAL;
+  /* cubos infinitos (los pone la casa; Carlos, 14 nov): se rellena cada vez que se lee, así nunca le falta */
+  if(p.infinito) p.cubos = Math.max(p.cubos, CUBOS_INFINITOS);
   if(!p.cubosDia || typeof p.cubosDia !== 'object') p.cubosDia = { dia: '', por: {} };
   if(!Array.isArray(p.premiados)) p.premiados = [];
   if(!p.inv || typeof p.inv !== 'object') p.inv = {};
@@ -159,6 +162,16 @@ export function crianza(p, c, ahora){
     if(p.cubos < precio) return { error: `Te faltan ${precio - p.cubos} cubitos.`, falta: precio - p.cubos };
     p.cubos -= precio; p.mascotas[especie] = nuevaMascota(ahora); p.mascota = especie;
     p.cuidado = { hambre: 85, limpieza: 95, animo: 90, t: ahora }; p.peligroDesde = null;
+    return { bien: true, gastado: precio };
+  }
+  /* que regrese la que se fue: con su nivel y su ropa, por un montón de cubitos */
+  if(c.que === 'regresar'){
+    const m = p.mascotas[especie]; if(!m || !m.muerta) return { error: 'Esa mascota no se ha ido.' };
+    const precio = precioRegreso(nivelMascota(m.xp || 0));
+    if(p.cubos < precio) return { error: `Para que regrese hacen falta ${precio} cubitos; te faltan ${precio - p.cubos}.`, falta: precio - p.cubos };
+    p.cubos -= precio; delete m.muerta; p.mascota = especie;
+    p.cuidado = { hambre: 70, limpieza: 80, animo: 75, t: ahora }; p.peligroDesde = null;
+    const i = p.cielo.map((x) => x.especie).lastIndexOf(especie); if(i >= 0) p.cielo = p.cielo.filter((_, j) => j !== i);
     return { bien: true, gastado: precio };
   }
   if(c.que === 'activa'){

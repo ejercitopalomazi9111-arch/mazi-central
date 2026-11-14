@@ -2,7 +2,11 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<script>/* SIN ZOOM (Carlos, 14 nov: «bloquea el zoom porque molesta»). Safari del iPhone no hace caso a user-scalable=no:
+   se le corta el pellizco (gesturestart) y el doble toque (touch-action en el CSS). El pizarrón sigue acercándose con
+   su propio pellizco, que no es el zoom de la página. */
+for(const ev of ['gesturestart', 'gesturechange']) document.addEventListener(ev, (e) => e.preventDefault(), { passive: false });</script>
 <meta name="theme-color" content="#170A26">
 <title>CARYMO · Learn. Explore. Grow.</title>
 <link rel="icon" type="image/png" href="marca/favicon-64.png">
@@ -23,6 +27,7 @@
      Plan de examen → camino por unidades → lección y cuestionario con combo → grado, XP, racha y ranking de la semana.
      La IA (Negro y Paulina) pasa por La Sala; el progreso vive en La Sala (servidor/estudio.js). Lógica en carymo.js; lo compartido con La Sala (pizarrón, sonidos, JSON de la IA) vive en ../sala/. -->
 <style>
+  html{ touch-action:manipulation; -webkit-text-size-adjust:100% }
   @font-face{ font-family:Titulo; src:url(../sala/letra/montserrat.woff2) format("woff2"); font-weight:100 900; font-display:swap }
   @font-face{ font-family:Texto; src:url(../sala/letra/nunito-600.woff2) format("woff2"); font-weight:600; font-display:swap }
   @font-face{ font-family:Texto; src:url(../sala/letra/nunito-700.woff2) format("woff2"); font-weight:700; font-display:swap }
@@ -164,6 +169,14 @@
   .con-llave summary{ color:var(--tenue); font-size:13px; cursor:pointer; padding:6px 0; min-height:32px }
   .form-cuenta{ display:grid; gap:12px } .form-cuenta label{ display:grid; gap:6px; font:700 14px/1.2 Texto; color:var(--suave) }
   .form-cuenta .campo{ font-size:16px }
+  /* qué estudias, al crear la cuenta */
+  .escolar{ border:0; padding:0; margin:0; min-width:0 } .escolar legend{ font:700 14px/1.2 Texto; color:var(--suave); margin-bottom:6px; padding:0 }
+  .escolar-op{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:6px }
+  .form-cuenta .escolar-op label{ display:block; gap:0; position:relative }
+  .escolar-op input{ position:absolute; opacity:0; inset:0; margin:0 }
+  .escolar-op span{ display:flex; align-items:center; min-height:44px; padding:8px 12px; border-radius:12px; border:2px solid #ffffff1a; background:#ffffff0d; color:var(--hueso, #fff); font-weight:700; font-size:14px; line-height:1.2; overflow-wrap:anywhere }
+  .escolar-op input:checked + span{ border-color:var(--claro); background:#AC27FF22 }
+  .escolar-op input:focus-visible + span{ outline:2px solid var(--claro); outline-offset:2px }
   .cuenta-txt{ color:var(--suave); margin:0 0 4px; line-height:1.45 }
   .cuenta-error{ color:#FF9CAE; font-weight:700; margin:0 }
   .cuenta-otras{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center } .cuenta-otras .bt{ min-height:44px; font-size:14px }
@@ -183,6 +196,11 @@
   .en-brillo{ position:absolute; inset:0 auto 0 0; width:40%; background:linear-gradient(90deg, transparent, #ffffffb0, transparent); mix-blend-mode:overlay; opacity:0; pointer-events:none }
   .en-lema{ margin:12px 0 0; padding-left:.32em; font:800 13px/1 Titulo; letter-spacing:.32em; text-transform:uppercase; color:#C77DFF; opacity:0 }
   .en-masc{ margin-top:30px; opacity:0 }
+  /* la dedicatoria (Carlos, 14 nov: «al abrir menciona que es un proyecto de Grupo Mazi dedicado con amor para Mónica») */
+  .en-dedica{ position:absolute; left:16px; right:16px; bottom:max(28px, env(safe-area-inset-bottom)); margin:0; display:grid; justify-items:center; gap:6px; text-align:center; opacity:0 }
+  .en-mazi{ display:inline-flex; align-items:center; gap:7px; font:800 12px/1 Titulo; letter-spacing:.18em; text-transform:uppercase; color:#E9E4E4 }
+  .en-mazi svg{ width:18px; height:18px; flex:none }
+  .en-amor{ font:700 24px/1.15 Dibujada, Texto; color:#C77DFF; overflow-wrap:anywhere }
 
   /* ══ palomium y el cuarto del compañero (companero.js, cosas.js) ══ */
   .pastilla.cubos{ border:0; color:#E7CCFF; font:800 14px/1 Titulo; cursor:pointer; gap:5px }
@@ -566,7 +584,7 @@
   @keyframes aparece{ from{ opacity:0 } }
   .hoja{ position:fixed; left:0; right:0; bottom:0; z-index:91; max-height:min(85dvh, calc(100dvh - var(--muelle, 0px) - 12px)); overflow-y:auto; padding:10px 16px calc(18px + env(safe-area-inset-bottom)); border-radius:24px 24px 0 0; background:var(--fondo-2); animation:sube .3s cubic-bezier(.2,.9,.3,1) }
   .hoja .dentro{ max-width:560px; margin:0 auto }
-  .hoja .agarre{ width:42px; height:5px; border-radius:3px; background:#ffffff30; margin:0 auto 12px }
+  .hoja .agarre{ width:46px; height:5px; border-radius:3px; background:#ffffff59; margin:0 auto 14px }
   .hoja h3{ font:800 18px/1.2 Titulo; text-align:center; margin-bottom:12px }
   .menu{ display:grid; gap:4px }
   .menu button{ display:flex; align-items:center; gap:12px; width:100%; min-height:52px; padding:0 12px; border:0; border-radius:12px; background:none; text-align:left; font-weight:700 }
@@ -639,7 +657,11 @@
   .nom-perla{ background:linear-gradient(100deg, #FFFFFF 20%, #E7DDF6 38%, #FFFFFF 50%, #F3E9DA 64%, #FFFFFF 80%) 0 0 / 220% 100%; -webkit-background-clip:text; background-clip:text; color:transparent;
     font-weight:800; animation:nom-perla 5s ease-in-out infinite alternate; filter:drop-shadow(0 0 5px #ffffff55) }
   @keyframes nom-perla{ to{ background-position:-120% 0 } }
-  @media (prefers-reduced-motion: reduce){ .nom-arcoiris, .nom-perla{ animation:none } }
+  .nom-corazones{ display:inline-flex; align-items:center; gap:4px; max-width:100% } .nom-corazones .nom-perla{ min-width:0; overflow:hidden; text-overflow:ellipsis }
+  .nom-corazon{ width:.95em; height:.95em; flex:none; animation:nom-late 1.6s ease-in-out infinite } .nom-corazon + .nom-perla + .nom-corazon{ animation-delay:.25s }
+  @keyframes nom-late{ 0%, 60%, 100%{ transform:scale(1) } 20%{ transform:scale(1.22) } 35%{ transform:scale(.96) } }
+  .ins-inspiracion{ color:#FFB3C8 } .ins-inspiracion .i{ color:#F0477A; fill:#F0477A }
+  @media (prefers-reduced-motion: reduce){ .nom-arcoiris, .nom-perla, .nom-corazon{ animation:none } }
   .insignias{ display:inline-flex; flex-wrap:wrap; gap:4px; flex:none }
   .insignia{ display:inline-flex; align-items:center; gap:3px; padding:2px 7px 2px 5px; border-radius:99px; font-size:11px; font-weight:800; line-height:1.3; white-space:nowrap;
     background:#AC27FF22; color:var(--claro-txt); border:1px solid #AC27FF55 }
@@ -781,7 +803,8 @@
   .interruptor{ position:relative; width:52px; height:32px; border-radius:999px; border:0; background:#ffffff22; transition:background .2s; flex:none }
   .interruptor::after{ content:""; position:absolute; left:3px; top:3px; width:26px; height:26px; border-radius:50%; background:#fff; transition:transform .2s }
   .interruptor[aria-checked="true"]{ background:var(--claro) } .interruptor[aria-checked="true"]::after{ transform:translateX(20px) }
-  .version{ text-align:center; color:var(--tenue); font-size:12px; margin:24px 0 }
+  .version{ text-align:center; color:var(--tenue); font-size:12px; margin:24px 0 8px }
+  .dedicatoria{ text-align:center; margin:0 0 28px; color:var(--tenue); font:800 11px/1.6 Titulo; letter-spacing:.14em; text-transform:uppercase } .dedicatoria span{ font:700 20px/1.2 Dibujada, Texto; letter-spacing:0; text-transform:none; color:var(--claro-txt, #C77DFF) }
 
   .aviso{ margin:12px 0; padding:12px 14px; border-radius:14px; background:#3A0F1E; color:#FFD3DA; font-size:14px }
   .cargando-fila{ text-align:center; color:var(--suave); padding:30px 0 }
@@ -905,6 +928,12 @@
   .chips-nivel{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; margin-bottom:8px }
   .chips-nivel button{ min-height:48px; padding:10px; border-radius:16px; border:2px solid #ffffff1a; background:#ffffff0d; color:inherit; font-weight:800; font-size:15px; font-family:inherit; line-height:1.2 }
   .chips-nivel button[aria-checked="true"]{ border-color:var(--claro); background:#AC27FF22 }
+  /* qué tan fuerte estudias: tres tarjetas con su frase */
+  .chips-estudio{ display:grid; gap:8px; margin-bottom:12px }
+  .chips-estudio button{ display:grid; grid-template-columns:28px minmax(0, 1fr); column-gap:10px; align-items:center; text-align:left; min-height:56px; padding:10px 14px; border-radius:16px; border:2px solid #ffffff1a; background:#ffffff0d; color:inherit; font-family:inherit }
+  .chips-estudio button .i{ grid-row:span 2; width:24px; height:24px; color:var(--claro-txt, #C77DFF) }
+  .chips-estudio b{ font-size:15px; font-weight:800 } .chips-estudio small{ font-size:13px; color:var(--tenue); line-height:1.3 }
+  .chips-estudio button[aria-checked="true"]{ border-color:var(--claro); background:#AC27FF22 }
   .elige-masc{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; margin-bottom:6px }   /* 8 animales + ninguno = 3 filas de 3 */
   .elige-masc button{ display:grid; justify-items:center; gap:6px; padding:12px 6px; border-radius:18px; border:2px solid #ffffff1a; background:#ffffff0d; color:inherit; font-weight:700; font-size:14px; line-height:1.2; font-family:inherit; min-height:44px; min-width:0; overflow:hidden; transition:transform .25s cubic-bezier(.3,1.6,.4,1), border-color .2s }
   .elige-masc button[aria-checked="true"]{ border-color:var(--claro, #AC27FF); background:#AC27FF22 }
@@ -933,7 +962,16 @@
   .pelota{ position:absolute; left:0; top:0; width:36px; height:36px; pointer-events:auto; cursor:grab; touch-action:none; transition:opacity .2s; filter:drop-shadow(0 4px 3px #0007) } .pelota svg{ width:100%; height:100% }
   .cielo-carta{ position:absolute; inset:14% 10%; z-index:4; display:grid; align-content:center; justify-items:center; gap:6px; padding:16px; border-radius:20px; background:#170A26e6; text-align:center }
   .cielo-carta[hidden]{ display:none } .cielo-carta b{ font:800 18px/1.2 Titulo } .cielo-carta p{ margin:0 0 6px; color:var(--suave); font-size:14px }
-  .cielo-l{ display:flex; flex-wrap:wrap; gap:6px } .cielo-l span{ padding:5px 10px; border-radius:99px; background:#ffffff0d; color:var(--suave); font-size:12.5px }
+  .cielo-l{ display:grid; gap:6px }
+  .cielo-l .ida{ display:grid; grid-template-columns:24px minmax(0, 1fr) auto; align-items:center; gap:10px; min-height:48px; padding:8px 12px; border-radius:14px; border:1px solid #ffffff1a; background:#ffffff0d; color:inherit; font-family:inherit; text-align:left }
+  .cielo-l .ida span{ font-weight:700; font-size:14px; overflow-wrap:anywhere } .cielo-l .ida small{ color:var(--claro-txt, #C77DFF); font-size:12.5px; font-weight:700 }
+  /* la nota que deja la mascota: papel escrito a mano */
+  .nota-ida{ position:relative; margin:4px 0 10px; padding:16px 18px 12px; border-radius:6px; background:#F4EEE6; color:#2A1B3D; transform:rotate(-1.2deg); box-shadow:0 0 0 1px #0000001a, 0 8px 18px #00000040; text-align:left; max-width:100% }
+  .nota-ida .nota-txt{ margin:0; font:700 19px/1.35 Dibujada, Texto; overflow-wrap:anywhere } .nota-ida .nota-firma{ margin:8px 0 0; text-align:right; font:700 18px/1 Dibujada, Texto; color:#7E1735 }
+  .nota-dato{ margin:0 0 10px; color:var(--suave); font-size:13.5px; line-height:1.4 }
+  .nota-bts{ display:grid; gap:8px } .nota-bts .bt{ width:100%; white-space:nowrap }
+  .nota-bts .bt svg:first-child{ width:18px; height:18px } .nota-bts .bt[aria-disabled="true"]{ opacity:.6 }
+  .cielo-carta{ overflow:auto }
   .adopta-g{ display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:8px }
   .adopta, .prenda{ display:grid; justify-items:center; gap:3px; padding:8px 4px 10px; border-radius:18px; border:2px solid #ffffff1a; background:#ffffff0d; color:inherit; font:inherit; min-width:0; transition:transform .2s cubic-bezier(.3,1.6,.4,1), border-color .2s }
   .adopta:active, .prenda:active{ transform:scale(.93) } .adopta.elegida, .prenda.puesta{ border-color:#AC27FF; background:#AC27FF26 } .adopta[disabled]{ opacity:.5 }
@@ -959,7 +997,8 @@
 <div id="entrada" aria-hidden="true"><div class="en-chispas"></div><div class="en-centro">
   <span class="en-onda"></span><img class="en-ico" src="marca/icono-512.webp" width="512" height="512" alt="">
   <div class="en-nombre"><i>C</i><i>A</i><i>R</i><i>Y</i><i>M</i><i>O</i><span class="en-brillo"></span></div>
-  <p class="en-lema">Learn. Explore. Grow.</p><div class="en-masc"></div></div></div>
+  <p class="en-lema">Learn. Explore. Grow.</p><div class="en-masc"></div></div>
+  <p class="en-dedica"><span class="en-mazi"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1 19 5.5 10 10 1 5.5Z" fill="#AC27FF"/><path d="M1 5.5 10 10v9L1 14.5Z" fill="#7E1735"/><path d="M19 5.5 10 10v9l9-4.5Z" fill="#2A1640"/><path d="M3 13.5V8l3.5 3.2L10 8.6v8" fill="none" stroke="#F1ECF4" stroke-width="1.3" stroke-linejoin="round"/></svg>Un proyecto de Grupo Mazi</span><span class="en-amor">dedicado con amor para Mónica</span></p></div>
 <script>/* ya se vio en esta visita, «reducir movimiento», o la maneja un robot de pruebas (salvo ?entrada=1): fuera el telón */
 try{ if(!/[?&]entrada=1/.test(location.search) && (sessionStorage.getItem('carymo.entrada') || navigator.webdriver || matchMedia('(prefers-reduced-motion: reduce)').matches)) document.getElementById('entrada').remove(); }catch(e){ document.getElementById('entrada').remove(); }</script>
 <div class="app" id="app">

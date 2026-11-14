@@ -27,7 +27,7 @@ import { iniciarAmigos } from './amigos.js';
 import { nombreHTML, insigniasHTML } from './nombre.js';
 import { iniciarPerfilOtro } from './perfil-otro.js';
 import { iniciarCompanero } from './companero.js';
-import { iniciarCuenta } from './cuenta.js';
+import { iniciarCuenta, ESCOLAR, NIVEL_DE_ESCOLAR } from './cuenta.js';
 import { iniciarApuntes } from './apuntes.js';
 import { iniciarSesionEstudio } from './sesion.js';
 import { pedirSala, conAcceso } from '../sala/acceso.js';
@@ -144,6 +144,12 @@ async function ia({ sistema, texto, imagenes = [], motor = imagenes.length ? 'ge
 
 /* ══ 1 · LO QUE SE LE PIDE A LA IA ════════════════════════════════════════ */
 const corta = (t, n) => String(t ?? '').trim().slice(0, n);
+/* LOS PASOS SIN NÚMERO (Carlos, 14 nov, captura: «Ordena los pasos» salía con «1. Consultar al médico», «2. …»: la
+   IA los numeraba y eso ES la respuesta). Se quita «1.», «2)», «Paso 3:», «(4)» o «Primero,» del principio. */
+const sinNumero = (t) => { const o = String(t ?? '').trim(), r = o.replace(/^(?:paso\s*)?\(?\d{1,2}\s*(?:[.)\-:–](?!\d))\s*|^(?:primero|segundo|tercero|cuarto|quinto|sexto|luego|despu[eé]s|al final|finalmente)\s*[,:]\s*/i, '').trim();
+  return r ? r.charAt(0).toUpperCase() + r.slice(1) : o; };
+/* revuelve sin dejarlo igual que la respuesta (con 3 pasos, 1 de cada 6 veces salía ya ordenado) */
+const revueltoDistinto = (xs) => { let r = barajar(xs); for(let k = 0; k < 8 && r.every((x, i) => x === xs[i]); k++) r = barajar(xs); return r; };
 /* EL NIVEL DE ESTUDIO (Carlos, 14 nov: «suma un nivel kids para kínder, primaria, secundaria… y un nivel prepa está casi a
    nivel universidad, bájalos un poco»). Se elige en Ajustes; lo usan el plan, las lecciones y el pizarrón. */
 const NIVELES = { kids: 'Kids · kínder y primaria', secu: 'Secundaria', prepa: 'Prepa', uni: 'Universidad' };
@@ -156,12 +162,28 @@ const TUTOR = {
 const nivelEstudio = () => NIVELES[ajustes.nivel] ? ajustes.nivel : 'prepa';
 /* qué tan a fondo: «automático» = general cuando el examen está cerca (Carlos: «mientras más se acerca la fecha, que se vaya
    volviendo más general y más útil para datos que sí te pueden preguntar»), normal si falta mucho */
+/* QUÉ TAN FUERTE ESTUDIAS (Carlos, 14 nov: «3 opciones de configuración general: superficial, esencial y a profundidad»).
+   Lo de antes (ajustes.profundidad: general/normal/detalle/auto) se traduce solo. Esencial conserva el «automático»:
+   normal si falta mucho y lo general cerca del examen. */
+const ESTUDIO = {
+  superficial: { nombre: 'Superficial', ico: 'feather', desc: 'Lo clave' },
+  esencial: { nombre: 'Esencial', ico: 'target', desc: 'Lo del examen' },
+  profundo: { nombre: 'A profundidad', ico: 'microscope', desc: 'Todo a detalle' },
+};
+const estudioElegido = () => ESTUDIO[ajustes.estudio] ? ajustes.estudio : ({ general: 'superficial', detalle: 'profundo' }[ajustes.profundidad] || 'esencial');
 function profundidadDe(p){
-  const elegida = ajustes.profundidad || 'auto';
-  if(elegida !== 'auto') return elegida;
+  const e = estudioElegido();
+  if(e === 'superficial') return 'general';
+  if(e === 'profundo') return 'detalle';
+  if(ajustes.profundidad === 'normal') return 'normal';
   const dias = p && p.fecha ? Math.ceil((Date.parse(p.fecha + 'T12:00:00') - Date.now()) / 864e5) : 99;
   return dias <= 10 ? 'general' : 'normal';
 }
+const REGLA_ESTUDIO = {
+  superficial: '- Es un repaso SUPERFICIAL: 3 unidades de 2 temas, sólo lo indispensable.',
+  esencial: '',
+  profundo: '- Es un estudio A PROFUNDIDAD: 4 unidades de 3 temas, sin dejar fuera nada importante del temario.',
+};
 const llaveNivel = (nivel, largo, prof) => `${nivel}-${largo}${prof && prof !== 'normal' ? '-' + prof : ''}`;
 function sistemaPlan(){
   return `Eres un tutor ${TUTOR[nivelEstudio()]}. Armas PLANES DE ESTUDIO para un examen, en español de México.
@@ -172,7 +194,7 @@ Reglas:
 - De 3 a 4 unidades, de lo básico a lo difícil (la primera son los fundamentos; la última, lo que más cuesta).
 - De 2 a 3 temas por unidad, sin repetir. Sólo temas que de verdad entran en el examen, del tamaño de un tema de clase (ej. «Partes del aparato reproductor femenino», NO «El endometrio»): nada de subtemas tan específicos que un examen de este nivel no preguntaría.
 - Si te mandan temas o fotos de apuntes, el plan se arma con ESO (no inventes otro temario).
-- Nada de emojis.`;
+${REGLA_ESTUDIO[estudioElegido()] ? REGLA_ESTUDIO[estudioElegido()] + '\n' : ''}- Nada de emojis.`;
 }
 function sistemaLeccion(){
   return `Eres un tutor ${TUTOR[nivelEstudio()]}. Escribes en español de México, claro y sin relleno.
@@ -192,7 +214,7 @@ Reglas:
 - "icono": escoge el dibujo que mejor ilustre cada idea, SÓLO de esta lista: ${DIBUJOS_LISTA}
 - De 8 a 9 preguntas MUY VARIADAS: 2 de "opcion" y una de cada uno de los demás tipos (hueco, escribir, unir, error, ordenar, clasificar). Si el tema de plano no tiene un proceso para "error" u "ordenar", cámbialo por otro tipo, pero usa al menos 6 tipos distintos. Que todo se conteste con lo que dice la lección.
 - "error": de 4 a 6 pasos de un proceso real con UNO cambiado para que esté mal; "error" es su número (empieza en 0).
-- "ordenar": de 4 a 6 pasos de un proceso en su orden correcto (la app los revuelve).
+- "ordenar": de 4 a 6 pasos de un proceso en su orden correcto (la app los revuelve). SIN números ni «primero», «luego» al principio: eso delata la respuesta.
 - "clasificar": 2 o 3 grupos con 2 a 3 elementos cada uno.
 - "unir": 4 pares; "escribir": respuestas cortas que se puedan escribir en el teléfono.
 - En "opcion": 4 opciones del mismo largo más o menos, UNA sola correcta; "correcta" es su número (0 a 3). Las incorrectas tienen que sonar posibles.
@@ -238,8 +260,8 @@ export function normalizarLeccion(j){
     if(tipo === 'unir'){ const pares = (Array.isArray(p.pares) ? p.pares : []).map((x) => Array.isArray(x) ? [corta(x[0], 80), corta(x[1], 120)] : x && typeof x === 'object' ? [corta(x.a || x.concepto || x[0], 80), corta(x.b || x.definicion || x[1], 120)] : null).filter((x) => x && x[0] && x[1]).slice(0, 5);
       if(pares.length < 3 || new Set(pares.map((x) => quitarAcentos(x[0]))).size !== pares.length || new Set(pares.map((x) => quitarAcentos(x[1]))).size !== pares.length) return null; return { tipo, pregunta: corta(p.pregunta, 200), pares, ...base }; }
     if(tipo === 'imagen'){ const q = sinImagen(p); if(!q) return null; return { ...q, ...base }; }
-    if(tipo === 'error'){ const pasos = lista(p.pasos, 120, 7), e0 = Number(p.error); if(pasos.length < 3 || !Number.isInteger(e0) || e0 < 0 || e0 >= pasos.length) return null; return { tipo, pregunta: corta(p.pregunta, 200), pasos, error: e0, correccion: corta(p.correccion, 160) || 'otro paso', ...base }; }
-    if(tipo === 'ordenar'){ const pasos = lista(p.pasos, 100, 7); if(pasos.length < 3 || new Set(pasos.map(quitarAcentos)).size !== pasos.length) return null; return { tipo, pregunta: corta(p.pregunta, 200), pasos, ...base }; }
+    if(tipo === 'error'){ const pasos = lista(p.pasos, 120, 7).map(sinNumero), e0 = Number(p.error); if(pasos.length < 3 || !Number.isInteger(e0) || e0 < 0 || e0 >= pasos.length) return null; return { tipo, pregunta: corta(p.pregunta, 200), pasos, error: e0, correccion: corta(p.correccion, 160) || 'otro paso', ...base }; }
+    if(tipo === 'ordenar'){ const pasos = lista(p.pasos, 100, 7).map(sinNumero); if(pasos.length < 3 || new Set(pasos.map(quitarAcentos)).size !== pasos.length) return null; return { tipo, pregunta: corta(p.pregunta, 200), pasos, ...base }; }
     if(tipo === 'clasificar'){ const grupos = (Array.isArray(p.grupos) ? p.grupos : []).map((g) => ({ nombre: corta(g && g.nombre, 40), items: lista(g && g.items, 50, 4) })).filter((g) => g.nombre && g.items.length).slice(0, 3);
       if(grupos.length < 2 || grupos.reduce((a, g) => a + g.items.length, 0) < 4) return null; return { tipo, pregunta: corta(p.pregunta, 200), grupos, ...base }; }
     const opciones = (Array.isArray(p.opciones) ? p.opciones : []).map((x) => corta(x, 200)).filter(Boolean);
@@ -330,10 +352,40 @@ function hoja(titulo, html, alAbrir){
   const h = document.createElement('div'); h.className = 'hoja'; h.id = 'hoja'; h.setAttribute('role', 'dialog'); h.setAttribute('aria-modal', 'true'); h.setAttribute('aria-label', titulo);
   h.innerHTML = `<div class="dentro"><div class="agarre"></div>${titulo ? `<h3>${esc(titulo)}</h3>` : ''}${html}</div>`;
   v.addEventListener('click', cerrarHoja); document.body.append(v, h);
+  deslizarParaCerrar(h, v);
   alAbrir?.(h); h.querySelector('button, input')?.focus({ preventScroll: true });
   return h;
 }
 function cerrarHoja(){ $('#velo')?.remove(); $('#hoja')?.remove(); }
+/* DESLIZAR PARA CERRAR (Carlos, 14 nov: «en los menús que se levantan sobre otra página, que si los deslizo desde arriba,
+   donde tienen la línea blanca, hacia abajo, los pueda cerrar»). Se agarra de la franja de arriba (la rayita y el título)
+   cuando la hoja no está bajada; si se suelta pasando un tercio, o con un jalón rápido, se va; si no, regresa. Un toque
+   ahí mismo sigue siendo un toque: el arrastre empieza hasta que el dedo baja 8 px. */
+function deslizarParaCerrar(h, v){
+  let y0 = null, t0 = 0, dy = 0, arrastra = false;
+  h.addEventListener('touchstart', (e) => {
+    const t = e.touches[0], arriba = t.clientY - h.getBoundingClientRect().top;
+    if(e.touches.length !== 1 || h.scrollTop > 0 || arriba > 64){ y0 = null; return; }
+    y0 = t.clientY; t0 = performance.now(); dy = 0; arrastra = false;
+  }, { passive: true });
+  h.addEventListener('touchmove', (e) => {
+    if(y0 == null) return;
+    dy = e.touches[0].clientY - y0;
+    if(!arrastra){ if(dy < 8) { if(dy < -4) y0 = null; return; } arrastra = true; h.style.animation = 'none'; h.style.transition = 'none'; }
+    e.preventDefault();
+    h.style.transform = `translateY(${Math.max(0, dy)}px)`; v.style.opacity = String(Math.max(.2, 1 - dy / (h.offsetHeight * 1.2)));
+  }, { passive: false });
+  const soltar = () => {
+    if(y0 == null || !arrastra){ y0 = null; return; }
+    const rapido = dy / Math.max(1, performance.now() - t0) > .6 && dy > 30;
+    y0 = null; arrastra = false;
+    if(dy > h.offsetHeight / 3 || rapido){
+      h.style.transition = 'transform .2s ease-in'; h.style.transform = 'translateY(105%)'; v.style.transition = 'opacity .2s'; v.style.opacity = '0';
+      tono(SON.toque); setTimeout(() => { if(h.isConnected) cerrarHoja(); }, 190);
+    } else { h.style.transition = 'transform .25s cubic-bezier(.2,.9,.3,1)'; h.style.transform = ''; v.style.opacity = ''; }
+  };
+  h.addEventListener('touchend', soltar); h.addEventListener('touchcancel', soltar);
+}
 /* una capa encima de todo (alta, lección, cuestionario…). Se recrea entera cada vez: sin oyentes viejos colgados */
 function capa(clase = ''){
   cerrarCapa(); tono(SON.whoosh);
@@ -961,7 +1013,7 @@ const EJ = {
     marcar(q, r, c){ $$('.caja-f', c).forEach((b) => { b.disabled = true; const k = +b.dataset.err; if(k === q.error){ b.classList.add('mal-real'); b.insertAdjacentHTML('beforeend', `<small class="corrige">Debía decir: ${esc(q.correccion)}</small>`); } else if(k === q._r) b.classList.add('mal'); }); },
   },
   ordenar: {
-    pintar(q){ q._fichas ||= barajar(q.pasos.map((t, k) => ({ t, k }))); q._puestos ||= [];
+    pintar(q){ q._fichas ||= revueltoDistinto(q.pasos.map((t, k) => ({ t: sinNumero(t), k }))); q._puestos ||= [];
       return `<p class="instruccion">${esc(q.pregunta || 'Arma el diagrama en orden')}</p>
         <div class="flujo armar">${q.pasos.map((_, k) => `${k ? `<span class="flecha-f">${ico('arrow-down')}</span>` : ''}<div class="hueco-f" data-hueco="${k}"><span class="n-f">${k + 1}</span></div>`).join('')}</div>
         <div class="fichas sueltas">${q._fichas.map((f, j) => `<div class="ficha-lugar" data-lugar-o="${j}"><button class="ficha" data-ord="${j}">${esc(f.t)}</button></div>`).join('')}</div>`; },
@@ -1243,8 +1295,8 @@ async function abrirSimulacro(p, n, _repaso){
 function pizarraDe(p, n){
   const q = new URLSearchParams(); q.set('nivel', nivelEstudio()); q.set('profundidad', profundidadDe(p));
   const unidad = n.alcance === 'unidad' && p.unidades ? p.unidades.find((u) => u.nodos.some((x) => x.id === n.id)) : null;
-  if(unidad){ q.set('tema', `Panorama general de «${unidad.titulo}» (${p.materia}): de qué trata y cómo se conectan ${unidad.temas.map((t) => t.titulo).join(', ')}. Explica la idea general; cada tema se verá a fondo después.`); q.set('largo', 'normal'); }
-  else { q.set('tema', `${n.titulo} (${p.materia})`); q.set('largo', 'corta'); }
+  if(unidad){ q.set('tema', `Panorama general de «${unidad.titulo}» (${p.materia}): de qué trata y cómo se conectan ${unidad.temas.map((t) => t.titulo).join(', ')}. Explica la idea general; cada tema se verá a fondo después.`); q.set('largo', estudioElegido() === 'superficial' ? 'corta' : 'normal'); }
+  else { q.set('tema', `${n.titulo} (${p.materia})`); q.set('largo', estudioElegido() === 'profundo' ? 'normal' : 'corta'); }
   /* para que la clase sea SUYA: qué examen prepara, cuándo, qué ya vio y qué le costó (Explica lo mete en lo que le pide a la IA) */
   if(p.academia){
     /* Academia: la IA explica SÓLO con la hoja oficial de Grupo Mazi (academia.js), para que no invente precios ni clientes */
@@ -1762,9 +1814,8 @@ function pintarPerfil(){
       return `<button role="radio" aria-checked="${mascotaActiva() === k}" data-masc="${k}" class="${mia ? '' : 'sin-adoptar'}">${k === 'no' ? ico('x') : `<span class="masc-mini" data-mini="${k}"></span>`}<span>${t}</span>${mia ? '' : `<small>${ico('lock')}Adoptar</small>`}</button>`; }).join('')}</div>
     <div class="seccion-t">Tu nivel</div>
     <div class="chips-nivel" role="radiogroup" aria-label="Tu nivel de estudio">${Object.entries(NIVELES).map(([k, t]) => `<button role="radio" aria-checked="${nivelEstudio() === k}" data-nivel="${k}">${esc(t)}</button>`).join('')}</div>
-    <div class="seccion-t">Qué tan a fondo te explico</div>
-    <div class="chips-nivel" role="radiogroup" aria-label="Qué tan a fondo">${[['auto', 'Automático'], ['general', 'Lo general'], ['normal', 'Normal'], ['detalle', 'A detalle']].map(([k, t]) => `<button role="radio" aria-checked="${(ajustes.profundidad || 'auto') === k}" data-prof="${k}">${t}</button>`).join('')}</div>
-    <p class="sub-vista" style="margin:-2px 0 10px;font-size:13px">Automático: normal cuando falta mucho para el examen, y lo general (todos los temas, lo que sí te preguntan) cuando faltan 10 días o menos.</p>
+    <div class="seccion-t">Intensidad</div>
+    <div class="chips-estudio" role="radiogroup" aria-label="Qué tan fuerte estudias">${Object.entries(ESTUDIO).map(([k, e]) => `<button role="radio" aria-checked="${estudioElegido() === k}" data-estudio="${k}">${ico(e.ico)}<b>${e.nombre}</b><small>${e.desc}</small></button>`).join('')}</div>
     <div class="seccion-t">La voz que te explica</div>
     <div class="ajuste voz-aj">${ico('mic')}<span>Voz del pizarrón<small style="display:block;color:var(--tenue);font-weight:500">Las «de estudio» suenan como persona</small></span>
       <select id="pVoz" class="campo" style="max-width:170px;min-height:40px" aria-label="Voz del pizarrón">${opcionesVoz()}</select>
@@ -1773,14 +1824,15 @@ function pintarPerfil(){
     <div class="seccion-t">App</div>
     <div class="ajuste">${ico('volume-2')}<span>Efectos de sonido</span><button class="interruptor" role="switch" data-aj="sonido" aria-checked="${!!ajustes.sonido}" aria-label="Efectos de sonido"></button></div>
     <div class="ajuste">${ico('vibrate')}<span>Vibración</span><button class="interruptor" role="switch" data-aj="vibrar" aria-checked="${!!ajustes.vibrar}" aria-label="Vibración"></button></div>
-    <p class="version">${esc(VERSION_ESTUDIO)} · ${cola.length ? `${cola.length} logros por mandar a La Sala` : 'todo guardado en La Sala'}</p>`;
+    <p class="version">${esc(VERSION_ESTUDIO)} · ${cola.length ? `${cola.length} logros por mandar a La Sala` : 'todo guardado en La Sala'}</p>
+    <p class="dedicatoria">Un proyecto de Grupo Mazi<br><span>dedicado con amor para Mónica</span></p>`;
   /* el selector de compañero con las mascotas vivas (sin imágenes recortadas) */
   $$('[data-mini]', v).forEach((d) => crearMascota(d, { personaje: d.dataset.mini, tam: 62 }));
   avisos?.pintar(v.querySelector('#pAvisos'));
 }
 $('#vPerfil').addEventListener('click', (e) => {
   const nv = e.target.closest('[data-nivel]'); if(nv){ ajustes.nivel = nv.dataset.nivel; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); brindis(`Nivel: ${NIVELES[ajustes.nivel]}`, '', 'graduation-cap'); return; }
-  const pf = e.target.closest('[data-prof]'); if(pf){ ajustes.profundidad = pf.dataset.prof; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); return; }
+  const pf = e.target.closest('[data-estudio]'); if(pf){ ajustes.estudio = pf.dataset.estudio; delete ajustes.profundidad; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); brindis(`Estudio: ${ESTUDIO[ajustes.estudio].nombre}`, '', ESTUDIO[ajustes.estudio].ico); return; }
   const a = e.target.closest('[data-aj]'); if(a){ ajustes[a.dataset.aj] = !ajustes[a.dataset.aj]; guarda.poner('est.ajustes', ajustes); a.setAttribute('aria-checked', ajustes[a.dataset.aj]); encenderSonidos(ajustes.sonido !== false); tono(SON.toque); return; }
   const p = e.target.closest('[data-abrir-plan]'); if(p){ actualId = p.dataset.abrirPlan; guardarLocal(); vista = 'plan'; pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); return; }
   if(e.target.closest('[data-nuevo-plan]')) alta();
@@ -1836,7 +1888,8 @@ amigos = iniciarAmigos({ sala, brindis, hoja, cerrarHoja, esc, ico, tono, SON, v
 pintar();
 sincronizar();
 if(conAcceso()){ amigos.arrancar(); setTimeout(() => { if(vista === 'plan' && !$('#capa')) amigos.preguntarExamen(); }, 2500); }
-cuentaUI = iniciarCuenta({ hoja, cerrarHoja, esc, ico, brindis, tono, SON, $, perfil: () => perfil,
+cuentaUI = iniciarCuenta({ hoja, cerrarHoja, esc, ico, brindis, tono, SON, $, perfil: () => perfil, escolar: () => ajustes.escolar,
+  alEscolar: (k) => { ajustes.escolar = k; ajustes.nivel = NIVEL_DE_ESCOLAR[k] || 'prepa'; guarda.poner('est.ajustes', ajustes); },
   alEntrar: (yo) => { $('#cajaLlave')?.remove(); try{ const pend = sessionStorage.getItem('carymo.planPendiente'); if(pend){ sessionStorage.removeItem('carymo.planPendiente'); setTimeout(() => anadirCurso(pend), 900); } }catch{} if(yo && yo.nombre && (!perfil.nombre || perfil.nombre === 'Tú')){ perfil.nombre = yo.nombre; guarda.poner('est.perfil', perfil); sala({ accion: 'perfil', nombre: yo.nombre }).catch(() => {}); } sincronizar(); amigos.arrancar(); pintar(); },
   alSalir: () => { pintar(); pintarFaltaLlave(); } });
 apuntes = iniciarApuntes({ $, esc, ico, hoja, cerrarHoja, capa, cerrarCapa, brindis, tono, SON, nuevoId, planes: () => planes });
@@ -1882,4 +1935,4 @@ $('#pCubos').addEventListener('click', () => companero.abrir());
     history.back();
   });
 })();
-window.__estudio = { prueba: { brindis, dice, comboVFX, reaccion }, ir: (v) => { vista = v; pintar(); }, yo: () => yo, vestidor: () => vestidor, avisos: () => avisos, companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };
+window.__estudio = { prueba: { brindis, dice, comboVFX, reaccion }, hoja, cerrarHoja, ir: (v) => { vista = v; pintar(); }, yo: () => yo, vestidor: () => vestidor, avisos: () => avisos, companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };

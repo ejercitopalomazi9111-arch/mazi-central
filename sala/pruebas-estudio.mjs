@@ -6,6 +6,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { atenderEstudio, semanaDe, avanzarRacha, juntarProgreso, diaMexico } from './servidor/estudio.js';
+import { precioRegreso, nivelMascota, notaDespedida } from '../carymo/crianza-datos.js';
 
 let bien = 0, mal = 0;
 const ok = (c, t) => { if(c){ bien++; console.log('  ✓', t); } else { mal++; console.log('  ✗', t); } };
@@ -105,8 +106,20 @@ console.log('El servidor');
     ok(q.perfil.mascotas.perrito.muerta && !q.mascotaSube, 'una mascota que se murió ya no gana nada');
     q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'activa', especie: 'paloma' }, '2026-11-17');
     ok(q.bien && q.perfil.mascota === 'paloma', 'te puedes quedar con otra de las que tienes');
-    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'adoptar', especie: 'perrito' }, '2026-11-17');
-    ok(q.bien && q.gastado === 40 && !q.perfil.mascotas.perrito.muerta && q.perfil.mascotas.perrito.xp === 0, 'y la que se murió sólo vuelve como una nueva, desde el principio');
+    /* SE FUE, NO SE MURIÓ (Carlos, 14 nov): regresa con su nivel, pero sólo pagando un montón */
+    const xpAntes = C.m.get('est:perfil:mia').mascotas.perrito.xp, precio = precioRegreso(nivelMascota(xpAntes));
+    ok(precio >= 300, `que regrese cuesta un montón (${precio} cubitos; la mascota más cara cuesta 140)`);
+    pf = C.m.get('est:perfil:mia'); pf.cubos = precio - 1; C.m.set('est:perfil:mia', pf);
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'regresar', especie: 'perrito' }, '2026-11-17');
+    ok(q.error && q.falta === 1 && q.perfil.mascotas.perrito.muerta, 'si te falta un cubito, no regresa y te dice cuánto falta');
+    pf = C.m.get('est:perfil:mia'); pf.cubos = precio + 5; C.m.set('est:perfil:mia', pf);
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'regresar', especie: 'perrito' }, '2026-11-17');
+    ok(q.bien && q.gastado === precio && q.perfil.cubos === 5 && !q.perfil.mascotas.perrito.muerta && q.perfil.mascotas.perrito.xp === xpAntes && q.perfil.mascotas.perrito.acc.join() === 'birrete,lentes' && q.perfil.mascota === 'perrito',
+      'pagando, regresa con su nivel y su ropa, y te acompaña otra vez');
+    ok(!q.perfil.cielo.some((x) => x.especie === 'perrito'), 'y ya no sale en «las que se fueron»');
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'regresar', especie: 'paloma' }, '2026-11-17');
+    ok(q.error, 'no se puede «regresar» a una que no se ha ido');
+    ok(notaDespedida('gatito').includes('mejor') || /buscar/.test(notaDespedida('gatito')), 'la nota de despedida dice que se fue a buscar algo mejor');
   }
 
   /* ── las ligas ── */
@@ -320,6 +333,27 @@ console.log('Títulos, regalos y el perfil de otro (Carlos, 14 nov)');
   ok(r.ranking.filas.find((f) => f.cuenta === 'sandra').estilo === 'arcoiris', 'en la tabla su nombre viene con su estilo');
   r = await llamar(s, 'sandra', 'POST', '', { accion: 'crianza', que: 'comprarRopa', item: 'capaMazi' });
   ok(!r.bien, 'lo de regalo no se puede comprar');
+  /* Carlos, 14 nov: gorra con pelo por los lados y estampado de Grupo Mazi, sudadera con la marca, y una mascota ya crecida y especial */
+  await llamar(s, 'carlosq', 'POST', '', { accion: 'xp', id: 'cq1', xp: 10 });
+  r = await llamar(s, 'carlosq', 'POST', '', { accion: 'comprarRopa', item: 'gorro:gorraMazi' });
+  ok(!r.bien, 'la gorra Mazi no se puede comprar (aunque sea «gratis»: es de regalo)');
+  r = await casa('carlos', { accion: 'admin', que: 'especial', cuenta: 'carlosq', regalos: ['gorro:gorraMazi', 'estampa:mazi'], ponerle: true,
+    mascotaEspecial: { especie: 'paloma', nivel: 15, skin: 'mazi', acc: ['coronaMazi', 'capaMazi'] } });
+  ok(r.bien && r.ropa.includes('gorro:gorraMazi') && r.personaje.gorro === 'gorraMazi' && r.personaje.estampa === 'mazi' && ['hoodie', 'shirtCrewNeck', 'shirtScoopNeck', 'shirtVNeck', 'graphicShirt'].includes(r.personaje.ropa),
+    'la casa le regala la gorra y el estampado de Grupo Mazi y se los pone');
+  ok(nivelMascota(r.mascotas.paloma.xp) === 15 && r.mascotas.paloma.skin === 'mazi' && r.mascotas.paloma.especial && r.mascota === 'paloma' && r.armario.includes('mazi'),
+    'y una paloma ya crecida (nivel 15), con el color de Grupo Mazi, que lo acompaña');
+  r = await llamar(s, 'carlosq', 'POST', '', { accion: 'crianza', que: 'vestir', especie: 'paloma', skin: 'mazi', acc: ['coronaMazi', 'capaMazi'] });
+  ok(r.bien, 'el color Grupo Mazi se lo puede quitar y volver a poner porque es suyo');
+  r = await llamar(s, 'sandra', 'POST', '', { accion: 'crianza', que: 'comprarRopa', item: 'mazi' });
+  ok(!r.bien, 'y nadie más lo puede comprar');
+  r = await casa('carlos', { accion: 'admin', que: 'especial', cuenta: 'carlosq', cubosInfinitos: true });
+  ok(r.bien && r.infinito && r.cubos >= 999999, 'a Carlos: cubos infinitos');
+  r = await llamar(s, 'carlosq', 'POST', '', { accion: 'crianza', que: 'adoptar', especie: 'ballena' });
+  r = await llamar(s, 'carlosq', 'GET', '');
+  ok(r.perfil.infinito && r.perfil.cubos >= 999999 && r.perfil.mascotas.ballena, 'compra lo que quiera y el saldo se rellena solo');
+  r = await casa('carlos', { accion: 'admin', que: 'especial', cuenta: 'carlosq', titulo: 'inspiracion', estilo: 'perlaCorazones' });
+  ok(r.bien && r.titulos[0] === 'inspiracion' && r.estilo === 'perlaCorazones', 'el título Inspiración y el nombre con corazones existen');
   r = await llamar(s, 'luis', 'GET', '?perfil=sandra');
   ok(r.bien && r.otro.nombre && r.otro.estilo === 'arcoiris' && r.otro.mascotas[0].especie === 'tigre' && !('cubos' in r.otro) && !('amigos' in r.otro), 'el perfil de otra persona enseña su nivel, títulos y mascotas, sin sus cubitos ni sus amigos');
   r = await llamar(s, 'luis', 'GET', '?perfil=nadie');
