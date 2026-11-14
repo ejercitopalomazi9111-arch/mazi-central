@@ -33,7 +33,7 @@ const ESPERA_PAGINA = 5000, ESPERA_ARCHIVO = 8000;
    (lo que la página pidió antes de que este trabajador existiera no pasó por aquí) */
 const BASE = [
   './', './index.html', './manifest.webmanifest', './pizarron.html',
-  './carymo.js', './academia.js', './idiomas.js', './diagrama.js', './amigos.js', './apuntes.js', './avisos.js', './companero.js', './cosas.js', './cuenta.js',
+  './carymo.js', './academia.js', './idiomas.js', './diagrama.js', './repaso.js', './amigos.js', './apuntes.js', './avisos.js', './companero.js', './cosas.js', './cuenta.js',
   './entrada.js', './iconos.js', './mascota.js', './ropa.js', './sesion.js', './trazo.js', './vestidor.js', './yo.js', './zoo.js', './personaje-vivo.js', './ligas.js', './crianza-datos.js', './mascota-ropa.js', './muelle.js', './nombre.js', './titulos.js', './perfil-otro.js', './widget.js',
   './juegos/juegos.js', './juegos/motores.js', './juegos/clases.js', './juegos/revisar.js', './juegos/maquina.js', './juegos/entrenador.js', './juegos/notacion.js', './juegos/aperturas.json',
   ...['K', 'Q', 'R', 'B', 'N', 'P'].flatMap((p) => [`./juegos/piezas/w${p}.svg`, `./juegos/piezas/b${p}.svg`]),

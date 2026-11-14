@@ -21,6 +21,7 @@ import { llave, ponerLlave, llamar, SERVIDOR, SALA } from '../presentaciones/ia.
 import { CURSOS, MATERIAL, HECHOS, planDeCurso } from './academia.js';
 import { IDIOMAS, planDeIdioma } from './idiomas.js';
 import { MODELOS } from './modelos/modelos.js';
+import * as REPASO from './repaso.js';
 import { SISTEMA_DIAGRAMA, normalizarDiagrama, diagramaBasico, svgDiagrama, elegirOcultos } from './diagrama.js';
 import { crearVoz, todas as todasLasVoces, VOZ_DE_FABRICA, despertar } from '../sala/voces.js';
 import { alMuelle, muelleArriba } from './muelle.js';
@@ -238,6 +239,12 @@ Reglas:
 - "unir": 4 pares; "escribir": respuestas cortas que se puedan escribir en el teléfono.
 - En "opcion": 4 opciones del mismo largo más o menos, UNA sola correcta; "correcta" es su número (0 a 3). Las incorrectas tienen que sonar posibles.
 - En "hueco": la frase lleva EXACTAMENTE un ___ y los distractores son del mismo tipo de palabra que la respuesta.
+- Cómo se aprende de verdad (PEDAGOGIA.md), aplícalo sin decirlo:
+  · Una de las ideas es un EJEMPLO CONCRETO o un EJEMPLO RESUELTO paso a paso (en matemáticas, física o química: un ejercicio resuelto corto).
+  · Conecta con algo que el alumno ya conoce de su vida diaria (una comparación o analogía), en una de las ideas.
+  · El "dato" es un truco para recordarlo (regla, rima, acrónimo o imagen mental), no otro dato suelto.
+  · Al menos 2 preguntas piden APLICAR o EXPLICAR (un caso nuevo, «¿qué pasaría si…?», «¿por qué…?»), no sólo repetir la definición.
+  · Las opciones incorrectas salen de los ERRORES TÍPICOS de los alumnos en este tema, y el "porque" explica por qué ese error es tentador y por qué está mal.
 - Nada de emojis. Nada de inventar datos: si no estás seguro de algo, no lo preguntes.`;
 }
 
@@ -559,20 +566,25 @@ function pintarPlan(){
   const c = $('#planCuerpo'), p = plan();
   if(!p){
     c.innerHTML = `<div class="vacio entra"><div class="masc-vacio" id="mascVacio"></div><div class="marca-carymo"><b>CARYMO</b><span>Learn. Explore. Grow.</span></div><p class="lema">Todo lo que puedes aprender, en un solo lugar.</p>
-      <h1>¿Tienes un examen pronto?<em>Aquí estamos para ayudarte</em></h1>
-      <p>Dinos la materia, la fecha y qué temas vienen, o súbele foto a tus apuntes. Te armamos el camino hasta el día del examen.</p>
+      <h1>¿Tienes un examen pronto?<em>Te armamos el camino</em></h1>
+      <p>Materia, fecha y temas, o foto de tus apuntes.</p>
       <button class="bt fuerte ancho" id="bCrear">${ico('plus')} Crear mi plan</button>
-      <button class="bt ancho" id="bAnadir" style="margin-top:12px">${ico('share-2')} Añadir curso con link o código</button>
-      <button class="bt ancho" id="bIdiomas" style="margin-top:12px">${ico('languages')} Idiomas</button>
-      <button class="bt ancho" id="bJuegos" style="margin-top:12px">${ico('swords')} Juegos de mesa</button>
-      <button class="bt ancho" id="bModelos" style="margin-top:12px">${ico('rotate-3d')} Modelos 3D</button>
-      <button class="bt ancho academia-bt" id="bAcademia" style="margin-top:12px">${ico('graduation-cap')} Academia Grupo Mazi</button></div>`;
+      <button class="enlace-suave" id="bAnadir">${ico('share-2')} Tengo un link o código</button>
+      ${botonRepaso()}
+      <div class="seccion-t" style="text-align:left">Explora</div>
+      <div class="explora">
+        <button id="bIdiomas" style="--c:#5BB8F5">${ico('languages')}<b>Idiomas</b></button>
+        <button id="bJuegos" style="--c:#F2B544">${ico('swords')}<b>Juegos</b></button>
+        <button id="bModelos" style="--c:#7FD6A8">${ico('rotate-3d')}<b>3D</b></button>
+        <button id="bAcademia" style="--c:#F06C8B">${ico('graduation-cap')}<b>Academia</b></button>
+      </div></div>`;
     $('#bCrear').addEventListener('click', alta);
     $('#bJuegos').addEventListener('click', () => juegos.abrir());
     $('#bIdiomas').addEventListener('click', abrirIdiomas);
     $('#bModelos').addEventListener('click', () => abrirModelos());
     $('#bAcademia').addEventListener('click', abrirAcademia);
     $('#bAnadir').addEventListener('click', () => anadirCurso());
+    $('#bRepasoHoy')?.addEventListener('click', abrirRepaso);
     { const m = mascotaEn($('#mascVacio'), { tam: 120 }); if(m) setTimeout(() => m.play('saluda', { decir: '¡Hola! ¿Qué estudiamos hoy?' }), 500); }
     return;
   }
@@ -608,7 +620,8 @@ function pintarPlan(){
     html += `<div class="siguiente"><small>Plan completo</small><h3>Llegaste a grado 10. Ya estás listo.</h3><button class="bt blanco ancho" id="bRepasoFinal">Hacer otro simulacro</button></div>`;
   }
   /* arriba: tus cursos para cambiar de un toque y la sesión de estudio (sesion.js) */
-  c.innerHTML = (sesionEst ? sesionEst.fila() : '') + html;
+  c.innerHTML = (sesionEst ? sesionEst.fila() : '') + botonRepaso() + html;
+  $('#bRepasoHoy', c)?.addEventListener('click', abrirRepaso);
   /* la mascota se para junto al nivel que toca, del otro lado del camino */
   if(mascotaPos){
     const nodos = $$('.nodos', c)[mascotaPos.u];
@@ -1117,7 +1130,7 @@ export function sinImagen(q){
   const pregunta = String(q.pregunta || '').replace(/(de )?estas im[aá]genes/gi, (m, de) => de ? 'de estas opciones' : 'estas opciones').slice(0, 300) || '¿Cuál es la correcta?';
   return { tipo: 'opcion', pregunta, opciones, correcta: c, porque: q.porque || '', pista: q.pista || '' };
 }
-function cuestionario(p, n, preguntas, { simulacro = false } = {}){
+function cuestionario(p, n, preguntas, { simulacro = false, repaso = false } = {}){
   const c = capa();
   const fila = barajar(preguntas.map(sinImagen)).filter((q) => q && EJ[q.tipo]).map((q) => ({ ...q, intento: 0 }));
   const total = fila.length;
@@ -1146,6 +1159,8 @@ function cuestionario(p, n, preguntas, { simulacro = false } = {}){
     q._verificada = true;
     const r = ej.revisar(q), bien = r.bien;
     ej.marcar(q, r, c);
+    /* al repaso espaciado (repaso.js): sólo el primer intento cuenta, y con pista no cuenta como sabida */
+    if(q.intento === 0){ try{ const o = q.origen || { plan: p.id, tema: n.tema || n.id || '', materia: p.materia, examen: p.fecha || '' }; REPASO.registrar(q, bien && !q._pista, o); }catch{} }
     contestadas += q.intento === 0 ? 1 : 0;
     if(bien){
       if(q.intento === 0 && !q._pista){ buenasPrimera++; }
@@ -1185,6 +1200,12 @@ function cuestionario(p, n, preguntas, { simulacro = false } = {}){
     clearTimeout(piensaT); pj?.destruir();
     const seg = Math.round((Date.now() - t0) / 1000);
     const pct = Math.round(buenasPrimera / total * 100);
+    if(repaso){
+      const xp = 5 + buenasPrimera * 2;
+      sumarXP(xp, 'repaso'); tono(SON.fin); if(pct === 100) confeti();
+      brindis(`Repaso listo · ${buenasPrimera} de ${total} · +${xp} XP`, 'oro', 'zap');
+      cerrarCapa(); pintar(); return;
+    }
     const xp = simulacro ? 10 + buenasPrimera * 3 + (pct === 100 ? 10 : 0) : 5 + buenasPrimera * 2 + (pct === 100 ? 5 : 0) + Math.min(5, Math.floor(maxCombo / 2));
     resultado(p, n, { xp, pct, seg, maxCombo, titulo: pct === 100 ? '¡La rompiste!' : pct >= 70 ? '¡Bien hecho!' : 'Ya casi', frase: pct === 100 ? 'Todo correcto. Estás volando.' : pct >= 70 ? 'Vas muy bien; lo que fallaste ya lo repasaste.' : 'Lo que fallaste ya lo repasaste. Si quieres, hazlo otra vez.' });
   }
@@ -1437,6 +1458,20 @@ function abrirIdiomas(){
     if(!planes[id]){ guardarPlan(planDeIdioma(k, armarCamino)); brindis(`Empezaste «${k.titulo}»`, 'vino', 'languages'); }
     actualId = id; guardarLocal(); cerrarCapa(); vista = 'plan'; pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 });
   });
+}
+
+/* ══ REPASO DEL DÍA (repaso.js) ═══════════════════════════════════════════
+   Lo que contestaste vuelve en días separados; primero lo que más fallas y mezclando temas (PEDAGOGIA.md). */
+function botonRepaso(){
+  const n = REPASO.cuantas(hoyLocal());
+  return n ? `<button class="repaso-hoy entra" id="bRepasoHoy">${ico('rotate-ccw')}<span><b>Repaso de hoy</b><small>${n} ${n === 1 ? 'pregunta' : 'preguntas'}</small></span>${ico('chevron-right')}</button>` : '';
+}
+function abrirRepaso(){
+  const rs = REPASO.pendientes(hoyLocal(), 10);
+  if(!rs.length){ brindis('Hoy no hay nada que repasar', '', 'circle-check'); return; }
+  tono(SON.toque);
+  const preguntas = rs.map((r) => ({ ...r.q, origen: { plan: r.plan, tema: r.tema, materia: r.materia, examen: r.examen } }));
+  cuestionario({ id: 'repaso', materia: 'Repaso', titulo: 'Repaso de hoy' }, { id: null, titulo: 'Repaso de hoy' }, preguntas, { repaso: true });
 }
 
 /* ══ DIAGRAMAS INTELIGENTES (diagrama.js) ═══════════════════════════════
