@@ -25,6 +25,7 @@ import { crearMascota, PERSONAJES, NOMBRE_PERSONAJE, configurarVestido, refresca
 import { ESPECIES, ETAPAS, nivelMascota, xpDeNivel, etapaDe } from './crianza-datos.js';
 import { iniciarAmigos } from './amigos.js';
 import { nombreHTML, insigniasHTML } from './nombre.js';
+import { iniciarPerfilOtro } from './perfil-otro.js';
 import { iniciarCompanero } from './companero.js';
 import { iniciarCuenta } from './cuenta.js';
 import { iniciarApuntes } from './apuntes.js';
@@ -1673,7 +1674,7 @@ function pintarRanking(){
   } else if(yoF && f.some((x) => x.xp > 0)) frase = `${f.find((x) => x.xp > 0).nombre} ya va arriba: termina una lección para alcanzarlo.`;
   const fila = (x, i) => {
     const zona = deAmigos ? '' : i < rg.suben && x.xp > 0 ? 'sube' : rg.bajan && i >= act - rg.bajan && i < act ? 'baja' : '';
-    return `<div class="fila-rank ${x.yo ? 'yo' : ''} ${zona} ${x.xp > 0 ? '' : 'quieto'}" data-cuenta="${esc(x.cuenta)}"><span class="n">${i + 1}</span><span class="av" style="background:${colorMateria(x.cuenta)}">${esc((x.nombre || '?').charAt(0).toUpperCase())}</span><span class="nom"><span class="nom-linea">${nombreHTML(x.nombre, x.estilo)}${x.yo ? ' <small>(tú)</small>' : ''}</span>${(x.titulos || []).length ? `<span class="insignias">${insigniasHTML(x.titulos, ico, { corto: true })}</span>` : ''}</span>${deAmigos ? `<span class="mini-liga" title="Liga ${esc(ligaDe(x.liga).nombre)}">${trofeoSVG(x.liga | 0, { tam: 20 })}</span>` : ''}<span class="xp" title="${x.xp} XP">${ico('zap')}${xpCorto(x.xp)} XP</span></div>`;
+    return `<div class="fila-rank ${x.yo ? 'yo' : ''} ${zona} ${x.xp > 0 ? '' : 'quieto'}" data-cuenta="${esc(x.cuenta)}"${x.yo ? '' : ` role="button" tabindex="0" aria-label="Ver el perfil de ${esc(x.nombre)}"`}><span class="n">${i + 1}</span><span class="av" style="background:${colorMateria(x.cuenta)}">${esc((x.nombre || '?').charAt(0).toUpperCase())}</span><span class="nom"><span class="nom-linea">${nombreHTML(x.nombre, x.estilo)}${x.yo ? ' <small>(tú)</small>' : ''}</span>${(x.titulos || []).length ? `<span class="insignias">${insigniasHTML(x.titulos, ico, { corto: true })}</span>` : ''}</span>${deAmigos ? `<span class="mini-liga" title="Liga ${esc(ligaDe(x.liga).nombre)}">${trofeoSVG(x.liga | 0, { tam: 20 })}</span>` : ''}<span class="xp" title="${x.xp} XP">${ico('zap')}${xpCorto(x.xp)} XP</span></div>`;
   };
   let lista = '';
   f.forEach((x, i) => {
@@ -1851,6 +1852,7 @@ yo = iniciarYo({ esc, ico, $, tono, SON, crearMascota, perfil: () => perfil, aju
   svgPersonaje: (p) => vestidor.svgPersonaje(p), personajeVivo, hoja, abrirVestidor: () => vestidor.abrir(), abrirCompanero: () => companero.abrir() });
 /* tu personaje vivo: el mismo del vestidor, con lo que te pusiste (personaje-vivo.js) */
 configurarPersonaje({ personaje: () => normalizarPersonaje(perfil.personaje || personajeDeArranque(perfil.cuenta || perfil.nombre || ''), perfil.ropa || [], perfil.cuenta || ''), svg: (p) => vestidor.svgPersonaje(p) });
+iniciarPerfilOtro({ sala, hoja, esc, ico, tono, SON, svgPersonaje: (p) => vestidor.svgPersonaje(p) });
 vestidor = iniciarVestidor({ sala, capa, cerrarCapa, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, brindis, $, ponerPerfil, conAcceso, perfil: () => perfil });
 /* tocar un aviso abre lo que dice: el cuarto del compañero o el plan del examen */
 avisos = iniciarAvisos({ sala, esc, ico, brindis, tono, SON,
