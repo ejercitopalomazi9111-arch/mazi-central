@@ -26,6 +26,7 @@
    ═════════════════════════════════════════════════════════════════════════ */
 import { atenderAvisos, avisoDePrueba, kAvisos, K_INDICE } from './avisos-estudio.js';
 import { atenderVestidor } from './vestidor.js';
+import { atenderJuegos, llavesJuegos } from './juegos-mesa.js';
 import { LIGAS, grupoDe, reglasDe, resultadoSemana, TAM_GRUPO } from '../../carymo/ligas.js';
 import { conEconomia, premiar, premiarUnaVez, cobrarNivel, estudioAnima, comprar, cuidar, PREMIOS, TIENDA, nivelDe, animoDe, parejaDe, avanzarRachaJuntos, rachaJuntosHoy, crecer, crianza, vivas, conCrianza } from './palomium.js';
 import { ESPECIES, nivelMascota, etapaDe, ACCESORIOS, SKINS, xpDeNivel } from '../../carymo/crianza-datos.js';
@@ -226,7 +227,8 @@ export async function guardarEnMemoria(storage, { tipo, materia, titulo, nivel, 
 export const EN_LINEA_MS = 45_000;
 const kAmigos = (c) => `est:amigos:${c}`, kBuzon = (c) => `est:buzon:${c}`, kSes = (id) => `est:ses:${id}`, kSesAct = (c) => `est:sesactual:${c}`, kExam = (c) => `est:examenes:${c}`;
 const TIPOS_MSG = { saludo: 'te saludó', felicita: 'te felicitó', invita: 'te invita a estudiar juntos', acepta: 'aceptó estudiar contigo', rechaza: 'ahorita no puede estudiar',
-  amistad: 'quiere ser tu amigo', amigos: 'ya es tu amigo', examen: 'ya hizo su examen', fin: 'terminó la sesión contigo', estudio: 'acaba de estudiar' };
+  amistad: 'quiere ser tu amigo', amigos: 'ya es tu amigo', examen: 'ya hizo su examen', fin: 'terminó la sesión contigo', estudio: 'acaba de estudiar',
+  reta: 'te retó a una partida', retoAcepta: 'aceptó tu reto', retoRechaza: 'ahorita no puede jugar', juegoFin: 'terminó la partida' };
 async function amigosDe(storage, c){ return (await storage.get(kAmigos(c))) || { amigos: [], pide: [] }; }
 async function alBuzon(storage, para, m, ahora){
   const b = (await storage.get(kBuzon(para))) || [];
@@ -405,7 +407,7 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
      contraseña se borra aparte, en la comunidad (comunidad.js · borrarCuenta). ── */
   if(c.accion === 'borrarTodo'){
     if(cuenta === 'invitado') return Response.json({ error: 'No hay cuenta que borrar.' }, { status: 400 });
-    const llaves = [kPerfil(cuenta), kPlanes(cuenta), kAmigos(cuenta), kBuzon(cuenta), kExam(cuenta), kSesAct(cuenta), kAvisos(cuenta), ...Object.keys(indice).map((id) => kPlan(cuenta, id))];
+    const llaves = [kPerfil(cuenta), kPlanes(cuenta), kAmigos(cuenta), kBuzon(cuenta), kExam(cuenta), kSesAct(cuenta), kAvisos(cuenta), ...llavesJuegos(cuenta), ...Object.keys(indice).map((id) => kPlan(cuenta, id))];
     for(let i = 0; i < llaves.length; i += 100) await storage.delete(llaves.slice(i, i + 100));
     const miembros = (await storage.get(K_MIEMBROS)) || {};
     if(miembros[cuenta]){ delete miembros[cuenta]; await storage.put(K_MIEMBROS, miembros); }
@@ -414,6 +416,11 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
     return Response.json({ bien: true, borrado: true });
   }
 
+  /* ── juegos de mesa en línea (juegos-mesa.js) ── */
+  if(typeof c.accion === 'string' && /^juego/.test(c.accion)){
+    const r = await atenderJuegos(storage, c, cuenta, perfil, ahora, { alBuzon });
+    if(r) return Response.json(r, { status: r.estado || 200 });
+  }
   /* ── amigos y estudiar juntos ── */
   if(['latido', 'amistad', 'quitarAmigo', 'mandar', 'invitar'].includes(c.accion)){
     const r = await atenderAmigos(storage, c, cuenta, perfil, ahora);
