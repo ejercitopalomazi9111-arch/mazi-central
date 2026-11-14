@@ -24,7 +24,7 @@
 
    Sin `cloudflare:workers`: las pruebas cargan esto en Node.
    ═════════════════════════════════════════════════════════════════════════ */
-import { atenderAvisos, avisoDePrueba } from './avisos-estudio.js';
+import { atenderAvisos, avisoDePrueba, kAvisos, K_INDICE } from './avisos-estudio.js';
 import { atenderVestidor } from './vestidor.js';
 import { LIGAS, grupoDe, reglasDe, resultadoSemana, TAM_GRUPO } from '../../carymo/ligas.js';
 import { conEconomia, premiar, premiarUnaVez, cobrarNivel, estudioAnima, comprar, cuidar, PREMIOS, TIENDA, nivelDe, animoDe, parejaDe, avanzarRachaJuntos, rachaJuntosHoy, crecer, crianza, vivas, conCrianza } from './palomium.js';
@@ -399,6 +399,20 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
   const crudo = await pedido.text().catch(() => '');
   if(crudo.length > MAX_PLAN + 50_000) return Response.json({ error: 'El plan es demasiado grande para guardarlo.' }, { status: 413 });
   let c; try{ c = JSON.parse(crudo || '{}'); }catch{ return Response.json({ error: 'No entendí la petición.' }, { status: 400 }); }
+
+  /* ── BORRAR TODO lo de la cuenta (App Store y Play Store lo exigen: borrar la cuenta desde la app, 14 nov).
+     Perfil, planes, amigos, buzón, exámenes, avisos al teléfono y su lugar en el ranking. La cuenta de usuario y
+     contraseña se borra aparte, en la comunidad (comunidad.js · borrarCuenta). ── */
+  if(c.accion === 'borrarTodo'){
+    if(cuenta === 'invitado') return Response.json({ error: 'No hay cuenta que borrar.' }, { status: 400 });
+    const llaves = [kPerfil(cuenta), kPlanes(cuenta), kAmigos(cuenta), kBuzon(cuenta), kExam(cuenta), kSesAct(cuenta), kAvisos(cuenta), ...Object.keys(indice).map((id) => kPlan(cuenta, id))];
+    for(let i = 0; i < llaves.length; i += 100) await storage.delete(llaves.slice(i, i + 100));
+    const miembros = (await storage.get(K_MIEMBROS)) || {};
+    if(miembros[cuenta]){ delete miembros[cuenta]; await storage.put(K_MIEMBROS, miembros); }
+    const conAvisos = (await storage.get(K_INDICE)) || [];
+    if(Array.isArray(conAvisos) && conAvisos.includes(cuenta)) await storage.put(K_INDICE, conAvisos.filter((x) => x !== cuenta));
+    return Response.json({ bien: true, borrado: true });
+  }
 
   /* ── amigos y estudiar juntos ── */
   if(['latido', 'amistad', 'quitarAmigo', 'mandar', 'invitar'].includes(c.accion)){
