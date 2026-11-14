@@ -1,0 +1,9 @@
+{
+  "appId": "mx.grupomazi.carymo",
+  "appName": "CARYMO",
+  "webDir": "www",
+  "backgroundColor": "#170A26",
+  "server": { "hostname": "app.carymo", "androidScheme": "https", "iosScheme": "capacitor" },
+  "ios": { "contentInset": "never", "scheme": "CARYMO" },
+  "android": { "allowMixedContent": false }
+}
