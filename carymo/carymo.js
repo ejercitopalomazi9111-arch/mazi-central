@@ -20,6 +20,7 @@ import { sonar, encender as encenderSonidos } from '../sala/sonidos/sonidos.js';
 import { llave, ponerLlave, llamar, SERVIDOR, SALA } from '../presentaciones/ia.js';
 import { CURSOS, MATERIAL, HECHOS, planDeCurso } from './academia.js';
 import { IDIOMAS, planDeIdioma } from './idiomas.js';
+import { MODELOS } from './modelos/modelos.js';
 import { crearVoz, todas as todasLasVoces, VOZ_DE_FABRICA, despertar } from '../sala/voces.js';
 import { alMuelle, muelleArriba } from './muelle.js';
 import { crearMascota, PERSONAJES, NOMBRE_PERSONAJE, configurarVestido, refrescarVestidos } from './mascota.js';
@@ -563,10 +564,12 @@ function pintarPlan(){
       <button class="bt ancho" id="bAnadir" style="margin-top:12px">${ico('share-2')} Añadir curso con link o código</button>
       <button class="bt ancho" id="bIdiomas" style="margin-top:12px">${ico('languages')} Idiomas</button>
       <button class="bt ancho" id="bJuegos" style="margin-top:12px">${ico('swords')} Juegos de mesa</button>
+      <button class="bt ancho" id="bModelos" style="margin-top:12px">${ico('rotate-3d')} Modelos 3D</button>
       <button class="bt ancho academia-bt" id="bAcademia" style="margin-top:12px">${ico('graduation-cap')} Academia Grupo Mazi</button></div>`;
     $('#bCrear').addEventListener('click', alta);
     $('#bJuegos').addEventListener('click', () => juegos.abrir());
     $('#bIdiomas').addEventListener('click', abrirIdiomas);
+    $('#bModelos').addEventListener('click', () => abrirModelos());
     $('#bAcademia').addEventListener('click', abrirAcademia);
     $('#bAnadir').addEventListener('click', () => anadirCurso());
     { const m = mascotaEn($('#mascVacio'), { tam: 120 }); if(m) setTimeout(() => m.play('saluda', { decir: '¡Hola! ¿Qué estudiamos hoy?' }), 500); }
@@ -923,7 +926,7 @@ async function abrirLeccion(p, n){
         <div class="aro-dib">${dibujoDe(t.icono, k)}</div>
         ${t.titulo ? `<h2>${esc(t.titulo)}</h2>` : ''}
         <p class="txt-hist">${p.idioma && t.tipo === 'idea' ? conVoz(t.texto) : negritas(t.texto)}</p>
-        ${ultima ? `<div class="acciones-mini"><button data-gusta="1" aria-label="Me sirvió" aria-pressed="false">${ico('thumbs-up')}</button><button data-gusta="0" aria-label="No me sirvió" aria-pressed="false">${ico('thumbs-down')}</button><button data-copiar aria-label="Copiar la lección">${ico('copy')}</button><button data-pizarron aria-label="Que me lo expliquen en el pizarrón">${ico('presentation')}</button></div>` : ''}
+        ${ultima ? `<div class="acciones-mini"><button data-gusta="1" aria-label="Me sirvió" aria-pressed="false">${ico('thumbs-up')}</button><button data-gusta="0" aria-label="No me sirvió" aria-pressed="false">${ico('thumbs-down')}</button><button data-copiar aria-label="Copiar la lección">${ico('copy')}</button><button data-pizarron aria-label="Que me lo expliquen en el pizarrón">${ico('presentation')}</button>${modeloDe(l.titulo + ' ' + n.titulo + ' ' + tarjetas.map((x) => x.texto).join(' ')) ? `<button data-modelo aria-label="Verlo en 3D">${ico('rotate-3d')}</button>` : ''}</div>` : ''}
       </article>
       <button class="zona-atras" data-atras aria-label="Idea anterior" ${k ? '' : 'hidden'}></button>
       <div class="abajo">${ultima ? '<button class="bt blanco ancho" data-empezar>Empezar cuestionario</button>' : '<button class="bt blanco ancho" data-sig>Siguiente</button>'}</div>`;
@@ -936,6 +939,7 @@ async function abrirLeccion(p, n){
     const g = e.target.closest('[data-gusta]'); if(g){ $$('[data-gusta]', c).forEach((x) => x.setAttribute('aria-pressed', x === g)); const pp = plan(); pp.progreso[n.id] = { ...(pp.progreso[n.id] || {}), gusto: +g.dataset.gusta }; guardarPlan(pp); brindis('Gracias, eso nos ayuda a explicar mejor', '', 'sparkles'); return; }
     if(e.target.closest('[data-copiar]')){ try{ await navigator.clipboard.writeText([l.titulo, ...tarjetas.map((x) => (x.titulo ? x.titulo + ': ' : '') + x.texto.replace(/\*\*/g, ''))].filter(Boolean).join('\n\n')); brindis('Copiada', '', 'copy'); }catch{ brindis('No se pudo copiar', 'vino', 'x'); } return; }
     if(e.target.closest('[data-pizarron]')){ abrirPizarra(plan(), { id: null, titulo: n.titulo, tema: n.tema }); return; }
+    if(e.target.closest('[data-modelo]')){ const m = modeloDe(l.titulo + ' ' + n.titulo + ' ' + tarjetas.map((x) => x.texto).join(' ')); if(m) abrirModelo(m.id, () => abrirLeccion(p, n)); return; }
     if(e.target.closest('[data-empezar]')) cuestionario(plan(), n, cont.preguntas, { leccion: true });
   });
   /* con teclado también: flechas para pasar */
@@ -1433,6 +1437,33 @@ function abrirIdiomas(){
   });
 }
 
+/* ══ MODELOS 3D (modelos/) ═══════════════════════════════════════════════
+   Carlos, 14 nov: «los modelos 3D que se utilizan para seleccionar una parte». Se tocan las piezas, se lee
+   qué hace cada una y hay un reto («toca el cerebelo») que da XP. Los modelos son de un atlas médico libre. */
+const PISTAS_MODELO = { cerebro: /cerebr|encéfal|encefal|neuron|lóbulo|lobulo|cerebelo|sistema nervioso/i, corazon: /coraz[oó]n|card[ií]ac|circulaci[oó]n|ventr[ií]culo|aur[ií]cula|aorta|sangre/i, esqueleto: /esquelet|hueso|[oó]seo|vértebra|vertebra|cr[aá]neo|f[eé]mur|columna vertebral/i };
+function modeloDe(texto){ const k = Object.keys(PISTAS_MODELO).find((id) => PISTAS_MODELO[id].test(texto || '')); return k ? MODELOS.find((m) => m.id === k) : null; }
+function abrirModelos(){
+  const c = capa('academia');
+  c.innerHTML = `<div class="arriba"><button class="bt redondo fantasma" data-cerrar aria-label="Cerrar">${ico('x')}</button><div style="flex:1"></div></div>
+    <div class="cuerpo entra"><div class="acad-cab"><div class="marca-carymo"><b>MODELOS 3D</b><span>CARYMO</span></div>
+      <h1>Gíralo y tócalo</h1><p>Cada parte te dice qué hace. Luego, el reto.</p></div>
+      <div class="mod-lista">${MODELOS.map((m, i) => `<button class="mod-carta entra" style="animation-delay:${i * 70}ms" data-modelo="${m.id}"><span class="acad-ico">${ico(m.icono)}</span><span style="flex:1;min-width:0"><b>${esc(m.titulo)}</b><small>${Object.keys(m.partes).length} partes · ${esc(m.materia)}</small></span>${ico('chevron-right')}</button>`).join('')}</div></div>`;
+  c.addEventListener('click', (e) => {
+    if(e.target.closest('[data-cerrar]')){ cerrarCapa(); pintar(); return; }
+    const b = e.target.closest('[data-modelo]'); if(b){ tono(SON.toque); abrirModelo(b.dataset.modelo, abrirModelos); }
+  });
+}
+function abrirModelo(id, alSalir){
+  const c = capa('modelo3d');
+  c.innerHTML = `<iframe title="Modelo 3D" src="modelos/visor.html?m=${encodeURIComponent(id)}"></iframe>`;
+  const oir = (e) => {
+    if(e.origin !== location.origin || !e.data || !e.data.deModelos) return;
+    if(e.data.tipo === 'cerrar'){ removeEventListener('message', oir); if(alSalir) alSalir(); else { cerrarCapa(); pintar(); } }
+    if(e.data.tipo === 'reto'){ const xp = e.data.puntos * 2; if(xp){ sumarXP(xp, 'modelo'); brindis(`${e.data.puntos} de ${e.data.total} · +${xp} XP`, 'oro', 'zap'); tono(SON.moneda); } if(e.data.puntos === e.data.total) confeti(); }
+  };
+  addEventListener('message', oir);
+}
+
 /* ══ 11 · CELEBRACIONES ══════════════════════════════════════════════════ */
 function confeti(){
   if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -1493,9 +1524,10 @@ $('#bPlanes').addEventListener('click', () => {
   const h = hoja('Tus planes', `<div class="menu">${lista.map((p) => `<button data-plan="${esc(p.id)}">${ico('notebook-pen')}<span>${esc(p.titulo)}<br><small style="color:var(--suave);font-weight:600">${esc(cuandoTexto(p.fecha))} · ${avanceDe(p).pct} %</small></span>${p.id === actualId ? `<span class="sel">${ico('circle-check')}</span>` : ''}</button>`).join('')}</div>
     <button class="bt blanco ancho" style="margin-top:12px" data-plan="nuevo">${ico('plus')}Crear un nuevo plan</button>
     <button class="bt ancho" style="margin-top:10px" data-plan="idiomas">${ico('languages')}Idiomas</button>
+    <button class="bt ancho" style="margin-top:10px" data-plan="modelos">${ico('rotate-3d')}Modelos 3D</button>
     <button class="bt ancho" style="margin-top:10px" data-plan="juegos">${ico('swords')}Juegos de mesa</button>
     <button class="bt ancho" style="margin-top:10px" data-plan="academia">${ico('graduation-cap')}Academia Grupo Mazi</button>`);
-  h.addEventListener('click', (e) => { const b = e.target.closest('[data-plan]'); if(!b) return; cerrarHoja(); if(b.dataset.plan === 'nuevo') alta(); else if(b.dataset.plan === 'academia') abrirAcademia(); else if(b.dataset.plan === 'juegos') juegos.abrir(); else if(b.dataset.plan === 'idiomas') abrirIdiomas(); else { actualId = b.dataset.plan; guardarLocal(); pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); } });
+  h.addEventListener('click', (e) => { const b = e.target.closest('[data-plan]'); if(!b) return; cerrarHoja(); if(b.dataset.plan === 'nuevo') alta(); else if(b.dataset.plan === 'academia') abrirAcademia(); else if(b.dataset.plan === 'juegos') juegos.abrir(); else if(b.dataset.plan === 'idiomas') abrirIdiomas(); else if(b.dataset.plan === 'modelos') abrirModelos(); else { actualId = b.dataset.plan; guardarLocal(); pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); } });
 });
 function editarPlan(p){
   const h = hoja('Editar plan', `<label class="seccion-t" for="eNom">Nombre</label><input class="campo" id="eNom" value="${esc(p.titulo)}"><label class="seccion-t" for="eFecha" style="display:block">Fecha del examen</label><input type="date" class="campo" id="eFecha" value="${esc(p.fecha)}"><button class="bt fuerte ancho" style="margin-top:16px" id="eGuardar">Guardar</button>`);
@@ -1960,7 +1992,7 @@ companero.pintarPastilla();
 const widget = iniciarWidget({ perfil: () => perfil, activa: mascotaActiva, hoy: hoyLocal, crearMascota });
 yo = iniciarYo({ esc, ico, $, tono, SON, crearMascota, perfil: () => perfil, ajustes: () => ajustes, planes: () => planes,
   cuantosApuntes: () => apuntes?.cuantos?.() || 0, pintarCubos: (el) => { if(el) el.innerHTML = $('#pCubos .pm-cubos')?.innerHTML || $('#pCubos')?.innerHTML || ''; },
-  svgPersonaje: (p) => vestidor.svgPersonaje(p), personajeVivo, hoja, abrirVestidor: () => vestidor.abrir(), abrirCompanero: () => companero.abrir(), abrirJuegos: () => juegos?.abrir() });
+  svgPersonaje: (p) => vestidor.svgPersonaje(p), personajeVivo, hoja, abrirVestidor: () => vestidor.abrir(), abrirCompanero: () => companero.abrir(), abrirJuegos: () => juegos?.abrir(), abrirIdiomas: () => abrirIdiomas(), abrirModelos: () => abrirModelos() });
 /* tu personaje vivo: el mismo del vestidor, con lo que te pusiste (personaje-vivo.js) */
 configurarPersonaje({ personaje: () => normalizarPersonaje(perfil.personaje || personajeDeArranque(perfil.cuenta || perfil.nombre || ''), perfil.ropa || [], perfil.cuenta || ''), svg: (p) => vestidor.svgPersonaje(p) });
 iniciarPerfilOtro({ sala, hoja, esc, ico, tono, SON, svgPersonaje: (p) => vestidor.svgPersonaje(p) });

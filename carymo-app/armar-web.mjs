@@ -17,6 +17,8 @@ const WWW = join(AQUI, 'www');
 
 /* las puertas de entrada: la app y el pizarrón (que se abre en un marco) */
 const ENTRADAS = ['carymo/index.html', 'sala/explica.html', 'carymo/manifest.webmanifest', 'carymo/juegos/maquina.js',
+  'carymo/modelos/visor.html', 'carymo/modelos/vendor/three.module.min.js', 'carymo/modelos/vendor/three.core.min.js',
+  ...['cerebro', 'corazon', 'esqueleto'].map((m) => `carymo/modelos/glb/${m}.glb`),
   ...['K', 'Q', 'R', 'B', 'N', 'P'].flatMap((p) => [`carymo/juegos/piezas/w${p}.svg`, `carymo/juegos/piezas/b${p}.svg`])];
 /* nunca entran a la app, aunque algo los nombre */
 const PROHIBIDO = [/^sala\/servidor\//, /^\.llaves\//, /(^|\/)pruebas[^/]*$/, /\.md$/, /^carymo\/anuncio/, /(^|\/)node_modules\//];
@@ -35,9 +37,11 @@ function referencias(ruta, texto){
   const r = new Set(), ext = extname(ruta);
   const poner = (m) => { const n = normal(ruta, m); if(n) r.add(n); };
   /* import … from '…', import('…'), export … from '…' */
-  for(const m of texto.matchAll(/(?:import|export)\s[^'"`;]*?from\s*['"]([^'"]+)['"]/g)) poner(m[1]);
-  for(const m of texto.matchAll(/import\s*\(\s*['"]([^'"]+)['"]\s*\)/g)) poner(m[1]);
-  for(const m of texto.matchAll(/import\s+['"]([^'"]+)['"]/g)) poner(m[1]);
+  /* los nombres sueltos («three», «three/addons/…») los resuelve el mapa de importación, no son archivos */
+  const ponerModulo = (m) => { if(/^[./]/.test(m)) poner(m); };
+  for(const m of texto.matchAll(/(?:import|export)\s[^'"`;]*?from\s*['"]([^'"]+)['"]/g)) ponerModulo(m[1]);
+  for(const m of texto.matchAll(/import\s*\(\s*['"]([^'"]+)['"]\s*\)/g)) ponerModulo(m[1]);
+  for(const m of texto.matchAll(/import\s+['"]([^'"]+)['"]/g)) ponerModulo(m[1]);
   /* new URL('…', import.meta.url) */
   for(const m of texto.matchAll(/new URL\(\s*['"]([^'"]+)['"]\s*,\s*import\.meta\.url/g)) poner(m[1]);
   if(ext === '.html' || ext === '.svg'){ for(const m of texto.matchAll(/\s(?:src|href|poster|data-src)\s*=\s*["']([^"']+)["']/g)) poner(m[1]); }

@@ -612,6 +612,8 @@ dependemos.
 
    | una variable de CSS (`--casilla-l`) puesta en la clase de la pantalla de juegos llega a todo lo de los juegos | llega sólo a lo que vive DENTRO de ese contenedor: el menú era `.jg` y la mesa `.jg-mesa`, hermanos, y en la mesa la variable no existía: casillas transparentes | el tablero de ajedrez salió negro sin un solo error y las 28 pruebas de pantalla en verde (contaban casillas y piezas, no su color). Lo vio la captura; la variable va en el propio tablero (`.jg-tab`) y la prueba mide que las casillas tengan dos colores y midan lo mismo (`carymo/juegos/pruebas-pantalla.mjs`) |
 
+   | un modelo GLB que carga sin errores y cuyas piezas ya se pueden tocar se ve en pantalla | el atlas BodyParts3D viene en **milímetros** (1,700 de alto) y la cámara cortaba a 100: todo quedaba fuera del alcance, sin un solo error, y además acostado (su «arriba» es +z) | los tres modelos de CARYMO salieron en negro con las fichas funcionando. El visor escala cada modelo a 2 unidades y lo endereza (`carymo/modelos/visor.html`) |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---

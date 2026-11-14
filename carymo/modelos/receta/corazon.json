@@ -1,0 +1,57 @@
+{
+ "caras": 6000,
+ "partes": [
+  {
+   "id": "ventriculo-izq",
+   "conceptos": [
+    "left ventricle"
+   ],
+   "color": "#C2334D"
+  },
+  {
+   "id": "ventriculo-der",
+   "conceptos": [
+    "right ventricle"
+   ],
+   "color": "#5875D8"
+  },
+  {
+   "id": "auricula-izq",
+   "conceptos": [
+    "left atrium"
+   ],
+   "color": "#E8667E"
+  },
+  {
+   "id": "auricula-der",
+   "conceptos": [
+    "right atrium"
+   ],
+   "color": "#7E95E8"
+  },
+  {
+   "id": "aorta",
+   "conceptos": [
+    "ascending aorta",
+    "arch of aorta"
+   ],
+   "color": "#E43B3B"
+  },
+  {
+   "id": "pulmonar",
+   "conceptos": [
+    "pulmonary trunk"
+   ],
+   "color": "#4B66C9",
+   "caras": 3000
+  },
+  {
+   "id": "cava-sup",
+   "conceptos": [
+    "superior vena cava"
+   ],
+   "color": "#3E57B5",
+   "caras": 2000
+  }
+ ]
+}
