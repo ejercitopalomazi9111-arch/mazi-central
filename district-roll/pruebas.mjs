@@ -181,6 +181,15 @@ for (const [w, h, nom] of [[390, 844, 'iPhone'], [320, 568, 'iPhone SE'], [390, 
   v(`${nom}: la página de atrás no se mueve con la hoja abierta`, m.fija);
   await p.close();
 }
+{ /* las capturas del iPhone de Carlos (14 nov): «0 platillos» asomado al fondo y la hoja vacía cortada */
+  const p = await pagina(2, 390, 664); await p.evaluate(() => localStorage.clear()); await p.reload({ waitUntil: 'networkidle' });
+  await p.evaluate(() => scrollTo(0, document.documentElement.scrollHeight)); await p.waitForTimeout(500);
+  v('sin platillos, la barra de abajo no se asoma (escondida de verdad)', await p.evaluate(() => getComputedStyle(document.querySelector('#flota')).visibility === 'hidden'));
+  await p.click('#topPedido'); await p.waitForTimeout(500);
+  v('la hoja vacía enseña completo «Todavía no hay nada» y su explicación', await p.evaluate(() => { const c = document.querySelector('#hojaPedido .hoja__cuerpo'), r = c.getBoundingClientRect(); return c.scrollHeight <= c.clientHeight + 1 && r.bottom <= innerHeight && c.clientHeight > 60; }));
+  await p.click('#hojaPedido [data-cerrar]'); await mas(p, 'Texano'); await p.waitForTimeout(200); await p.click('#flota'); await p.waitForTimeout(500);
+  v('con un platillo, el cuerpo de la hoja se ve (no queda en cero entre la cabeza y el botón)', await p.evaluate(() => document.querySelector('#hojaPedido .hoja__cuerpo').clientHeight > 200));
+  await p.close(); }
 console.log(ok, 'bien ·', mal, 'mal');
 await br.close();
 process.exit(mal ? 1 : 0);
