@@ -2082,4 +2082,4 @@ $('#pCubos').addEventListener('click', () => companero.abrir());
     history.back();
   });
 })();
-window.__estudio = { prueba: { brindis, dice, comboVFX, reaccion, nodo: abrirNodo, diagrama: abrirDiagrama }, hoja, cerrarHoja, ir: (v) => { vista = v; pintar(); }, yo: () => yo, vestidor: () => vestidor, avisos: () => avisos, companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };
+window.__estudio = { prueba: { brindis, dice, comboVFX, reaccion, nodo: abrirNodo, diagrama: abrirDiagrama }, hoja, cerrarHoja, ir: (v) => { vista = v; pintar(); }, yo: () => yo, vestidor: () => vestidor, avisos: () => avisos, companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), juegos: () => juegos, avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };

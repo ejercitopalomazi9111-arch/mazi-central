@@ -11,6 +11,7 @@
 import { MOTORES, elegir, enJaque } from './motores.js';
 import { CLASES } from './clases.js';
 import { cumple, pista } from './revisar.js';
+import { armarLibro, aperturaDe, deLibro, enLibroHasta, analizar, resumen, perfil, CLASES as CLASE_JUGADA } from './entrenador.js';
 
 const PIEZA = (p) => new URL(`./piezas/${p === p.toUpperCase() ? 'w' : 'b'}${p.toUpperCase()}.svg`, import.meta.url).href;
 const ORDEN = ['ajedrez', 'damas', 'reversi', 'conecta4', 'domino'];
@@ -103,6 +104,26 @@ const CSS = `
 .jg-buscando{ display:grid; justify-items:center; gap:14px; padding:40px 0; text-align:center } .jg-buscando .i{ width:42px; height:42px; color:var(--claro-txt); animation:jgGira 1.6s linear infinite }
 @keyframes jgGira{ to{ transform:rotate(360deg) } }
 @media (prefers-reduced-motion: reduce){ .jg-disco.voltea, .jg-c4 i.cae, .jg-buscando .i{ animation:none } }
+/* el entrenador de ajedrez (entrenador.js) */
+.jg-apertura{ text-align:center; color:var(--suave); font-size:13px; min-height:18px; margin-top:-4px }
+.jg-c.hecha::before{ content:""; position:absolute; inset:0; background:var(--cc); opacity:.55 }
+.jg-c.mejor::after{ content:""; position:absolute; inset:3px; border:4px solid #3FCB8A; border-radius:6px }
+.jg-rep{ display:grid; gap:14px }
+.jg-rep-cab{ display:flex; gap:14px; align-items:center }
+.jg-prec{ flex:none; width:92px; height:92px; border-radius:50%; display:grid; place-content:center; text-align:center; background:conic-gradient(#AC27FF calc(var(--p) * 1%), #ffffff14 0); position:relative }
+.jg-prec::before{ content:""; position:absolute; inset:8px; border-radius:50%; background:var(--fondo, #170A26) }
+.jg-prec b, .jg-prec small{ position:relative } .jg-prec b{ font:800 28px/1 Titulo } .jg-prec small{ font-size:11px; color:var(--suave) }
+.jg-cuenta{ display:flex; flex-wrap:wrap; gap:6px }
+.jg-cuenta span{ display:inline-flex; align-items:center; gap:6px; font-size:13px; background:var(--sup); border-radius:999px; padding:4px 10px }
+.jg-cuenta i, .jg-movs i{ width:10px; height:10px; border-radius:50%; background:var(--cc); flex:none }
+.jg-rep-nota{ background:var(--sup); border:1px solid var(--borde); border-left:0; border-radius:16px; padding:12px 14px; min-height:74px }
+.jg-rep-nota b{ font:800 17px Titulo; display:flex; align-items:center; gap:8px } .jg-rep-nota p{ margin:4px 0 0 }
+.jg-rep-nav{ display:grid; grid-template-columns:auto 1fr auto; gap:8px }
+.jg-movs{ display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none }
+.jg-movs button{ flex:none; display:flex; align-items:center; gap:6px; border:1px solid var(--borde); background:var(--sup); border-radius:999px; padding:6px 10px; min-height:40px; font-weight:800 }
+.jg-movs button[aria-current="true"]{ border-color:#C77DFF; background:#AC27FF33 }
+.jg-perfil{ display:grid; gap:10px }
+.jg-perfil .fila{ background:var(--sup); border-radius:16px; padding:12px 14px } .jg-perfil .fila small{ color:var(--suave); display:block } .jg-perfil .fila b{ font:800 18px Titulo }
 `;
 
 export function iniciarJuegos(h){
@@ -114,7 +135,7 @@ export function iniciarJuegos(h){
 
   /* ── la máquina, en su trabajador (si el teléfono no lo deja, piensa aquí mismo) ── */
   let trabajador = null, pedidoN = 0; const esperando = new Map();
-  try{ trabajador = new Worker(new URL('./maquina.js', import.meta.url), { type: 'module' }); trabajador.onmessage = (ev) => { const f = esperando.get(ev.data.id); if(f){ esperando.delete(ev.data.id); f(ev.data.j); } }; trabajador.onerror = () => { trabajador = null; }; }catch{ trabajador = null; }
+  try{ trabajador = new Worker(new URL('./maquina.js', import.meta.url), { type: 'module' }); trabajador.onmessage = (ev) => { const f = esperando.get(ev.data.id); if(f){ esperando.delete(ev.data.id); f('an' in ev.data ? ev.data.an : ev.data.j); } }; trabajador.onerror = () => { trabajador = null; }; }catch{ trabajador = null; }
   const pensar = (juego, e, nivel) => new Promise((ok) => {
     if(!trabajador){ setTimeout(() => ok(elegir(MOTORES[juego], e, nivel)), 30); return; }
     const id = ++pedidoN; esperando.set(id, ok); trabajador.postMessage({ id, juego, e, nivel });
@@ -122,6 +143,17 @@ export function iniciarJuegos(h){
   });
 
   let c = null, P = null, reloj = 0, mias = { partidas: [], stats: {} };
+  /* el libro de aperturas se baja la primera vez que se juega ajedrez */
+  let libro = null, bajandoLibro = null;
+  const cargarLibro = () => bajandoLibro ||= fetch(new URL('./aperturas.json', import.meta.url)).then((r) => r.json()).then((d) => { libro = armarLibro(d); return libro; }).catch(() => { bajandoLibro = null; return null; });
+  const movsDe = () => (P && P.reg || []).map((r) => r.uci);
+  guardado.repasos ||= [];
+  const analizarAparte = (datos) => new Promise((ok) => {
+    const local = () => setTimeout(() => { try{ ok(analizar(datos.estados, datos.movs, datos.yo, { libroHasta: datos.libroHasta })); }catch{ ok(null); } }, 30);
+    if(!trabajador) return local();
+    const id = ++pedidoN; esperando.set(id, (an) => ok(an)); trabajador.postMessage({ id, tipo: 'analizar', ...datos });
+    setTimeout(() => { if(esperando.has(id)){ esperando.delete(id); local(); } }, 60000);
+  });
   const parar = () => { clearInterval(reloj); reloj = 0; };
 
   /* ══════════════ el menú ══════════════ */
@@ -153,12 +185,14 @@ export function iniciarJuegos(h){
     h.hoja(m.nombre, `<div class="jg-opciones">
       <div class="jg-seccion" style="margin-top:0">Aprender</div>
       ${CLASES[id].map((k) => `<button class="jg-clase-f ${guardado.clases[k.id] ? 'hecha' : ''}" data-clase="${k.id}">${ico(guardado.clases[k.id] ? 'circle-check' : 'graduation-cap')}<span>${esc(k.titulo)}</span></button>`).join('')}
+      ${id === 'ajedrez' ? `<div class="jg-seccion">Tu juego</div><button class="jg-clase-f" data-perfil>${ico('chart-line')}<span>Cómo juegas · ${guardado.repasos.length} repasadas</span></button>` : ''}
       <div class="jg-seccion">Contra la máquina</div>
       <div class="jg-niveles">${Object.entries(NIVEL).map(([k, v]) => `<button class="bt" data-nivel="${k}">${v}</button>`).join('')}</div>
       <div class="jg-seccion">En línea</div>
       <div class="jg-niveles" style="grid-template-columns:1fr 1fr"><button class="bt fuerte" data-linea="buscar">${ico('search')}Buscar rival</button><button class="bt" data-linea="retar">${ico('swords')}Retar</button></div></div>`, (hj) => {
       hj.addEventListener('click', (ev) => {
         const k = ev.target.closest('[data-clase]'); if(k){ h.cerrarHoja(); empezarClase(id, k.dataset.clase); return; }
+        if(ev.target.closest('[data-perfil]')){ h.cerrarHoja(); verPerfil(); return; }
         const n = ev.target.closest('[data-nivel]'); if(n){ h.cerrarHoja(); empezarMaquina(id, n.dataset.nivel); return; }
         const l = ev.target.closest('[data-linea]'); if(!l) return;
         if(!h.conAcceso()){ h.cerrarHoja(); brindis('Crea tu cuenta para jugar en línea', 'vino', 'user-plus'); return; }
@@ -238,7 +272,8 @@ export function iniciarJuegos(h){
   function empezarMaquina(juego, nivel, e0 = null, meta = null){
     parar();
     const m = MOTORES[juego], e = e0 ? JSON.parse(JSON.stringify(e0)) : m.inicial({});
-    P = { juego, m, modo: 'maquina', nivel, e, e0, yo: 0, hist: [], nombres: ['Tú', `Máquina · ${NIVEL[nivel]}`], meta };
+    P = { juego, m, modo: 'maquina', nivel, e, e0, yo: 0, hist: [], reg: [], nombres: ['Tú', `Máquina · ${NIVEL[nivel]}`], meta };
+    if(juego === 'ajedrez') cargarLibro().then(() => { if(P && P.juego === 'ajedrez') pintarEstado(); });
     // en ajedrez y damas a veces te toca con negras
     if(!e0 && (juego === 'ajedrez' || juego === 'damas' || juego === 'reversi') && Math.random() < .5) P.yo = 1;
     if(juego === 'domino') P.yo = 0;
@@ -251,9 +286,13 @@ export function iniciarJuegos(h){
     while(P && !m.fin(P.e) && m.turno(P.e) !== P.yo){
       P.pensando = true; pintarEstado();
       const t0 = performance.now(), yo = P;
-      const j = await pensar(P.juego, P.e, P.nivel || 'medio');
+      /* en ajedrez, Medio y Difícil abren como los libros (Fácil juega a lo que salga) */
+      let j = null;
+      if(P.juego === 'ajedrez' && P.nivel !== 'facil' && !P.e0 && libro){ const u = deLibro(libro, movsDe()); if(u) j = m.jugadas(P.e).find((x) => m.texto(x) === u) || null; }
+      if(!j) j = await pensar(P.juego, P.e, P.nivel || 'medio');
       await new Promise((ok) => setTimeout(ok, Math.max(0, 450 - (performance.now() - t0))));
       if(P !== yo || !j) return;
+      if(P.reg) P.reg.push({ e: P.e, uci: m.texto ? m.texto(j) : '' });
       const antes = P.e; P.e = m.aplicar(P.e, j); P.pensando = false;
       tono(SON.toque); pintarMesa({ antes });
     }
@@ -308,6 +347,7 @@ export function iniciarJuegos(h){
     P.sel = null; P.marcaPista = null;
     if(P.modo === 'clase'){ revisarPaso(legal); return; }
     P.hist.push(P.e);
+    if(P.reg) P.reg.push({ e: P.e, uci: m.texto ? m.texto(legal) : '' });
     const antes = P.e; P.e = m.aplicar(P.e, legal); tono(SON.toque); vibrar(8);
     pintarMesa({ antes });
     if(P.modo === 'maquina'){ const f = m.fin(P.e); if(f) finDePartida(f); else turnoMaquina(); return; }
@@ -332,9 +372,11 @@ export function iniciarJuegos(h){
     if(gane){ tono(SON.fin); h.confeti?.(); } else if(!empate) tono(SON.perdio || SON.mal);
     const elo = P.modo === 'linea' && P.linea.final ? P.linea.final.cambioElo[P.yo] : null;
     const extra = [f.motivo, xp ? `+${xp} XP` : '', elo != null ? `${elo >= 0 ? '+' : ''}${elo} puntos` : ''].filter(Boolean).join(' · ');
+    const repasable = P.juego === 'ajedrez' && P.modo === 'maquina' && !P.meta && (P.reg || []).length >= 6;
+    const resultado = gane ? 'ganaste' : empate ? 'empate' : 'perdiste';
     setTimeout(() => mostrarFin(gane ? '¡Ganaste!' : empate ? 'Empate' : 'Perdiste', extra,
-      P?.modo === 'linea' ? [['menu', 'Juegos'], ['otra', 'Otra']] : [['otra', 'Otra'], ['menu', 'Juegos']],
-      (a) => { if(a === 'otra'){ if(P.modo === 'linea') buscarRival(P.juego); else empezarMaquina(P.juego, P.nivel, P.e0, P.meta); } else abrir(); },
+      P?.modo === 'linea' ? [['menu', 'Juegos'], ['otra', 'Otra']] : repasable ? [['repaso', 'Repasar'], ['otra', 'Otra'], ['menu', 'Juegos']] : [['otra', 'Otra'], ['menu', 'Juegos']],
+      (a) => { if(a === 'repaso'){ repasar({ reg: P.reg.slice(), final: P.e, yo: P.yo, nivel: P.nivel, resultado }); return; } if(a === 'otra'){ if(P.modo === 'linea') buscarRival(P.juego); else empezarMaquina(P.juego, P.nivel, P.e0, P.meta); } else abrir(); },
       gane ? 'festeja' : empate ? 'saluda' : 'piensa'), 700);
   }
   function mostrarFin(titulo, texto, botones, alElegir, anim){
@@ -362,6 +404,7 @@ export function iniciarJuegos(h){
       ${P.modo === 'clase' ? `<div class="jg-dice ${P.diceClase || ''}"><div class="jg-masc"></div><p>${negritas(P.dice)}</p></div>` : jugadorHTML(1 - P.yo, rival)}
       <div class="jg-estado" aria-live="polite"></div>
       <div class="jg-tablero"></div>
+      ${P.juego === 'ajedrez' && P.modo === 'maquina' ? '<div class="jg-apertura" aria-live="polite"></div>' : ''}
       ${P.modo === 'clase' ? '' : jugadorHTML(P.yo, yoN)}
       <div class="jg-botones">${botones.map(([k, i, t]) => `<button class="bt" data-accion="${k}">${ico(i)}${t}</button>`).join('')}</div></div>`;
     c.querySelector('.jg-tablero').append(tablero({ antes }));
@@ -395,6 +438,7 @@ export function iniciarJuegos(h){
     else if(P.modo !== 'clase') t = m.turno(P.e) === P.yo ? 'Te toca' : 'Le toca';
     if(!f && P.juego === 'ajedrez' && enJaque(P.e)) t += ' · Jaque';
     s.textContent = t;
+    const ap = c.querySelector('.jg-apertura'); if(ap){ const a = aperturaDe(libro, movsDe()); ap.textContent = a ? a.nombre : ''; }
     c.querySelectorAll('[data-jugador]').forEach((el) => el.classList.toggle('turno', !f && m.turno(P.e) === +el.dataset.jugador));
   }
   async function onClickMesa(ev){
@@ -403,7 +447,8 @@ export function iniciarJuegos(h){
     if(a){
       const k = a.dataset.accion;
       if(k === 'pista'){ if(!miTurno()) return; const meta = P.modo === 'clase' ? P.clase.pasos[P.paso].meta : null; P.marcaPista = pista(P.m, P.e, meta); tono(SON.pop); pintarMesa(); return; }
-      if(k === 'deshacer'){ if(P.pensando || !P.hist.length) return; let e = P.hist.pop(); while(P.hist.length && P.m.turno(e) !== P.yo) e = P.hist.pop(); P.e = e; P.cerrada = false; pintarMesa(); return; }
+      if(k === 'deshacer'){ if(P.pensando || !P.hist.length) return; let e = P.hist.pop(); while(P.hist.length && P.m.turno(e) !== P.yo) e = P.hist.pop(); P.e = e; P.cerrada = false;
+        if(P.reg){ const k = P.reg.findIndex((r) => r.e === e); if(k >= 0) P.reg.length = k; } pintarMesa(); return; }
       if(k === 'repetir'){ ponerPaso(); return; }
       if(k === 'rendirse'){ try{ const r = await sala({ accion: 'juegoRendirse', id: P.linea.id }); P.linea = r.partida; P.e = r.partida.e; finDePartida(r.partida.fin); }catch(e){ brindis(e.message || 'No se pudo', 'vino', 'clock'); } return; }
       if(k === 'reclamar'){ try{ const r = await sala({ accion: 'juegoReclamar', id: P.linea.id }); P.linea = r.partida; finDePartida(r.partida.fin); }catch(e){ brindis(e.message || 'Todavía no', 'vino', 'clock'); } return; }
@@ -519,5 +564,87 @@ export function iniciarJuegos(h){
     return d;
   }
 
-  return { abrir, avisoDeJuego, get partida(){ return P; } };
+  /* ══════════════ el entrenador: repasar una partida y ver cómo juegas ══════════════ */
+  async function repasar(datos, guardadoYa = null){
+    parar(); P = null;
+    c = h.capa('juegos');
+    const volver = () => abrir();
+    c.innerHTML = `<div class="arriba"><button class="bt redondo fantasma" data-salir aria-label="Salir">${ico('chevron-left')}</button><b style="flex:1">Repaso</b></div><div class="cuerpo"><p class="jg-sub">Repasando cada jugada…</p></div>`;
+    c.onclick = (ev) => { if(ev.target.closest('[data-salir]')) volver(); };
+    await cargarLibro();
+    const movs = datos.reg.map((r) => r.uci), estados = datos.reg.map((r) => r.e);
+    const libroHasta = enLibroHasta(libro, movs), apertura = aperturaDe(libro, movs);
+    let rep = guardadoYa;
+    if(!rep){
+      const an = await analizarAparte({ estados, movs, yo: datos.yo, libroHasta });
+      if(!c.isConnected) return;
+      if(!an){ c.querySelector('.cuerpo').innerHTML = '<p class="jg-sub">No se pudo repasar esta partida.</p>'; return; }
+      rep = { fecha: Date.now(), nivel: datos.nivel, yo: datos.yo, resultado: datos.resultado, movs, apertura: apertura && apertura.nombre, an, resumen: resumen(an) };
+      guardado.repasos.push(rep); guardado.repasos = guardado.repasos.slice(-20); guardar();
+      h.sumarXP?.(3, 'repaso');
+    }
+    pintarRepaso(rep, estados.length ? estados : null);
+  }
+  function estadosDe(movs){
+    const m = MOTORES.ajedrez; let e = m.inicial({}); const out = [];
+    for(const u of movs){ out.push(e); const j = m.jugadas(e).find((x) => m.texto(x) === u); if(!j) break; e = m.aplicar(e, j); }
+    return out;
+  }
+  function pintarRepaso(rep, estados){
+    estados ||= estadosDe(rep.movs);
+    const m = MOTORES.ajedrez, an = rep.an, r0 = rep.resumen;
+    let k = Math.max(0, an.findIndex((x) => x.clase === 'grave' || x.clase === 'error')); if(k < 0) k = 0;
+    const pinta = () => {
+      const x = an[k], cl = CLASE_JUGADA[x.clase];
+      const e = estados[x.i], j = m.jugadas(e).find((y) => m.texto(y) === x.uci), n = j ? m.aplicar(e, j) : e;
+      const mejor = x.mejorUci && x.clase !== 'mejor' && x.clase !== 'libro' ? m.deTexto(x.mejorUci) : null;
+      const tab = document.createElement('div'); tab.className = 'jg-tab';
+      let html = '';
+      for(let q = 0; q < 64; q++){
+        const i = rep.yo === 1 ? 63 - q : q, f = Math.floor(i / 8), col = i % 8, p = n.b[i];
+        const cls = ['jg-c', (f + col) % 2 ? 'o' : '', j && (j.de === i || j.a === i) ? 'hecha' : '', mejor && (mejor.de === i || mejor.a === i) ? 'mejor' : ''];
+        html += `<div class="${cls.filter(Boolean).join(' ')}" style="--cc:${cl.color}">${p ? `<img src="${PIEZA(p)}" alt="">` : ''}</div>`;
+      }
+      tab.innerHTML = html;
+      c.innerHTML = `<div class="arriba"><button class="bt redondo fantasma" data-salir aria-label="Salir">${ico('chevron-left')}</button><b style="flex:1">Repaso</b></div>
+        <div class="cuerpo jg-rep">
+          <div class="jg-rep-cab"><div class="jg-prec" style="--p:${r0.precision}"><b>${r0.precision}</b><small>Precisión</small></div>
+            <div><div class="jg-sub" style="margin:0 0 6px">${esc(rep.apertura || 'Sin apertura de libro')}</div><div class="jg-cuenta">${Object.entries(CLASE_JUGADA).filter(([c2]) => r0.cuenta[c2]).map(([c2, v]) => `<span style="--cc:${v.color}"><i></i>${r0.cuenta[c2]} ${esc(v.nombre)}</span>`).join('')}</div></div></div>
+          <div class="jg-tab-sitio"></div>
+          <div class="jg-rep-nota" style="box-shadow:inset 4px 0 0 ${cl.color}"><b><span style="color:${cl.color}">${esc(cl.nombre)}</span> · ${Math.floor(x.i / 2) + 1}. ${esc(x.es)}</b><p>${esc(x.nota)}</p></div>
+          <div class="jg-rep-nav"><button class="bt" data-paso="-1" aria-label="Anterior">${ico('chevron-left')}</button><button class="bt fuerte" data-error>Siguiente error</button><button class="bt" data-paso="1" aria-label="Siguiente">${ico('chevron-right')}</button></div>
+          <div class="jg-movs">${an.map((y, q) => `<button data-mov="${q}" aria-current="${q === k}" style="--cc:${CLASE_JUGADA[y.clase].color}"><i></i>${Math.floor(y.i / 2) + 1}. ${esc(y.es)}</button>`).join('')}</div>
+        </div>`;
+      c.querySelector('.jg-tab-sitio').replaceWith(tab);
+      /* sólo se mueve la fila de jugadas (scrollIntoView movería también la página: CLAUDE.md) */
+      const fila = c.querySelector('.jg-movs'), act = c.querySelector('.jg-movs [aria-current="true"]');
+      if(fila && act) fila.scrollTo({ left: act.offsetLeft - fila.clientWidth / 2 + act.offsetWidth / 2 });
+    };
+    pinta();
+    c.onclick = (ev) => {
+      if(ev.target.closest('[data-salir]')){ abrir(); return; }
+      const p = ev.target.closest('[data-paso]'); if(p){ k = Math.max(0, Math.min(an.length - 1, k + +p.dataset.paso)); tono(SON.toque); pinta(); return; }
+      const mv = ev.target.closest('[data-mov]'); if(mv){ k = +mv.dataset.mov; tono(SON.toque); pinta(); return; }
+      if(ev.target.closest('[data-error]')){
+        const sig = an.findIndex((y, q) => q > k && ['imprecision', 'error', 'grave'].includes(y.clase));
+        if(sig >= 0){ k = sig; tono(SON.toque); pinta(); } else brindis('No hay más errores', '', 'circle-check');
+      }
+    };
+  }
+  function verPerfil(){
+    const pf = perfil(guardado.repasos);
+    const lista = guardado.repasos.slice().reverse();
+    h.hoja('Cómo juegas', pf ? `<div class="jg-perfil">
+      <div class="fila"><small>Nivel</small><b>${esc(pf.nivel)} · ${pf.precision} % de precisión</b>${pf.tendencia != null ? `<small>${pf.tendencia >= 0 ? 'Mejoraste' : 'Bajaste'} ${Math.abs(pf.tendencia)} puntos en tus últimas partidas</small>` : ''}</div>
+      ${pf.error ? `<div class="fila"><small>Tu error de siempre (${pf.error.veces} ${pf.error.veces === 1 ? 'vez' : 'veces'})</small><b>${esc(pf.error.error)}</b><p style="margin:6px 0 0">${esc(pf.error.consejo)}</p></div>` : ''}
+      ${pf.peorFase ? `<div class="fila"><small>Donde más fallas</small><b>${esc(pf.peorFase.nombre)} · ${pf.peorFase.precision} %</b></div>` : ''}
+      ${pf.apertura ? `<div class="fila"><small>Tu apertura</small><b>${esc(pf.apertura.nombre)}</b></div>` : ''}
+      <div class="jg-seccion">Tus partidas</div>
+      ${lista.map((r, q) => `<button class="jg-clase-f" data-rep="${guardado.repasos.length - 1 - q}">${ico(r.resultado === 'ganaste' ? 'trophy' : 'swords')}<span>${esc(r.apertura || 'Partida')} · ${r.resumen.precision} %</span></button>`).join('')}
+    </div>` : '<p class="jg-sub">Juega contra la máquina y toca «Repasar» al terminar: aquí verás cómo juegas.</p>', (hj) => {
+      hj.addEventListener('click', (ev) => { const b = ev.target.closest('[data-rep]'); if(!b) return; h.cerrarHoja(); const r = guardado.repasos[+b.dataset.rep]; c = h.capa('juegos'); pintarRepaso(r, null); });
+    });
+  }
+
+  return { abrir, avisoDeJuego, repasar, verPerfil, get partida(){ return P; } };
 }

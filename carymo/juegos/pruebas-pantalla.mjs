@@ -107,6 +107,31 @@ if(await pg.locator('.hoja [data-lado]').count()) await pg.locator('.hoja [data-
 ok(await esperar(() => document.querySelectorAll('.jg-dom-mesa .jg-ficha').length >= 1 || document.querySelectorAll('.jg-dom-mano button').length > 7), `Dominó: pones ficha (o robas) y sigue el juego (antes ${antesMesa} en la mesa)`);
 await foto('juegos-8-domino'); await sinDesborde('el dominó cabe en 390');
 
+console.log('\nEl entrenador de ajedrez');
+await pg.click('[data-salir]'); await pg.waitForSelector('.jg-juego');
+await pg.click('.jg-juego[data-juego="ajedrez"]'); await pg.click('.hoja [data-nivel="medio"]'); await pg.waitForSelector('.jg-tab .jg-c img');
+await pg.click(`.jg-c[data-i="${indice('e2')}"]`); await pg.click(`.jg-c[data-i="${indice('e4')}"]`);
+ok(await esperar(() => /Te toca/.test(document.querySelector('.jg-estado').textContent) && /Defensa|Apertura|Gambito|Partida|Peón/.test(document.querySelector('.jg-apertura')?.textContent || ''), 9000), 'la máquina contesta de libro y la mesa dice qué apertura es: ' + await pg.textContent('.jg-apertura').catch(() => ''));
+/* el mate pastor, jugando tú con negras: 3…Cf6?? deja el mate */
+await pg.evaluate(async () => {
+  const { ajedrez } = await import('/carymo/juegos/motores.js');
+  let e = ajedrez.inicial(); const reg = [];
+  for(const u of ['e2e4', 'e7e5', 'f1c4', 'b8c6', 'd1h5', 'g8f6', 'h5f7']){ reg.push({ e, uci: u }); e = ajedrez.aplicar(e, ajedrez.jugadas(e).find((j) => ajedrez.texto(j) === u)); }
+  window.__estudio.juegos().repasar({ reg, yo: 1, nivel: 'medio', resultado: 'perdiste' });
+});
+ok(await esperar(() => document.querySelector('.jg-rep .jg-prec'), 20000), 'Repasar: sale tu precisión');
+ok(/Apertura de Alfil/.test(await pg.textContent('.jg-rep')), 'con el nombre de la apertura (1.e4 e5 2.Ac4 es la Apertura de Alfil)');
+ok(/Error grave/.test(await pg.textContent('.jg-rep-nota')) && /mate/.test(await pg.textContent('.jg-rep-nota')), 'abre en tu error grave: «Cf6» deja que te den mate');
+ok(await pg.locator('.jg-rep .jg-c.hecha').count() === 2 && await pg.locator('.jg-rep .jg-c.mejor').count() === 2, 'en el tablero se marca tu jugada y la que era mejor');
+await pg.click('.jg-movs [data-mov="0"]'); ok(/De libro/.test(await pg.textContent('.jg-rep-nota')), 'tus primeras jugadas salen «De libro»');
+await sinDesborde('el repaso cabe en 390'); await foto('juegos-10-repaso');
+await pg.click('[data-salir]'); await pg.waitForSelector('.jg-juego');
+await pg.click('.jg-juego[data-juego="ajedrez"]'); await pg.click('.hoja [data-perfil]');
+ok(await esperar(() => /Cómo juegas/.test(document.querySelector('.hoja')?.textContent || '') && /precisión/.test(document.querySelector('.hoja').textContent)), '«Cómo juegas» enseña tu nivel y tu precisión');
+ok(/rey|mate/i.test(await pg.textContent('.hoja')), 'y tu error de siempre, con un consejo');
+await foto('juegos-11-perfil'); await sinDesborde('el perfil cabe en 390');
+await pg.click('.hoja [data-rep]'); ok(await esperar(() => document.querySelector('.jg-rep .jg-prec')), 'y desde ahí se vuelve a abrir el repaso');
+
 console.log('\nEn línea');
 await pg.click('[data-salir]'); await pg.waitForSelector('.jg-juego');
 await pg.click('.jg-juego[data-juego="conecta4"]'); await pg.click('.hoja [data-linea="buscar"]');

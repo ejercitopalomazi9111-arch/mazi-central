@@ -16,7 +16,7 @@ const RAIZ = resolve(AQUI, '..');
 const WWW = join(AQUI, 'www');
 
 /* las puertas de entrada: la app y el pizarrón (que se abre en un marco) */
-const ENTRADAS = ['carymo/index.html', 'sala/explica.html', 'carymo/manifest.webmanifest', 'carymo/juegos/maquina.js',
+const ENTRADAS = ['carymo/index.html', 'sala/explica.html', 'carymo/manifest.webmanifest', 'carymo/juegos/maquina.js', 'carymo/juegos/aperturas.json',
   'carymo/modelos/visor.html', 'carymo/modelos/vendor/three.module.min.js', 'carymo/modelos/vendor/three.core.min.js',
   ...['cerebro', 'corazon', 'esqueleto'].map((m) => `carymo/modelos/glb/${m}.glb`),
   ...['K', 'Q', 'R', 'B', 'N', 'P'].flatMap((p) => [`carymo/juegos/piezas/w${p}.svg`, `carymo/juegos/piezas/b${p}.svg`])];
