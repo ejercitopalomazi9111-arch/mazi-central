@@ -5,7 +5,7 @@ import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { atenderEstudio } from '../sala/servidor/estudio.js';
-import { TIENDA_ROPA, PIELES } from './ropa.js';
+import { TIENDA_ROPA, PIELES, OPCIONES, extrasMazi } from './ropa.js';
 
 const raiz = fileURLToPath(new URL('..', import.meta.url));
 const PUERTO = 8700 + Math.floor(Math.random() * 90);
@@ -14,6 +14,7 @@ await new Promise((r) => setTimeout(r, 900));
 let f = 0, n = 0; const ok = (c, t) => { n++; console.log((c ? '  ✓ ' : '  ✗ ') + t); if(!c) f++; };
 /* sólo tonos de piel humanos: el amarillo, el naranja y el café anaranjado de Avataaars se leen como burla (Carlos, 14 nov) */
 ok(!['f8d25c', 'fd9841', 'ae5d29'].some((c) => PIELES.includes(c)) && PIELES.length >= 18, `${PIELES.length} tonos de piel, ninguno amarillo ni naranja de caricatura`);
+ok(['vitiligo', 'pecas', 'lunar', 'mancha', 'rubor', 'acne', 'cicatriz', 'audifono'].every((d) => OPCIONES.detalle.includes(d) && !Object.values(TIENDA_ROPA).some((a) => a.valor === d)) && /piel-vitiligo/.test(extrasMazi({ piel: '8a5638', detalle: 'vitiligo' })), 'detalles de la piel (vitíligo, pecas, lunar, mancha, rosácea, acné, cicatriz, aparato auditivo): gratis y se dibujan');
 
 const m = new Map();
 const s = { async get(k){ return structuredClone(m.get(k)); }, async put(k, v){ if(typeof k === 'object'){ for(const [a, b] of Object.entries(k)) m.set(a, structuredClone(b)); } else m.set(k, structuredClone(v)); },

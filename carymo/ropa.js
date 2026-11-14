@@ -17,6 +17,11 @@
    Quien ya los tenía puestos regresa a su tono de arranque (normalizarPersonaje no acepta lo que no está aquí). */
 export const PIELES = ['fff0e6', 'fbe3d3', 'ffdbb4', 'f6d2b8', 'f0c8a0', 'edb98a', 'e7b98f', 'dfa679', 'd08b5b', 'c99064',
   'b77b4f', 'a06a45', '8a5638', '73452c', '614335', '5e3a26', '4b2e1f', '3a2418', '2b1b12'];
+/* LOS DETALLES DE LA PIEL (Carlos, 14 nov: «pon cosas como el vitiligo y otras situaciones de la piel para hacerlo más
+   inclusivo»): gratis, como la piel, porque son identidad y no adorno. Se dibujan encima, en detallesPiel(), sin tapar
+   ojos, cejas ni boca. El aparato auditivo va aquí también: es de la persona, no un accesorio de tienda. */
+export const DETALLES = ['', 'vitiligo', 'pecas', 'lunar', 'mancha', 'rubor', 'acne', 'cicatriz', 'audifono'];
+export const NOMBRE_DETALLE = { '': 'Ninguno', vitiligo: 'Vitíligo', pecas: 'Pecas', lunar: 'Lunar', mancha: 'Mancha de nacimiento', rubor: 'Rosácea', acne: 'Acné', cicatriz: 'Cicatriz', audifono: 'Aparato auditivo' };
 export const COLORES_PELO = ['2c1b18', '4a312c', '724133', 'a55728', 'b58143', 'd6b370', 'c93305', 'e8e1e1', 'ecdcbf', 'f59797',
   '0b0806', '5a3a22', '8b5a2b', 'e2c290', 'f5ecd5', 'ffffff', '9aa3ad', 'ac27ff', '6c5ce7', '3498db', '00b894', 'fd79a8', 'e84393', 'ff7675', 'fdcb6e'];
 export const PEINADOS = ['shortFlat', 'shortRound', 'shortWaved', 'shortCurly', 'sides', 'theCaesar', 'theCaesarAndSidePart', 'shavedSides', 'frizzle', 'shaggy', 'shaggyMullet',
@@ -79,7 +84,7 @@ export const articuloDe = (parte, valor) => Object.entries(TIENDA_ROPA).find(([,
 
 /* las opciones de cada parte: libres y de paga, en el orden del vestidor */
 export const OPCIONES = {
-  piel: PIELES, pelo: PEINADOS, colorPelo: COLORES_PELO, ojos: OJOS, cejas: CEJAS, boca: BOCAS, barba: BARBAS,
+  piel: PIELES, detalle: DETALLES, pelo: PEINADOS, colorPelo: COLORES_PELO, ojos: OJOS, cejas: CEJAS, boca: BOCAS, barba: BARBAS,
   ropa: [...ROPA_LIBRE, ...Object.values(TIENDA_ROPA).filter((a) => a.parte === 'ropa').map((a) => a.valor)],
   colorRopa: COLORES_ROPA,
   estampa: ['', ...Object.values(TIENDA_ROPA).filter((a) => a.parte === 'estampa').map((a) => a.valor)],
@@ -95,7 +100,7 @@ export function personajeDeArranque(cuenta = ''){
   let h = 2166136261; for(const ch of String(cuenta)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
   /* ⚠ el `>>> 0` va ANTES del módulo: un XOR puede dar negativo, y lista[-3] es undefined */
   const de = (lista, sal) => lista[(((h >>> sal) ^ Math.imul(h, sal + 7)) >>> 0) % lista.length];
-  return { piel: de(PIELES, 1), pelo: de(PEINADOS.slice(0, 27), 3), colorPelo: de(COLORES_PELO.slice(0, 7), 5), ojos: 'happy', cejas: 'defaultNatural', boca: 'smile', barba: '',
+  return { piel: de(PIELES, 1), pelo: de(PEINADOS.slice(0, 27), 3), colorPelo: de(COLORES_PELO.slice(0, 7), 5), ojos: 'happy', cejas: 'defaultNatural', boca: 'smile', barba: '', detalle: '',
     ropa: de(ROPA_LIBRE, 7), colorRopa: de(COLORES_ROPA.slice(0, 8), 9), estampa: '', gorro: '', colorGorro: '25557c', lentes: '', extra: '', fondo: de(FONDOS.slice(0, 6), 11) };
 }
 
@@ -142,8 +147,27 @@ function cuboMazi(cx, cy, r){
 }
 const oscurecer = (hex, k) => '#' + [0, 2, 4].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * k).toString(16).padStart(2, '0')).join('');
 /* lo que va ENCIMA del dibujo de Avataaars (mismas medidas: lienzo de 280, la cabeza va de x 84 a 196 y arriba en y 36) */
+const mezclaHex = (a, b, k) => '#' + [0, 2, 4].map((i) => Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - k) + parseInt(b.slice(i, i + 2), 16) * k).toString(16).padStart(2, '0')).join('');
+/* las coordenadas son las del lienzo de Avataaars (280): cara de x 84 a 196, ojos en y ~110 (x 110 y 170), cejas en ~92,
+   nariz en ~133, boca de 118 a 162 en y 145-168, barbilla en ~184, cuello de x 116 a 164 */
+export function detallesPiel(p){
+  const piel = /^[0-9a-f]{6}$/i.test(p.piel || '') ? p.piel : 'edb98a';
+  const claro = mezclaHex(piel, 'fbf1e9', .72), oscuro = mezclaHex(piel, '2b1408', .45);
+  const mancha = (cx, cy, rx, ry, rot = 0) => `<path d="M${cx - rx} ${cy} C${cx - rx} ${cy - ry * 1.1} ${cx - rx * .2} ${cy - ry * 1.2} ${cx + rx * .3} ${cy - ry * .9} C${cx + rx * 1.1} ${cy - ry * .7} ${cx + rx * 1.05} ${cy + ry * .4} ${cx + rx * .5} ${cy + ry * .9} C${cx} ${cy + ry * 1.3} ${cx - rx * .9} ${cy + ry} ${cx - rx} ${cy} Z" transform="rotate(${rot} ${cx} ${cy})"/>`;
+  const D = {
+    vitiligo: () => `<g fill="${claro}">${mancha(101, 143, 13, 9, -15)}${mancha(156, 176, 10, 6, 10)}${mancha(84, 122, 5, 9)}${mancha(128, 208, 12, 10, 20)}${mancha(154, 196, 6, 8)}${mancha(190, 104, 5, 7, 10)}</g>`,
+    pecas: () => `<g fill="${oscuro}" opacity=".55">${[[100, 130], [106, 136], [112, 131], [98, 139], [109, 141], [118, 128], [180, 130], [174, 136], [168, 131], [182, 139], [171, 141], [162, 128], [134, 126], [146, 126], [140, 122]].map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="${i % 3 ? 1.6 : 2.1}"/>`).join('')}</g>`,
+    lunar: () => `<circle cx="170" cy="150" r="2.6" fill="${mezclaHex(piel, '1a0c06', .7)}"/>`,
+    mancha: () => `<g fill="#9B2C4A" opacity=".32">${mancha(102, 140, 15, 11, -10)}${mancha(92, 128, 6, 7)}</g>`,
+    rubor: () => `<g fill="#D9455F" opacity=".26"><ellipse cx="104" cy="137" rx="15" ry="9"/><ellipse cx="176" cy="137" rx="15" ry="9"/><ellipse cx="140" cy="134" rx="9" ry="5"/></g>`,
+    acne: () => `<g fill="#C4475A" opacity=".55">${[[98, 136], [104, 145], [178, 140], [172, 147], [184, 132], [158, 176], [124, 176], [150, 70], [132, 74]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.9"/>`).join('')}</g>`,
+    cicatriz: () => `<path d="M168 126 L176 146" stroke="${claro}" stroke-width="2.6" stroke-linecap="round"/><path d="M168 132 L174 130 M170 138 L176 136 M172 143 L177 141" stroke="${claro}" stroke-width="1.4" stroke-linecap="round"/>`,
+    audifono: () => `<path d="M198 104 C206 104 208 116 204 124 C202 128 198 128 197 124 Z" fill="#E6D3C2" stroke="#8C7A6B" stroke-width="1"/><path d="M197 118 C193 119 191 121 190 124" stroke="#8C7A6B" stroke-width="1.6" fill="none"/>`,
+  };
+  return D[p.detalle] ? `<g data-extra="piel-${p.detalle}">${D[p.detalle]()}</g>` : '';
+}
 export function extrasMazi(p){
-  let s = '';
+  let s = detallesPiel(p);
   /* los extras dibujados (mismo lienzo de 280: la cabeza va de x 84 a 196 y su coronilla en y ~36) */
   const ex = {
     chispas: () => [[70, 60, 9], [210, 48, 7], [62, 140, 6], [218, 128, 8]].map(([x, y, r]) => `<path d="M${x} ${y - r} Q${x + r * .2} ${y - r * .2} ${x + r} ${y} Q${x + r * .2} ${y + r * .2} ${x} ${y + r} Q${x - r * .2} ${y + r * .2} ${x - r} ${y} Q${x - r * .2} ${y - r * .2} ${x} ${y - r}Z" fill="#FFE27A"/>`).join(''),
