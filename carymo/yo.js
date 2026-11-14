@@ -45,6 +45,7 @@ export function iniciarYo(h){
         ${boton('apuntes', 'notebook-pen', 'Apuntes', nApuntes ? `${nApuntes} guardados, por materia` : 'Por materia')}
         ${boton('pizarron', 'presentation', 'Pizarrón libre', 'Pídele una clase de lo que sea')}
         ${boton('buscar', 'search', 'Buscar un tema', 'En tus planes y cursos')}
+        ${boton('@juegos', 'swords', 'Juegos', 'Ajedrez, damas, dominó…')}
         ${boton('@vestidor', 'shirt', 'Tu personaje', 'Ropa, gorros y lentes')}
         ${boton('perfil', 'settings', 'Ajustes y cuenta', `${planes.length} ${planes.length === 1 ? 'plan' : 'planes'} · voz · avisos`)}
       </div>`;
@@ -62,6 +63,7 @@ export function iniciarYo(h){
     if(b.dataset.yo === 'vestidor') h.abrirVestidor();
     if(b.dataset.yo === 'companero') h.abrirCompanero();
     if(b.dataset.yo === 'trofeos') vitrina();
+    if(b.dataset.yo === 'juegos') h.abrirJuegos?.();
   });
   /* la vitrina: un trofeo por liga; los que ya alcanzaste a color, con cuántas semanas y podios; los demás en silueta */
   function vitrina(){

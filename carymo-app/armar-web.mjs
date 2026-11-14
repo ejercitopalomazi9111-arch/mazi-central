@@ -16,7 +16,8 @@ const RAIZ = resolve(AQUI, '..');
 const WWW = join(AQUI, 'www');
 
 /* las puertas de entrada: la app y el pizarrón (que se abre en un marco) */
-const ENTRADAS = ['carymo/index.html', 'sala/explica.html', 'carymo/manifest.webmanifest'];
+const ENTRADAS = ['carymo/index.html', 'sala/explica.html', 'carymo/manifest.webmanifest', 'carymo/juegos/maquina.js',
+  ...['K', 'Q', 'R', 'B', 'N', 'P'].flatMap((p) => [`carymo/juegos/piezas/w${p}.svg`, `carymo/juegos/piezas/b${p}.svg`])];
 /* nunca entran a la app, aunque algo los nombre */
 const PROHIBIDO = [/^sala\/servidor\//, /^\.llaves\//, /(^|\/)pruebas[^/]*$/, /\.md$/, /^carymo\/anuncio/, /(^|\/)node_modules\//];
 /* lo que se lee como texto para buscarle referencias */
