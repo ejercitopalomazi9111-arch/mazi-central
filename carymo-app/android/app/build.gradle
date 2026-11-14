@@ -7,8 +7,9 @@ android {
         applicationId "mx.grupomazi.carymo"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // cada subida a la tienda necesita un número más grande: en GitHub lo pone el número de corrida
+        versionCode Integer.parseInt(System.getenv("CARYMO_VERSION_CODE") ?: "1")
+        versionName System.getenv("CARYMO_VERSION") ?: "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,8 +17,20 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // la firma de Play Store: la llave vive en los secretos de GitHub, nunca en el repo (PUBLICAR.md)
+    signingConfigs {
+        tienda {
+            if (System.getenv("CARYMO_KEYSTORE")) {
+                storeFile file(System.getenv("CARYMO_KEYSTORE"))
+                storePassword System.getenv("CARYMO_KEYSTORE_CLAVE")
+                keyAlias System.getenv("CARYMO_KEY_ALIAS") ?: "carymo"
+                keyPassword System.getenv("CARYMO_KEY_CLAVE") ?: System.getenv("CARYMO_KEYSTORE_CLAVE")
+            }
+        }
+    }
     buildTypes {
         release {
+            if (System.getenv("CARYMO_KEYSTORE")) signingConfig signingConfigs.tienda
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

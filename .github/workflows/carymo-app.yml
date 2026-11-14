@@ -1,0 +1,101 @@
+# CARYMO como app de App Store y Play Store (carymo-app/). Los pasos para Carlos: carymo-app/PUBLICAR.md
+#
+#  · Cada vez que se toca la app: arma Android (APK para instalar a mano) y compila iPhone en una Mac de GitHub
+#    (aquí no hay Mac; ésta es la prueba de que el código de iPhone y sus widgets compilan).
+#  · «Run workflow» a mano con «tiendas» = sí: arma la versión firmada para Play Store (.aab) y, si ya están los
+#    secretos de Apple, sube la de iPhone a TestFlight. Sin secretos esos pasos se saltan solos, sin tronar.
+name: CARYMO app
+
+on:
+  push:
+    branches: [main, 'claude/**']
+    paths: ['carymo-app/**', 'carymo/**', 'sala/*.js', 'sala/letra/**', 'sala/sonidos/**', 'sala/explica.html', 'presentaciones/ia.js', '.github/workflows/carymo-app.yml']
+  workflow_dispatch:
+    inputs:
+      tiendas:
+        description: 'Armar y subir para las tiendas'
+        type: boolean
+        default: false
+      version:
+        description: 'Versión que ve la gente (ej. 1.0.1)'
+        default: '1.0'
+
+concurrency:
+  group: carymo-app-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    env: { HAY_LLAVE: "${{ secrets.CARYMO_KEYSTORE_BASE64 != '' }}" }
+    defaults: { run: { working-directory: carymo-app } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 21 }
+      - run: npm ci
+      - run: node armar-web.mjs && npx cap sync android
+      - name: APK para instalar a mano
+        run: cd android && ./gradlew assembleDebug --no-daemon
+        env: { CARYMO_VERSION_CODE: '${{ github.run_number }}', CARYMO_VERSION: '${{ inputs.version || ''1.0'' }}' }
+      - uses: actions/upload-artifact@v4
+        with: { name: CARYMO-android-para-instalar, path: carymo-app/android/app/build/outputs/apk/debug/app-debug.apk }
+      - name: Versión firmada para Play Store (.aab)
+        if: ${{ inputs.tiendas && env.HAY_LLAVE == 'true' }}
+        env:
+          LLAVE: ${{ secrets.CARYMO_KEYSTORE_BASE64 }}
+          CARYMO_KEYSTORE_CLAVE: ${{ secrets.CARYMO_KEYSTORE_CLAVE }}
+          CARYMO_KEY_ALIAS: ${{ secrets.CARYMO_KEY_ALIAS }}
+          CARYMO_VERSION_CODE: ${{ github.run_number }}
+          CARYMO_VERSION: ${{ inputs.version }}
+        run: |
+          echo "$LLAVE" | base64 -d > "$RUNNER_TEMP/carymo.keystore"
+          export CARYMO_KEYSTORE="$RUNNER_TEMP/carymo.keystore"
+          cd android && ./gradlew bundleRelease --no-daemon
+      - uses: actions/upload-artifact@v4
+        if: ${{ inputs.tiendas }}
+        with: { name: CARYMO-play-store, path: carymo-app/android/app/build/outputs/bundle/release/*.aab, if-no-files-found: ignore }
+
+  ios:
+    runs-on: macos-latest
+    env: { HAY_APPLE: "${{ secrets.ASC_LLAVE_P8_BASE64 != '' }}" }
+    defaults: { run: { working-directory: carymo-app } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+      - run: node armar-web.mjs && npx cap sync ios
+      - name: Compila iPhone y sus widgets (sin firmar, en el simulador)
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO build | tail -40
+          test "${PIPESTATUS[0]}" = 0
+      - name: Sube a TestFlight (con la llave de App Store Connect)
+        if: ${{ inputs.tiendas && env.HAY_APPLE == 'true' }}
+        env:
+          ASC_LLAVE: ${{ secrets.ASC_LLAVE_P8_BASE64 }}
+          ASC_ID: ${{ secrets.ASC_LLAVE_ID }}
+          ASC_EMISOR: ${{ secrets.ASC_EMISOR_ID }}
+          EQUIPO: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          echo "$ASC_LLAVE" | base64 -d > "$RUNNER_TEMP/asc.p8"
+          AUTH="-allowProvisioningUpdates -authenticationKeyPath $RUNNER_TEMP/asc.p8 -authenticationKeyID $ASC_ID -authenticationKeyIssuerID $ASC_EMISOR"
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/CARYMO.xcarchive" DEVELOPMENT_TEAM="$EQUIPO" CODE_SIGN_STYLE=Automatic \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} MARKETING_VERSION=${{ inputs.version }} $AUTH archive
+          cat > "$RUNNER_TEMP/exportar.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$EQUIPO</string>
+            <key>signingStyle</key><string>automatic</string>
+          </dict></plist>
+          EOF
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/CARYMO.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/exportar.plist" \
+            -exportPath "$RUNNER_TEMP/salida" $AUTH
