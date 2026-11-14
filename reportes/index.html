@@ -912,6 +912,10 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
   .modo{flex:0 0 auto; padding:0 20px}
 }
 
+/* Con cuatro modos (Tarea, 14 nov) «Credencial» se cortaba en «Creden…» a 390 px: en pantallas angostas, letra un
+   poco más chica y menos relleno, para que los cuatro nombres quepan enteros. */
+@media(max-width:430px){ .modo{font-size:13px; padding:0 4px} .modos{gap:4px} }
+
 /* Una pestaña que no es de este modo no se esconde con `hidden`: se saca del
    flujo con `display:none` para que la tira de abajo no deje huecos. */
 .pestana[hidden]{display:none}
@@ -978,6 +982,35 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
   .suelta:last-child{break-after:auto; page-break-after:auto}
   .mesa{display:none !important}
 }
+
+/* ───────── TAREA: hojas escaneadas y su PDF (tarea/tarea.js) ───────── */
+.t-ancho{width:100%}
+.t-pista{color:var(--tenue); font-size:13.5px; margin:8px 0 12px}
+.t-hojas{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; margin-bottom:18px}
+.t-vacio{color:var(--tenue); font-size:14px; margin:0}
+.t-hoja{background:var(--vacio); border:1px solid var(--linea); border-radius:12px; padding:8px; min-width:0}
+.t-mini{position:relative; aspect-ratio:17/22; background:#fff; border-radius:6px; overflow:hidden; display:grid; place-items:center}
+.t-mini img{width:100%; height:100%; object-fit:contain; display:block}
+.t-cargando{color:#555; font-size:13px}
+.t-num{position:absolute; top:6px; left:6px; min-width:24px; height:24px; padding:0 6px; border-radius:12px; background:var(--violeta); color:#fff; font-size:13px; display:grid; place-items:center}
+.t-bts{display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px}
+.t-bts .btn{min-height:44px; padding:0 6px; font-size:13px; min-width:0}
+.t-bts select{grid-column:1 / -1; min-height:44px; padding:6px 8px; font-size:14px}
+.t-bts .borrar{grid-column:1 / -1}
+.t-check{display:flex; align-items:center; gap:8px; min-height:44px; font-weight:600; margin-bottom:8px}
+.t-check input{width:22px; height:22px; accent-color:var(--violeta)}
+.t-campos{display:grid; grid-template-columns:1fr; gap:0 12px}
+@media(min-width:720px){ .t-campos{grid-template-columns:1fr 1fr} }
+.t-acciones{display:flex; gap:10px; flex-wrap:wrap}
+.t-acciones .btn{flex:1 1 160px}
+.t-estado{color:var(--tenue); font-size:14px; min-height:20px; margin:10px 0 0}
+.t-capa{position:fixed; inset:0; z-index:300; background:#0b0710f2; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:16px; touch-action:none}
+.t-lienzo{position:relative}
+.t-lienzo canvas{display:block; border-radius:6px}
+.t-lienzo svg{position:absolute; inset:0; width:100%; height:100%; pointer-events:none}
+.t-lienzo polygon{fill:#AC27FF22; stroke:#C77BFF; stroke-width:2}
+.t-punto{position:absolute; width:44px; height:44px; margin:-22px 0 0 -22px; border-radius:50%; border:3px solid #fff; background:#AC27FF99; touch-action:none; cursor:grab}
+.t-capa-bts{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
 </style>
 </head>
 <body>
@@ -998,6 +1031,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
     <button class="modo" role="tab" data-modo="reporte"    aria-selected="true">Reporte</button>
     <button class="modo" role="tab" data-modo="credencial" aria-selected="false">Credencial</button>
     <button class="modo" role="tab" data-modo="aviso"      aria-selected="false">Aviso</button>
+    <button class="modo" role="tab" data-modo="tarea"      aria-selected="false">Tarea</button>
   </nav>
   <nav class="pestanas" role="tablist" aria-label="Secciones">
     <button class="pestana" role="tab" data-modo="reporte" data-vista="escribir" aria-selected="true">Escribir</button>
@@ -1010,6 +1044,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--violeta); outlin
     <button class="pestana" role="tab" data-modo="credencial" data-vista="credencial" aria-selected="false" hidden>Hacerla</button>
     <button class="pestana" role="tab" data-modo="aviso" data-vista="avisos" aria-selected="false" hidden>Pendientes</button>
     <button class="pestana" role="tab" data-modo="aviso" data-vista="cartel" aria-selected="false" hidden>El cartel</button>
+    <button class="pestana" role="tab" data-modo="tarea" data-vista="tarea" aria-selected="false" hidden>Hojas</button>
   </nav>
 </header>
 
@@ -1517,6 +1552,8 @@ El día ...
       imagen se arma aquí mismo.</p>
   </section>
 
+  <!-- ══════════ TAREA (Carlos, 14 nov): fotos de hojas → escaneo → PDF APA con portada. Lo pinta tarea/tarea.js ══════════ -->
+  <section class="panel" id="panel-tarea" hidden></section>
 </div>
 </main>
 
@@ -1532,6 +1569,7 @@ El día ...
      copia es dos verdades, y el horario del 3.1 cambia cada semestre. -->
 <script src="../avisos/datos.js"></script>
 <script src="../avisos/iconos.js"></script>
+<script type="module" src="tarea/tarea.js"></script>
 <script>
 "use strict";
 
@@ -4255,7 +4293,7 @@ function verVista(v){
     avisos:   partido ? ["avisos","cartel"] : ["avisos"],
     cartel:   partido ? ["avisos","cartel"] : ["cartel"],
     credencial:["credencial"], plantilla:["plantilla"], registro: ["registro"],
-    formato:  ["formato"], verificar:["verificar"], guardados:["guardados"],
+    formato:  ["formato"], verificar:["verificar"], guardados:["guardados"], tarea:["tarea"],
   }[v] || ["escribir"];
   /* La lista de paneles se saca del DOM, no se escribe a mano: así un panel
      nuevo no se queda visible para siempre porque a alguien se le pasó
@@ -4282,12 +4320,12 @@ function verVista(v){
    lugar donde el pulgar espera la acción principal, así que se toca por
    costumbre y no hace lo que uno quería. */
 function pintarBarra(modo){
-  const esAviso = modo === "aviso";
-  $("#bImprimir").textContent = esAviso ? "Crear la imagen" : "Imprimir / PDF";
+  const esAviso = modo === "aviso", esTarea = modo === "tarea";
+  $("#bImprimir").textContent = esAviso ? "Crear la imagen" : esTarea ? "Descargar PDF" : "Imprimir / PDF";
   /* En modo Aviso el panel YA trae su «+ Agregar un pendiente» a todo lo ancho.
      Repetirlo arriba no daba una segunda vía: daba un tercer botón en una barra
      de 390 px, y ahí es donde «Crear la imagen» se partía en dos renglones. */
-  $("#bNuevo").hidden = esAviso;
+  $("#bNuevo").hidden = esAviso || esTarea;
   $("#bNuevo").textContent = "Nuevo";
 }
 
@@ -4676,6 +4714,8 @@ function imprimir(){
      El botón de «Imprimir todas» de allá abajo sigue existiendo; esto sólo
      hace que el de arriba haga lo que uno espera desde donde está parado. */
   if(vistaActual() === 'credencial'){ imprimirCredenciales(false); return; }
+  /* En modo Tarea, el botón grande arma el PDF de las hojas (tarea/tarea.js) */
+  if(modoActual() === 'tarea'){ window.__tarea && window.__tarea.descargar(); return; }
 
   /* Y en modo Aviso NO se imprime: se hace la imagen para el chat. Es la
      misma lección de las credenciales, que costó dieciséis páginas. El botón
