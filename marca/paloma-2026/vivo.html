@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Grupo Mazi · Paloma viva</title>
+<meta name="theme-color" content="#170A26">
+<style>
+:root{ --osc:#170A26; --lila:#C77DFF; --claro:#F4EEF2 }
+*{ box-sizing:border-box; margin:0 }
+html, body{ height:100%; background:radial-gradient(70% 55% at 50% 38%, #2A1240, var(--osc) 75%) fixed, var(--osc); color:var(--claro);
+  font-family:system-ui, -apple-system, "Segoe UI", sans-serif; overflow:hidden; -webkit-tap-highlight-color:transparent }
+#logo{ position:absolute; left:50%; top:46%; width:min(78vw, 58vh); transform:translate(-50%, -50%); touch-action:none }
+#caja{ position:absolute; left:50%; top:46%; width:min(70vw, 360px); height:min(46vw, 230px); transform:translate(-50%, -50%);
+  display:grid; place-items:center; text-align:center; padding:24px; opacity:0; transition:opacity .5s; pointer-events:none }
+#caja b{ display:block; font-size:22px; letter-spacing:-.01em } #caja span{ display:block; margin-top:6px; font-size:15px; color:#D8CCE4 }
+#caja.ver{ opacity:1 }
+nav{ position:fixed; left:0; right:0; bottom:max(18px, env(safe-area-inset-bottom)); display:flex; justify-content:center; gap:8px; flex-wrap:wrap; padding:0 16px }
+button{ font:600 15px/1 inherit; font-family:inherit; color:var(--claro); background:#ffffff10; border:1px solid #C77DFF55; border-radius:999px;
+  min-height:44px; padding:0 18px; cursor:pointer; transition:background .15s }
+button:active, button[aria-pressed="true"]{ background:#AC27FF55 }
+button:focus-visible{ outline:2px solid var(--lila); outline-offset:2px }
+@media (prefers-reduced-motion: reduce){ #caja{ transition:none } }
+</style>
+</head>
+<body>
+<div id="logo" aria-label="Logo de Grupo Mazi" role="img"></div>
+<div id="caja" aria-live="polite"><div><b>Se construye la herramienta</b><span>Grupo Mazi</span></div></div>
+<nav>
+  <button data-a="respira" aria-pressed="true">Respira</button>
+  <button data-a="abrir" aria-pressed="false">Abrir</button>
+  <button data-a="estirar" aria-pressed="false">Estirar</button>
+  <button data-a="recuadro" aria-pressed="false">Recuadro</button>
+</nav>
+<script type="module">
+import { crearPaloma } from './vivo.js';
+const P = await crearPaloma(document.querySelector('#logo'));
+window.__paloma = P;
+const caja = document.querySelector('#caja');
+let modo = 'respira', ocupado = false;
+async function poner(m){
+  if(ocupado) return; ocupado = true;
+  if(modo === 'recuadro'){ caja.classList.remove('ver'); await P.volver(); }
+  P.cerrar();
+  if(m === 'abrir') P.abrir(1);
+  if(m === 'estirar') P.estirar(1.35, .8);
+  if(m === 'recuadro'){ await P.formar(caja.getBoundingClientRect()); caja.classList.add('ver'); }
+  modo = m;
+  document.querySelectorAll('nav button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.a === m)));
+  ocupado = false;
+}
+document.querySelector('nav').addEventListener('click', (e) => { const b = e.target.closest('button[data-a]'); if(b) poner(b.dataset.a); });
+</script>
+</body>
+</html>
