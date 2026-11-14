@@ -189,7 +189,6 @@ button{ cursor:pointer; background:none; border:0; }
 /* entra el chat desde la derecha en el teléfono */
 @media (max-width: 899px){ .app.en-chat .conv{ animation:entra .22s ease-out; } }
 @keyframes entra{ from{ transform:translateX(24px); opacity:0; } to{ transform:none; opacity:1; } }
-@media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
 
 /* probar el bot */
 .btn.probar{ width:100%; margin:0 0 12px; }
@@ -206,3 +205,13 @@ button{ cursor:pointer; background:none; border:0; }
 .como [aria-checked="true"]{ background:var(--acento); color:var(--acento-tinta); border-color:transparent; }
 .como .borrar{ margin-left:auto; min-height:36px; color:var(--aviso); font-weight:600; font-size:13px; }
 .sin-acceso{ position:fixed; inset:0; z-index:9; background:var(--fondo); display:grid; place-items:center; padding:24px; }
+
+/* «reducir movimiento» REDUCE, no apaga (Godines, 14 nov): muchas compus lo traen prendido sin que su dueño lo sepa
+   (Windows con «Efectos de animación» apagado) y un `*{ animation:none; transition:none }` dejaba la página tiesa y sin
+   cambios de color al tocar. Aquí sólo se quita lo que se desplaza: el chat entra sin volar y los puntos no brincan. */
+@media (prefers-reduced-motion: reduce){
+  .app.en-chat .conv{ animation:upChatAparece .15s ease-out; }
+  .b.escribiendo span{ animation:upChatLatido 1.4s infinite ease-in-out; }
+}
+@keyframes upChatAparece{ from{ opacity:0; } to{ opacity:1; } }
+@keyframes upChatLatido{ 0%,100%{ opacity:.3; } 50%{ opacity:1; } }
