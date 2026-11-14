@@ -18,7 +18,7 @@ public class WidgetMascota extends AppWidgetProvider {
             RemoteViews v = new RemoteViews(ctx.getPackageName(), R.layout.widget_mascota);
             if (foto != null) { v.setImageViewBitmap(R.id.foto, foto); v.setViewVisibility(R.id.foto, View.VISIBLE); }
             v.setTextViewText(R.id.racha, WidgetDatos.racha(d));
-            boolean viva = d != null && d.optBoolean("rachaViva", false);
+            boolean viva = WidgetDatos.estudioHoy(d);
             v.setInt(R.id.pastillaRacha, "setBackgroundResource", viva ? R.drawable.widget_pastilla_viva : R.drawable.widget_pastilla);
             v.setTextViewText(R.id.frase, d == null ? "Abre CARYMO" : d.optString("frase", ""));
             v.setOnClickPendingIntent(R.id.raiz, WidgetDatos.abrirApp(ctx));

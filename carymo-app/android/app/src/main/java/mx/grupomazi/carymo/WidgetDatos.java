@@ -47,6 +47,13 @@ final class WidgetDatos {
         return PendingIntent.getActivity(ctx, 0, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
+    /** La racha «viva» se guarda al abrir la app; si ya cambió el día, hoy todavía no estudias. */
+    static boolean estudioHoy(JSONObject d) {
+        if (d == null || !d.optBoolean("rachaViva", false)) return false;
+        String hoy = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(new java.util.Date());
+        return hoy.equals(d.optString("dia", ""));
+    }
+
     static String racha(JSONObject d) {
         int n = d == null ? 0 : d.optInt("racha", 0);
         return String.valueOf(n);
@@ -56,7 +63,7 @@ final class WidgetDatos {
     static String avisoRacha(JSONObject d) {
         if (d == null) return "Abre CARYMO para empezar";
         int n = d.optInt("racha", 0);
-        if (d.optBoolean("rachaViva", false)) return n == 1 ? "día de racha" : "días de racha";
+        if (estudioHoy(d)) return n == 1 ? "día de racha" : "días de racha";
         return n > 0 ? "¡Estudia hoy para no perderla!" : "Estudia hoy y empieza tu racha";
     }
 

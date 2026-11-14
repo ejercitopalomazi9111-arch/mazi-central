@@ -93,7 +93,7 @@ export function datosWidget(h){
   const estado = sin ? 'ninguna' : quePasa(c);
   const nivel = m ? nivelMascota(m.xp || 0) : 1;
   return {
-    racha: p.racha || 0, rachaViva: p.ultimoDia === hoy, mejorRacha: p.mejorRacha || 0, congeladas: p.congeladas || 0,
+    racha: p.racha || 0, rachaViva: p.ultimoDia === hoy, dia: hoy, mejorRacha: p.mejorRacha || 0, congeladas: p.congeladas || 0,
     xp: p.xp || 0, cubos: p.infinito ? -1 : (p.cubos ?? 0),
     mascota: sin ? '' : (m && m.nombre) || (ESPECIES[quien] && ESPECIES[quien].nombre) || 'Tu mascota',
     especie: sin ? '' : quien, nivel, etapa: sin ? '' : (ETAPAS[etapaDe(quien, nivel)] || ''),
