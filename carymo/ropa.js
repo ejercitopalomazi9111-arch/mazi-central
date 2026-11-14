@@ -12,9 +12,11 @@
  * no adorno, y no se venden.
  * ===========================================================================*/
 
-/* muchos más tonos de piel (Carlos, 14 nov): los 7 de Avataaars y 15 más, del más claro al más oscuro, con tonos fríos y cálidos */
-export const PIELES = ['ffdbb4', 'edb98a', 'f8d25c', 'fd9841', 'd08b5b', 'ae5d29', '614335',
-  'fff0e6', 'fbe3d3', 'f6d2b8', 'f0c8a0', 'e7b98f', 'dfa679', 'c99064', 'b77b4f', 'a06a45', '8a5638', '73452c', '5e3a26', '4b2e1f', '3a2418', '2b1b12'];
+/* LOS TONOS DE PIEL: sólo tonos humanos, del más claro al más oscuro (Carlos, 14 nov). Avataaars trae de fábrica un
+   amarillo (f8d25c), un naranja (fd9841) y un café anaranjado (ae5d29) de caricatura; como tono de piel se pueden leer como burla, así que NO van.
+   Quien ya los tenía puestos regresa a su tono de arranque (normalizarPersonaje no acepta lo que no está aquí). */
+export const PIELES = ['fff0e6', 'fbe3d3', 'ffdbb4', 'f6d2b8', 'f0c8a0', 'edb98a', 'e7b98f', 'dfa679', 'd08b5b', 'c99064',
+  'b77b4f', 'a06a45', '8a5638', '73452c', '614335', '5e3a26', '4b2e1f', '3a2418', '2b1b12'];
 export const COLORES_PELO = ['2c1b18', '4a312c', '724133', 'a55728', 'b58143', 'd6b370', 'c93305', 'e8e1e1', 'ecdcbf', 'f59797',
   '0b0806', '5a3a22', '8b5a2b', 'e2c290', 'f5ecd5', 'ffffff', '9aa3ad', 'ac27ff', '6c5ce7', '3498db', '00b894', 'fd79a8', 'e84393', 'ff7675', 'fdcb6e'];
 export const PEINADOS = ['shortFlat', 'shortRound', 'shortWaved', 'shortCurly', 'sides', 'theCaesar', 'theCaesarAndSidePart', 'shavedSides', 'frizzle', 'shaggy', 'shaggyMullet',

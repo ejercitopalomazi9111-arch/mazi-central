@@ -5,13 +5,15 @@ import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { atenderEstudio } from '../sala/servidor/estudio.js';
-import { TIENDA_ROPA } from './ropa.js';
+import { TIENDA_ROPA, PIELES } from './ropa.js';
 
 const raiz = fileURLToPath(new URL('..', import.meta.url));
 const PUERTO = 8700 + Math.floor(Math.random() * 90);
 const srv = spawn('python3', ['-m', 'http.server', String(PUERTO), '--bind', '127.0.0.1'], { cwd: raiz, stdio: 'ignore' });
 await new Promise((r) => setTimeout(r, 900));
 let f = 0, n = 0; const ok = (c, t) => { n++; console.log((c ? '  ✓ ' : '  ✗ ') + t); if(!c) f++; };
+/* sólo tonos de piel humanos: el amarillo, el naranja y el café anaranjado de Avataaars se leen como burla (Carlos, 14 nov) */
+ok(!['f8d25c', 'fd9841', 'ae5d29'].some((c) => PIELES.includes(c)) && PIELES.length >= 18, `${PIELES.length} tonos de piel, ninguno amarillo ni naranja de caricatura`);
 
 const m = new Map();
 const s = { async get(k){ return structuredClone(m.get(k)); }, async put(k, v){ if(typeof k === 'object'){ for(const [a, b] of Object.entries(k)) m.set(a, structuredClone(b)); } else m.set(k, structuredClone(v)); },
