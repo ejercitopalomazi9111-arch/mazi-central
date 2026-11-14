@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Memoria técnica · Red LAN</title><link rel="stylesheet" href="estilo.css"></head>
+<body>
+
+<!-- ═══════════════ ÍNDICE ═══════════════ -->
+<section>
+<h1>Índice</h1>
+{{INDICE}}
+</section>
+
+<!-- ═══════════════ 1. INTRODUCCIÓN ═══════════════ -->
+<section class="capitulo">
+<h1 id="s1"><span class="num">1.</span>Introducción</h1>
+<p>Una <strong>red de área local (LAN, <em>Local Area Network</em>)</strong> es un conjunto de dispositivos —computadoras, impresoras, servidores, teléfonos, puntos de acceso inalámbrico— interconectados dentro de un área geográfica limitada, como una oficina, un piso o un edificio, que comparten recursos e intercambian información a alta velocidad bajo la administración de una sola organización (Stallings, 2004). A diferencia de una red de área amplia (WAN), cuya infraestructura suele pertenecer a un proveedor de telecomunicaciones, en la LAN la organización es dueña del cableado, de los equipos de conmutación y de las políticas que gobiernan el tráfico (Tanenbaum y Wetherall, 2012; Cisco Systems, s. f.-b).</p>
+<p>En la actualidad prácticamente todas las LAN cableadas se construyen con tecnología <strong>Ethernet</strong>, la familia de estándares IEEE 802.3, que define tanto la forma de transmitir los bits por cobre o fibra como el formato de las tramas que intercambian los equipos (Cisco Systems, s. f.-e; IEEE, 2022a). A esa base cableada se suma la conectividad inalámbrica <strong>Wi-Fi</strong> (IEEE 802.11), que permite a los usuarios moverse dentro de las instalaciones sin perder acceso a los recursos (Cisco Systems, s. f.-i).</p>
+<p>Para una organización, la LAN no es un accesorio (Cisco Systems, s. f.-g): es el sistema nervioso de la operación diaria. Por ella circulan los correos, los archivos compartidos, la información de clientes, las órdenes de impresión, el acceso a Internet y las aplicaciones administrativas. Una red bien diseñada permite <strong>compartir recursos</strong> (una impresora o un servidor para muchos usuarios), <strong>centralizar la información</strong> y sus respaldos, <strong>controlar quién accede a qué</strong> y <strong>crecer</strong> sin rehacer la instalación. Una red mal diseñada, en cambio, provoca lentitud, fallas que detienen al personal completo y huecos de seguridad difíciles de detectar.</p>
+<p>El propósito de esta <strong>memoria técnica</strong> es documentar de forma ordenada y verificable el diseño y la implementación de la red LAN de una empresa mediana. El documento describe el escenario y sus requerimientos, propone una arquitectura con sus diagramas físicos y lógicos, especifica el cableado, el direccionamiento IP y la segmentación por VLAN, detalla los componentes del sistema de comunicación, presenta las configuraciones básicas de los equipos con comandos de Cisco IOS, clasifica los dispositivos y protocolos según los modelos OSI y TCP/IP, y repasa la evolución histórica de las redes de datos con énfasis en su <strong>confiabilidad</strong>. Una memoria técnica de este tipo sirve como guía para la instalación, como evidencia de las decisiones tomadas y como referencia para el mantenimiento y las ampliaciones futuras.</p>
+</section>
+
+<!-- ═══════════════ 2. ESCENARIO ═══════════════ -->
+<section class="capitulo">
+<h1 id="s2"><span class="num">2.</span>Descripción del escenario</h1>
+<h2 id="s2-1"><span class="num">2.1</span>La empresa</h2>
+<p><strong>Distribuidora Técnica del Bajío, S. A. de C. V.</strong> (en adelante, <strong>DTB</strong>) es una empresa ficticia, creada para este proyecto, dedicada a la comercialización y distribución de equipo eléctrico e insumos industriales a talleres y pequeñas fábricas de la región del Bajío. Opera en un solo nivel de un edificio de oficinas de aproximadamente <strong>38 m × 20 m</strong> en la ciudad de Querétaro, en horario de lunes a sábado. Cuenta con <strong>28 empleados</strong> y recibe a diario visitas de clientes y proveedores.</p>
+<p>La empresa trabajaba hasta ahora con equipos conectados a un módem doméstico y a un par de switches no administrables: no había separación entre áreas, los archivos se compartían por memorias USB y correo, y una falla en cualquier cable dejaba sin servicio a varias personas. La dirección decidió implementar una red LAN profesional que soporte la operación actual y el crecimiento planeado para los próximos tres a cinco años.</p>
+
+<h2 id="s2-2"><span class="num">2.2</span>Distribución de áreas y usuarios</h2>
+<table>
+<thead><tr><th>Área</th><th class="c">Personal</th><th>Equipos que se conectan</th><th>Uso principal de la red</th></tr></thead>
+<tbody>
+<tr><td><strong>Dirección</strong></td><td class="c">3</td><td>3 PC, 1 impresora (IMP-DIR), dispositivos móviles</td><td>Información financiera y estratégica, correo, videoconferencias</td></tr>
+<tr><td><strong>Administración</strong></td><td class="c">8</td><td>8 PC, 1 impresora multifunción compartida con RR. HH. (IMP-ADM)</td><td>Facturación, compras, inventario, contabilidad, banca en línea</td></tr>
+<tr><td><strong>Recursos Humanos</strong></td><td class="c">4</td><td>4 PC</td><td>Expedientes del personal, nómina, reclutamiento (datos sensibles)</td></tr>
+<tr><td><strong>Atención al cliente</strong></td><td class="c">10</td><td>10 PC (incluye recepción), 1 impresora (IMP-ATC)</td><td>Cotizaciones, pedidos, seguimiento de clientes, correo</td></tr>
+<tr><td><strong>Sistemas</strong></td><td class="c">3</td><td>3 PC, servidores y equipo de comunicaciones</td><td>Administración de la red, servidores, soporte técnico</td></tr>
+<tr><td><strong>Sala de juntas</strong></td><td class="c">—</td><td>Equipo de videoconferencia, pantalla, equipos de visitantes</td><td>Reuniones internas y con clientes, presentaciones</td></tr>
+<tr><td colspan="4" style="text-align:right"><strong>Total: 28 empleados · 31 PC · 3 impresoras · 3 servidores/almacenamiento · 3 puntos de acceso</strong></td></tr>
+</tbody></table>
+
+<h2 id="s2-3"><span class="num">2.3</span>Necesidades y requerimientos de conectividad</h2>
+<p>A partir de entrevistas con cada área se identificaron los siguientes requerimientos, que el diseño debe cumplir:</p>
+<table>
+<thead><tr><th style="width:24%">Requerimiento</th><th>Descripción</th></tr></thead>
+<tbody>
+<tr><td><strong>Conectividad cableada</strong></td><td>Cada puesto de trabajo con al menos una salida de datos a 1 Gb/s, más salidas de reserva por área para equipos nuevos.</td></tr>
+<tr><td><strong>Conectividad inalámbrica</strong></td><td>Cobertura Wi-Fi en toda la planta para laptops y teléfonos del personal, y una red separada para visitantes sin acceso a los recursos internos.</td></tr>
+<tr><td><strong>Recursos compartidos</strong></td><td>Servidor de archivos con carpetas por área, impresoras en red y servicio de directorio para administrar usuarios y contraseñas de forma centralizada.</td></tr>
+<tr><td><strong>Seguridad</strong></td><td>Separar lógicamente las áreas para que la información de Dirección y RR. HH. no quede expuesta al resto; acceso administrativo a los equipos sólo por canales cifrados.</td></tr>
+<tr><td><strong>Confiabilidad</strong></td><td>Que la falla de un cable o de un puerto entre switches no detenga la operación; respaldos automáticos y energía protegida en el cuarto de telecomunicaciones.</td></tr>
+<tr><td><strong>Acceso a Internet</strong></td><td>Salida compartida a Internet para todas las áreas, con un solo enlace de proveedor y traducción de direcciones.</td></tr>
+<tr><td><strong>Crecimiento</strong></td><td>Capacidad para aumentar al menos 50 % los puestos sin cambiar la arquitectura ni el direccionamiento.</td></tr>
+<tr><td><strong>Administración</strong></td><td>Documentación completa, nombres y etiquetas consistentes, y una red de gestión aparte para switches y puntos de acceso.</td></tr>
+</tbody></table>
+</section>
+
+<!-- ═══════════════ 3. DISEÑO ═══════════════ -->
+<section class="capitulo">
+<h1 id="s3"><span class="num">3.</span>Diseño de la red LAN</h1>
+<h2 id="s3-1"><span class="num">3.1</span>Arquitectura general de la red</h2>
+<p>Se adopta un <strong>modelo jerárquico de núcleo colapsado</strong>, recomendado para redes de tamaño pequeño y mediano: en lugar de tres capas físicas separadas (núcleo, distribución y acceso), las funciones de núcleo y distribución se concentran en un switch central, y una capa de acceso conecta a los usuarios (Cisco Networking Academy, s. f.). La arquitectura se compone de:</p>
+<ul>
+<li><strong>Borde:</strong> el router <strong>R-BORDE</strong> (Cisco ISR 1111-8P) conecta la LAN con el proveedor de Internet, realiza la traducción de direcciones (NAT/PAT), entrega direcciones por DHCP y enruta el tráfico entre VLAN mediante subinterfaces (<em>router-on-a-stick</em>).</li>
+<li><strong>Núcleo/distribución colapsados:</strong> el switch <strong>SW-CORE</strong> (Cisco Catalyst C1000-24T-4G-L) concentra los enlaces troncales hacia el router y hacia los switches de acceso, y conecta los servidores.</li>
+<li><strong>Acceso:</strong> dos switches <strong>SW-ACC1</strong> y <strong>SW-ACC2</strong> (Cisco Catalyst C1000-48P-4G-L, con alimentación PoE+) conectan las salidas de datos de cada área y los puntos de acceso inalámbrico.</li>
+<li><strong>Inalámbrico:</strong> tres puntos de acceso <strong>AP-01, AP-02 y AP-03</strong> (Cisco Business 150AX, Wi-Fi 6) con dos redes: <em>DTB-Corporativo</em> y <em>DTB-Invitados</em>.</li>
+<li><strong>Servicios:</strong> dos servidores (<strong>SRV-01</strong> y <strong>SRV-02</strong>) con Windows Server para directorio activo, DNS y archivos, y un equipo de almacenamiento en red (<strong>NAS-01</strong>) para respaldos.</li>
+</ul>
+<p>Todo el equipo activo se instala en un gabinete de 19" ubicado en el área de Sistemas, que funciona como cuarto de telecomunicaciones, protegido por un sistema de alimentación ininterrumpida (UPS).</p>
+
+<h2 id="s3-2"><span class="num">3.2</span>Distribución de los equipos</h2>
+<table style="font-size:8.6pt">
+<thead><tr><th>Equipo</th><th>Modelo / tipo</th><th class="c">Cant.</th><th>Ubicación</th></tr></thead>
+<tbody>
+<tr><td>R-BORDE</td><td>Cisco ISR 1111-8P</td><td class="c">1</td><td>Rack, U14</td></tr>
+<tr><td>SW-CORE</td><td>Cisco Catalyst C1000-24T-4G-L</td><td class="c">1</td><td>Rack, U15</td></tr>
+<tr><td>SW-ACC1 / SW-ACC2</td><td>Cisco Catalyst C1000-48P-4G-L (PoE+)</td><td class="c">2</td><td>Rack, U21 y U20</td></tr>
+<tr><td>AP-01 / AP-02 / AP-03</td><td>Cisco Business 150AX (Wi-Fi 6)</td><td class="c">3</td><td>Techo de Atención, Administración y Sala de juntas</td></tr>
+<tr><td>SRV-01 / SRV-02 · NAS-01</td><td>Servidor 1U con Windows Server 2022 · almacenamiento RAID 1</td><td class="c">2 · 1</td><td>Rack, U11, U10 y U9</td></tr>
+<tr><td>PC · impresoras</td><td>Escritorio con NIC de 1 Gb/s · láser multifunción con Ethernet</td><td class="c">31 · 3</td><td>Puestos de cada área</td></tr>
+<tr><td>UPS · PDU</td><td>UPS en línea 2U · regleta para rack</td><td class="c">1 · 1</td><td>Rack, U1-U2 y U4</td></tr>
+</tbody></table>
+<p class="leyenda">Las conexiones de cada equipo, puerto por puerto, aparecen en la Figura 1 y en la tabla de la sección 3.5.</p>
+
+<div class="junto"><h2 id="s3-3"><span class="num">3.3</span>Diagrama de la topología física</h2>
+<p>El diagrama muestra cómo están conectados físicamente los equipos: qué puerto se une con cuál y por qué medio. Los dos cables paralelos entre SW-CORE y cada switch de acceso forman un <strong>EtherChannel</strong> (agregación de enlaces con LACP) y la línea punteada entre los switches de acceso es un enlace redundante que el protocolo de árbol de expansión mantiene en espera.</p>
+<figure style="padding:2mm 9mm">{{FIG_FISICA}}<figcaption><b>Figura 1.</b> Topología física en estrella extendida: router de borde, switch de núcleo, dos switches de acceso, servidores y áreas de trabajo.</figcaption></figure></div>
+
+<div class="junto"><h2 id="s3-4"><span class="num">3.4</span>Diagrama de la topología lógica</h2>
+<p>La topología lógica describe cómo circula la información, independientemente de dónde esté conectado cada cable. La red se divide en <strong>11 VLAN</strong>, cada una con su propia subred IPv4; todas viajan por los mismos enlaces troncales 802.1Q y el router es la puerta de enlace de cada una.</p>
+<figure>{{FIG_LOGICA}}<figcaption><b>Figura 2.</b> Topología lógica: VLAN, subredes, puertas de enlace y enrutamiento entre VLAN en R-BORDE.</figcaption></figure></div>
+
+<h2 id="s3-5"><span class="num">3.5</span>Distribución de puntos de red</h2>
+<p>Se instalan <strong>45 enlaces horizontales</strong>: 42 salidas de datos en las áreas de trabajo (incluidas las de impresoras y reservas) y 3 para los puntos de acceso en el techo. Cada salida se identifica con una etiqueta que indica panel y puerto (por ejemplo, <code>A-07</code> = panel PP-A, puerto 7), de modo que cualquier falla se localiza sin rastrear cables.</p>
+<figure>{{FIG_PLANO}}<figcaption><b>Figura 3.</b> Plano esquemático de la planta con la ubicación de las salidas de datos, impresoras, puntos de acceso, charola y rack.</figcaption></figure>
+<table>
+<thead><tr><th>Switch</th><th>Puertos</th><th>Área / equipo</th><th class="c">VLAN</th><th class="c">Salidas</th><th>Etiquetas</th></tr></thead>
+<tbody>
+<tr><td rowspan="5">SW-ACC1</td><td>Gi1/0/1-12</td><td>Atención al cliente (10 PC + 2 reserva)</td><td class="c">40</td><td class="c">12</td><td>A-01 a A-12</td></tr>
+<tr><td>Gi1/0/13</td><td>IMP-ATC</td><td class="c">70</td><td class="c">1</td><td>A-13</td></tr>
+<tr><td>Gi1/0/14-16</td><td>Sala de juntas (videoconferencia, pantalla, reserva)</td><td class="c">80</td><td class="c">3</td><td>A-14 a A-16</td></tr>
+<tr><td>Gi1/0/17-18</td><td>AP-01 (Atención) y AP-03 (Sala de juntas)</td><td class="c">90/99/100</td><td class="c">2</td><td>A-17, A-18</td></tr>
+<tr><td>Gi1/0/46-48</td><td>Enlace a SW-ACC2 (46) y Po1 hacia SW-CORE (47-48)</td><td class="c">troncal</td><td class="c">—</td><td>—</td></tr>
+<tr><td rowspan="7">SW-ACC2</td><td>Gi1/0/1-5</td><td>Dirección (3 PC + 2 reserva)</td><td class="c">10</td><td class="c">5</td><td>B-01 a B-05</td></tr>
+<tr><td>Gi1/0/6-15</td><td>Administración (8 PC + 2 reserva)</td><td class="c">20</td><td class="c">10</td><td>B-06 a B-15</td></tr>
+<tr><td>Gi1/0/16-20</td><td>Recursos Humanos (4 PC + 1 reserva)</td><td class="c">30</td><td class="c">5</td><td>B-16 a B-20</td></tr>
+<tr><td>Gi1/0/21-24</td><td>Sistemas (3 PC + 1 reserva)</td><td class="c">50</td><td class="c">4</td><td>B-21 a B-24</td></tr>
+<tr><td>Gi1/0/25-26</td><td>IMP-DIR e IMP-ADM</td><td class="c">70</td><td class="c">2</td><td>B-25, B-26</td></tr>
+<tr><td>Gi1/0/27</td><td>AP-02 (Administración)</td><td class="c">90/99/100</td><td class="c">1</td><td>B-27</td></tr>
+<tr><td>Gi1/0/46-48</td><td>Enlace a SW-ACC1 (46) y Po2 hacia SW-CORE (47-48)</td><td class="c">troncal</td><td class="c">—</td><td>—</td></tr>
+<tr><td colspan="4" style="text-align:right"><strong>Total de enlaces horizontales</strong></td><td class="c"><strong>45</strong></td><td>18 en PP-A · 27 en PP-B</td></tr>
+</tbody></table>
+<p class="leyenda">Los puertos Gi1/0/19-45 de SW-ACC1 y Gi1/0/28-45 de SW-ACC2 quedan libres y apagados: <b>45 puertos disponibles</b> para crecimiento sin comprar equipo nuevo.</p>
+
+<h2 id="s3-6"><span class="num">3.6</span>Medio de transmisión y cableado estructurado</h2>
+<p>El <strong>medio de transmisión</strong> principal es el <strong>cable de par trenzado sin blindaje (UTP) categoría 6</strong>, de cuatro pares de cobre, que soporta Gigabit Ethernet (1000BASE-T) en un canal de hasta 100 m y frecuencias de hasta 250 MHz. Para la conexión con el proveedor de Internet se usa la <strong>fibra óptica</strong> que entrega el propio proveedor, y para la red inalámbrica, las <strong>ondas de radio</strong> en las bandas de 2.4 GHz y 5 GHz definidas por IEEE 802.11 (IEEE, 2021; IEEE, 2022a).</p>
+<p>El <strong>cableado estructurado</strong> es un sistema ordenado y normalizado, independiente de los equipos que se conecten, que permite mover, agregar o cambiar puestos sin rehacer la instalación. Se sigue la práctica de la norma ANSI/TIA-568 para edificios comerciales, organizada en los subsistemas siguientes:</p>
+<table>
+<thead><tr><th style="width:26%">Subsistema</th><th>Implementación en DTB</th></tr></thead>
+<tbody>
+<tr><td><strong>Entrada de servicios</strong></td><td>Acometida de fibra del proveedor que termina en su ONT, colocada en una charola dentro del rack (U13).</td></tr>
+<tr><td><strong>Cuarto de telecomunicaciones</strong></td><td>Gabinete de piso de 19" y 24U en el área de Sistemas, con UPS, PDU, tierra física, ventilación y puerta con llave.</td></tr>
+<tr><td><strong>Cableado horizontal</strong></td><td>45 tendidos de UTP Cat 6 desde los paneles de parcheo hasta cada salida, en topología de estrella. Longitud máxima de 90 m de enlace permanente (el tendido más largo de la planta mide unos 55 m) más un máximo de 10 m entre cordones de parcheo y de equipo.</td></tr>
+<tr><td><strong>Canalización</strong></td><td>Charola perimetral por plafón y bajadas en canaleta hasta cada salida; separación respecto a cables eléctricos para evitar interferencia.</td></tr>
+<tr><td><strong>Área de trabajo</strong></td><td>Placas de pared con jacks RJ45 Cat 6 y cordones de parcheo de 1 a 3 m hasta el equipo.</td></tr>
+<tr><td><strong>Administración</strong></td><td>Dos paneles de parcheo de 48 puertos (PP-A y PP-B), organizadores horizontales, etiquetado en ambos extremos de cada cable y planos actualizados.</td></tr>
+</tbody></table>
+<p>Todas las terminaciones usan el esquema de colores <strong>T568B</strong> en ambos extremos (cable directo) y cada enlace se certifica con un probador de cableado antes de entregar la obra.</p>
+<figure style="width:62%;margin-left:auto;margin-right:auto">{{FIG_RACK}}<figcaption><b>Figura 4.</b> Elevación frontal del rack de 24U.</figcaption></figure>
+
+<h2 id="s3-7"><span class="num">3.7</span>Direccionamiento IP</h2>
+<p>Se utiliza direccionamiento <strong>IPv4 privado</strong> del bloque 192.168.0.0/16, reservado por el RFC 1918 para redes internas que no se enrutan en Internet (Rekhter et al., 1996). A cada VLAN se le asigna una subred <strong>/24</strong> (máscara 255.255.255.0, 254 direcciones útiles), cuyo tercer octeto coincide con el número de VLAN: así, con sólo ver una dirección se sabe a qué área pertenece. La dirección pública de la interfaz WAN pertenece al rango 203.0.113.0/24, que el RFC 5737 reserva para documentación; en la implementación real se sustituye por la que asigne el proveedor (Arkko et al., 2010). Del mismo modo, el nombre de dominio interno <code>corp.dtb.example</code> usa el dominio <code>.example</code>, reservado para ejemplos por el RFC 2606 (Eastlake y Panitz, 1999); la empresa real usaría un subdominio de su propio dominio registrado.</p>
+<table>
+<thead><tr><th class="c">VLAN</th><th>Nombre</th><th>Subred</th><th>Puerta de enlace</th><th>Reservadas (estáticas)</th><th>Rango DHCP</th><th class="c">Útiles</th></tr></thead>
+<tbody>
+<tr><td class="c">10</td><td>DIRECCION</td><td>192.168.10.0/24</td><td>192.168.10.1</td><td>.1 – .20</td><td>.21 – .254</td><td class="c">254</td></tr>
+<tr><td class="c">20</td><td>ADMINISTRACION</td><td>192.168.20.0/24</td><td>192.168.20.1</td><td>.1 – .20</td><td>.21 – .254</td><td class="c">254</td></tr>
+<tr><td class="c">30</td><td>RRHH</td><td>192.168.30.0/24</td><td>192.168.30.1</td><td>.1 – .20</td><td>.21 – .254</td><td class="c">254</td></tr>
+<tr><td class="c">40</td><td>ATENCION</td><td>192.168.40.0/24</td><td>192.168.40.1</td><td>.1 – .20</td><td>.21 – .254</td><td class="c">254</td></tr>
+<tr><td class="c">50</td><td>SISTEMAS</td><td>192.168.50.0/24</td><td>192.168.50.1</td><td>.1 – .20</td><td>.21 – .254</td><td class="c">254</td></tr>
+<tr><td class="c">60</td><td>SERVIDORES</td><td>192.168.60.0/24</td><td>192.168.60.1</td><td>todas (sin DHCP)</td><td>—</td><td class="c">254</td></tr>
+<tr><td class="c">70</td><td>IMPRESION</td><td>192.168.70.0/24</td><td>192.168.70.1</td><td>todas (sin DHCP)</td><td>—</td><td class="c">254</td></tr>
+<tr><td class="c">80</td><td>SALA-JUNTAS</td><td>192.168.80.0/24</td><td>192.168.80.1</td><td>.1 – .20</td><td>.21 – .254</td><td class="c">254</td></tr>
+<tr><td class="c">90</td><td>WIFI-CORP</td><td>192.168.90.0/24</td><td>192.168.90.1</td><td>.1 – .20</td><td>.21 – .254</td><td class="c">254</td></tr>
+<tr><td class="c">99</td><td>GESTION</td><td>192.168.99.0/24</td><td>192.168.99.1</td><td>todas (sin DHCP)</td><td>—</td><td class="c">254</td></tr>
+<tr><td class="c">100</td><td>INVITADOS</td><td>192.168.100.0/24</td><td>192.168.100.1</td><td>.1 – .20</td><td>.21 – .254</td><td class="c">254</td></tr>
+<tr><td class="c">999</td><td>NATIVA-SIN-USO</td><td colspan="5">VLAN nativa de los troncales; no tiene hosts ni dirección IP</td></tr>
+</tbody></table>
+<h3>Direcciones estáticas de la infraestructura</h3>
+<table>
+<thead><tr><th>Equipo</th><th>Interfaz</th><th>Dirección IPv4</th><th>Máscara</th><th>Puerta de enlace</th><th>DNS</th></tr></thead>
+<tbody>
+<tr><td>R-BORDE</td><td>G0/0/0 (WAN)</td><td>203.0.113.2</td><td>255.255.255.252</td><td>203.0.113.1 (proveedor)</td><td>—</td></tr>
+<tr><td>R-BORDE</td><td>G0/0/1.10 … .100</td><td>192.168.<i>V</i>.1</td><td>255.255.255.0</td><td>—</td><td>—</td></tr>
+<tr><td>SW-CORE</td><td>VLAN 99</td><td>192.168.99.2</td><td>255.255.255.0</td><td>192.168.99.1</td><td>—</td></tr>
+<tr><td>SW-ACC1</td><td>VLAN 99</td><td>192.168.99.3</td><td>255.255.255.0</td><td>192.168.99.1</td><td>—</td></tr>
+<tr><td>SW-ACC2</td><td>VLAN 99</td><td>192.168.99.4</td><td>255.255.255.0</td><td>192.168.99.1</td><td>—</td></tr>
+<tr><td>AP-01 / AP-02 / AP-03</td><td>gestión (VLAN 99)</td><td>192.168.99.11 / .12 / .13</td><td>255.255.255.0</td><td>192.168.99.1</td><td>192.168.60.10</td></tr>
+<tr><td>SRV-01</td><td>NIC (VLAN 60)</td><td>192.168.60.10</td><td>255.255.255.0</td><td>192.168.60.1</td><td>127.0.0.1 y 192.168.60.11</td></tr>
+<tr><td>SRV-02</td><td>NIC (VLAN 60)</td><td>192.168.60.11</td><td>255.255.255.0</td><td>192.168.60.1</td><td>192.168.60.10 y 127.0.0.1</td></tr>
+<tr><td>NAS-01</td><td>NIC (VLAN 60)</td><td>192.168.60.12</td><td>255.255.255.0</td><td>192.168.60.1</td><td>192.168.60.10, 192.168.60.11</td></tr>
+<tr><td>IMP-DIR / IMP-ADM / IMP-ATC</td><td>NIC (VLAN 70)</td><td>192.168.70.11 / .12 / .13</td><td>255.255.255.0</td><td>192.168.70.1</td><td>192.168.60.10</td></tr>
+</tbody></table>
+<p class="leyenda">Las PC y los dispositivos inalámbricos reciben dirección, máscara, puerta de enlace y DNS automáticamente por DHCP desde R-BORDE (sección 5.3).</p>
+
+<h2 id="s3-8"><span class="num">3.8</span>Segmentación de la red con VLAN</h2>
+<p>Una <strong>VLAN</strong> (red de área local virtual, IEEE 802.1Q) divide un mismo conjunto de switches en varios dominios de difusión independientes: los equipos de una VLAN sólo reciben las difusiones de su propia VLAN y, para hablar con otra, su tráfico debe pasar por un dispositivo de capa 3 (IEEE, 2022b; Cisco Systems, s. f.-k). En DTB la segmentación cumple tres objetivos:</p>
+<ul>
+<li><strong>Seguridad:</strong> la información de Dirección y de Recursos Humanos queda en subredes propias; los visitantes (VLAN 100) sólo salen a Internet porque una lista de control de acceso (ACL) les impide llegar a cualquier subred interna.</li>
+<li><strong>Rendimiento:</strong> las difusiones (ARP, DHCP, descubrimiento de equipos) se quedan dentro de cada área en lugar de inundar a los 70 dispositivos de la red.</li>
+<li><strong>Administración:</strong> los switches y puntos de acceso se gestionan desde la VLAN 99, separada de los usuarios; la VLAN nativa de los troncales (999) no lleva tráfico, lo que reduce el riesgo de ataques de salto de VLAN.</li>
+</ul>
+
+<h2 id="s3-9"><span class="num">3.9</span>Justificación de las decisiones de diseño</h2>
+<table>
+<thead><tr><th style="width:24%">Decisión</th><th>Justificación</th><th style="width:28%">Alternativa descartada</th></tr></thead>
+<tbody>
+<tr><td>Núcleo colapsado (2 capas)</td><td>Con 28 usuarios y una sola planta, separar núcleo y distribución elevaría el costo sin beneficio; el diseño conserva la jerarquía y puede crecer agregando switches de acceso.</td><td>Tres capas físicas: sobredimensionado para el tamaño de la empresa.</td></tr>
+<tr><td>Enrutamiento entre VLAN en el router (<em>router-on-a-stick</em>)</td><td>Los C1000 son switches de capa 2; el ISR enruta, filtra con ACL, da DHCP y NAT en un solo equipo. Un enlace de 1 Gb/s basta para el tráfico entre áreas de esta empresa.</td><td>Switch multicapa: más caro; se recomienda si el tráfico entre VLAN crece mucho.</td></tr>
+<tr><td>UTP Cat 6</td><td>Soporta 1 Gb/s con margen, es la categoría más común en instalaciones nuevas de oficina y su costo es moderado.</td><td>Cat 5e (sin margen) y Cat 6A (más cara y rígida, innecesaria para 1 Gb/s).</td></tr>
+<tr><td>EtherChannel con LACP</td><td>Duplica el ancho de banda hacia cada switch de acceso y, si un cable falla, el otro sigue transportando el tráfico sin reconvergencia de STP (IEEE, 2020; Cisco Systems, s. f.-c).</td><td>Un solo enlace por switch: punto único de falla.</td></tr>
+<tr><td>Enlace extra entre accesos + Rapid PVST+</td><td>Si cae un Port-channel completo, el switch afectado sigue llegando al núcleo a través del otro switch de acceso; RSTP desbloquea el enlace en segundos.</td><td>Sin enlace extra: la caída de un Po aísla un área completa.</td></tr>
+<tr><td>Subred /24 por VLAN</td><td>Facilita la lectura (tercer octeto = VLAN) y deja amplio margen de crecimiento. El espacio privado 192.168.0.0/16 alcanza de sobra.</td><td>VLSM ajustado (p. ej. /27): ahorra direcciones que aquí no escasean y complica el crecimiento.</td></tr>
+<tr><td>Switches PoE+</td><td>Alimentan los puntos de acceso por el mismo cable de datos; no se requieren contactos eléctricos en el techo.</td><td>Inyectores PoE individuales: más puntos de falla.</td></tr>
+<tr><td>Dos servidores con AD DS y DNS</td><td>Si SRV-01 falla, SRV-02 sigue atendiendo inicios de sesión y resolución de nombres.</td><td>Un solo servidor: punto único de falla para todos los usuarios.</td></tr>
+</tbody></table>
+</section>
+
+<!-- ═══════════════ 4. COMPONENTES ═══════════════ -->
+<section class="capitulo">
+<h1 id="s4"><span class="num">4.</span>Características de los componentes del sistema de comunicación</h1>
+<h2 id="s4-1"><span class="num">4.1</span>Elementos del proceso de comunicación</h2>
+<p>Todo sistema de comunicación de datos, por simple o complejo que sea, tiene los mismos elementos básicos: alguien que envía, alguien que recibe, algo que se envía, un camino y un acuerdo sobre cómo hacerlo (Forouzan, 2007). Para ilustrarlos se toma una operación cotidiana en DTB: <em>un asesor de Atención al cliente (PC-ATC-03) guarda una cotización en la carpeta compartida del servidor SRV-02.</em></p>
+<table>
+<thead><tr><th style="width:19%">Elemento</th><th>Definición</th><th style="width:38%">En el escenario</th></tr></thead>
+<tbody>
+<tr><td><strong>Emisor</strong></td><td>Dispositivo que origina el mensaje y lo convierte en señales que pueden viajar por el medio.</td><td>PC-ATC-03 (192.168.40.x, VLAN 40), que inicia la escritura del archivo.</td></tr>
+<tr><td><strong>Receptor</strong></td><td>Dispositivo de destino que recibe las señales, las interpreta y entrega el mensaje a la aplicación correspondiente.</td><td>SRV-02 (192.168.60.11, VLAN 60), que almacena la cotización.</td></tr>
+<tr><td><strong>Mensaje</strong></td><td>Información que se quiere comunicar: texto, números, imágenes, audio o video, codificados en bits.</td><td>El archivo de la cotización, dividido en segmentos TCP, paquetes IP y tramas Ethernet.</td></tr>
+<tr><td><strong>Medio de transmisión</strong></td><td>Camino físico por el que viajan las señales: cobre, fibra óptica o aire (radio).</td><td>UTP Cat 6 desde la PC hasta SW-ACC1; troncales hacia SW-CORE y R-BORDE; UTP hasta SRV-02. Si el asesor usara laptop, el primer tramo sería radio Wi-Fi.</td></tr>
+<tr><td><strong>Protocolo</strong></td><td>Conjunto de reglas que establecen formato, orden, sincronización y control de errores de la comunicación.</td><td>SMB (archivos compartidos) sobre TCP puerto 445, IPv4 para el direccionamiento, Ethernet 802.3 y 802.1Q en los enlaces.</td></tr>
+<tr><td><strong>Interfaz de red</strong></td><td>Hardware que conecta un equipo con el medio; tiene una dirección física (MAC) única y realiza las funciones de las capas física y de enlace.</td><td>La tarjeta Ethernet de 1 Gb/s de la PC, los puertos Gi de los switches, las subinterfaces del router y la NIC del servidor.</td></tr>
+</tbody></table>
+<div class="nota"><p><b>¿Por qué pasa por el router?</b> Emisor y receptor están en VLAN distintas (40 y 60), así que la PC envía la trama a su puerta de enlace 192.168.40.1. R-BORDE la recibe por la subinterfaz G0/0/1.40, consulta su tabla de enrutamiento y la reenvía por G0/0/1.60 etiquetada con la VLAN 60. Este camino se ilustra capa por capa en la Figura 5 (sección 7).</p></div>
+
+<h2 id="s4-2"><span class="num">4.2</span>Dispositivos físicos de la red</h2>
+<div class="ficha"><h4>Computadoras y estaciones de trabajo <small>31 equipos · capa de usuario</small></h4><dl>
+<dt>Función</dt><dd>Son los dispositivos finales (hosts) desde los que el personal crea, consulta y envía información; actúan como emisores y receptores.</dd>
+<dt>Características</dt><dd>Procesador de varios núcleos, 16 GB de RAM, unidad SSD, Windows 11 Pro (necesario para unirse al dominio), tarjeta de red Ethernet 10/100/1000 Mb/s con conector RJ45 y, en laptops, adaptador Wi-Fi 6. Configuración IP automática por DHCP.</dd>
+<dt>Importancia</dt><dd>Sin ellas la red no tiene usuarios; su configuración (dirección, DNS, dominio) determina que puedan llegar a los servicios.</dd>
+<dt>En DTB</dt><dd>PC-ATC-01 a 10 en Atención (VLAN 40), PC-ADM-01 a 08 en Administración (VLAN 20), etc. Cada una obtiene, por ejemplo, 192.168.20.25/24, puerta 192.168.20.1 y DNS 192.168.60.10.</dd></dl></div>
+<div class="ficha"><h4>Switch <small>SW-CORE · SW-ACC1 · SW-ACC2 · capa 2</small></h4><dl>
+<dt>Función</dt><dd>Interconecta los dispositivos de la LAN y reenvía cada trama sólo por el puerto donde se encuentra el destino, gracias a su tabla de direcciones MAC; separa el tráfico por VLAN (Cisco Systems, s. f.-a).</dd>
+<dt>Características</dt><dd>Cisco Catalyst C1000-24T-4G-L: 24 puertos 10/100/1000 y 4 puertos SFP de 1 Gb/s. Catalyst C1000-48P-4G-L: 48 puertos 10/100/1000 con PoE+ y 4 SFP. Administrables por línea de comandos (Cisco IOS) y web; soportan VLAN 802.1Q, Rapid PVST+, EtherChannel con LACP, seguridad de puertos y SSH.</dd>
+<dt>Importancia</dt><dd>Son el centro de la estrella: cada usuario depende de un puerto de switch. Su configuración define la segmentación y la redundancia de la red.</dd>
+<dt>En DTB</dt><dd>SW-ACC1 conecta Atención y la sala de juntas; SW-ACC2 conecta Dirección, Administración, RR. HH. y Sistemas; SW-CORE une ambos con el router y los servidores.</dd></dl></div>
+<div class="ficha"><h4>Router <small>R-BORDE · capa 3</small></h4><dl>
+<dt>Función</dt><dd>Conecta redes distintas y elige la ruta de cada paquete según su dirección IP de destino; en el borde, une la LAN con Internet. Mientras el switch une los equipos de una red, el router une redes distintas (Cisco Systems, s. f.-d; Cisco Systems, s. f.-h).</dd>
+<dt>Características</dt><dd>Cisco ISR 1111-8P con sistema Cisco IOS XE: dos puertos Gigabit Ethernet enrutados (G0/0/0 y G0/0/1) y un switch integrado de 8 puertos. Funciones usadas: subinterfaces 802.1Q, NAT/PAT, servidor DHCP, listas de control de acceso y SSH.</dd>
+<dt>Importancia</dt><dd>Sin él no hay comunicación entre VLAN ni salida a Internet; también es el primer filtro de seguridad.</dd>
+<dt>En DTB</dt><dd>Recibe la troncal desde SW-CORE en G0/0/1, con una subinterfaz por VLAN (192.168.V.1), y traduce todo el tráfico interno a 203.0.113.2 en G0/0/0.</dd></dl></div>
+<div class="ficha"><h4>Punto de acceso inalámbrico <small>AP-01 · AP-02 · AP-03 · capas 1 y 2</small></h4><dl>
+<dt>Función</dt><dd>Convierte el tráfico cableado en ondas de radio y viceversa: permite que los dispositivos inalámbricos se unan a la LAN (Cisco Systems, s. f.-i).</dd>
+<dt>Características</dt><dd>Cisco Business 150AX: Wi-Fi 6 (IEEE 802.11ax) con radios de 2.4 GHz y 5 GHz, varias redes inalámbricas (SSID) asociadas a VLAN, seguridad WPA2/WPA3, alimentación por PoE y administración web.</dd>
+<dt>Importancia</dt><dd>Extiende la red a laptops, teléfonos y visitantes sin cablear cada lugar; la separación de SSID por VLAN mantiene la seguridad.</dd>
+<dt>En DTB</dt><dd>Publican <em>DTB-Corporativo</em> (VLAN 90) y <em>DTB-Invitados</em> (VLAN 100); se gestionan en 192.168.99.11-13.</dd></dl></div>
+<div class="ficha"><h4>Servidor <small>SRV-01 · SRV-02 · NAS-01 · capa de servicios</small></h4><dl>
+<dt>Función</dt><dd>Equipo dedicado a ofrecer servicios a los demás: autenticación, resolución de nombres, archivos compartidos y respaldos.</dd>
+<dt>Características</dt><dd>Servidores de rack de 1U con procesador de clase servidor, memoria ECC, discos en arreglo RAID 1, fuente redundante y Windows Server 2022 (Active Directory Domain Services, DNS y servicio de archivos). NAS-01: almacenamiento en red con dos discos en RAID 1 para copias de seguridad diarias.</dd>
+<dt>Importancia</dt><dd>Concentran la información crítica de la empresa; por eso se duplican y se respaldan.</dd>
+<dt>En DTB</dt><dd>SRV-01 (192.168.60.10) es controlador de dominio y DNS primario; SRV-02 (192.168.60.11) es controlador de dominio secundario, DNS y servidor de archivos; NAS-01 (192.168.60.12) guarda los respaldos.</dd></dl></div>
+<div class="ficha"><h4>Impresoras de red <small>IMP-DIR · IMP-ADM · IMP-ATC</small></h4><dl>
+<dt>Función</dt><dd>Reciben trabajos de impresión de varios usuarios a través de la red, sin depender de una PC encendida.</dd>
+<dt>Características</dt><dd>Impresoras láser multifunción con interfaz Ethernet 10/100/1000, servidor web integrado para su configuración y soporte de protocolos de impresión estándar (IPP y puerto 9100).</dd>
+<dt>Importancia</dt><dd>Un recurso compartido reduce costos de equipo y consumibles.</dd>
+<dt>En DTB</dt><dd>En la VLAN 70 con direcciones fijas 192.168.70.11-13; los usuarios las agregan desde el servidor de impresión de SRV-02.</dd></dl></div>
+<div class="ficha"><h4>Cableado Ethernet <small>UTP categoría 6 · capa 1</small></h4><dl>
+<dt>Función</dt><dd>Medio guiado que transporta las señales eléctricas entre los equipos.</dd>
+<dt>Características</dt><dd>Cuatro pares trenzados de cobre calibre 23–24 AWG, desempeño hasta 250 MHz, soporta 1000BASE-T en canales de hasta 100 m (90 m de enlace permanente + 10 m de cordones), compatible con PoE. Forro con clasificación adecuada para instalarse en plafón.</dd>
+<dt>Importancia</dt><dd>Es la parte de la red que más años permanece instalada; un cableado de buena categoría evita reemplazos costosos.</dd>
+<dt>En DTB</dt><dd>45 tendidos horizontales y cordones de parcheo de 1 m en el rack y de 2 m en los puestos.</dd></dl></div>
+<div class="ficha"><h4>Conectores RJ45 <small>8P8C · capa 1</small></h4><dl>
+<dt>Función</dt><dd>Terminan el cable y permiten conectarlo a puertos de equipos, placas de pared y paneles.</dd>
+<dt>Características</dt><dd>Conector modular de 8 posiciones y 8 contactos; categoría 6 para mantener el desempeño del enlace. Se ponchan con el esquema T568B: blanco-naranja, naranja, blanco-verde, azul, blanco-azul, verde, blanco-café, café.</dd>
+<dt>Importancia</dt><dd>Una mala terminación es la causa más común de fallas intermitentes en una LAN.</dd>
+<dt>En DTB</dt><dd>Jacks Cat 6 en placas de pared y paneles; plugs RJ45 en los cordones de parcheo.</dd></dl></div>
+<div class="ficha"><h4>Rack y paneles de parcheo <small>gabinete 24U · PP-A · PP-B</small></h4><dl>
+<dt>Función</dt><dd>El rack aloja, protege y ordena el equipo activo; los paneles de parcheo concentran la terminación del cableado horizontal para conectarlo a los switches con cordones cortos.</dd>
+<dt>Características</dt><dd>Gabinete de piso de 19", 24 unidades, con puerta, ventilación y barra de tierra. Paneles de 48 puertos Cat 6 de 2U, organizadores horizontales, PDU y UPS en línea.</dd>
+<dt>Importancia</dt><dd>Permiten cambiar a un usuario de puerto o de VLAN en segundos, sin tocar el cableado fijo, y facilitan el diagnóstico.</dd>
+<dt>En DTB</dt><dd>PP-A atiende las salidas A-01 a A-18 (SW-ACC1) y PP-B las B-01 a B-27 (SW-ACC2), como se muestra en la Figura 4.</dd></dl></div>
+</section>
+
+<!-- ═══════════════ 5. CONFIGURACIÓN ═══════════════ -->
+<section class="capitulo">
+<h1 id="s5"><span class="num">5.</span>Configuración básica de los dispositivos de red</h1>
+<p>Los ejemplos siguientes usan comandos de Cisco IOS (switches C1000) y Cisco IOS XE (router ISR 1111). Las contraseñas aparecen como <code>&lt;clave&gt;</code> y deben sustituirse por contraseñas robustas. Los comentarios se marcan con <code>!</code>, que IOS ignora. Las configuraciones son coherentes con el direccionamiento de la sección 3.7 y con los puertos de la sección 3.5.</p>
+
+<h2 id="s5-1"><span class="num">5.1</span>Parámetros IPv4 de los equipos finales</h2>
+<p>Una computadora necesita cuatro datos para comunicarse fuera de su propia subred: su <strong>dirección IPv4</strong>, la <strong>máscara de subred</strong> (qué parte de la dirección identifica a la red), la <strong>puerta de enlace predeterminada</strong> (a quién enviar lo que va a otra red) y uno o más <strong>servidores DNS</strong> (quién traduce nombres como <code>srv-02</code> a direcciones IP). En DTB las PC los reciben por DHCP; los servidores y las impresoras se configuran a mano:</p>
+<table>
+<thead><tr><th>Equipo</th><th>Método</th><th>Dirección IPv4</th><th>Máscara</th><th>Puerta de enlace</th><th>DNS preferido / alterno</th></tr></thead>
+<tbody>
+<tr><td>PC-ADM-04 (Administración)</td><td>DHCP</td><td>192.168.20.21 – .254</td><td>255.255.255.0</td><td>192.168.20.1</td><td>192.168.60.10 / 192.168.60.11</td></tr>
+<tr><td>PC-ATC-03 (Atención)</td><td>DHCP</td><td>192.168.40.21 – .254</td><td>255.255.255.0</td><td>192.168.40.1</td><td>192.168.60.10 / 192.168.60.11</td></tr>
+<tr><td>Laptop en DTB-Corporativo</td><td>DHCP</td><td>192.168.90.21 – .254</td><td>255.255.255.0</td><td>192.168.90.1</td><td>192.168.60.10 / 192.168.60.11</td></tr>
+<tr><td>Teléfono de visitante</td><td>DHCP</td><td>192.168.100.21 – .254</td><td>255.255.255.0</td><td>192.168.100.1</td><td>1.1.1.1 / 8.8.8.8</td></tr>
+<tr><td>SRV-02</td><td>Estática</td><td>192.168.60.11</td><td>255.255.255.0</td><td>192.168.60.1</td><td>192.168.60.10 / 127.0.0.1</td></tr>
+<tr><td>IMP-ADM</td><td>Estática</td><td>192.168.70.12</td><td>255.255.255.0</td><td>192.168.70.1</td><td>192.168.60.10</td></tr>
+</tbody></table>
+<p>En Windows la configuración estática se captura en <em>Configuración › Red e Internet › Ethernet › Asignación de IP › Editar</em>; para comprobarla se usan <code>ipconfig /all</code>, <code>ping 192.168.60.1</code> y <code>nslookup srv-02</code>.</p>
+
+<h2 id="s5-2"><span class="num">5.2</span>Router R-BORDE</h2>
+<p class="cfg-tit">Ajustes generales y acceso seguro</p>
+<pre class="cfg">hostname R-BORDE                          <span class="c">! nombre del equipo</span>
+enable secret &lt;clave&gt;                     <span class="c">! clave cifrada del modo privilegiado</span>
+service password-encryption               <span class="c">! cifra contraseñas en texto</span>
+no ip domain-lookup                       <span class="c">! no busca en DNS comandos mal escritos</span>
+ip domain-name corp.dtb.example           <span class="c">! requerido para las llaves SSH</span>
+username admin privilege 15 secret &lt;clave&gt; <span class="c">! usuario local para administrar</span>
+crypto key generate rsa general-keys modulus 2048  <span class="c">! llaves RSA para SSH</span>
+ip ssh version 2                          <span class="c">! sólo SSH versión 2</span>
+banner motd ^Acceso restringido a personal autorizado de DTB^
+line vty 0 4
+ login local                              <span class="c">! pide el usuario local</span>
+ transport input ssh                      <span class="c">! administración remota sólo cifrada</span></pre>
+
+<p class="cfg-tit">Interfaces: WAN y subinterfaces por VLAN (enrutamiento entre VLAN)</p>
+<pre class="cfg">interface GigabitEthernet0/0/0
+ description ENLACE-PROVEEDOR-INTERNET
+ ip address 203.0.113.2 255.255.255.252   <span class="c">! IP pública (documentación, RFC 5737)</span>
+ ip nat outside                           <span class="c">! lado externo de la traducción</span>
+ no shutdown
+!
+interface GigabitEthernet0/0/1
+ description TRONCAL-A-SW-CORE-Gi1/0/24
+ no ip address                            <span class="c">! la IP va en las subinterfaces</span>
+ no shutdown
+!
+interface GigabitEthernet0/0/1.10
+ description VLAN10-DIRECCION
+ encapsulation dot1Q 10                   <span class="c">! atiende las tramas de la VLAN 10</span>
+ ip address 192.168.10.1 255.255.255.0    <span class="c">! puerta de enlace de la VLAN 10</span>
+ ip nat inside                            <span class="c">! lado interno de la traducción</span>
+!
+interface GigabitEthernet0/0/1.20
+ description VLAN20-ADMINISTRACION
+ encapsulation dot1Q 20
+ ip address 192.168.20.1 255.255.255.0
+ ip nat inside
+<span class="c">! … el mismo bloque se repite para 30, 40, 50, 60, 70, 80 y 90 con 192.168.V.1</span>
+!
+interface GigabitEthernet0/0/1.99
+ description VLAN99-GESTION
+ encapsulation dot1Q 99
+ ip address 192.168.99.1 255.255.255.0
+ ip nat inside
+!
+interface GigabitEthernet0/0/1.100
+ description VLAN100-INVITADOS
+ encapsulation dot1Q 100
+ ip address 192.168.100.1 255.255.255.0
+ ip access-group INVITADOS-ENTRADA in     <span class="c">! filtra lo que entra de invitados</span>
+ ip nat inside</pre>
+
+<p class="cfg-tit">Ruta a Internet, NAT con sobrecarga (PAT) y filtro de invitados</p>
+<pre class="cfg">ip route 0.0.0.0 0.0.0.0 203.0.113.1      <span class="c">! ruta predeterminada hacia el proveedor</span>
+!
+ip access-list standard NAT-INTERNAS
+ permit 192.168.0.0 0.0.255.255           <span class="c">! redes internas que pueden salir a Internet</span>
+ip nat inside source list NAT-INTERNAS interface GigabitEthernet0/0/0 overload
+                                          <span class="c">! todas salen con la IP pública (PAT)</span>
+!
+ip access-list extended INVITADOS-ENTRADA
+ permit udp any any eq bootps             <span class="c">! permite pedir DHCP</span>
+ deny   ip 192.168.100.0 0.0.0.255 192.168.0.0 0.0.255.255  <span class="c">! nada a redes internas</span>
+ permit ip 192.168.100.0 0.0.0.255 any    <span class="c">! Internet, sí</span></pre>
+
+<h2 id="s5-3"><span class="num">5.3</span>Servicio DHCP en R-BORDE</h2>
+<p>El protocolo DHCP entrega automáticamente dirección, máscara, puerta de enlace, DNS y dominio a los equipos que lo solicitan (Droms, 1997). Se excluyen las primeras 20 direcciones de cada subred para equipos con dirección fija y se crea un <em>pool</em> por VLAN de usuarios (Cisco Systems, s. f.-f):</p>
+<pre class="cfg">ip dhcp excluded-address 192.168.10.1 192.168.10.20     <span class="c">! no se reparten .1 a .20</span>
+ip dhcp excluded-address 192.168.20.1 192.168.20.20
+ip dhcp excluded-address 192.168.30.1 192.168.30.20
+ip dhcp excluded-address 192.168.40.1 192.168.40.20
+ip dhcp excluded-address 192.168.50.1 192.168.50.20
+ip dhcp excluded-address 192.168.80.1 192.168.80.20
+ip dhcp excluded-address 192.168.90.1 192.168.90.20
+ip dhcp excluded-address 192.168.100.1 192.168.100.20
+!
+ip dhcp pool VLAN10-DIRECCION
+ network 192.168.10.0 255.255.255.0       <span class="c">! subred que atiende este pool</span>
+ default-router 192.168.10.1              <span class="c">! puerta de enlace que recibirán las PC</span>
+ dns-server 192.168.60.10 192.168.60.11   <span class="c">! DNS internos (SRV-01 y SRV-02)</span>
+ domain-name corp.dtb.example             <span class="c">! sufijo DNS del dominio</span>
+ lease 1                                  <span class="c">! concesión de 1 día</span>
+<span class="c">! … pools iguales para 20, 30, 40, 50, 80 y 90 cambiando network y default-router</span>
+!
+ip dhcp pool VLAN100-INVITADOS
+ network 192.168.100.0 255.255.255.0
+ default-router 192.168.100.1
+ dns-server 1.1.1.1 8.8.8.8               <span class="c">! DNS públicos para invitados</span>
+ lease 0 4                                <span class="c">! concesión corta: 0 días, 4 horas</span></pre>
+<p class="leyenda">Las VLAN 60 (servidores), 70 (impresoras) y 99 (gestión) no tienen <i>pool</i>: todos sus equipos usan dirección fija.</p>
+
+<h2 id="s5-4"><span class="num">5.4</span>Switch de núcleo SW-CORE</h2>
+<p class="cfg-tit">Ajustes generales (iguales en los tres switches, cambiando el nombre)</p>
+<pre class="cfg">hostname SW-CORE
+enable secret &lt;clave&gt;
+service password-encryption
+no ip domain-lookup
+ip domain-name corp.dtb.example
+username admin privilege 15 secret &lt;clave&gt;
+crypto key generate rsa general-keys modulus 2048
+ip ssh version 2
+line vty 0 15
+ login local
+ transport input ssh</pre>
+<p class="cfg-tit">VLAN y árbol de expansión</p>
+<pre class="cfg">vlan 10
+ name DIRECCION                           <span class="c">! crea la VLAN y le pone nombre</span>
+vlan 20
+ name ADMINISTRACION
+vlan 30
+ name RRHH
+vlan 40
+ name ATENCION
+vlan 50
+ name SISTEMAS
+vlan 60
+ name SERVIDORES
+vlan 70
+ name IMPRESION
+vlan 80
+ name SALA-JUNTAS
+vlan 90
+ name WIFI-CORP
+vlan 99
+ name GESTION
+vlan 100
+ name INVITADOS
+vlan 999
+ name NATIVA-SIN-USO
+!
+spanning-tree mode rapid-pvst             <span class="c">! RSTP (802.1w) con una instancia por VLAN</span>
+spanning-tree vlan 10,20,30,40,50,60,70,80,90,99,100 root primary
+                                          <span class="c">! SW-CORE, raíz de todas las VLAN</span></pre>
+<p class="cfg-tit">EtherChannel hacia los switches de acceso y troncal hacia el router</p>
+<pre class="cfg">interface range GigabitEthernet1/0/1 - 2
+ description PO1-HACIA-SW-ACC1
+ channel-group 1 mode active              <span class="c">! LACP activo, Port-channel 1</span>
+interface range GigabitEthernet1/0/3 - 4
+ description PO2-HACIA-SW-ACC2
+ channel-group 2 mode active
+!
+interface Port-channel1
+ switchport mode trunk                    <span class="c">! varias VLAN etiquetadas (802.1Q)</span>
+ switchport trunk native vlan 999         <span class="c">! nativa sin usuarios</span>
+ switchport trunk allowed vlan 10,20,30,40,50,60,70,80,90,99,100
+interface Port-channel2
+ switchport mode trunk
+ switchport trunk native vlan 999
+ switchport trunk allowed vlan 10,20,30,40,50,60,70,80,90,99,100
+!
+interface GigabitEthernet1/0/24
+ description TRONCAL-A-R-BORDE-G0/0/1
+ switchport mode trunk
+ switchport trunk native vlan 999
+ switchport trunk allowed vlan 10,20,30,40,50,60,70,80,90,99,100</pre>
+<p class="cfg-tit">Puertos de servidores, puertos libres y gestión</p>
+<pre class="cfg">interface range GigabitEthernet1/0/5 - 7
+ description SRV-01_SRV-02_NAS-01
+ switchport mode access                   <span class="c">! acceso: una VLAN, sin etiqueta</span>
+ switchport access vlan 60
+ spanning-tree portfast                   <span class="c">! equipo final: reenvío inmediato</span>
+ spanning-tree bpduguard enable           <span class="c">! se apaga si llega un switch</span>
+!
+interface range GigabitEthernet1/0/8 - 23
+ description LIBRE
+ switchport mode access
+ switchport access vlan 999
+ shutdown                                 <span class="c">! sin uso: apagados</span>
+!
+interface Vlan99
+ ip address 192.168.99.2 255.255.255.0    <span class="c">! dirección de administración del switch</span>
+ no shutdown
+ip default-gateway 192.168.99.1           <span class="c">! para administrarlo desde otras VLAN</span></pre>
+
+<h2 id="s5-5"><span class="num">5.5</span>Switches de acceso SW-ACC1 y SW-ACC2</h2>
+<p>Ambos switches reciben los mismos ajustes generales y las mismas VLAN que SW-CORE. Se muestra SW-ACC1; en SW-ACC2 cambian los rangos de puertos y VLAN según la tabla de la sección 3.5, el Port-channel es el 2 en el lado del núcleo (en el propio SW-ACC2 puede numerarse 1, porque el número sólo tiene validez local) y la dirección de gestión es 192.168.99.4.</p>
+<pre class="cfg">spanning-tree mode rapid-pvst
+!
+interface range GigabitEthernet1/0/1 - 12
+ description ATENCION-CLIENTE
+ switchport mode access
+ switchport access vlan 40
+ switchport port-security                 <span class="c">! activa la seguridad de puerto</span>
+ switchport port-security maximum 2       <span class="c">! máximo 2 direcciones MAC por salida</span>
+ switchport port-security violation restrict  <span class="c">! descarta y registra</span>
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+!
+interface GigabitEthernet1/0/13
+ description IMP-ATC
+ switchport mode access
+ switchport access vlan 70
+ spanning-tree portfast
+!
+interface range GigabitEthernet1/0/14 - 16
+ description SALA-DE-JUNTAS
+ switchport mode access
+ switchport access vlan 80
+ spanning-tree portfast
+!
+interface range GigabitEthernet1/0/17 - 18
+ description AP-01_AP-03
+ switchport mode trunk                    <span class="c">! el AP lleva varias redes</span>
+ switchport trunk native vlan 99          <span class="c">! la gestión del AP viaja sin etiqueta</span>
+ switchport trunk allowed vlan 90,99,100
+ spanning-tree portfast trunk             <span class="c">! troncal hacia un equipo final</span>
+!
+interface range GigabitEthernet1/0/47 - 48
+ description PO1-HACIA-SW-CORE
+ channel-group 1 mode active
+interface Port-channel1
+ switchport mode trunk
+ switchport trunk native vlan 999
+ switchport trunk allowed vlan 10,20,30,40,50,60,70,80,90,99,100
+!
+interface GigabitEthernet1/0/46
+ description ENLACE-REDUNDANTE-A-SW-ACC2
+ switchport mode trunk
+ switchport trunk native vlan 999
+ switchport trunk allowed vlan 10,20,30,40,50,60,70,80,90,99,100
+!
+interface range GigabitEthernet1/0/19 - 45
+ description LIBRE
+ switchport mode access
+ switchport access vlan 999
+ shutdown
+!
+interface Vlan99
+ ip address 192.168.99.3 255.255.255.0
+ no shutdown
+ip default-gateway 192.168.99.1</pre>
+<div class="nota"><p><b>Cómo trabaja la redundancia.</b> Con SW-CORE como raíz, cada switch de acceso tiene dos caminos al núcleo: su Port-channel (costo bajo) y el enlace Gi1/0/46 a través del otro switch de acceso (costo mayor). Rapid PVST+ deja en reenvío el Port-channel y bloquea uno de los extremos del enlace Gi1/0/46 para que no se forme un bucle. Si falla un cable del Port-channel, LACP sigue con el otro sin que STP intervenga; si fallan los dos, RSTP habilita el enlace Gi1/0/46 en unos segundos (IEEE, 2004; IEEE, 2020).</p></div>
+
+<h2 id="s5-6"><span class="num">5.6</span>Puntos de acceso inalámbrico</h2>
+<p>Los Cisco Business 150AX se configuran desde su interfaz web (no usan la línea de comandos de IOS). Los tres puntos se administran como un solo grupo y comparten los parámetros siguientes:</p>
+<table>
+<thead><tr><th style="width:30%">Parámetro</th><th>Valor</th></tr></thead>
+<tbody>
+<tr><td>Dirección de gestión</td><td>AP-01 192.168.99.11 · AP-02 192.168.99.12 · AP-03 192.168.99.13 · máscara 255.255.255.0 · puerta 192.168.99.1 (VLAN 99, sin etiqueta)</td></tr>
+<tr><td>Red <em>DTB-Corporativo</em></td><td>VLAN 90 · seguridad WPA3-Personal con transición WPA2 · contraseña larga que se cambia periódicamente · para laptops y teléfonos del personal</td></tr>
+<tr><td>Red <em>DTB-Invitados</em></td><td>VLAN 100 · WPA2-Personal con clave que se entrega en recepción · aislamiento entre clientes activado · límite de ancho de banda por usuario</td></tr>
+<tr><td>Canales de 2.4 GHz</td><td>AP-01 canal 1 · AP-02 canal 6 · AP-03 canal 11 (los tres canales que no se traslapan), ancho de 20 MHz</td></tr>
+<tr><td>Canales de 5 GHz</td><td>AP-01 canal 36 · AP-02 canal 44 · AP-03 canal 149, ancho de 40 MHz</td></tr>
+<tr><td>Acceso administrativo</td><td>Sólo por HTTPS desde la VLAN 50 (Sistemas); contraseña de fábrica sustituida</td></tr>
+</tbody></table>
+
+<h2 id="s5-7"><span class="num">5.7</span>Verificación de la configuración</h2>
+<table>
+<thead><tr><th style="width:38%">Comando</th><th>Qué permite comprobar</th></tr></thead>
+<tbody>
+<tr><td><code>show vlan brief</code></td><td>Que existan las 12 VLAN y que cada puerto de acceso esté en la correcta.</td></tr>
+<tr><td><code>show interfaces trunk</code></td><td>Qué puertos son troncales, su VLAN nativa (999) y las VLAN permitidas.</td></tr>
+<tr><td><code>show etherchannel summary</code></td><td>Que Po1 y Po2 estén activos (SU) con sus dos puertos en el canal (P).</td></tr>
+<tr><td><code>show spanning-tree vlan 40</code></td><td>Que SW-CORE sea la raíz y qué puerto queda bloqueado.</td></tr>
+<tr><td><code>show ip interface brief</code></td><td>Estado y dirección de las interfaces y subinterfaces de R-BORDE.</td></tr>
+<tr><td><code>show ip dhcp binding</code></td><td>Qué dirección entregó el router a cada equipo.</td></tr>
+<tr><td><code>show ip nat translations</code></td><td>Las traducciones activas hacia Internet.</td></tr>
+<tr><td><code>show port-security</code></td><td>Puertos protegidos y violaciones registradas.</td></tr>
+<tr><td><code>ping</code> / <code>traceroute</code></td><td>Conectividad y camino entre VLAN y hacia Internet.</td></tr>
+</tbody></table>
+</section>
+
+<!-- ═══════════════ 6. TOPOLOGÍAS ═══════════════ -->
+<section class="capitulo">
+<h1 id="s6"><span class="num">6.</span>Identificación de topologías físicas y lógicas</h1>
+<h2 id="s6-1"><span class="num">6.1</span>Topología física</h2>
+<p>La <strong>topología física</strong> es la disposición real de los cables y los equipos. La red de DTB tiene una topología de <strong>estrella extendida</strong> (también llamada jerárquica o de árbol): cada equipo final se conecta con su propio cable a un switch de acceso (estrellas locales), y los switches de acceso se conectan a su vez a un switch central (la estrella principal), que se enlaza con el router de borde (Figura 1).</p>
+<p><strong>Cómo están conectados:</strong> las PC, impresoras y puntos de acceso llegan por cableado horizontal UTP Cat 6 a los paneles PP-A y PP-B y, con cordones cortos, a SW-ACC1 o SW-ACC2. Cada switch de acceso sube al núcleo con dos cables agrupados (Po1 y Po2) y además se une con el otro switch de acceso; los servidores se conectan directamente a SW-CORE; SW-CORE se une al router con un solo enlace troncal y el router con el proveedor por fibra. Como hay un enlace de más entre los switches de acceso, físicamente existe un anillo SW-CORE – SW-ACC1 – SW-ACC2, controlado por el árbol de expansión.</p>
+<p><strong>Justificación:</strong> es la topología que define el cableado estructurado para edificios comerciales, la que usan todas las redes Ethernet conmutadas actuales y la única que permite aislar fallas por puesto (Tanenbaum y Wetherall, 2012).</p>
+<table>
+<thead><tr><th>Ventajas</th><th>Desventajas y cómo se mitigan</th></tr></thead>
+<tbody>
+<tr><td>La falla de un cable o de una PC sólo afecta a ese puesto.</td><td>El switch central es crítico: se protege con UPS, enlaces agregados y un camino alterno entre accesos.</td></tr>
+<tr><td>Fácil de diagnosticar: cada salida tiene su puerto y su etiqueta.</td><td>Requiere más cable que una topología en bus: se compensa con su vida útil y orden.</td></tr>
+<tr><td>Crecimiento sencillo: basta con conectar un nuevo puesto o un nuevo switch de acceso.</td><td>El enlace troncal único hacia el router es un punto de falla; se documenta como mejora futura un segundo router con HSRP.</td></tr>
+<tr><td>Cada enlace es punto a punto y full-dúplex, sin colisiones.</td><td>Los equipos de núcleo cuestan más: se usó un núcleo colapsado para contener el costo.</td></tr>
+</tbody></table>
+
+<h2 id="s6-2"><span class="num">6.2</span>Topología lógica</h2>
+<p>La <strong>topología lógica</strong> describe la forma en que fluyen los datos y cómo se organiza la comunicación, sin importar la forma del cableado (Figura 2):</p>
+<ul>
+<li><strong>Forma en que circulan los datos.</strong> Dentro de una VLAN, la comunicación es Ethernet conmutada: cada switch aprende en qué puerto está cada dirección MAC y envía las tramas sólo hacia su destino (unidifusión); las difusiones, como una consulta ARP, llegan a todos los puertos de esa VLAN y de ninguna otra. Entre VLAN, el tráfico sube por la troncal al router, que lo enruta según la dirección IP de destino y lo devuelve por la subinterfaz de la VLAN correspondiente.</li>
+<li><strong>Organización de la comunicación.</strong> Hay 11 dominios de difusión (uno por VLAN) y un solo dominio de enrutamiento con salida única a Internet a través de NAT. El árbol de expansión garantiza que, aunque físicamente exista un anillo, lógicamente haya un único camino activo entre dos switches.</li>
+<li><strong>Protocolos involucrados.</strong> Ethernet (IEEE 802.3) y 802.11 para el acceso al medio; IEEE 802.1Q para el etiquetado de VLAN; Rapid PVST+ (basado en IEEE 802.1w) para evitar bucles; LACP (IEEE 802.1AX) para la agregación; ARP para relacionar IP y MAC; IPv4, ICMP y NAT en la capa de red; TCP y UDP en transporte; DHCP, DNS, SMB, HTTPS y SSH en aplicación.</li>
+<li><strong>Funcionamiento de la transmisión.</strong> Cuando PC-ATC-03 envía datos a SRV-02, primero consulta por DNS la dirección del servidor, compara la red de destino con la suya usando la máscara, ve que es otra red y envía la trama a la MAC de su puerta de enlace (192.168.40.1). SW-ACC1 la etiqueta con la VLAN 40 al pasarla por el Port-channel; SW-CORE la reenvía por la troncal a R-BORDE; el router cambia la etiqueta a VLAN 60 y la regresa a SW-CORE, que la entrega sin etiqueta al puerto Gi1/0/6 de SRV-02.</li>
+</ul>
+
+<h2 id="s6-3"><span class="num">6.3</span>Diferencias entre la topología física y la lógica</h2>
+<table>
+<thead><tr><th style="width:22%">Aspecto</th><th>Topología física</th><th>Topología lógica</th></tr></thead>
+<tbody>
+<tr><td>Qué describe</td><td>Dónde están los equipos y cómo se unen con cables o radio.</td><td>Cómo viaja la información y quién puede hablar con quién.</td></tr>
+<tr><td>En DTB</td><td>Estrella extendida con un anillo de respaldo entre switches.</td><td>11 VLAN independientes unidas por el router; un árbol sin bucles.</td></tr>
+<tr><td>Dos PC de la misma área</td><td>Conectadas al mismo switch, a dos metros una de otra.</td><td>Misma VLAN y subred: se comunican directo por el switch.</td></tr>
+<tr><td>PC de Dirección y PC de Atención</td><td>Pueden estar en el mismo switch.</td><td>VLAN distintas: su tráfico pasa obligatoriamente por el router y sus ACL.</td></tr>
+<tr><td>Se modifica con…</td><td>Obra de cableado, mover equipos.</td><td>Configuración: VLAN, direcciones, rutas, STP.</td></tr>
+<tr><td>Se documenta con…</td><td>Planos, elevación del rack, tabla de puertos (Figuras 1, 3 y 4).</td><td>Diagrama de VLAN y direccionamiento (Figura 2) y tablas IP.</td></tr>
+</tbody></table>
+</section>
+
+<!-- ═══════════════ 7. MODELOS ═══════════════ -->
+<section class="capitulo">
+<h1 id="s7"><span class="num">7.</span>Clasificación de dispositivos según los modelos de referencia</h1>
+<p>Los modelos de referencia dividen la comunicación en capas: cada capa resuelve una parte del problema y ofrece servicios a la capa superior. Esta división permite que fabricantes distintos construyan equipos y programas que funcionan juntos. A continuación se clasifican los <strong>dispositivos</strong> (objetos físicos) y los <strong>protocolos y tecnologías</strong> (reglas) del escenario por separado, porque un mismo equipo trabaja en varias capas y un protocolo no es un equipo.</p>
+<h2 id="s7-1"><span class="num">7.1</span>Modelo OSI</h2>
+<p>El modelo OSI (<em>Open Systems Interconnection</em>) fue publicado por la ISO y adoptado por la UIT-T como Recomendación X.200; define siete capas, de la física a la de aplicación (UIT-T, 1994).</p>
+<table>
+<thead><tr><th style="width:4%" class="c">#</th><th style="width:13%">Capa</th><th style="width:30%">Función</th><th style="width:9%">Unidad</th><th style="width:22%">Dispositivos en DTB</th><th>Protocolos y tecnologías en DTB</th></tr></thead>
+<tbody>
+<tr><td class="c">7</td><td><strong>Aplicación</strong></td><td>Ofrece servicios de red a los programas del usuario.</td><td>Datos</td><td>PC, servidores (programas que corren en ellos)</td><td>DNS, DHCP, SMB, HTTPS, SSH, SNMP, correo (SMTP/IMAP)</td></tr>
+<tr><td class="c">6</td><td><strong>Presentación</strong></td><td>Da formato a los datos: codificación de caracteres, compresión y cifrado.</td><td>Datos</td><td>PC, servidores</td><td>Cifrado TLS de HTTPS, codificación UTF-8, formatos como PDF o JPEG</td></tr>
+<tr><td class="c">5</td><td><strong>Sesión</strong></td><td>Establece, mantiene y cierra el diálogo entre aplicaciones.</td><td>Datos</td><td>PC, servidores</td><td>Sesiones SMB al servidor de archivos, sesiones de inicio de sesión en el dominio</td></tr>
+<tr><td class="c">4</td><td><strong>Transporte</strong></td><td>Comunicación extremo a extremo: segmentación, puertos, control de flujo y de errores.</td><td>Segmento</td><td>PC, servidores (y el router al traducir puertos con PAT)</td><td>TCP (SMB 445, HTTPS 443, SSH 22), UDP (DNS 53, DHCP 67/68)</td></tr>
+<tr><td class="c">3</td><td><strong>Red</strong></td><td>Direccionamiento lógico y selección de rutas entre redes.</td><td>Paquete</td><td>R-BORDE</td><td>IPv4, ICMP (ping), NAT/PAT, ACL, ruta predeterminada</td></tr>
+<tr><td class="c">2</td><td><strong>Enlace de datos</strong></td><td>Entrega de tramas dentro de una red, direcciones MAC, detección de errores.</td><td>Trama</td><td>SW-CORE, SW-ACC1, SW-ACC2, AP-01 a 03, NIC</td><td>Ethernet (MAC 802.3), 802.1Q, Rapid PVST+, LACP, ARP*, 802.11 (MAC), seguridad de puerto</td></tr>
+<tr><td class="c">1</td><td><strong>Física</strong></td><td>Transmisión de bits como señales eléctricas, ópticas o de radio.</td><td>Bit</td><td>Cable UTP Cat 6, conectores RJ45, paneles de parcheo, radios de los AP, fibra del proveedor</td><td>1000BASE-T, PoE+ (802.3at), radio 2.4 y 5 GHz (802.11ax)</td></tr>
+</tbody></table>
+<p class="leyenda">* ARP relaciona direcciones de capa 3 con direcciones de capa 2; por eso algunos autores lo ubican entre ambas capas.</p>
+<figure>{{FIG_RECORRIDO}}<figcaption><b>Figura 5.</b> Capas que procesa cada equipo en el camino de PC-ATC-03 a SRV-02: los extremos usan las siete capas; los switches, hasta la 2; el router, hasta la 3.</figcaption></figure>
+
+<h2 id="s7-2"><span class="num">7.2</span>Modelo TCP/IP</h2>
+<p>El modelo TCP/IP es el que realmente implementa Internet. El RFC 1122 lo describe en cuatro capas: <strong>enlace</strong>, <strong>Internet</strong>, <strong>transporte</strong> y <strong>aplicación</strong> (Braden, 1989). Muchos libros de texto separan la capa de enlace en <em>enlace</em> y <em>física</em>, lo que da un modelo híbrido de cinco capas (Kurose y Ross, 2017).</p>
+<table>
+<thead><tr><th style="width:16%">Capa TCP/IP</th><th style="width:30%">Función</th><th style="width:22%">Dispositivos en DTB</th><th>Protocolos en DTB</th></tr></thead>
+<tbody>
+<tr><td><strong>Aplicación</strong></td><td>Reúne lo que en OSI hacen aplicación, presentación y sesión: los servicios que usa el personal.</td><td>PC, SRV-01, SRV-02, NAS-01, impresoras</td><td>DNS, DHCP, SMB, HTTPS/TLS, SSH, SNMP, IPP</td></tr>
+<tr><td><strong>Transporte</strong></td><td>Comunicación entre procesos mediante puertos; confiable (TCP) o ligera (UDP).</td><td>Equipos finales</td><td>TCP, UDP</td></tr>
+<tr><td><strong>Internet</strong></td><td>Direccionamiento IP y reenvío de paquetes entre redes.</td><td>R-BORDE</td><td>IPv4, ICMP, NAT</td></tr>
+<tr><td><strong>Enlace (acceso a la red)</strong></td><td>Transmisión de tramas sobre el medio físico local.</td><td>Switches, AP, NIC, cableado, conectores</td><td>Ethernet 802.3, 802.1Q, STP/RSTP, LACP, Wi-Fi 802.11, ARP</td></tr>
+</tbody></table>
+
+<h2 id="s7-3"><span class="num">7.3</span>Tabla comparativa OSI y TCP/IP</h2>
+<table>
+<thead><tr><th style="width:22%">Aspecto</th><th>Modelo OSI</th><th>Modelo TCP/IP</th></tr></thead>
+<tbody>
+<tr><td>Número de capas</td><td>7</td><td>4 (5 en el modelo híbrido de los libros)</td></tr>
+<tr><td>Origen</td><td>ISO / UIT-T, como referencia teórica normalizada.</td><td>Proyecto ARPANET; descrito en los RFC del IETF.</td></tr>
+<tr><td>Uso</td><td>Enseñar, diagnosticar y clasificar dispositivos y protocolos.</td><td>Es el que implementan los equipos y sistemas operativos.</td></tr>
+<tr><td>Capas superiores</td><td>Aplicación, presentación y sesión separadas.</td><td>Todas reunidas en la capa de aplicación.</td></tr>
+<tr><td>Capas inferiores</td><td>Enlace de datos y física separadas.</td><td>Reunidas en enlace / acceso a la red.</td></tr>
+<tr><td>Correspondencia</td><td>7-6-5 → Aplicación · 4 → Transporte · 3 → Red · 2-1 → Enlace y física</td><td>Aplicación · Transporte · Internet · Enlace</td></tr>
+<tr><td>Ejemplo en DTB</td><td>«Falla de capa 1»: un RJ45 mal ponchado en la salida B-08.</td><td>«Falla de la capa Internet»: una subinterfaz del router sin dirección IP.</td></tr>
+</tbody></table>
+</section>
+
+<!-- ═══════════════ 8. LÍNEA DEL TIEMPO ═══════════════ -->
+<section class="capitulo">
+<h1 id="s8"><span class="num">8.</span>Línea del tiempo: evolución de las redes de datos</h1>
+<p>La historia de las redes de datos es también la historia de cómo se hicieron confiables: cada generación resolvió no sólo «más velocidad», sino «que no se caiga». La cronología se apoya en Leiner et al. (1997), Tanenbaum y Wetherall (2012) y las normas IEEE citadas. Los hitos marcados con fondo azul son los que más aportaron a la <strong>confiabilidad</strong>. Etiquetas: <span class="tag inf">Infraestructura</span> <span class="tag std">Estándar</span> <span class="tag ina">Inalámbrico</span> <span class="tag cnf">Confiabilidad</span></p>
+<h2 id="s8-1"><span class="num">8.1</span>Cronología</h2>
+<div class="linea">
+{{LINEA}}
+</div>
+
+<h2 id="s8-2"><span class="num">8.2</span>La confiabilidad de las redes</h2>
+<p>Una red es <strong>confiable</strong> cuando sigue entregando su servicio aunque falle alguna de sus partes, cuando protege la información que transporta y cuando permite detectar y corregir problemas antes de que los usuarios los padezcan. Esa capacidad se construyó por capas a lo largo de seis décadas:</p>
+<table>
+<thead><tr><th style="width:20%">Mecanismo</th><th>Cómo evolucionó</th><th style="width:30%">Cómo se aplica en DTB</th></tr></thead>
+<tbody>
+<tr><td><strong>Redundancia de enlaces</strong></td><td>De la red distribuida que propuso Baran en los años sesenta, con varios caminos entre nodos, a las LAN conmutadas con enlaces duplicados entre switches.</td><td>Dos enlaces por switch de acceso y un enlace adicional entre accesos.</td></tr>
+<tr><td><strong>Protocolos de recuperación ante fallos</strong></td><td>STP (1990) tardaba de 30 a 50 s en reaccionar; RSTP (2001) lo bajó a segundos; protocolos de redundancia de puerta de enlace como HSRP y VRRP (1998) duplican el router (Li et al., 1998).</td><td>Rapid PVST+; HSRP queda como mejora si se agrega un segundo router.</td></tr>
+<tr><td><strong>Spanning Tree Protocol</strong></td><td>El algoritmo de Radia Perlman permitió tener caminos de respaldo sin bucles; se normalizó en IEEE 802.1D y se mejoró con 802.1w y 802.1s.</td><td>Raíz fija en SW-CORE; enlace Gi1/0/46 bloqueado hasta que se necesite.</td></tr>
+<tr><td><strong>Agregación de enlaces</strong></td><td>IEEE 802.3ad (2000), hoy 802.1AX, agrupa varios cables en uno lógico: más ancho de banda y continuidad si uno falla.</td><td>Po1 y Po2 con LACP.</td></tr>
+<tr><td><strong>Tolerancia a fallos</strong></td><td>Equipos con fuentes y discos redundantes (RAID), servicios replicados en varios servidores.</td><td>Dos controladores de dominio y DNS; RAID 1 en servidores y NAS.</td></tr>
+<tr><td><strong>Sistemas de respaldo</strong></td><td>De las cintas a los respaldos automáticos en disco y nube; energía protegida con UPS.</td><td>Respaldo diario en NAS-01 y copia semanal fuera de sitio; UPS en el rack.</td></tr>
+<tr><td><strong>Seguridad de red</strong></td><td>De redes abiertas a VLAN, ACL, autenticación de puertos (802.1X), cifrado inalámbrico WPA2 y WPA3.</td><td>VLAN por área, ACL de invitados, seguridad de puerto, SSH, WPA3.</td></tr>
+<tr><td><strong>Monitoreo y administración</strong></td><td>SNMP (1990) permitió vigilar equipos desde una consola (Case et al., 1990); hoy se suman registros centralizados y controladores SDN.</td><td>VLAN 99 de gestión; registro de eventos y monitoreo por SNMP desde Sistemas.</td></tr>
+<tr><td><strong>Alta disponibilidad</strong></td><td>Combinación de todo lo anterior para acercarse al servicio continuo, medido como porcentaje de tiempo en operación.</td><td>Diseño sin puntos únicos de falla en la capa de acceso y en los servicios; el router y el enlace a Internet quedan como mejoras documentadas.</td></tr>
+</tbody></table>
+</section>
+
+<!-- ═══════════════ 9. CONCLUSIONES ═══════════════ -->
+<section class="capitulo">
+<h1 id="s9"><span class="num">9.</span>Conclusiones</h1>
+<p>El diseño propuesto para Distribuidora Técnica del Bajío demuestra que una red LAN profesional no consiste sólo en conectar computadoras a un switch: es un sistema en el que el cableado, los equipos, el direccionamiento y las configuraciones deben responder, todos juntos, a las necesidades reales de la organización. La topología física en estrella extendida, montada sobre cableado estructurado Cat 6 y un rack ordenado, da a cada puesto un enlace dedicado de 1 Gb/s y permite localizar y aislar fallas por salida.</p>
+<p>La segmentación en 11 VLAN, con un direccionamiento IPv4 privado en el que el tercer octeto coincide con el número de VLAN, separa la información de cada área, reduce el tráfico de difusión y hace que la red se entienda con sólo leer una dirección. El router de borde concentra el enrutamiento entre VLAN, el DHCP, el NAT y los filtros de seguridad, mientras que las configuraciones presentadas en Cisco IOS son coherentes entre sí: cada subinterfaz corresponde a una VLAN creada en los switches y permitida en sus troncales, y cada pool DHCP entrega la puerta de enlace y los DNS que aparecen en los diagramas y las tablas.</p>
+<p>La revisión de los elementos de la comunicación y de los modelos OSI y TCP/IP permite ubicar con precisión qué hace cada componente: los cables y conectores en la capa física, los switches y puntos de acceso en la de enlace, el router en la de red y los servidores y computadoras en todas las capas. Distinguir dispositivos de protocolos es lo que permite diagnosticar una falla en el lugar correcto.</p>
+<p>Finalmente, la línea del tiempo muestra que la confiabilidad ha sido el hilo conductor de la evolución de las redes, desde la red distribuida de Baran hasta la agregación de enlaces y el árbol de expansión rápido. El diseño aplica esas lecciones: enlaces agregados, un camino alterno controlado por RSTP, servicios duplicados, respaldos y energía protegida. Quedan documentadas como mejoras para una segunda etapa un segundo router con HSRP y un segundo enlace a Internet, que eliminarían los últimos puntos únicos de falla.</p>
+</section>
+
+<!-- ═══════════════ ANEXO IA ═══════════════ -->
+<section class="capitulo">
+<h1 id="sA">Anexo: Uso de Inteligencia Artificial</h1>
+<p>En atención a la indicación de la evaluación —«Si usas una IA incluye el prompt utilizado como referencia y solicita tus fuentes de consulta en español»—, se declara que para elaborar esta memoria técnica se utilizó un asistente de inteligencia artificial como herramienta de apoyo. El prompt que se le proporcionó se reproduce íntegramente al final de este anexo; se utilizó como referencia para apoyar la elaboración del documento.</p>
+<h3>Tareas en las que se apoyó la inteligencia artificial</h3>
+<ul>
+<li><strong>Organización de la información:</strong> propuesta de la estructura del documento siguiendo los apartados que pide la evaluación.</li>
+<li><strong>Planteamiento del escenario:</strong> definición de la empresa ficticia, su distribución de áreas y sus requerimientos.</li>
+<li><strong>Diseño técnico:</strong> propuesta de la arquitectura, el plan de VLAN, el direccionamiento IP, la asignación de puertos y la redacción de los ejemplos de configuración en Cisco IOS.</li>
+<li><strong>Elaboración de diagramas:</strong> dibujo de las figuras de topología física, topología lógica, plano de salidas, rack y recorrido por capas.</li>
+<li><strong>Investigación y fuentes:</strong> búsqueda de fuentes técnicas preferentemente en español y comprobación de que los enlaces citados abren.</li>
+<li><strong>Redacción y formato:</strong> redacción de los apartados y armado del documento en PDF.</li>
+</ul>
+<p>La configuración presentada no se cargó en equipos físicos ni en un simulador durante la elaboración de este documento; los comandos corresponden a la sintaxis documentada por el fabricante para las familias de equipos elegidas y deben probarse en un laboratorio o en Cisco Packet Tracer antes de la implementación. Las fuentes se priorizaron en español; las que sólo existen en inglés (normas IEEE, RFC del IETF y guías de configuración de Cisco) se incluyen por ser la documentación oficial de las tecnologías utilizadas.</p>
+<h3>Prompt utilizado</h3>
+<div class="prompt">{{PROMPT}}</div>
+</section>
+
+<!-- ═══════════════ FUENTES ═══════════════ -->
+<section class="capitulo refs">
+<h1 id="sF">Fuentes de consulta</h1>
+<h3>Fuentes en español</h3>
+<p>Cisco Networking Academy. (s. f.). <i>CCNA: Introducción a las redes</i> [Curso en línea]. Cisco. <a href="https://www.netacad.com/es/courses/ccna-introduction-networks">https://www.netacad.com/es/courses/ccna-introduction-networks</a></p>
+<p>Cisco Systems. (s. f.-a). <i>¿Cómo funciona el switch?</i> <a href="https://www.cisco.com/c/es_mx/solutions/small-business/resource-center/networking/network-switch-how.html">https://www.cisco.com/c/es_mx/solutions/small-business/resource-center/networking/network-switch-how.html</a></p>
+<p>Cisco Systems. (s. f.-b). <i>Componentes básicos de las redes: lo que debe saber</i>. <a href="https://www.cisco.com/c/es_mx/solutions/small-business/resource-center/networking/networking-basics.html">https://www.cisco.com/c/es_mx/solutions/small-business/resource-center/networking/networking-basics.html</a></p>
+<p>Cisco Systems. (s. f.-c). <i>Configuración de LACP (802.3ad) entre un Catalyst 6500/6000 y un Catalyst 4500/4000</i> [Documento técnico]. <a href="https://www.cisco.com/c/es_mx/support/docs/lan-switching/etherchannel/19642-126.pdf">https://www.cisco.com/c/es_mx/support/docs/lan-switching/etherchannel/19642-126.pdf</a></p>
+<p>Cisco Systems. (s. f.-d). <i>¿Cuál es la diferencia entre un switch y un router?</i> <a href="https://www.cisco.com/c/es_mx/solutions/small-business/resource-center/networking/network-switch-vs-router.html">https://www.cisco.com/c/es_mx/solutions/small-business/resource-center/networking/network-switch-vs-router.html</a></p>
+<p>Cisco Systems. (s. f.-e). <i>Ethernet</i>. <a href="https://www.cisco.com/c/es_mx/tech/lan-switching/ethernet/index.html">https://www.cisco.com/c/es_mx/tech/lan-switching/ethernet/index.html</a></p>
+<p>Cisco Systems. (s. f.-g). <i>Poniendo las bases de la red</i> [Guía]. <a href="https://www.cisco.com/c/dam/global/es_es/assets/acelera/pdf/poniendo-las-bases-de-la-red-enrutamiento-y-conmutacion-sin-problemas.pdf">https://www.cisco.com/c/dam/global/es_es/assets/acelera/pdf/poniendo-las-bases-de-la-red-enrutamiento-y-conmutacion-sin-problemas.pdf</a></p>
+<p>Cisco Systems. (s. f.-h). <i>¿Qué es un router?</i> <a href="https://www.cisco.com/c/es_mx/solutions/small-business/resource-center/networking/what-is-a-router.html">https://www.cisco.com/c/es_mx/solutions/small-business/resource-center/networking/what-is-a-router.html</a></p>
+<p>Cisco Systems. (s. f.-i). <i>¿Qué es una red inalámbrica?</i> <a href="https://www.cisco.com/c/es_mx/solutions/small-business/resource-center/networking/wireless-network.html">https://www.cisco.com/c/es_mx/solutions/small-business/resource-center/networking/wireless-network.html</a></p>
+<p>Cisco Systems. (s. f.-j). <i>Redes definidas por software (SDN)</i>. <a href="https://www.cisco.com/c/es_mx/solutions/software-defined-networking/overview.html">https://www.cisco.com/c/es_mx/solutions/software-defined-networking/overview.html</a></p>
+<p>Forouzan, B. A. (2007). <i>Transmisión de datos y redes de comunicaciones</i> (4.ª ed.). McGraw-Hill Interamericana.</p>
+<p>Kurose, J. F., y Ross, K. W. (2017). <i>Redes de computadoras: Un enfoque descendente</i> (7.ª ed.). Pearson Educación.</p>
+<p>Leiner, B. M., Cerf, V. G., Clark, D. D., Kahn, R. E., Kleinrock, L., Lynch, D. C., Postel, J., Roberts, L. G., y Wolff, S. (1997). <i>Una breve historia de Internet</i>. Internet Society. <a href="https://www.internetsociety.org/es/internet/history-internet/brief-history-internet/">https://www.internetsociety.org/es/internet/history-internet/brief-history-internet/</a></p>
+<p>Stallings, W. (2004). <i>Comunicaciones y redes de computadores</i> (7.ª ed.). Pearson Prentice Hall.</p>
+<p>Tanenbaum, A. S., y Wetherall, D. J. (2012). <i>Redes de computadoras</i> (5.ª ed.). Pearson Educación.</p>
+<p>Unión Internacional de Telecomunicaciones [UIT-T]. (1994). <i>Recomendación X.200: Tecnología de la información – Interconexión de sistemas abiertos – Modelo de referencia básico</i>. <a href="https://www.itu.int/rec/T-REC-X.200-199407-I/es">https://www.itu.int/rec/T-REC-X.200-199407-I/es</a></p>
+<h3>Documentación oficial disponible sólo en inglés</h3>
+<p>Arkko, J., Cotton, M., y Vegoda, L. (2010). <i>IPv4 address blocks reserved for documentation</i> (RFC 5737). Internet Engineering Task Force. <a href="https://www.rfc-editor.org/rfc/rfc5737">https://www.rfc-editor.org/rfc/rfc5737</a></p>
+<p>Braden, R. (Ed.). (1989). <i>Requirements for Internet hosts — Communication layers</i> (RFC 1122). Internet Engineering Task Force. <a href="https://www.rfc-editor.org/rfc/rfc1122">https://www.rfc-editor.org/rfc/rfc1122</a></p>
+<p>Case, J., Fedor, M., Schoffstall, M., y Davin, J. (1990). <i>A Simple Network Management Protocol (SNMP)</i> (RFC 1157). Internet Engineering Task Force. <a href="https://www.rfc-editor.org/rfc/rfc1157">https://www.rfc-editor.org/rfc/rfc1157</a></p>
+<p>Cisco Systems. (s. f.-f). <i>IP addressing configuration guide, Cisco IOS XE 17.x: Configuring the Cisco IOS XE DHCP server</i>. <a href="https://www.cisco.com/c/en/us/td/docs/routers/ios/config/17-x/ip-addressing/b-ip-addressing/m_config-dhcp-server-xe.html">https://www.cisco.com/c/en/us/td/docs/routers/ios/config/17-x/ip-addressing/b-ip-addressing/m_config-dhcp-server-xe.html</a></p>
+<p>Cisco Systems. (s. f.-k). <i>VLAN configuration guide, Cisco IOS Release 15.2(7)Ex (Catalyst 1000 switches): Configuring VLAN</i>. <a href="https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst1000/software/releases/15_2_7_e/configuration_guides/vlan/b_1527e_vlan_c1000_cg/configuring_vlan.html">https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst1000/software/releases/15_2_7_e/configuration_guides/vlan/b_1527e_vlan_c1000_cg/configuring_vlan.html</a></p>
+<p>Droms, R. (1997). <i>Dynamic Host Configuration Protocol</i> (RFC 2131). Internet Engineering Task Force. <a href="https://www.rfc-editor.org/rfc/rfc2131">https://www.rfc-editor.org/rfc/rfc2131</a></p>
+<p>Eastlake, D., y Panitz, A. (1999). <i>Reserved top level DNS names</i> (RFC 2606). Internet Engineering Task Force. <a href="https://www.rfc-editor.org/rfc/rfc2606">https://www.rfc-editor.org/rfc/rfc2606</a></p>
+<p>Institute of Electrical and Electronics Engineers [IEEE]. (2004). <i>IEEE standard for local and metropolitan area networks: Media access control (MAC) bridges</i> (IEEE Std 802.1D-2004). <a href="https://standards.ieee.org/ieee/802.1D/3387/">https://standards.ieee.org/ieee/802.1D/3387/</a></p>
+<p>Institute of Electrical and Electronics Engineers [IEEE]. (2020). <i>IEEE standard for local and metropolitan area networks — Link aggregation</i> (IEEE Std 802.1AX-2020). <a href="https://standards.ieee.org/ieee/802.1AX/6768/">https://standards.ieee.org/ieee/802.1AX/6768/</a></p>
+<p>Institute of Electrical and Electronics Engineers [IEEE]. (2021). <i>IEEE standard for information technology — Telecommunications and information exchange between systems — Local and metropolitan area networks — Specific requirements — Part 11: Wireless LAN medium access control (MAC) and physical layer (PHY) specifications</i> (IEEE Std 802.11-2020). <a href="https://standards.ieee.org/ieee/802.11/7028/">https://standards.ieee.org/ieee/802.11/7028/</a></p>
+<p>Institute of Electrical and Electronics Engineers [IEEE]. (2022a). <i>IEEE standard for Ethernet</i> (IEEE Std 802.3-2022). <a href="https://standards.ieee.org/ieee/802.3/10422/">https://standards.ieee.org/ieee/802.3/10422/</a></p>
+<p>Institute of Electrical and Electronics Engineers [IEEE]. (2022b). <i>IEEE standard for local and metropolitan area networks — Bridges and bridged networks</i> (IEEE Std 802.1Q-2022). <a href="https://standards.ieee.org/ieee/802.1Q/10323/">https://standards.ieee.org/ieee/802.1Q/10323/</a></p>
+<p>Li, T., Cole, B., Morton, P., y Li, D. (1998). <i>Cisco Hot Standby Router Protocol (HSRP)</i> (RFC 2281). Internet Engineering Task Force. <a href="https://www.rfc-editor.org/rfc/rfc2281">https://www.rfc-editor.org/rfc/rfc2281</a></p>
+<p>Rekhter, Y., Moskowitz, B., Karrenberg, D., de Groot, G. J., y Lear, E. (1996). <i>Address allocation for private internets</i> (RFC 1918). Internet Engineering Task Force. <a href="https://www.rfc-editor.org/rfc/rfc1918">https://www.rfc-editor.org/rfc/rfc1918</a></p>
+</section>
+</body></html>
