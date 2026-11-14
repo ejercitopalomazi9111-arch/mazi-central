@@ -27,7 +27,7 @@ import { iniciarAmigos } from './amigos.js';
 import { nombreHTML, insigniasHTML } from './nombre.js';
 import { iniciarPerfilOtro } from './perfil-otro.js';
 import { iniciarCompanero } from './companero.js';
-import { iniciarCuenta } from './cuenta.js';
+import { iniciarCuenta, ESCOLAR, NIVEL_DE_ESCOLAR } from './cuenta.js';
 import { iniciarApuntes } from './apuntes.js';
 import { iniciarSesionEstudio } from './sesion.js';
 import { pedirSala, conAcceso } from '../sala/acceso.js';
@@ -156,12 +156,28 @@ const TUTOR = {
 const nivelEstudio = () => NIVELES[ajustes.nivel] ? ajustes.nivel : 'prepa';
 /* qué tan a fondo: «automático» = general cuando el examen está cerca (Carlos: «mientras más se acerca la fecha, que se vaya
    volviendo más general y más útil para datos que sí te pueden preguntar»), normal si falta mucho */
+/* QUÉ TAN FUERTE ESTUDIAS (Carlos, 14 nov: «3 opciones de configuración general: superficial, esencial y a profundidad»).
+   Lo de antes (ajustes.profundidad: general/normal/detalle/auto) se traduce solo. Esencial conserva el «automático»:
+   normal si falta mucho y lo general cerca del examen. */
+const ESTUDIO = {
+  superficial: { nombre: 'Superficial', ico: 'feather', desc: 'Lo mínimo para salir del paso: ideas clave y clases cortas.' },
+  esencial: { nombre: 'Esencial', ico: 'target', desc: 'Lo que sí te preguntan. Más general mientras se acerca el examen.' },
+  profundo: { nombre: 'A profundidad', ico: 'microscope', desc: 'Todo a detalle: más temas, clases largas y casos difíciles.' },
+};
+const estudioElegido = () => ESTUDIO[ajustes.estudio] ? ajustes.estudio : ({ general: 'superficial', detalle: 'profundo' }[ajustes.profundidad] || 'esencial');
 function profundidadDe(p){
-  const elegida = ajustes.profundidad || 'auto';
-  if(elegida !== 'auto') return elegida;
+  const e = estudioElegido();
+  if(e === 'superficial') return 'general';
+  if(e === 'profundo') return 'detalle';
+  if(ajustes.profundidad === 'normal') return 'normal';
   const dias = p && p.fecha ? Math.ceil((Date.parse(p.fecha + 'T12:00:00') - Date.now()) / 864e5) : 99;
   return dias <= 10 ? 'general' : 'normal';
 }
+const REGLA_ESTUDIO = {
+  superficial: '- Es un repaso SUPERFICIAL: 3 unidades de 2 temas, sólo lo indispensable.',
+  esencial: '',
+  profundo: '- Es un estudio A PROFUNDIDAD: 4 unidades de 3 temas, sin dejar fuera nada importante del temario.',
+};
 const llaveNivel = (nivel, largo, prof) => `${nivel}-${largo}${prof && prof !== 'normal' ? '-' + prof : ''}`;
 function sistemaPlan(){
   return `Eres un tutor ${TUTOR[nivelEstudio()]}. Armas PLANES DE ESTUDIO para un examen, en español de México.
@@ -172,7 +188,7 @@ Reglas:
 - De 3 a 4 unidades, de lo básico a lo difícil (la primera son los fundamentos; la última, lo que más cuesta).
 - De 2 a 3 temas por unidad, sin repetir. Sólo temas que de verdad entran en el examen, del tamaño de un tema de clase (ej. «Partes del aparato reproductor femenino», NO «El endometrio»): nada de subtemas tan específicos que un examen de este nivel no preguntaría.
 - Si te mandan temas o fotos de apuntes, el plan se arma con ESO (no inventes otro temario).
-- Nada de emojis.`;
+${REGLA_ESTUDIO[estudioElegido()] ? REGLA_ESTUDIO[estudioElegido()] + '\n' : ''}- Nada de emojis.`;
 }
 function sistemaLeccion(){
   return `Eres un tutor ${TUTOR[nivelEstudio()]}. Escribes en español de México, claro y sin relleno.
@@ -1243,8 +1259,8 @@ async function abrirSimulacro(p, n, _repaso){
 function pizarraDe(p, n){
   const q = new URLSearchParams(); q.set('nivel', nivelEstudio()); q.set('profundidad', profundidadDe(p));
   const unidad = n.alcance === 'unidad' && p.unidades ? p.unidades.find((u) => u.nodos.some((x) => x.id === n.id)) : null;
-  if(unidad){ q.set('tema', `Panorama general de «${unidad.titulo}» (${p.materia}): de qué trata y cómo se conectan ${unidad.temas.map((t) => t.titulo).join(', ')}. Explica la idea general; cada tema se verá a fondo después.`); q.set('largo', 'normal'); }
-  else { q.set('tema', `${n.titulo} (${p.materia})`); q.set('largo', 'corta'); }
+  if(unidad){ q.set('tema', `Panorama general de «${unidad.titulo}» (${p.materia}): de qué trata y cómo se conectan ${unidad.temas.map((t) => t.titulo).join(', ')}. Explica la idea general; cada tema se verá a fondo después.`); q.set('largo', estudioElegido() === 'superficial' ? 'corta' : 'normal'); }
+  else { q.set('tema', `${n.titulo} (${p.materia})`); q.set('largo', estudioElegido() === 'profundo' ? 'normal' : 'corta'); }
   /* para que la clase sea SUYA: qué examen prepara, cuándo, qué ya vio y qué le costó (Explica lo mete en lo que le pide a la IA) */
   if(p.academia){
     /* Academia: la IA explica SÓLO con la hoja oficial de Grupo Mazi (academia.js), para que no invente precios ni clientes */
@@ -1762,9 +1778,8 @@ function pintarPerfil(){
       return `<button role="radio" aria-checked="${mascotaActiva() === k}" data-masc="${k}" class="${mia ? '' : 'sin-adoptar'}">${k === 'no' ? ico('x') : `<span class="masc-mini" data-mini="${k}"></span>`}<span>${t}</span>${mia ? '' : `<small>${ico('lock')}Adoptar</small>`}</button>`; }).join('')}</div>
     <div class="seccion-t">Tu nivel</div>
     <div class="chips-nivel" role="radiogroup" aria-label="Tu nivel de estudio">${Object.entries(NIVELES).map(([k, t]) => `<button role="radio" aria-checked="${nivelEstudio() === k}" data-nivel="${k}">${esc(t)}</button>`).join('')}</div>
-    <div class="seccion-t">Qué tan a fondo te explico</div>
-    <div class="chips-nivel" role="radiogroup" aria-label="Qué tan a fondo">${[['auto', 'Automático'], ['general', 'Lo general'], ['normal', 'Normal'], ['detalle', 'A detalle']].map(([k, t]) => `<button role="radio" aria-checked="${(ajustes.profundidad || 'auto') === k}" data-prof="${k}">${t}</button>`).join('')}</div>
-    <p class="sub-vista" style="margin:-2px 0 10px;font-size:13px">Automático: normal cuando falta mucho para el examen, y lo general (todos los temas, lo que sí te preguntan) cuando faltan 10 días o menos.</p>
+    <div class="seccion-t">Qué tan fuerte estudias</div>
+    <div class="chips-estudio" role="radiogroup" aria-label="Qué tan fuerte estudias">${Object.entries(ESTUDIO).map(([k, e]) => `<button role="radio" aria-checked="${estudioElegido() === k}" data-estudio="${k}">${ico(e.ico)}<b>${e.nombre}</b><small>${e.desc}</small></button>`).join('')}</div>
     <div class="seccion-t">La voz que te explica</div>
     <div class="ajuste voz-aj">${ico('mic')}<span>Voz del pizarrón<small style="display:block;color:var(--tenue);font-weight:500">Las «de estudio» suenan como persona</small></span>
       <select id="pVoz" class="campo" style="max-width:170px;min-height:40px" aria-label="Voz del pizarrón">${opcionesVoz()}</select>
@@ -1780,7 +1795,7 @@ function pintarPerfil(){
 }
 $('#vPerfil').addEventListener('click', (e) => {
   const nv = e.target.closest('[data-nivel]'); if(nv){ ajustes.nivel = nv.dataset.nivel; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); brindis(`Nivel: ${NIVELES[ajustes.nivel]}`, '', 'graduation-cap'); return; }
-  const pf = e.target.closest('[data-prof]'); if(pf){ ajustes.profundidad = pf.dataset.prof; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); return; }
+  const pf = e.target.closest('[data-estudio]'); if(pf){ ajustes.estudio = pf.dataset.estudio; delete ajustes.profundidad; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); brindis(`Estudio: ${ESTUDIO[ajustes.estudio].nombre}`, '', ESTUDIO[ajustes.estudio].ico); return; }
   const a = e.target.closest('[data-aj]'); if(a){ ajustes[a.dataset.aj] = !ajustes[a.dataset.aj]; guarda.poner('est.ajustes', ajustes); a.setAttribute('aria-checked', ajustes[a.dataset.aj]); encenderSonidos(ajustes.sonido !== false); tono(SON.toque); return; }
   const p = e.target.closest('[data-abrir-plan]'); if(p){ actualId = p.dataset.abrirPlan; guardarLocal(); vista = 'plan'; pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); return; }
   if(e.target.closest('[data-nuevo-plan]')) alta();
@@ -1836,7 +1851,8 @@ amigos = iniciarAmigos({ sala, brindis, hoja, cerrarHoja, esc, ico, tono, SON, v
 pintar();
 sincronizar();
 if(conAcceso()){ amigos.arrancar(); setTimeout(() => { if(vista === 'plan' && !$('#capa')) amigos.preguntarExamen(); }, 2500); }
-cuentaUI = iniciarCuenta({ hoja, cerrarHoja, esc, ico, brindis, tono, SON, $, perfil: () => perfil,
+cuentaUI = iniciarCuenta({ hoja, cerrarHoja, esc, ico, brindis, tono, SON, $, perfil: () => perfil, escolar: () => ajustes.escolar,
+  alEscolar: (k) => { ajustes.escolar = k; ajustes.nivel = NIVEL_DE_ESCOLAR[k] || 'prepa'; guarda.poner('est.ajustes', ajustes); },
   alEntrar: (yo) => { $('#cajaLlave')?.remove(); try{ const pend = sessionStorage.getItem('carymo.planPendiente'); if(pend){ sessionStorage.removeItem('carymo.planPendiente'); setTimeout(() => anadirCurso(pend), 900); } }catch{} if(yo && yo.nombre && (!perfil.nombre || perfil.nombre === 'Tú')){ perfil.nombre = yo.nombre; guarda.poner('est.perfil', perfil); sala({ accion: 'perfil', nombre: yo.nombre }).catch(() => {}); } sincronizar(); amigos.arrancar(); pintar(); },
   alSalir: () => { pintar(); pintarFaltaLlave(); } });
 apuntes = iniciarApuntes({ $, esc, ico, hoja, cerrarHoja, capa, cerrarCapa, brindis, tono, SON, nuevoId, planes: () => planes });

@@ -12,7 +12,10 @@
  *   · Cada mascota que tienes lleva su XP. Sólo gana la que está contigo (la «activa»), con lo mismo que tú.
  *   · Hasta nivel 10 gana todo; después sólo un tercio: ya creció, dale chance a otra (por eso conviene tener varias).
  *   · Etapas: las aves empiezan en HUEVO (nivel 1); todas pasan por bebé (≤3), joven (≤7), adulta (≤15) y sabia (16+).
- *   · Si NADIE la cuida (hambre, limpieza o ánimo en cero) por 3 días seguidos, se muere y ya no vuelve.
+ *   · Si NADIE la cuida (hambre, limpieza o ánimo en cero) por 3 días seguidos, SE VA (Carlos, 14 nov: «que no se
+ *     mueran, que se vayan y dejen una nota de que se fueron a buscar una mejor vida, y sólo pagando un montón de
+ *     palomium pueden volver»). Regresa con su nivel y su ropa. En los datos el campo sigue llamándose `muerta`
+ *     (la fecha en que se fue) para no romper lo guardado.
  * ===========================================================================*/
 export const ESPECIES = {
   perrito: { nombre: 'Perrito', precio: 40, basica: true },
@@ -27,6 +30,20 @@ export const ESPECIES = {
 export const ETAPAS = { huevo: 'Huevo', bebe: 'Bebé', joven: 'Joven', adulto: 'Adulto', viejo: 'Sabio' };
 export const NIVEL_MAX = 30, NIVEL_LENTO = 10, FACTOR_LENTO = 1 / 3;
 export const MUERE_HORAS = 72;
+/* lo que cuesta que regrese: «un montón» (lo más caro de la tienda es la ballena, 140) */
+export const precioRegreso = (nivel) => 300 + 20 * Math.max(1, nivel | 0);
+/* la nota que deja al irse; cambia con la especie para que no suene a plantilla */
+const DESPEDIDA = {
+  perrito: 'Te esperé en la puerta tres días. Me fui a buscar a alguien que me saque a pasear.',
+  gatito: 'Me cansé de que nadie llenara mi plato. Me fui a buscar una casa con más atún y más mimos.',
+  paloma: 'Volé lejos a buscar una plaza donde alguien me eche semillas. El cielo es grande.',
+  tigre: 'Un tigre necesita comer y jugar. Me fui a buscar una mejor vida en la selva.',
+  conejo: 'Me fui saltando a buscar un jardín con zanahorias y alguien que me acaricie las orejas.',
+  pinguino: 'Me fui nadando a buscar una colonia que sí me haga caso. Hace frío sin ti, pero más frío sin comida.',
+  foca: 'Me fui al mar a buscar una mejor vida. Allá los peces no se acaban.',
+  ballena: 'El océano es enorme y yo tenía hambre. Me fui a buscar una mejor vida.',
+};
+export const notaDespedida = (especie) => DESPEDIDA[especie] || 'Me fui a buscar una mejor vida.';
 
 export const nivelMascota = (xp) => Math.min(NIVEL_MAX, 1 + Math.floor(Math.sqrt(Math.max(0, xp) / 15)));
 export const xpDeNivel = (n) => 15 * (Math.max(1, n) - 1) ** 2;

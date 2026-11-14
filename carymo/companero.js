@@ -13,7 +13,7 @@
  * Y `premios(r)`: cuando el servidor paga cubitos, sale el aviso con el cubito.
  * ===========================================================================*/
 import { CUBO, COSAS, LUGAR } from './cosas.js';
-import { ESPECIES, ETAPAS, ACCESORIOS, SKINS, MAX_ACCESORIOS, nivelMascota, xpDeNivel, etapaDe, MUERE_HORAS } from './crianza-datos.js';
+import { ESPECIES, ETAPAS, ACCESORIOS, SKINS, MAX_ACCESORIOS, nivelMascota, xpDeNivel, etapaDe, MUERE_HORAS, precioRegreso, notaDespedida } from './crianza-datos.js';
 
 const FRASES = {
   feliz: ['¡Qué bonito está mi cuarto!', '¡Hoy me siento genial!', '¿Estudiamos otro ratito?', 'Me encanta cuando vienes.'],
@@ -109,7 +109,7 @@ export function iniciarCompanero(h){
         <div class="seccion-t">Tienda</div>
         <div id="tienda"><p style="color:var(--suave)">Cargando la tienda…</p></div>
         <div id="cieloLista"></div>
-        <div class="como-ganar"><b>Cómo se ganan los cubitos</b><p>Terminando lecciones, subiendo de grado, terminando planes, con tu racha de cada día, cada 7 días seguidos, subiendo de nivel y estudiando con amigos. Son poquitos: cuídalos.</p><b style="margin-top:10px">Cómo crece tu mascota</b><p>Gana experiencia contigo mientras estudias. Empieza bebé (las aves, en huevo), luego es joven, adulta y al final sabia. Después del nivel 10 crece más lento: conviene tener varias e irlas turnando. Si nadie la cuida en 3 días, se va.</p></div>
+        <div class="como-ganar"><b>Cómo se ganan los cubitos</b><p>Terminando lecciones, subiendo de grado, terminando planes, con tu racha de cada día, cada 7 días seguidos, subiendo de nivel y estudiando con amigos. Son poquitos: cuídalos.</p><b style="margin-top:10px">Cómo crece tu mascota</b><p>Gana experiencia contigo mientras estudias. Empieza bebé (las aves, en huevo), luego es joven, adulta y al final sabia. Después del nivel 10 crece más lento: conviene tener varias e irlas turnando. Si nadie la cuida en 3 días, se va a buscar una mejor vida y te deja una nota; regresa sólo si pagas un montón de cubitos.</p></div>
       </div>`;
     c.addEventListener('click', alTocar);
     ponerMascota();
@@ -137,13 +137,30 @@ export function iniciarCompanero(h){
       + `<button role="listitem" class="mi-masc adoptar" data-adoptar-abrir aria-label="Adoptar otra mascota"><span class="mm-mas">${ico('plus')}</span><b>Adoptar</b><small>${vivas.length ? 'Otra más' : 'Gratis'}</small></button>`;
     caja.querySelectorAll('[data-mm]').forEach((d) => crearMascota(d, { personaje: d.dataset.mm, tam: 58 }));
   }
+  /* LA NOTA QUE DEJA AL IRSE (Carlos, 14 nov: «que no se mueran: que se vayan y dejen una nota de que se fueron a buscar
+     una mejor vida, y sólo pagando un montón de palomium pueden volver») */
+  const nombreIdo = (k) => { const m = misMascotas()[k]; return (m && m.nombre) || ESPECIES[k]?.nombre || 'Tu mascota'; };
+  function notaHTML(k, nivel){
+    const pr = precioRegreso(nivel), alcanza = cubos() >= pr;
+    return `<div class="nota-ida"><p class="nota-txt">${esc(notaDespedida(k))}</p><p class="nota-firma">— ${esc(nombreIdo(k))}</p></div>
+      <p class="nota-dato">Pasaron ${MUERE_HORAS / 24} días sin cuidados. Se fue en el nivel ${nivel || 1}; si regresa, vuelve con su nivel y su ropa.</p>
+      <div class="nota-bts"><button class="bt fuerte" data-regresar="${esc(k)}" ${alcanza ? '' : 'aria-disabled="true"'}>${CUBO}Que regrese · ${pr}</button><button class="bt" data-adoptar-abrir>${ico('heart')}Adoptar otra</button></div>`;
+  }
+  async function regresar(k){
+    const m = misMascotas()[k]; if(!m || !m.muerta) return;
+    const pr = precioRegreso(nivelMascota(m.xp || 0));
+    if(cubos() < pr){ tono(SON.mal || SON.toque); h.brindis(`Para que regrese hacen falta ${pr} cubitos; tienes ${cubos()}.`, 'vino', 'circle-x'); return; }
+    try{ await pedir({ accion: 'crianza', que: 'regresar', especie: k }); cerrarHoja(); h.elegir?.(k); tono(SON.compra || SON.moneda); h.confeti?.(); ponerMascota(); pintarCuarto(); pintarPastilla();
+      setTimeout(() => masc?.play('festeja', { decir: '¡Volví! Te extrañé.', decirMs: 2600 }), 300); }
+    catch(err){ h.brindis(err.message, 'vino', 'circle-x'); }
+  }
   function pintarFicha(){
     const c = $('#capa.companero'); if(!c) return;
     const q = activa(), m = misMascotas()[q], f = $('#mascFicha', c);
     const muerta = q === 'no' && Object.values(misMascotas()).some((x) => x.muerta) && !vivasMias().length;
     $('#cieloCarta', c).hidden = !muerta;
-    if(muerta){ const ult = (h.perfil().cielo || []).slice(-1)[0];
-      $('#cieloCarta', c).innerHTML = `<b>${ult ? `Tu ${esc((ESPECIES[ult.especie]?.nombre || 'mascota').toLowerCase())} se fue` : 'Tu mascota se fue'}</b><p>Pasaron ${MUERE_HORAS / 24} días sin cuidados. Llegó al nivel ${ult?.nivel || 1}.</p><button class="bt fuerte" data-adoptar-abrir>${ico('heart')}Adopta otra (gratis)</button>`; }
+    if(muerta){ const ult = (h.perfil().cielo || []).slice().reverse().find((x) => misMascotas()[x.especie]?.muerta);
+      $('#cieloCarta', c).innerHTML = ult ? `<b>${esc(nombreIdo(ult.especie))} te dejó una nota</b>${notaHTML(ult.especie, ult.nivel)}` : `<b>Tu mascota se fue</b><button class="bt fuerte" data-adoptar-abrir>${ico('heart')}Adopta otra (gratis)</button>`; }
     $('#pistaCuarto', c).hidden = !m || m.muerta;
     if(!m || m.muerta){ f.innerHTML = vivasMias().length ? '' : `<p class="mf-vacio">${muerta ? '' : 'Todavía no tienes mascota. Toca «Adoptar» y elige una.'}</p>`; return; }
     const n = nivelMascota(m.xp || 0), a = xpDeNivel(n), b = xpDeNivel(n + 1), et = etapaDe(q, n);
@@ -154,7 +171,9 @@ export function iniciarCompanero(h){
   function pintarCielo(){
     const c = $('#capa.companero'); if(!c) return;
     const cielo = h.perfil().cielo || [];
-    $('#cieloLista', c).innerHTML = cielo.length ? `<div class="seccion-t">Las que se fueron</div><div class="cielo-l">${cielo.slice().reverse().map((x) => `<span>${esc(ESPECIES[x.especie]?.nombre || x.especie)} · nivel ${x.nivel}</span>`).join('')}</div>` : '';
+    /* las que se fueron y siguen fuera: con su botón para que regresen */
+    const fuera = cielo.slice().reverse().filter((x, i, a) => misMascotas()[x.especie]?.muerta && a.findIndex((y) => y.especie === x.especie) === i);
+    $('#cieloLista', c).innerHTML = fuera.length ? `<div class="seccion-t">Las que se fueron</div><div class="cielo-l">${fuera.map((x) => `<button class="ida" data-nota="${esc(x.especie)}" data-nivel="${x.nivel}">${ico('mail-open')}<span>${esc(nombreIdo(x.especie))} · nivel ${x.nivel}</span><small>Leer su nota</small></button>`).join('')}</div>` : '';
   }
   function pintarCuarto(primera = false){
     const c = $('#capa.companero'); if(!c) return;
@@ -333,14 +352,15 @@ export function iniciarCompanero(h){
       f.querySelector('button').addEventListener('click', () => { m.destruir(); f.remove(); listo(); }); f.querySelector('button').focus();
     });
   }
-  function murio(a){
-    const n = ESPECIES[a.especie]?.nombre || 'mascota';
-    hoja(`Tu ${n.toLowerCase()} se fue`, `<p style="margin:0 0 12px">Pasaron ${MUERE_HORAS / 24} días sin que nadie le diera de comer, la bañara o jugara con ella, y se fue. Llegó al nivel ${a.nivel}. Puedes adoptar otra mascota; esta vez cuídala un ratito cada día.</p>
-      <button class="bt fuerte ancho" data-adoptar-otra>${ico('heart')}Adoptar otra (gratis)</button>`, (hj) => {
-      hj.querySelector('[data-adoptar-otra]').addEventListener('click', () => { cerrarHoja(); abrir({ adoptar: a.especie }); });
+  function nota(k, nivel){
+    hoja(`${nombreIdo(k)} te dejó una nota`, notaHTML(k, nivel), (hj) => {
+      hj.addEventListener('click', (e) => {
+        const r = e.target.closest('[data-regresar]'); if(r){ regresar(r.dataset.regresar); return; }
+        if(e.target.closest('[data-adoptar-abrir]')){ cerrarHoja(); abrir({ adoptar: k }); }
+      });
     });
-    tono(SON.perdio); pintarPastilla();
   }
+  function murio(a){ nota(a.especie, a.nivel); tono(SON.perdio); pintarPastilla(); }
 
   function pintarTienda(){
     const c = $('#capa.companero'); if(!c || !tienda) return;
@@ -365,6 +385,8 @@ export function iniciarCompanero(h){
       pedir({ accion: 'crianza', que: 'activa', especie: k }).catch((err) => h.brindis(err.message, 'vino', 'circle-x'));
       setTimeout(() => masc?.play('saluda', { decir: azar(['¡Me toca a mí!', '¡Vamos a estudiar!', '¡Hola otra vez!']) }), 200); return; }
     if(e.target.closest('[data-adoptar-abrir]')){ tono(SON.toque); adoptarHoja(); return; }
+    const rg = e.target.closest('[data-regresar]'); if(rg){ regresar(rg.dataset.regresar); return; }
+    const nt = e.target.closest('[data-nota]'); if(nt){ tono(SON.toque); nota(nt.dataset.nota, +nt.dataset.nivel || 1); return; }
     if(e.target.closest('[data-vestir]')){ tono(SON.toque); if(!masc) return adoptarHoja(); vestirHoja(); return; }
     if(e.target.closest('[data-renombrar]')){ renombrar(); return; }
     const b = e.target.closest('[data-comprar]');

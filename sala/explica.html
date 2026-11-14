@@ -42,6 +42,15 @@
   .opciones{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; margin-top:12px }
   .opciones label{ display:block; font-size:12px; color:var(--suave); margin-bottom:4px }
   .opciones select{ width:100%; min-height:44px; border-radius:12px; border:1px solid #ffffff18; background:#150E1E; padding:0 10px }
+  .fuerza{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; margin-top:12px }
+  .fuerza button{ min-height:56px; padding:8px 6px; border-radius:14px; border:2px solid #ffffff1a; background:#ffffff0d; color:inherit; line-height:1.2; font-family:inherit; font-size:14px; font-weight:800; overflow-wrap:anywhere }
+  .fuerza button small{ display:block; font-size:12px; font-weight:500; color:var(--suave); margin-top:3px }
+  .fuerza button[aria-checked="true"]{ border-color:var(--violeta2, #C77DFF); background:#AC27FF22 }
+  .avanzado{ margin-top:10px } .avanzado > summary{ min-height:44px; display:flex; align-items:center; gap:6px; cursor:pointer; color:var(--suave); font-size:14px; font-weight:700; list-style:none }
+  .avanzado > summary::-webkit-details-marker{ display:none }
+  .avanzado > summary::after{ content:""; width:8px; height:8px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(45deg); margin:-4px 0 0 4px; transition:transform .2s }
+  .avanzado[open] > summary::after{ transform:rotate(225deg); margin-top:4px }
+  .avanzado .opciones{ margin-top:4px }
   .fotos{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px } .fotos img{ width:64px; height:64px; object-fit:cover; border-radius:10px }
   .acciones{ display:flex; gap:10px; margin-top:12px } .acciones .fuerte{ flex:1 }
   .ideas{ display:flex; gap:8px; flex-wrap:wrap; margin:14px 0 26px }
@@ -231,6 +240,14 @@
     <textarea id="tema" placeholder="Ej. «Explícame la Revolución Mexicana», «cómo se saca la derivada de un producto», «qué es la NOM-251»…"></textarea>
     <input id="extra" class="extra" type="text" autocomplete="off" placeholder="Escribe aquí si quieres agregarle algo (ej. «sólo lo básico», «con ejemplos de fútbol»)…" aria-label="Algo que quieras agregar a lo que se te va a explicar">
     <div class="fotos" id="fotos"></div>
+    <!-- QUÉ TAN FUERTE (Carlos, 14 nov): tres opciones a la vista; lo demás, en «Ajustes avanzados» plegado,
+         porque casi nadie lo quiere tocar -->
+    <div class="fuerza" role="radiogroup" aria-label="Qué tan fuerte estudias">
+      <button type="button" role="radio" data-fuerza="superficial">Superficial<small>lo clave, corto</small></button>
+      <button type="button" role="radio" data-fuerza="esencial">Esencial<small>lo que te preguntan</small></button>
+      <button type="button" role="radio" data-fuerza="profundo">A profundidad<small>todo a detalle</small></button>
+    </div>
+    <details class="avanzado" id="avanzado"><summary>Ajustes avanzados</summary>
     <div class="opciones">
       <div><label for="motor">Quién explica</label><select id="motor"><option value="groq">Negro · rápido</option><option value="gemini">Paulina · lee fotos, ~2 min</option></select></div>
       <div><label for="nivel">Nivel</label><select id="nivel"><option value="kids">Kids · kínder y primaria</option><option value="secu">Secundaria</option><option value="prepa" selected>Prepa</option><option value="uni">Universidad</option><option value="facil">Muy fácil</option></select></div>
@@ -240,6 +257,7 @@
       <div><label for="vozSel">Voz</label><select id="vozSel"></select></div>
       <div><label for="sonidos">Efectos de sonido</label><select id="sonidos"><option value="si">Sí, suavecitos</option><option value="no">No</option></select></div>
     </div>
+    </details>
     <div class="acciones">
       <label class="bt" id="bFoto" aria-label="Agregar foto de tus apuntes"><input type="file" id="archivo" accept="image/*" multiple hidden></label>
       <button class="bt fuerte" id="bExplica"></button>

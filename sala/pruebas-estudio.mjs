@@ -6,6 +6,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { atenderEstudio, semanaDe, avanzarRacha, juntarProgreso, diaMexico } from './servidor/estudio.js';
+import { precioRegreso, nivelMascota, notaDespedida } from '../carymo/crianza-datos.js';
 
 let bien = 0, mal = 0;
 const ok = (c, t) => { if(c){ bien++; console.log('  ✓', t); } else { mal++; console.log('  ✗', t); } };
@@ -105,8 +106,20 @@ console.log('El servidor');
     ok(q.perfil.mascotas.perrito.muerta && !q.mascotaSube, 'una mascota que se murió ya no gana nada');
     q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'activa', especie: 'paloma' }, '2026-11-17');
     ok(q.bien && q.perfil.mascota === 'paloma', 'te puedes quedar con otra de las que tienes');
-    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'adoptar', especie: 'perrito' }, '2026-11-17');
-    ok(q.bien && q.gastado === 40 && !q.perfil.mascotas.perrito.muerta && q.perfil.mascotas.perrito.xp === 0, 'y la que se murió sólo vuelve como una nueva, desde el principio');
+    /* SE FUE, NO SE MURIÓ (Carlos, 14 nov): regresa con su nivel, pero sólo pagando un montón */
+    const xpAntes = C.m.get('est:perfil:mia').mascotas.perrito.xp, precio = precioRegreso(nivelMascota(xpAntes));
+    ok(precio >= 300, `que regrese cuesta un montón (${precio} cubitos; la mascota más cara cuesta 140)`);
+    pf = C.m.get('est:perfil:mia'); pf.cubos = precio - 1; C.m.set('est:perfil:mia', pf);
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'regresar', especie: 'perrito' }, '2026-11-17');
+    ok(q.error && q.falta === 1 && q.perfil.mascotas.perrito.muerta, 'si te falta un cubito, no regresa y te dice cuánto falta');
+    pf = C.m.get('est:perfil:mia'); pf.cubos = precio + 5; C.m.set('est:perfil:mia', pf);
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'regresar', especie: 'perrito' }, '2026-11-17');
+    ok(q.bien && q.gastado === precio && q.perfil.cubos === 5 && !q.perfil.mascotas.perrito.muerta && q.perfil.mascotas.perrito.xp === xpAntes && q.perfil.mascotas.perrito.acc.join() === 'birrete,lentes' && q.perfil.mascota === 'perrito',
+      'pagando, regresa con su nivel y su ropa, y te acompaña otra vez');
+    ok(!q.perfil.cielo.some((x) => x.especie === 'perrito'), 'y ya no sale en «las que se fueron»');
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'regresar', especie: 'paloma' }, '2026-11-17');
+    ok(q.error, 'no se puede «regresar» a una que no se ha ido');
+    ok(notaDespedida('gatito').includes('mejor') || /buscar/.test(notaDespedida('gatito')), 'la nota de despedida dice que se fue a buscar algo mejor');
   }
 
   /* ── las ligas ── */

@@ -638,7 +638,21 @@ document.addEventListener('visibilitychange', () => { if(document.hidden && sona
 /* ?tema=… arranca directo (desde la mesa o un link) */
 const q0 = new URLSearchParams(location.search).get('tema'); if(q0) $('#tema').value = q0;
 /* …y Estudio también dice el nivel y el largo («corta»: un nodo del camino no es una clase de una hora) */
+/* QUÉ TAN FUERTE: cada opción pone «qué tan a fondo» y «largo»; si alguien los mueve a mano en los avanzados,
+   se marca la que coincida (o ninguna) */
+const FUERZA = { superficial: ['general', 'corta'], esencial: ['normal', 'normal'], profundo: ['detalle', 'fondo'] };
+function marcarFuerza(){
+  const k = Object.keys(FUERZA).find((f) => FUERZA[f][0] === $('#profundidad').value && FUERZA[f][1] === $('#largo').value);
+  for(const b of document.querySelectorAll('[data-fuerza]')) b.setAttribute('aria-checked', String(b.dataset.fuerza === k));
+}
+document.querySelector('.fuerza').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-fuerza]'); if(!b) return;
+  [$('#profundidad').value, $('#largo').value] = FUERZA[b.dataset.fuerza]; guarda.poner('explica.fuerza', b.dataset.fuerza); marcarFuerza();
+});
+for(const id of ['profundidad', 'largo']) $('#' + id).addEventListener('change', marcarFuerza);
+{ const f = guarda.leer('explica.fuerza', ''); if(FUERZA[f]) [$('#profundidad').value, $('#largo').value] = FUERZA[f]; }
 { const q = new URLSearchParams(location.search); for(const k of ['nivel', 'largo', 'motor', 'profundidad']){ const v = q.get(k); if(v && [...$('#' + k).options].some((o) => o.value === v)) $('#' + k).value = v; } }
+marcarFuerza();
 if(new URLSearchParams(location.search).has('preparar')) prepararCallado();
 else { botonPlay(); pintarVoces(); pintarHistorial(); ver('inicio'); }
 /* para las pruebas: cargar una clase ya hecha sin pedirla */

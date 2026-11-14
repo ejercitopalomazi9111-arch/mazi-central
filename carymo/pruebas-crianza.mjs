@@ -137,17 +137,23 @@ try{
   ({ ctx, pg, err } = await abrir({ ...PERFIL, mascotas: { tigre: { xp: 300, nacio: ahora - 9e8, skin: 'normal', acc: [], muerta: ahora - 1000 } }, cielo: [{ especie: 'tigre', nivel: 5, muerta: ahora - 1000 }],
     avisoMascota: { tipo: 'murio', especie: 'tigre', nivel: 5 } }));
   await pg.waitForTimeout(1200);
-  ok(/se fue/.test(await pg.locator('body').innerText()), 'al abrir la app te avisa que tu tigre se fue');
-  await foto(pg, '7-murio');
+  ok(/te dejó una nota/.test(await pg.locator('body').innerText()) && /mejor vida/.test(await pg.locator('.nota-ida').innerText()), 'al abrir la app tu tigre te deja una nota: se fue a buscar una mejor vida (Carlos, 14 nov)');
+  ok(/Que regrese · 400/.test(await pg.locator('.hoja [data-regresar]').innerText()), 'y te ofrece que regrese, por un montón de cubitos (400)');
+  await foto(pg, '7-se-fue');
   ok(await pg.locator('#pCubos[data-salud="peligro"]').count() === 1, 'la pastilla queda en rojo');
   ok(await espera(() => true) && (await pg.waitForFunction(() => !document.querySelector('#pCubos .pm-masc .masc'), null, { timeout: 4000 }).then(() => true, () => false)), 'y ya no sale el tigre en la pastilla');
-  await pg.click('[data-adoptar-otra]'); await pg.waitForSelector('.adopta-g');
+  await pg.click('.hoja [data-adoptar-abrir]'); await pg.waitForSelector('.adopta-g');
   ok(/gratis/i.test(await pg.locator('[data-adopta-si]').innerText()), 'la siguiente es gratis');
   ok(await pg.locator('.adopta[data-adopta="tigre"]:not([disabled])').count() === 1, 'y puedes volver a adoptar la misma especie');
   await pg.click('.adopta[data-adopta="gatito"]'); await pg.click('[data-adopta-si]');
   ok(await espera(() => perfil().mascotas.gatito && !perfil().mascotas.gatito.muerta && perfil().cubos === 500), 'adoptas un gatito sin pagar');
   ok(await ve(pg, '#pCubos .pm-masc .masc'), 'y vuelve a haber mascota en la pastilla');
   ok(/Las que se fueron/i.test(await pg.locator('#capa.companero').innerText()), 'el cuarto recuerda a las que se fueron');
+  await pg.click('#capa.companero [data-nota="tigre"]'); await pg.waitForSelector('.hoja .nota-ida');
+  await pg.click('.hoja [data-regresar="tigre"]');
+  ok(await espera(() => perfil().mascotas.tigre && !perfil().mascotas.tigre.muerta && perfil().mascotas.tigre.xp === 300 && perfil().cubos === 100), 'desde «las que se fueron» lees su nota y, pagando 400, el tigre regresa con su nivel');
+  ok(await pg.waitForFunction(() => !document.querySelector('#capa.companero [data-nota="tigre"]'), null, { timeout: 4000 }).then(() => true, () => false), 'y ya no sale en la lista de las que se fueron');
+  await foto(pg, '8-regreso');
   ok(err.length === 0, 'sin errores en la consola' + (err.length ? ': ' + err.join(' | ') : ''));
   await ctx.close();
 }catch(e){ console.log(e); f++; }
