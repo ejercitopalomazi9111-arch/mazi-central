@@ -192,6 +192,11 @@
   .en-brillo{ position:absolute; inset:0 auto 0 0; width:40%; background:linear-gradient(90deg, transparent, #ffffffb0, transparent); mix-blend-mode:overlay; opacity:0; pointer-events:none }
   .en-lema{ margin:12px 0 0; padding-left:.32em; font:800 13px/1 Titulo; letter-spacing:.32em; text-transform:uppercase; color:#C77DFF; opacity:0 }
   .en-masc{ margin-top:30px; opacity:0 }
+  /* la dedicatoria (Carlos, 14 nov: «al abrir menciona que es un proyecto de Grupo Mazi dedicado con amor para Mónica») */
+  .en-dedica{ position:absolute; left:16px; right:16px; bottom:max(28px, env(safe-area-inset-bottom)); margin:0; display:grid; justify-items:center; gap:6px; text-align:center; opacity:0 }
+  .en-mazi{ display:inline-flex; align-items:center; gap:7px; font:800 12px/1 Titulo; letter-spacing:.18em; text-transform:uppercase; color:#E9E4E4 }
+  .en-mazi svg{ width:18px; height:18px; flex:none }
+  .en-amor{ font:700 24px/1.15 Dibujada, Texto; color:#C77DFF; overflow-wrap:anywhere }
 
   /* ══ palomium y el cuarto del compañero (companero.js, cosas.js) ══ */
   .pastilla.cubos{ border:0; color:#E7CCFF; font:800 14px/1 Titulo; cursor:pointer; gap:5px }
@@ -790,7 +795,8 @@
   .interruptor{ position:relative; width:52px; height:32px; border-radius:999px; border:0; background:#ffffff22; transition:background .2s; flex:none }
   .interruptor::after{ content:""; position:absolute; left:3px; top:3px; width:26px; height:26px; border-radius:50%; background:#fff; transition:transform .2s }
   .interruptor[aria-checked="true"]{ background:var(--claro) } .interruptor[aria-checked="true"]::after{ transform:translateX(20px) }
-  .version{ text-align:center; color:var(--tenue); font-size:12px; margin:24px 0 }
+  .version{ text-align:center; color:var(--tenue); font-size:12px; margin:24px 0 8px }
+  .dedicatoria{ text-align:center; margin:0 0 28px; color:var(--tenue); font:800 11px/1.6 Titulo; letter-spacing:.14em; text-transform:uppercase } .dedicatoria span{ font:700 20px/1.2 Dibujada, Texto; letter-spacing:0; text-transform:none; color:var(--claro-txt, #C77DFF) }
 
   .aviso{ margin:12px 0; padding:12px 14px; border-radius:14px; background:#3A0F1E; color:#FFD3DA; font-size:14px }
   .cargando-fila{ text-align:center; color:var(--suave); padding:30px 0 }
@@ -983,7 +989,8 @@
 <div id="entrada" aria-hidden="true"><div class="en-chispas"></div><div class="en-centro">
   <span class="en-onda"></span><img class="en-ico" src="marca/icono-512.webp" width="512" height="512" alt="">
   <div class="en-nombre"><i>C</i><i>A</i><i>R</i><i>Y</i><i>M</i><i>O</i><span class="en-brillo"></span></div>
-  <p class="en-lema">Learn. Explore. Grow.</p><div class="en-masc"></div></div></div>
+  <p class="en-lema">Learn. Explore. Grow.</p><div class="en-masc"></div></div>
+  <p class="en-dedica"><span class="en-mazi"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1 19 5.5 10 10 1 5.5Z" fill="#AC27FF"/><path d="M1 5.5 10 10v9L1 14.5Z" fill="#7E1735"/><path d="M19 5.5 10 10v9l9-4.5Z" fill="#2A1640"/><path d="M3 13.5V8l3.5 3.2L10 8.6v8" fill="none" stroke="#F1ECF4" stroke-width="1.3" stroke-linejoin="round"/></svg>Un proyecto de Grupo Mazi</span><span class="en-amor">dedicado con amor para Mónica</span></p></div>
 <script>/* ya se vio en esta visita, «reducir movimiento», o la maneja un robot de pruebas (salvo ?entrada=1): fuera el telón */
 try{ if(!/[?&]entrada=1/.test(location.search) && (sessionStorage.getItem('carymo.entrada') || navigator.webdriver || matchMedia('(prefers-reduced-motion: reduce)').matches)) document.getElementById('entrada').remove(); }catch(e){ document.getElementById('entrada').remove(); }</script>
 <div class="app" id="app">

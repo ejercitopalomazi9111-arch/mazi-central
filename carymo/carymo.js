@@ -1788,7 +1788,8 @@ function pintarPerfil(){
     <div class="seccion-t">App</div>
     <div class="ajuste">${ico('volume-2')}<span>Efectos de sonido</span><button class="interruptor" role="switch" data-aj="sonido" aria-checked="${!!ajustes.sonido}" aria-label="Efectos de sonido"></button></div>
     <div class="ajuste">${ico('vibrate')}<span>Vibración</span><button class="interruptor" role="switch" data-aj="vibrar" aria-checked="${!!ajustes.vibrar}" aria-label="Vibración"></button></div>
-    <p class="version">${esc(VERSION_ESTUDIO)} · ${cola.length ? `${cola.length} logros por mandar a La Sala` : 'todo guardado en La Sala'}</p>`;
+    <p class="version">${esc(VERSION_ESTUDIO)} · ${cola.length ? `${cola.length} logros por mandar a La Sala` : 'todo guardado en La Sala'}</p>
+    <p class="dedicatoria">Un proyecto de Grupo Mazi<br><span>dedicado con amor para Mónica</span></p>`;
   /* el selector de compañero con las mascotas vivas (sin imágenes recortadas) */
   $$('[data-mini]', v).forEach((d) => crearMascota(d, { personaje: d.dataset.mini, tam: 62 }));
   avisos?.pintar(v.querySelector('#pAvisos'));

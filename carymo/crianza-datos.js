@@ -82,5 +82,7 @@ export const SKINS = {
   galaxia: { nombre: 'Galaxia', precio: 80, filtro: 'hue-rotate(250deg) saturate(1.8) contrast(1.05)' },
   arcoiris: { nombre: 'Arcoíris', precio: 120, filtro: 'arcoiris' },
   creador: { nombre: 'Creador', precio: null, filtro: 'sepia(.5) saturate(2.6) hue-rotate(250deg) brightness(1.1)', soloCreadores: true },
+  /* de regalo de la casa: los colores de Grupo Mazi (morado oscuro, vino y el morado claro del techo del cubo) */
+  mazi: { nombre: 'Grupo Mazi', precio: null, filtro: 'sepia(.4) saturate(2) hue-rotate(260deg)', regalo: true },
 };
 export const MAX_ACCESORIOS = 3;

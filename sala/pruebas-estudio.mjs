@@ -333,6 +333,20 @@ console.log('Títulos, regalos y el perfil de otro (Carlos, 14 nov)');
   ok(r.ranking.filas.find((f) => f.cuenta === 'sandra').estilo === 'arcoiris', 'en la tabla su nombre viene con su estilo');
   r = await llamar(s, 'sandra', 'POST', '', { accion: 'crianza', que: 'comprarRopa', item: 'capaMazi' });
   ok(!r.bien, 'lo de regalo no se puede comprar');
+  /* Carlos, 14 nov: gorra con pelo por los lados y estampado de Grupo Mazi, sudadera con la marca, y una mascota ya crecida y especial */
+  await llamar(s, 'carlosq', 'POST', '', { accion: 'xp', id: 'cq1', xp: 10 });
+  r = await llamar(s, 'carlosq', 'POST', '', { accion: 'comprarRopa', item: 'gorro:gorraMazi' });
+  ok(!r.bien, 'la gorra Mazi no se puede comprar (aunque sea «gratis»: es de regalo)');
+  r = await casa('carlos', { accion: 'admin', que: 'especial', cuenta: 'carlosq', regalos: ['gorro:gorraMazi', 'estampa:mazi'], ponerle: true,
+    mascotaEspecial: { especie: 'paloma', nivel: 15, skin: 'mazi', acc: ['coronaMazi', 'capaMazi'] } });
+  ok(r.bien && r.ropa.includes('gorro:gorraMazi') && r.personaje.gorro === 'gorraMazi' && r.personaje.estampa === 'mazi' && ['hoodie', 'shirtCrewNeck', 'shirtScoopNeck', 'shirtVNeck', 'graphicShirt'].includes(r.personaje.ropa),
+    'la casa le regala la gorra y el estampado de Grupo Mazi y se los pone');
+  ok(nivelMascota(r.mascotas.paloma.xp) === 15 && r.mascotas.paloma.skin === 'mazi' && r.mascotas.paloma.especial && r.mascota === 'paloma' && r.armario.includes('mazi'),
+    'y una paloma ya crecida (nivel 15), con el color de Grupo Mazi, que lo acompaña');
+  r = await llamar(s, 'carlosq', 'POST', '', { accion: 'crianza', que: 'vestir', especie: 'paloma', skin: 'mazi', acc: ['coronaMazi', 'capaMazi'] });
+  ok(r.bien, 'el color Grupo Mazi se lo puede quitar y volver a poner porque es suyo');
+  r = await llamar(s, 'sandra', 'POST', '', { accion: 'crianza', que: 'comprarRopa', item: 'mazi' });
+  ok(!r.bien, 'y nadie más lo puede comprar');
   r = await llamar(s, 'luis', 'GET', '?perfil=sandra');
   ok(r.bien && r.otro.nombre && r.otro.estilo === 'arcoiris' && r.otro.mascotas[0].especie === 'tigre' && !('cubos' in r.otro) && !('amigos' in r.otro), 'el perfil de otra persona enseña su nivel, títulos y mascotas, sin sus cubitos ni sus amigos');
   r = await llamar(s, 'luis', 'GET', '?perfil=nadie');

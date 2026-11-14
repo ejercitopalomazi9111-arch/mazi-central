@@ -8,7 +8,7 @@
  *   1. destellos que aparecen alrededor;
  *   2. el ícono llega girando y rebota, con una onda de luz;
  *   3. C·A·R·Y·M·O cae letra por letra y pasa un brillo;
- *   4. el lema, y la mascota que sube y saluda;
+ *   4. el lema, la mascota que sube y saluda, y abajo «Un proyecto de Grupo Mazi · dedicado con amor para Mónica»;
  *   5. el telón se cierra en un círculo hacia el ícono y queda la app.
  * Un toque en cualquier parte la salta. */
 import { crearMascota } from './mascota.js';
@@ -22,7 +22,7 @@ export function entrada({ personaje = 'tigre' } = {}){
   if(quieta()){ el.remove(); return Promise.resolve(); }
   try{ sessionStorage.setItem('carymo.entrada', '1'); }catch{}
   const ico = el.querySelector('.en-ico'), onda = el.querySelector('.en-onda'), letras = [...el.querySelectorAll('.en-nombre i')],
-    brillo = el.querySelector('.en-brillo'), lema = el.querySelector('.en-lema'), masc = el.querySelector('.en-masc');
+    brillo = el.querySelector('.en-brillo'), lema = el.querySelector('.en-lema'), masc = el.querySelector('.en-masc'), dedica = el.querySelector('.en-dedica');
   /* los destellos, en lugares al azar alrededor del centro */
   const chispas = el.querySelector('.en-chispas');
   for(let k = 0; k < 16; k++){
@@ -40,6 +40,8 @@ export function entrada({ personaje = 'tigre' } = {}){
     { duration: 560, delay: 760 + i * 75, easing: curva.rebote }));
   A(brillo, [{ transform: 'translateX(-120%) skewX(-20deg)', opacity: 0 }, { opacity: 1, offset: .2 }, { transform: 'translateX(220%) skewX(-20deg)', opacity: 0 }], { duration: 780, delay: 1340, easing: 'ease-in-out' });
   A(lema, [{ opacity: 0, transform: 'translateY(14px)', letterSpacing: '.6em' }, { opacity: 1, transform: 'none', letterSpacing: '.32em' }], { duration: 620, delay: 1420, easing: curva.sale });
+  /* la dedicatoria sube al final y se queda un momento para que se alcance a leer */
+  if(dedica) A(dedica, [{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }], { duration: 700, delay: 1750, easing: curva.sale });
   let m = null;
   if(personaje && personaje !== 'no'){
     m = crearMascota(masc, { personaje, tam: 120 });
@@ -55,7 +57,7 @@ export function entrada({ personaje = 'tigre' } = {}){
       const fin = el.animate([{ clipPath: `circle(150% at ${cx}px ${cy}px)` }, { clipPath: `circle(0px at ${cx}px ${cy}px)` }], { duration: 560, easing: curva.entra, fill: 'forwards' });
       fin.finished.catch(() => {}).then(() => { m?.destruir(); el.remove(); listo(); });
     };
-    const t = setTimeout(cerrar, 3150);
+    const t = setTimeout(cerrar, 3900);
     el.addEventListener('pointerdown', () => { for(const a of anims) a.finish(); cerrar(); }, { once: true });
   });
 }

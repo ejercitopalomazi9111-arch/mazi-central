@@ -246,7 +246,7 @@ export function refrescarVestidos(){ for(const m of VIVAS) m.revestir && m.reves
 const TONOS = {
   menta: ['#0E5E4A', '#3FC79A', '#E9FFF6'], noche: ['#0E0A33', '#3A4FB8', '#DCE4FF'], lava: ['#4A0808', '#E2451C', '#FFE6B8'],
   dorado: ['#4E3200', '#E2A21C', '#FFF7D6'], galaxia: ['#0B1446', '#6A45E8', '#B8F6FF'], creador: ['#2A0838', '#AC27FF', '#FFEFFF'],
-  arcoiris: ['#4A0A24', '#FF3B6B', '#FFE8F0'],
+  arcoiris: ['#4A0A24', '#FF3B6B', '#FFE8F0'], mazi: ['#170A26', '#7E1735', '#AC27FF', '#F3E8FF'],
 };
 const canal = (hex, i) => (parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) / 255).toFixed(3);
 function filtroSVG(id, skin, etapa){
