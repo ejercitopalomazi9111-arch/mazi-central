@@ -61,18 +61,58 @@ details.nuevo > summary::-webkit-details-marker{ display:none }
 .red p{ margin:0 } .red p + p{ margin-top:6px } .red .btn{ margin-top:6px; min-height:44px }
 .entrar{ max-width:440px; margin:12vh auto 0; background:var(--sup); border-radius:var(--r); padding:24px; box-shadow:var(--elev2) }
 .entrar p{ color:var(--tenue); margin:8px 0 16px }
+/* MOVIMIENTO Y ACABADO (Godines, 13 nov; lo pidió Luis: «llénalo de animaciones, premium y agradable»).
+   Nombres con «up» porque en CSS todo es global y esta página comparte ../chat/estilo.css.
+   Sólo transform: nada de opacidad sobre texto, y nada que cambie el tamaño de un botón al medirlo. */
+.env{ overflow-x:clip }
+.cifra{ position:relative; overflow:hidden; background-image:linear-gradient(160deg, color-mix(in srgb, var(--acento) 9%, transparent), transparent 58%) }
+.cifra.alerta{ background-image:linear-gradient(160deg, color-mix(in srgb, var(--aviso) 16%, transparent), transparent 62%) }
+.item{ transition:transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s }
+.item.up-ojo{ box-shadow:inset 3px 0 0 var(--aviso), var(--elev1) }
+.btn, .filtro button, .atajos a{ transition:transform .14s ease, background-color .2s, color .2s }
+.btn:active, .filtro button:active, .atajos a:active{ transform:scale(.96) }
+.btn:not(.b2){ background-image:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,0)); box-shadow:0 8px 18px -10px var(--acento) }
+/* el nivel de cada insumo; la raya marca su mínimo */
+.up-nivel{ position:relative; height:8px; border-radius:99px; background:var(--sup2); overflow:hidden }
+.up-nivel span{ display:block; height:100%; border-radius:inherit; background:var(--acento); transform-origin:left; transform:scaleX(var(--n)) }
+.up-nivel.bajo span{ background:var(--aviso) }
+.up-nivel::after{ content:""; position:absolute; left:33.33%; top:0; bottom:0; width:2px; background:var(--sup) }
+/* la luz que se desliza a la pestaña activa */
+.barra-inf{ isolation:isolate }
+.up-luz{ position:absolute; z-index:-1; left:0; top:6px; height:52px; width:0; border-radius:16px; background:var(--acento-suave); transition:transform .45s cubic-bezier(.3,1.3,.5,1), width .3s }
+/* el aviso de «listo»: sube desde abajo y se va solo */
+.up-aviso{ position:fixed; z-index:7; left:16px; right:16px; bottom:calc(84px + env(safe-area-inset-bottom)); max-width:520px; margin:0 auto; padding:12px 16px; border-radius:var(--r2); background:var(--tinta); color:var(--fondo); font-weight:600; font-size:14px; box-shadow:var(--elev2); transform:translateY(calc(100% + 150px)); transition:transform .4s cubic-bezier(.2,.9,.3,1.15); pointer-events:none }
+.up-aviso.ve{ transform:none }
+/* esqueleto mientras llega lo primero */
+.up-esq{ display:grid; gap:10px; padding-top:64px } .up-esq i{ display:block; height:74px; border-radius:var(--r); background:linear-gradient(100deg, var(--sup2) 30%, var(--sup) 50%, var(--sup2) 70%) 0 0 / 300% 100% }
+.up-esq i:first-child{ height:40px; width:52% }
+.up-solo-lector{ position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%) }
+@media (prefers-reduced-motion: no-preference){
+  .env > *, .cifra, .lista-c > .item, .atajos a{ animation:upEntra .55s cubic-bezier(.2,.85,.25,1) both; animation-delay:calc(var(--up-i, 0) * 45ms) }
+  .env > *:nth-child(2){ animation-delay:40ms } .env > *:nth-child(3){ animation-delay:80ms } .env > *:nth-child(n+4){ animation-delay:120ms }
+  @keyframes upEntra{ from{ transform:translateY(18px) } }
+  .up-nivel span{ animation:upLlena .9s cubic-bezier(.2,.8,.2,1) .15s both } @keyframes upLlena{ from{ transform:scaleX(0) } }
+  .barra-inf button[aria-current="page"] .ic{ animation:upBrinca .45s cubic-bezier(.3,1.6,.5,1) } @keyframes upBrinca{ 40%{ transform:translateY(-4px) scale(1.14) } }
+  .barra-inf i{ animation:upLate 2.6s ease-in-out infinite } @keyframes upLate{ 50%{ transform:scale(1.14) } }
+  .red:not([hidden]){ animation:upBaja .45s cubic-bezier(.2,.85,.25,1) } @keyframes upBaja{ from{ transform:translateY(-110%) } }
+  .up-sale{ animation:upSale .23s ease-in forwards !important } @keyframes upSale{ to{ transform:translateX(110%) } }
+  .up-esq i{ animation:upBrilla 1.3s linear infinite } @keyframes upBrilla{ to{ background-position:-150% 0 } }
+  @media (hover:hover){ .item:hover{ transform:translateY(-2px); box-shadow:var(--elev2) } }
+}
 </style>
 </head>
 <body>
 <div class="red" id="red" role="status" hidden></div>
-<div class="env" id="app"><p class="vacio" style="padding:40px 0">Cargando…</p></div>
+<div class="env" id="app"><div class="up-esq" aria-hidden="true"><i></i><i></i><i></i><i></i></div><p class="up-solo-lector">Cargando…</p></div>
 <nav class="barra-inf" id="barra" hidden aria-label="Secciones">
+  <span class="up-luz" id="upLuz" aria-hidden="true"></span>
   <button type="button" data-p="hoy" aria-current="page"><span data-ic="sun"></span>Hoy<i id="nHoy" hidden></i></button>
   <button type="button" data-p="servicios"><span data-ic="calendar-days"></span>Servicios</button>
   <button type="button" data-p="inventario"><span data-ic="package"></span>Inventario<i id="nInv" hidden></i></button>
   <button type="button" data-p="vehiculo"><span data-ic="truck"></span>Vehículo<i id="nVeh" hidden></i></button>
   <button type="button" data-p="numeros"><span data-ic="wallet"></span>Números</button>
 </nav>
+<div class="up-aviso" id="upAviso" role="status" aria-live="polite"></div>
 <script type="module">
 /* SIN INTERNET (Godines, 13 nov): toda llamada pasa por sin-red.js. Con señal va al servidor; sin señal
    contesta la réplica del teléfono con las mismas reglas (motor.js) y lo hecho se manda al volver.
@@ -147,11 +187,27 @@ const formEnvio = (f, alListo) => f.addEventListener('submit', async (e) => {
 });
 
 let actual = q.get('p') || 'hoy';
+/* ── movimiento y acabado ── */
+const QUIETO = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let tAviso;
+function avisa(texto){ const a = document.getElementById('upAviso'); a.textContent = texto; a.classList.add('ve'); clearTimeout(tAviso); tAviso = setTimeout(() => a.classList.remove('ve'), 3200); }
+function moverLuz(){ const b = barra.querySelector('[aria-current="page"]'), l = document.getElementById('upLuz'); if(!b || !l) return; l.style.width = b.offsetWidth + 'px'; l.style.transform = `translateX(${b.offsetLeft}px)`; }
+addEventListener('resize', moverLuz);
+function acabado(el){
+  /* cada tarjeta entra un poco después que la anterior */
+  el.querySelectorAll('.cifras, .lista-c, .atajos').forEach(g => [...g.children].forEach((h, i) => h.style.setProperty('--up-i', Math.min(i, 9))));
+  moverLuz();
+  if(QUIETO) return;
+  /* las cifras suben contando */
+  el.querySelectorAll('.cifra b').forEach(b => { const m = /^(\$?)([\d,]+)$/.exec(b.textContent.trim()); if(!m) return; const n = Number(m[2].replace(/,/g, '')); if(n < 1) return;
+    const t0 = performance.now(), dura = 450 + Math.min(n, 20) * 18, final = b.textContent;
+    (function paso(t){ const k = Math.min(1, Math.max(0, (t - t0) / dura)); b.textContent = k < 1 ? m[1] + Math.round(n * (1 - Math.pow(1 - k, 3))).toLocaleString('en-US') : final; if(k < 1) requestAnimationFrame(paso); })(t0); });
+}
 async function ir(p){
   actual = p; barra.querySelectorAll('button').forEach(b => b.dataset.p === p ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
   /* el contenedor se recrea en cada pantalla: así no se juntan oyentes viejos (CLAUDE.md, «innerHTML deja la pantalla limpia») */
   const viejo = raiz(), nuevo = viejo.cloneNode(false); viejo.replaceWith(nuevo); window.__app = nuevo;
-  await PANTALLAS[p](nuevo); pintaIconos(nuevo); pintaIconos(barra); pintaRed();
+  await PANTALLAS[p](nuevo); pintaIconos(nuevo); pintaIconos(barra); pintaRed(); acabado(nuevo);
   /* los globitos de la barra van al día en cualquier pantalla, no sólo en «Hoy» */
   if(p !== 'hoy') api('GET', '/api/tablero').then(t => { if(t.bien){ marca('nHoy', t.servicios_hoy.length + t.atrasados.length + t.seguimientos.length); marca('nInv', t.insumos_bajos.length); marca('nVeh', t.vehiculo.length); } });
 }
@@ -167,7 +223,11 @@ const conAcciones = (el) => el.addEventListener('click', async (e) => {
   const b = e.target.closest('[data-est],[data-seg]'); if(!b) return;
   const id = b.closest('[data-id]').dataset.id; b.disabled = true;
   const j = b.dataset.est ? await api('POST', '/api/citas/estado', { id, estado: b.dataset.est }) : await api('POST', '/api/citas/seguimiento', { id, sigue_plaga: b.dataset.seg === 'sigue' });
-  if(!j.bien){ b.disabled = false; alert(j.error); return; } ir(actual);
+  if(!j.bien){ b.disabled = false; alert(j.error); return; }
+  avisa((b.dataset.est === 'hecho' ? `Hecho. Seguimiento el ${dia(j.cita?.seguimiento?.fecha)}.` : b.dataset.est === 'cerrado' ? 'Cobrado.' : b.dataset.est === 'cancelado' ? 'Cancelado.'
+    : j.garantia ? `Garantía agendada para el ${dia(j.garantia.fecha)}.` : 'Seguimiento cerrado.') + (j.pendiente ? ' Se envía al volver la señal.' : ''));
+  const tarjeta = b.closest('.item'); if(tarjeta && !QUIETO){ tarjeta.classList.add('up-sale'); await new Promise(r => setTimeout(r, 230)); }
+  ir(actual);
 });
 
 const PANTALLAS = {
@@ -191,7 +251,7 @@ const PANTALLAS = {
       ${t.seguimientos.length ? `<ul class="lista-c" id="lSeg">${t.seguimientos.map(c => `<li class="item" data-id="${c.id}"><div class="t"><b>${esc(c.cliente)}</b><span>tocaba el ${dia(c.seguimiento.fecha)}</span></div>
         <p>Pregúntale si ya no ha visto ${esc(c.plaga || 'la plaga')}. Si sigue, la garantía de tu página: regresas sin costo.</p>
         <div class="acc"><button class="btn" data-seg="bien">Ya no hay plaga</button><button class="btn b2" data-seg="sigue">Sigue: agendar garantía</button>${c.telefono ? `<a class="btn b2" href="https://wa.me/52${esc(String(c.telefono).replace(/\D/g, '').slice(-10))}">WhatsApp</a>` : ''}</div></li>`).join('')}</ul>` : '<p class="vacio">Ninguna toca hoy. Se agendan solas 15 días después de cada servicio.</p>'}
-      ${t.insumos_bajos.length ? `<h2>Se está acabando <span class="n">${t.insumos_bajos.length}</span></h2><ul class="lista-c">${t.insumos_bajos.map(i => `<li class="item"><div class="t"><b>${esc(i.nombre)}</b><span>quedan ${i.cantidad} ${esc(i.unidad)}</span></div><p>Tu mínimo es ${i.minimo} ${esc(i.unidad)}.</p></li>`).join('')}</ul>` : ''}
+      ${t.insumos_bajos.length ? `<h2>Se está acabando <span class="n">${t.insumos_bajos.length}</span></h2><ul class="lista-c">${t.insumos_bajos.map(i => `<li class="item up-ojo"><div class="t"><b>${esc(i.nombre)}</b><span>quedan ${i.cantidad} ${esc(i.unidad)}</span></div><p>Tu mínimo es ${i.minimo} ${esc(i.unidad)}.</p></li>`).join('')}</ul>` : ''}
       ${t.vehiculo.length ? `<h2>Vehículo <span class="n">${t.vehiculo.length}</span></h2><ul class="lista-c">${t.vehiculo.map(v => `<li class="item"><div class="t"><b>${esc(v.vehiculo)} · ${esc(v.tipo)}</b><span>${v.dias != null ? (v.dias < 0 ? `venció hace ${-v.dias} d` : `en ${v.dias} d`) : `faltan ${v.faltanKm} km`}</span></div></li>`).join('')}</ul>` : ''}
       ${t.por_cobrar.length ? `<h2>Por cobrar <span class="n">${t.por_cobrar.length}</span></h2><ul class="lista-c" id="lCob">${t.por_cobrar.map(c => citaItem(c)).join('')}</ul>` : ''}`;
     conAcciones(el);
@@ -231,8 +291,9 @@ const PANTALLAS = {
           <div class="dos"><label>Registro (COFEPRIS)<input name="registro" placeholder="RSCO-…"></label><label>Unidad<select name="unidad"><option>pzas</option><option>g</option><option>kg</option><option>ml</option><option>L</option><option>bloques</option><option>cajas</option></select></label></div>
           <label>Avísame cuando queden<input name="minimo" inputmode="decimal" placeholder="10"></label>
           <button class="btn" type="submit">Agregar</button><p class="msj" role="status"></p></form></details>
-      ${j.insumos.length ? `<ul class="lista-c">${j.insumos.map(i => `<li class="item" data-id="${i.id}">
+      ${j.insumos.length ? `<ul class="lista-c">${j.insumos.map(i => `<li class="item${i.bajo ? ' up-ojo' : ''}" data-id="${i.id}">
         <div class="t"><b>${esc(i.nombre)}</b><span>${i.cantidad} ${esc(i.unidad)}</span></div>
+        ${i.minimo ? `<div class="up-nivel ${i.bajo ? 'bajo' : ''}" aria-hidden="true"><span style="--n:${Math.min(1, i.cantidad / (i.minimo * 3)).toFixed(3)}"></span></div>` : ''}
         <div class="acc">${i.bajo ? '<span class="chip aviso">Se está acabando</span>' : ''}${i.registro ? `<span class="chip">${esc(i.registro)}</span>` : '<span class="chip aviso">Falta su registro</span>'}${i.minimo != null ? `<span class="chip">mínimo ${i.minimo}</span>` : ''}</div>
         <form class="f mov" style="padding:0"><label>Motivo<input name="motivo" placeholder="Compra, servicio de Ana…"></label><label>Cantidad<input name="delta" inputmode="decimal" placeholder="+10 o −2" required></label>
           <div class="acc" style="grid-column:1/-1"><button class="btn b2" type="submit" name="sentido" value="1">Entró</button><button class="btn b2" type="submit" name="sentido" value="-1">Salió</button></div><p class="msj" role="status" style="grid-column:1/-1"></p></form>
@@ -279,7 +340,7 @@ const PANTALLAS = {
         <form class="f" id="fVeh"><div class="dos"><label>Nombre<input name="nombre" required placeholder="Camioneta blanca"></label><label>Placas<input name="placas"></label></div>
           <label>Kilometraje de hoy<input name="km" inputmode="numeric"></label><button class="btn" type="submit">Agregar</button><p class="msj" role="status"></p></form></details>
       ${j.vehiculos.map(v => `<h2>${esc(v.nombre)} <span class="n">${v.placas ? esc(v.placas) + ' · ' : ''}${v.km != null ? Number(v.km).toLocaleString('en-US') + ' km' : ''}</span></h2>
-        ${v.proximas.length ? `<ul class="lista-c">${v.proximas.map(p => `<li class="item"><div class="t"><b>${esc(p.tipo)}</b><span>${p.fecha ? dia(p.fecha) : ''}${p.km ? ' · a los ' + Number(p.km).toLocaleString('en-US') + ' km' : ''}</span></div>${p.urge ? '<div class="acc"><span class="chip aviso">Ya toca</span></div>' : ''}</li>`).join('')}</ul>` : '<p class="vacio">Sin próximas revisiones apuntadas.</p>'}
+        ${v.proximas.length ? `<ul class="lista-c">${v.proximas.map(p => `<li class="item${p.urge ? ' up-ojo' : ''}"><div class="t"><b>${esc(p.tipo)}</b><span>${p.fecha ? dia(p.fecha) : ''}${p.km ? ' · a los ' + Number(p.km).toLocaleString('en-US') + ' km' : ''}</span></div>${p.urge ? '<div class="acc"><span class="chip aviso">Ya toca</span></div>' : ''}</li>`).join('')}</ul>` : '<p class="vacio">Sin próximas revisiones apuntadas.</p>'}
         <details class="nuevo"><summary><span data-ic="wrench"></span>Apuntar una revisión</summary>
           <form class="f" data-v="${v.id}"><div class="dos"><label>Qué se hizo<select name="tipo">${TIPOS.map(t => `<option>${t}</option>`).join('')}</select></label><label>Fecha<input name="fecha" type="date" required value="${hoyISO()}"></label></div>
             <div class="dos"><label>Kilometraje<input name="km" inputmode="numeric"></label><label>Costo<input name="costo" inputmode="decimal"></label></div>
