@@ -260,12 +260,13 @@ svg.i{width:20px; height:20px; flex:none}
 .sug i svg{width:16px; height:16px}
 
 /* botón flotante del pedido (teléfono) */
-.flota{position:fixed; left:12px; right:12px; bottom:calc(12px + env(safe-area-inset-bottom)); z-index:25; display:flex; align-items:center; gap:12px; min-height:60px; padding:0 8px 0 10px;
+.flota{position:fixed; left:12px; right:12px; bottom:calc(12px + env(safe-area-inset-bottom) + var(--vvb, 0px)); z-index:25; flex-wrap:nowrap; display:flex; align-items:center; gap:12px; min-height:60px; padding:0 8px 0 10px;
   border:0; border-radius:18px; background:var(--tinta); color:var(--blanco); cursor:pointer; box-shadow:0 16px 40px -14px rgba(0,0,0,.55);
   transform:translateY(140%); transition:transform .32s cubic-bezier(.2,.8,.2,1)}
 .flota.ver{transform:none}
 .flota__bola{display:grid; place-items:center; min-width:38px; height:38px; padding:0 8px; border-radius:12px; background:var(--amarillo); color:var(--tinta); font:600 16px/1 var(--mono)}
-.flota__txt{flex:1; text-align:left; line-height:1.2}
+.flota__txt{flex:1; min-width:0; text-align:left; line-height:1.2}
+.flota__bola, .flota__ir{flex:none}
 .flota__txt b{display:block; font-size:16px}
 .flota__txt span{font-size:13px; color:rgba(255,255,255,.7)}
 .flota__ir{display:flex; align-items:center; gap:6px; padding:0 14px; height:44px; border-radius:12px; background:var(--amarillo); color:var(--tinta); font-weight:800; font-size:15px}
@@ -283,7 +284,15 @@ main{padding-bottom:110px}
 @media (min-width:1024px){ .pop{bottom:24px} }
 
 /* hojas (diálogos) */
-dialog{border:0; padding:0; margin:auto auto 0; width:100%; max-width:560px; max-height:min(92svh, 860px); border-radius:24px 24px 0 0; background:var(--blanco); color:var(--tinta); display:flex; flex-direction:column; overflow:hidden}
+/* La hoja en el iPhone (14 nov, lo reportó el cliente): con el pedido largo, Safari dejaba el cuerpo a su alto natural y
+   APLASTABA la barra de abajo (el botón de WhatsApp) y cortaba lo de en medio. Ahora: cabeza y pie no se encogen nunca,
+   el cuerpo es el único que se achica y hace scroll, el alto sigue a lo que de verdad se ve (con teclado o barras de
+   Safari, --vv lo pone el JS) y la página de atrás no se mueve mientras hay una hoja abierta. */
+dialog{border:0; padding:0; margin:auto auto 0; width:100%; max-width:560px; max-height:min(92svh, 860px); max-height:min(calc(var(--vv, 100svh) * .92), 860px); border-radius:24px 24px 0 0; background:var(--blanco); color:var(--tinta); display:flex; flex-direction:column; overflow:hidden}
+dialog[open]{bottom:var(--vvb, 0px)}
+@media (min-width:640px){ dialog[open]{bottom:0} }
+.hoja__cab, .hoja__pie{flex:none}
+html:has(dialog[open]){overflow:hidden}
 dialog:not([open]){display:none}
 dialog::backdrop{background:rgba(10,10,10,.55)}
 @media (min-width:640px){ dialog{margin:auto; border-radius:24px} }
@@ -293,7 +302,7 @@ dialog[open]{animation:sube .26s cubic-bezier(.2,.8,.2,1)}
 .hoja__cab{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 16px 12px 20px; border-bottom:1px solid var(--linea)}
 .hoja__cab h2{margin:0; font-weight:900; font-size:22px; letter-spacing:-.02em; font-stretch:110%}
 .cerrar{display:grid; place-items:center; width:44px; height:44px; border:0; border-radius:50%; background:var(--papel); cursor:pointer}
-.hoja__cuerpo{padding:16px 20px; overflow:auto; flex:1}
+.hoja__cuerpo{padding:16px 20px; overflow:auto; flex:1 1 auto; min-height:0; overscroll-behavior:contain; -webkit-overflow-scrolling:touch}
 .hoja__pie{padding:12px 20px calc(14px + env(safe-area-inset-bottom)); border-top:1px solid var(--linea); background:var(--blanco)}
 .ficha__foto{margin:-16px -20px 14px; aspect-ratio:16/10; background:var(--papel2)}
 .ficha__foto img{width:100%; height:100%; object-fit:cover}
@@ -749,7 +758,17 @@ function agregar(p, cant, nota, desde){
   var f = $("#flota"); if(!quieto && f.animate && f.classList.contains("ver")) f.animate([{transform:"translateY(0)"}, {transform:"translateY(-6px)"}, {transform:"translateY(0)"}], {duration:300, easing:"ease-out"});
 }
 
-function abrir(d){ if(typeof d.showModal === "function") d.showModal(); else d.setAttribute("open",""); }
+/* Lo que de verdad se ve en el teléfono: alto visible (--vv) y cuánto tapa abajo el teclado o la barra de Safari (--vvb).
+   La hoja y la barra «Ver pedido» se acomodan a eso para que nunca queden aplastadas ni debajo de nada. */
+function medirVista(){
+  var v = window.visualViewport, r = document.documentElement.style;
+  var alto = v ? v.height : innerHeight, abajo = v ? Math.max(0, innerHeight - (v.offsetTop + v.height)) : 0;
+  r.setProperty("--vv", Math.round(alto) + "px"); r.setProperty("--vvb", Math.round(abajo) + "px");
+}
+medirVista();
+if(window.visualViewport){ visualViewport.addEventListener("resize", medirVista); visualViewport.addEventListener("scroll", medirVista); }
+addEventListener("resize", medirVista);
+function abrir(d){ medirVista(); if(typeof d.showModal === "function") d.showModal(); else d.setAttribute("open",""); }
 $$("dialog").forEach(function(d){ $$("[data-cerrar]", d).forEach(function(b){ b.addEventListener("click", function(){ d.close(); }); });
   d.addEventListener("click", function(e){ if(e.target === d) d.close(); }); });
 
