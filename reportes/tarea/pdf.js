@@ -23,7 +23,7 @@ export async function pdfDeLienzos(lienzos, { titulo = 'Documento', autor = '' }
   obj(3, `<< /Title (${esc(titulo)}) /Author (${esc(autor)}) /Producer (Reportes Grupo Mazi) >>`);
   for(let i = 0; i < n; i++){
     const c = lienzos[i];
-    const blob = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.84));
+    const blob = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.9));
     const jpg = new Uint8Array(await blob.arrayBuffer());
     obj(ids[i].pag, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /XObject << /Im${i} ${ids[i].img} 0 R >> >> /Contents ${ids[i].cont} 0 R >>`);
     obj(ids[i].img, [`<< /Type /XObject /Subtype /Image /Width ${c.width} /Height ${c.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n`, jpg, '\nendstream']);

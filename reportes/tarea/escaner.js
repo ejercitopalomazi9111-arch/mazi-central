@@ -164,24 +164,60 @@ const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 export function limpiar(img, modo = 'escaneo'){
   if(modo === 'original') return img;
   const W = img.width, H = img.height, d = img.data, out = new ImageData(W, H), o = out.data;
-  const fondo = fondoDe(img);
-  const r = [0, 0, 0];
+  const fondo = fondoDe(img), n = W * H;
+  /* 1 · la hoja dividida entre su papel: la sombra se va y queda sólo lo escrito */
+  const R = new Float32Array(n * 3), L = new Float32Array(n);
   for(let y = 0; y < H; y++) for(let x = 0; x < W; x++){
-    const i = (y * W + x) * 4;
-    for(let k = 0; k < 3; k++) r[k] = clamp(d[i + k] / Math.max(1, fondo(x, y, k)) * 255, 0, 255);
-    if(modo === 'color'){
-      const m = (r[0] + r[1] + r[2]) / 3;
+    const p = y * W + x, i = p * 4;
+    for(let k = 0; k < 3; k++) R[p * 3 + k] = clamp(d[i + k] / Math.max(1, fondo(x, y, k)) * 255, 0, 255);
+    L[p] = 0.299 * R[p * 3] + 0.587 * R[p * 3 + 1] + 0.114 * R[p * 3 + 2];
+  }
+  if(modo === 'color'){
+    for(let p = 0; p < n; p++){
+      const i = p * 4, m = (R[p * 3] + R[p * 3 + 1] + R[p * 3 + 2]) / 3;
       /* más contraste y un poco más de color, para que el marcatextos no se lave */
       const mv = clamp((m - 20) * 255 / 215, 0, 255);
-      for(let k = 0; k < 3; k++){ const v = clamp((r[k] - 20) * 255 / 215, 0, 255); o[i + k] = clamp(v + (v - mv) * 0.35, 0, 255); }
-    }else{
-      const L = 0.299 * r[0] + 0.587 * r[1] + 0.114 * r[2];
-      const t = Math.pow(clamp((228 - L) / 26, 0, 1), 0.8);
-      for(let k = 0; k < 3; k++) o[i + k] = clamp((r[k] - 30) * 255 / 160, 0, 255) * 0.72 * t + 255 * (1 - t);
+      for(let k = 0; k < 3; k++){ const v = clamp((R[p * 3 + k] - 20) * 255 / 215, 0, 255); o[i + k] = clamp(v + (v - mv) * 0.35, 0, 255); }
+      o[i + 3] = 255;
     }
+    orillas(out);
+    return out;
+  }
+  /* 2 · ¿dónde hay TRAZO? (Lorena, 14 nov: «el texto no es legible»: el lápiz salía gris claro y delgadito)
+     El sombrero negro —cerrar la hoja con un cuadro de 11 px y restarle la original— enciende sólo lo delgado y más
+     oscuro que su alrededor: letras y rayas. Las manchas anchas (borrón, lo que se transparenta del otro lado) no. */
+  const cerrada = minFiltro(maxFiltro(L, W, H, 5), W, H, 5);
+  let t = new Float32Array(n);
+  for(let p = 0; p < n; p++){
+    const bh = cerrada[p] - L[p];
+    t[p] = Math.max(Math.pow(clamp((bh - 14) / 20, 0, 1), 0.6), clamp((150 - L[p]) / 40, 0, 1));
+  }
+  t = suave3(t, W, H);
+  /* 3 · el trazo se engorda un pixel, para que el lápiz delgado se lea desde lejos */
+  const gordo = maxFiltro(t, W, H, 1);
+  for(let p = 0; p < n; p++){
+    const k = Math.max(t[p], gordo[p] * 0.55), i = p * 4;
+    for(let c = 0; c < 3; c++) o[i + c] = clamp((R[p * 3 + c] - 90) * 255 / 115, 0, 255) * 0.42 * k + 255 * (1 - k);
     o[i + 3] = 255;
   }
   orillas(out);
+  return out;
+}
+/* máximo y mínimo en un cuadro de (2r+1), separados en renglón y columna para que sea rápido */
+function filtroCuadro(src, W, H, r, mayor){
+  const tmp = new Float32Array(src.length), out = new Float32Array(src.length);
+  const mejor = mayor ? (a, b) => (a > b ? a : b) : (a, b) => (a < b ? a : b);
+  for(let y = 0; y < H; y++){ const f = y * W; for(let x = 0; x < W; x++){ let m = src[f + x]; for(let k = Math.max(0, x - r); k <= Math.min(W - 1, x + r); k++) m = mejor(m, src[f + k]); tmp[f + x] = m; } }
+  for(let y = 0; y < H; y++) for(let x = 0; x < W; x++){ let m = tmp[y * W + x]; for(let k = Math.max(0, y - r); k <= Math.min(H - 1, y + r); k++) m = mejor(m, tmp[k * W + x]); out[y * W + x] = m; }
+  return out;
+}
+const maxFiltro = (s, W, H, r) => filtroCuadro(s, W, H, r, true);
+const minFiltro = (s, W, H, r) => filtroCuadro(s, W, H, r, false);
+/* desenfoque gaussiano de 3×3 (1-2-1) */
+function suave3(s, W, H){
+  const tmp = new Float32Array(s.length), out = new Float32Array(s.length);
+  for(let y = 0; y < H; y++){ const f = y * W; for(let x = 0; x < W; x++) tmp[f + x] = (s[f + Math.max(0, x - 1)] + 2 * s[f + x] + s[f + Math.min(W - 1, x + 1)]) / 4; }
+  for(let y = 0; y < H; y++) for(let x = 0; x < W; x++) out[y * W + x] = (tmp[Math.max(0, y - 1) * W + x] + 2 * tmp[y * W + x] + tmp[Math.min(H - 1, y + 1) * W + x]) / 4;
   return out;
 }
 /* las manchas que tocan la orilla y no traen trazo oscuro (plástico, sombra de otra hoja) se van; 12 px de margen blanco */

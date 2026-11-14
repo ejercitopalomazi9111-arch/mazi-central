@@ -70,7 +70,7 @@ try{
   ok(r.q0 < 40, `encuentra las 4 esquinas de la hoja chueca (a ${r.q0.toFixed(0)} px de las reales en una foto de 2000)`);
   ok(r.ancho === 1700 && r.alto === 2200, 'la deja de frente en carta a 200 ppp (1700 × 2200)');
   ok(r.m0.izq.media > 245 && r.m0.der.media > 245, `el papel queda blanco parejo aunque un lado tenía sombra (${r.m0.izq.media.toFixed(0)} y ${r.m0.der.media.toFixed(0)})`);
-  ok(r.m0.tinta.min < 110 && r.m0.lapiz.min < 160, `la tinta y el LÁPIZ se siguen leyendo (lo más oscuro: ${r.m0.tinta.min.toFixed(0)} y ${r.m0.lapiz.min.toFixed(0)})`);
+  ok(r.m0.tinta.min < 110 && r.m0.lapiz.min < 90, `la tinta y el LÁPIZ salen oscuros (Lorena: «el texto no es legible») (lo más oscuro: ${r.m0.tinta.min.toFixed(0)} y ${r.m0.lapiz.min.toFixed(0)})`);
   ok(r.m1.izq.media > 240 && r.m1.tinta.min < 120, 'la foto acostada se para sola y queda igual de limpia');
   if(FOTOS) await pg.screenshot({ path: `${FOTOS}/tarea-1-hojas.png`, fullPage: true });
 

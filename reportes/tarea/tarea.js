@@ -181,9 +181,10 @@ async function hacerPortada(d){
 function hacerHoja(h, n){
   const c = lienzo(ANCHO, ALTO), x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, ANCHO, ALTO);
   numero(x, n);
-  const aw = ANCHO - 2 * MARGEN, ah = ALTO - 2 * MARGEN, k = Math.min(aw / h.lista.width, ah / h.lista.height);
-  const w = h.lista.width * k, hh = h.lista.height * k, px = (ANCHO - w) / 2, py = MARGEN + (ah - hh) / 2;
-  x.drawImage(h.lista, px, py, w, hh); x.strokeStyle = '#c9c9c9'; x.lineWidth = 1.5; x.strokeRect(px, py, w, hh);
+  /* la hoja escaneada va con margen de 1.27 cm (100 px), no de 2.54: es una foto de una hoja, y entre más grande, más se lee */
+  const M = 100, aw = ANCHO - 2 * M, ah = ALTO - 2 * M - 60, k = Math.min(aw / h.lista.width, ah / h.lista.height);
+  const w = h.lista.width * k, hh = h.lista.height * k, px = (ANCHO - w) / 2, py = M + 60 + (ah - hh) / 2;
+  x.drawImage(h.lista, px, py, w, hh);
   return c;
 }
 export async function armar(){
