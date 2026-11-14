@@ -27,6 +27,7 @@ import { iniciarAmigos } from './amigos.js';
 import { nombreHTML, insigniasHTML } from './nombre.js';
 import { iniciarPerfilOtro } from './perfil-otro.js';
 import { iniciarCompanero } from './companero.js';
+import { iniciarWidget } from './widget.js';
 import { iniciarCuenta, ESCOLAR, NIVEL_DE_ESCOLAR } from './cuenta.js';
 import { iniciarApuntes } from './apuntes.js';
 import { iniciarSesionEstudio } from './sesion.js';
@@ -439,7 +440,7 @@ async function mandarCola(){
   return mandando;
 }
 function posicion(){ const i = ranking.filas.findIndex((f) => f.yo); return i < 0 ? 0 : i + 1; }
-function ponerPerfil(p){ if(!p) return; perfil = { ...perfil, ...p }; delete perfil._localRacha; guarda.poner('est.perfil', perfil);
+function ponerPerfil(p){ if(!p) return; perfil = { ...perfil, ...p }; delete perfil._localRacha; guarda.poner('est.perfil', perfil); try{ widget?.avisar(); }catch{}
   /* la mascota activa la decide el servidor (la crianza vive allá); si la tuya de antes todavía no está allá, se le manda una vez */
   if(perfil.mascotas){
     const q = perfil.mascota;
@@ -1802,7 +1803,7 @@ function pintarPerfil(){
     <div class="seccion-t">Tus planes</div><div class="resultados">${ps.map((p) => `<button data-abrir-plan="${esc(p.id)}">${ico('notebook-pen')}<span>${esc(p.titulo)}<small>${esc(cuandoTexto(p.fecha))} · ${avanceDe(p).pct} % · grado ${Math.floor(avanceDe(p).grado)}</small></span>${ico('chevron-right')}</button>`).join('') || '<p style="color:var(--tenue)">Todavía no tienes planes.</p>'}
       <button data-nuevo-plan>${ico('plus')}<span>Crear un plan</span></button><button data-anadir-plan>${ico('share-2')}<span>Añadir curso con link o código</span></button></div>
     <div class="seccion-t">Tu cuenta</div>
-    ${cuentaUI && cuentaUI.conCuenta() ? `<div class="ajuste">${ico('user')}<span>Entraste como <b>@${esc(cuentaUI.usuario())}</b></span><button class="bt mini" data-cuenta-p="salir">Salir</button></div>`
+    ${cuentaUI && cuentaUI.conCuenta() ? `<div class="ajuste">${ico('user')}<span>Entraste como <b>@${esc(cuentaUI.usuario())}</b></span><button class="bt mini" data-cuenta-p="salir">Salir</button></div><button class="bt mini fantasma borrar-cuenta" data-cuenta-p="borrar">${ico('trash')}Borrar cuenta</button>`
       : `<div class="fila-bt" style="margin-bottom:6px"><button class="bt fuerte" data-cuenta-p="crear">${ico('user-plus')}Crear cuenta</button><button class="bt" data-cuenta-p="entrar">Ya tengo cuenta</button></div>`}
     <div class="seccion-t">Tú</div>
     <label class="ajuste">${ico('pencil')}<span>Tu nombre en el ranking</span><input id="pNombre" class="campo" style="max-width:150px;min-height:40px" value="${esc(perfil.nombre || '')}" aria-label="Tu nombre en el ranking"></label>
@@ -1837,7 +1838,7 @@ $('#vPerfil').addEventListener('click', (e) => {
   const p = e.target.closest('[data-abrir-plan]'); if(p){ actualId = p.dataset.abrirPlan; guardarLocal(); vista = 'plan'; pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); return; }
   if(e.target.closest('[data-nuevo-plan]')) alta();
   if(e.target.closest('[data-anadir-plan]')) anadirCurso();
-  const cb = e.target.closest('[data-cuenta-p]'); if(cb){ if(cb.dataset.cuentaP === 'salir') cuentaUI.salir(); else cuentaUI.abrir(cb.dataset.cuentaP); return; }
+  const cb = e.target.closest('[data-cuenta-p]'); if(cb){ if(cb.dataset.cuentaP === 'salir') cuentaUI.salir(); else if(cb.dataset.cuentaP === 'borrar') cuentaUI.borrar(); else cuentaUI.abrir(cb.dataset.cuentaP); return; }
   if(e.target.closest('[data-probar-voz]')) probarVoz();
   const mb = e.target.closest('[data-masc]'); if(mb && mb.classList.contains('sin-adoptar')){ tono(SON.toque); companero.abrir({ adoptar: mb.dataset.masc }); return; }
   if(mb){ ajustes.mascota = mb.dataset.masc; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); pintarPlan.saludo = false; try{ sessionStorage.removeItem('carymo.saludo'); }catch{} if(conAcceso()) sala({ accion: 'mascota', personaje: mb.dataset.masc }).catch(() => {}); }
@@ -1891,7 +1892,10 @@ if(conAcceso()){ amigos.arrancar(); setTimeout(() => { if(vista === 'plan' && !$
 cuentaUI = iniciarCuenta({ hoja, cerrarHoja, esc, ico, brindis, tono, SON, $, perfil: () => perfil, escolar: () => ajustes.escolar,
   alEscolar: (k) => { ajustes.escolar = k; ajustes.nivel = NIVEL_DE_ESCOLAR[k] || 'prepa'; guarda.poner('est.ajustes', ajustes); },
   alEntrar: (yo) => { $('#cajaLlave')?.remove(); try{ const pend = sessionStorage.getItem('carymo.planPendiente'); if(pend){ sessionStorage.removeItem('carymo.planPendiente'); setTimeout(() => anadirCurso(pend), 900); } }catch{} if(yo && yo.nombre && (!perfil.nombre || perfil.nombre === 'Tú')){ perfil.nombre = yo.nombre; guarda.poner('est.perfil', perfil); sala({ accion: 'perfil', nombre: yo.nombre }).catch(() => {}); } sincronizar(); amigos.arrancar(); pintar(); },
-  alSalir: () => { pintar(); pintarFaltaLlave(); } });
+  alSalir: () => { pintar(); pintarFaltaLlave(); },
+  /* borrar la cuenta: primero el avance en el servidor; luego se limpia este teléfono y se empieza de cero */
+  borrarDatos: async () => { const r = await sala({ accion: 'borrarTodo' }); if(!r || !r.borrado) throw new Error((r && r.error) || 'No se pudo borrar tu avance.'); },
+  alBorrar: () => { try{ for(const k of Object.keys(localStorage)) if(/^(est\.|carymo\.)/.test(k)) localStorage.removeItem(k); }catch{} location.reload(); } });
 apuntes = iniciarApuntes({ $, esc, ico, hoja, cerrarHoja, capa, cerrarCapa, brindis, tono, SON, nuevoId, planes: () => planes });
 sesionEst = iniciarSesionEstudio({ $, esc, ico, hoja, cerrarHoja, brindis, tono, SON, dice, avanceDe, colorDe: colorMateria, cuando: cuandoTexto,
   planes: () => planes, actual: () => actualId, ocupado: () => !!$('#capa'), alCambiar: () => { if(vista === 'plan') pintar(); },
@@ -1900,6 +1904,8 @@ companero = iniciarCompanero({ sala, capa, cerrarCapa, hoja, cerrarHoja, esc, ic
   perfil: () => perfil, ajustes: () => ajustes, activa: mascotaActiva, vestidoDe, confeti,
   elegir: (q) => { ajustes.mascota = q; guarda.poner('est.ajustes', ajustes); refrescarVestidos(); }, alCerrar: () => pintar() });
 companero.pintarPastilla();
+/* los widgets de la pantalla de inicio (sólo dentro de la app de las tiendas): mascota en su cuarto, racha y cómo está */
+const widget = iniciarWidget({ perfil: () => perfil, activa: mascotaActiva, hoy: hoyLocal, crearMascota });
 yo = iniciarYo({ esc, ico, $, tono, SON, crearMascota, perfil: () => perfil, ajustes: () => ajustes, planes: () => planes,
   cuantosApuntes: () => apuntes?.cuantos?.() || 0, pintarCubos: (el) => { if(el) el.innerHTML = $('#pCubos .pm-cubos')?.innerHTML || $('#pCubos')?.innerHTML || ''; },
   svgPersonaje: (p) => vestidor.svgPersonaje(p), personajeVivo, hoja, abrirVestidor: () => vestidor.abrir(), abrirCompanero: () => companero.abrir() });

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget chico: la mascota en su cuarto, la racha arriba y cómo se siente abajo -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/raiz" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@drawable/widget_fondo" android:clipToOutline="true">
+    <ImageView android:id="@+id/foto" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:scaleType="centerCrop" android:visibility="gone" android:contentDescription="Tu mascota en su cuarto" />
+    <LinearLayout android:id="@+id/pastillaRacha" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_gravity="top|start" android:layout_margin="8dp" android:orientation="horizontal" android:gravity="center_vertical"
+        android:paddingStart="6dp" android:paddingEnd="9dp" android:paddingTop="3dp" android:paddingBottom="3dp" android:background="@drawable/widget_pastilla">
+        <ImageView android:layout_width="16dp" android:layout_height="16dp" android:src="@drawable/widget_flama" android:contentDescription="Racha" />
+        <TextView android:id="@+id/racha" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="3dp"
+            android:text="0" android:textColor="#FFFFFF" android:textSize="15sp" android:textStyle="bold" />
+    </LinearLayout>
+    <TextView android:id="@+id/frase" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_gravity="bottom"
+        android:layout_margin="8dp" android:paddingStart="8dp" android:paddingEnd="8dp" android:paddingTop="4dp" android:paddingBottom="4dp"
+        android:background="@drawable/widget_frase" android:gravity="center" android:maxLines="2" android:ellipsize="end"
+        android:text="Abre CARYMO" android:textColor="#F3E8FF" android:textSize="12sp" />
+</FrameLayout>

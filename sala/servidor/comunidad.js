@@ -158,6 +158,29 @@ export async function manejar(q, pedido, { ahora = Date.now(), llaveOk = false }
       return json({ bien: true });
     }
 
+    /* ── borrar la cuenta (App Store y Play Store lo exigen dentro de la app, 14 nov): con la contraseña.
+       Se va la cuenta, sus sesiones, sus comentarios, reacciones, temas, a quién sigue y quién la sigue,
+       sus avisos, reportes y respaldo. ── */
+    case 'borrarCuenta': {
+      const r = pide(); if(r) return r;
+      if(pedido.method !== 'POST') return mal(405, 'Usa POST.');
+      if(!iguales(await derivar(String(d.clave || ''), yo.sal), yo.clave)) return mal(401, 'Esa no es tu contraseña.');
+      const u = yo.usuario;
+      for(const [sql, ...v] of [
+        ['DELETE FROM reacciones WHERE usuario = ? OR comentario IN (SELECT id FROM comentarios WHERE usuario = ?)', u, u],
+        ['DELETE FROM comentarios WHERE usuario = ?', u],
+        ['DELETE FROM temas WHERE usuario = ?', u],
+        ['DELETE FROM siguiendo WHERE quien = ? OR a = ?', u, u],
+        ['DELETE FROM avisos WHERE para = ? OR de = ?', u, u],
+        ['DELETE FROM reportes WHERE usuario = ?', u],
+        ['DELETE FROM ritmo WHERE usuario = ?', u],
+        ['DELETE FROM respaldos WHERE usuario = ?', u],
+        ['DELETE FROM sesiones WHERE usuario = ?', u],
+        ['DELETE FROM cuentas WHERE usuario = ?', u],
+      ]) q(sql, ...v);
+      return json({ bien: true, borrada: u });
+    }
+
     /* ── el respaldo del Estante (listas, notas, etiquetas, colecciones, historial): Carlos, 11 nov.
        Safari borra lo guardado tras días sin abrir y en otro teléfono no hay nada; con la cuenta se recupera.
        El servidor sólo guarda y devuelve: la mezcla la hace el teléfono (biblioteca.js · mezclar). ── */

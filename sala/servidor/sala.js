@@ -1827,6 +1827,12 @@ export class Sala {
       }
       if(!['estudio', 'ia-texto', 'ia-voz', 'banco-escuela'].includes(ruta)) return Response.json({ error: 'Eso no es de CARYMO.' }, { status: 403 });
       const vinculo = await this.ctx.storage.get(kVinculo);
+      /* «borrar mi cuenta» desde CARYMO: si ese usuario está VINCULADO a una cuenta de la sala (Carlos, Luis),
+         sólo se suelta el vínculo; el avance de la cuenta de siempre no se toca */
+      if(ruta === 'estudio' && vinculo && pedido.method === 'POST' && /"accion"\s*:\s*"borrarTodo"/.test(await pedido.clone().text().catch(() => ''))){
+        await this.ctx.storage.delete(kVinculo);
+        return Response.json({ bien: true, borrado: true, soloVinculo: true });
+      }
       /* nadie se queda con el avance de «carlos» por registrarse con ese nombre: los nombres de las
          cuentas de la sala se apartan (u_carlos) salvo que se vinculen con su llave */
       const deLaSala = new Set([...Object.values(this.llaves || {}), ...String(this.env.LLAVES || '').split(',').map((x) => x.split(':')[0].trim()).filter(Boolean)]);
