@@ -19,6 +19,7 @@ import { sacarJSON } from '../sala/json-ia.js';
 import { sonar, encender as encenderSonidos } from '../sala/sonidos/sonidos.js';
 import { llave, ponerLlave, llamar, SERVIDOR, SALA } from '../presentaciones/ia.js';
 import { CURSOS, MATERIAL, HECHOS, planDeCurso } from './academia.js';
+import { IDIOMAS, planDeIdioma } from './idiomas.js';
 import { crearVoz, todas as todasLasVoces, VOZ_DE_FABRICA, despertar } from '../sala/voces.js';
 import { alMuelle, muelleArriba } from './muelle.js';
 import { crearMascota, PERSONAJES, NOMBRE_PERSONAJE, configurarVestido, refrescarVestidos } from './mascota.js';
@@ -47,6 +48,19 @@ const $$ = (s, d = document) => [...d.querySelectorAll(s)];
 const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 /* «**así**» → negritas, sin dejar pasar ningún otro HTML */
 const negritas = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+/* idiomas: lo que va en negritas está en el otro idioma; se toca y se oye (voz del teléfono, sin internet) */
+const VOZ_IDIOMA = { 'Inglés': 'en-US', 'Francés': 'fr-FR', 'Portugués': 'pt-BR', 'Italiano': 'it-IT', 'Alemán': 'de-DE' };
+const conVoz = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, (_, w) => `<button class="decir" data-decir="${w}">${w}${ico('volume-2')}</button>`);
+function decirEn(texto, idioma, boton){
+  const lang = VOZ_IDIOMA[idioma]; if(!lang || !('speechSynthesis' in window)) return;
+  try{
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(texto); u.lang = lang; u.rate = .9;
+    const v = speechSynthesis.getVoices().find((x) => x.lang.replace('_', '-').startsWith(lang.slice(0, 2))); if(v) u.voice = v;
+    if(boton){ boton.classList.add('hablando'); u.onend = u.onerror = () => boton.classList.remove('hablando'); }
+    speechSynthesis.speak(u);
+  }catch{}
+}
 const guarda = { leer(k, d){ try{ return JSON.parse(localStorage.getItem(k)) ?? d; }catch{ return d; } }, poner(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} } };
 const nuevoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const espera = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -547,10 +561,12 @@ function pintarPlan(){
       <p>Dinos la materia, la fecha y qué temas vienen, o súbele foto a tus apuntes. Te armamos el camino hasta el día del examen.</p>
       <button class="bt fuerte ancho" id="bCrear">${ico('plus')} Crear mi plan</button>
       <button class="bt ancho" id="bAnadir" style="margin-top:12px">${ico('share-2')} Añadir curso con link o código</button>
+      <button class="bt ancho" id="bIdiomas" style="margin-top:12px">${ico('languages')} Idiomas</button>
       <button class="bt ancho" id="bJuegos" style="margin-top:12px">${ico('swords')} Juegos de mesa</button>
       <button class="bt ancho academia-bt" id="bAcademia" style="margin-top:12px">${ico('graduation-cap')} Academia Grupo Mazi</button></div>`;
     $('#bCrear').addEventListener('click', alta);
     $('#bJuegos').addEventListener('click', () => juegos.abrir());
+    $('#bIdiomas').addEventListener('click', abrirIdiomas);
     $('#bAcademia').addEventListener('click', abrirAcademia);
     $('#bAnadir').addEventListener('click', () => anadirCurso());
     { const m = mascotaEn($('#mascVacio'), { tam: 120 }); if(m) setTimeout(() => m.play('saluda', { decir: '¡Hola! ¿Qué estudiamos hoy?' }), 500); }
@@ -772,7 +788,7 @@ function contenidoDe(p, temaId){
   const t = temaDe(p, temaId);
   const u = p.unidades.find((x) => x.temas.some((y) => y.id === temaId));
   const pr = (async () => {
-    const nivel = p.academia ? 'academia' : nivelEstudio();
+    const nivel = p.academia ? 'academia' : p.idioma ? 'idioma' : nivelEstudio();
     let j = await deLaBiblioteca('leccion', p.materia, t.titulo, nivel, normalizarLeccion);
     if(!j){
       j = await ia({ sistema: sistemaLeccion(), tope: 7000, revisar: normalizarLeccion,
@@ -906,7 +922,7 @@ async function abrirLeccion(p, n){
         ${k === 0 ? `<p class="tema-hist">${esc(l.titulo || n.titulo)}</p>` : ''}
         <div class="aro-dib">${dibujoDe(t.icono, k)}</div>
         ${t.titulo ? `<h2>${esc(t.titulo)}</h2>` : ''}
-        <p class="txt-hist">${negritas(t.texto)}</p>
+        <p class="txt-hist">${p.idioma && t.tipo === 'idea' ? conVoz(t.texto) : negritas(t.texto)}</p>
         ${ultima ? `<div class="acciones-mini"><button data-gusta="1" aria-label="Me sirvió" aria-pressed="false">${ico('thumbs-up')}</button><button data-gusta="0" aria-label="No me sirvió" aria-pressed="false">${ico('thumbs-down')}</button><button data-copiar aria-label="Copiar la lección">${ico('copy')}</button><button data-pizarron aria-label="Que me lo expliquen en el pizarrón">${ico('presentation')}</button></div>` : ''}
       </article>
       <button class="zona-atras" data-atras aria-label="Idea anterior" ${k ? '' : 'hidden'}></button>
@@ -915,6 +931,7 @@ async function abrirLeccion(p, n){
   c.addEventListener('click', async (e) => {
     if(e.target.closest('[data-cerrar]')){ cerrarCapa(); pintar(); return; }
     if(e.target.closest('[data-atras]')){ if(k){ k--; tono(SON.voltear); pintarTarjeta(-1); } return; }
+    const dz = e.target.closest('[data-decir]'); if(dz){ decirEn(dz.dataset.decir, p.idioma, dz); return; }
     if(e.target.closest('[data-sig]') || (e.target.closest('.historia') && !e.target.closest('button') && k < tarjetas.length - 1)){ k++; tono(SON.voltear); pintarTarjeta(1); return; }
     const g = e.target.closest('[data-gusta]'); if(g){ $$('[data-gusta]', c).forEach((x) => x.setAttribute('aria-pressed', x === g)); const pp = plan(); pp.progreso[n.id] = { ...(pp.progreso[n.id] || {}), gusto: +g.dataset.gusta }; guardarPlan(pp); brindis('Gracias, eso nos ayuda a explicar mejor', '', 'sparkles'); return; }
     if(e.target.closest('[data-copiar]')){ try{ await navigator.clipboard.writeText([l.titulo, ...tarjetas.map((x) => (x.titulo ? x.titulo + ': ' : '') + x.texto.replace(/\*\*/g, ''))].filter(Boolean).join('\n\n')); brindis('Copiada', '', 'copy'); }catch{ brindis('No se pudo copiar', 'vino', 'x'); } return; }
@@ -1309,6 +1326,11 @@ function pizarraDe(p, n){
     if(!unidad) q.set('tema', `${n.titulo} (curso de Grupo Mazi para vendedores)`);
     q.set('contexto', `Es un curso interno de Grupo Mazi para sus vendedores. Usa SÓLO estos datos oficiales; si algo no está aquí, no lo inventes: ${HECHOS}`);
   }
+  else if(p.idioma){
+    /* idiomas: explica en español, con los ejemplos en el idioma y cómo se pronuncian */
+    if(!unidad) q.set('tema', `${n.titulo} (${p.idioma} nivel A1, para hispanohablantes)`);
+    q.set('contexto', `Clase de ${p.idioma} para alguien que habla español y va empezando (nivel A1). Explica en español; escribe los ejemplos en ${p.idioma} con su traducción y cómo se pronuncian a la mexicana entre paréntesis. Frases cortas y de la vida diaria.`);
+  }
   else if(p.unidades){
     const t = n.tema && temaDe(p, n.tema), ns = todosLosNodos(p);
     const vistos = ns.filter((x) => x.tipo === 'quiz' && hecho(p, x)).map((x) => x.titulo).slice(-8);
@@ -1389,6 +1411,28 @@ function abrirAcademia(){
   });
 }
 
+function abrirIdiomas(){
+  const c = capa('academia');
+  c.innerHTML = `<div class="arriba"><button class="bt redondo fantasma" data-cerrar aria-label="Cerrar">${ico('x')}</button><div style="flex:1"></div></div>
+    <div class="cuerpo entra"><div class="acad-cab"><div class="marca-carymo"><b>IDIOMAS</b><span>CARYMO</span></div>
+      <h1>Aprende otro idioma</h1><p>Un ratito al día: palabras, frases y ejercicios.</p></div>
+      <div class="acad-cursos">${IDIOMAS.map((k, i) => { const p = planes['p-' + k.id], a = p ? avanceDe(p) : null, nTemas = k.unidades.reduce((x, u) => x + u.temas.length, 0);
+        return `<button class="acad-curso entra" style="--c:${k.color};animation-delay:${i * 70}ms" data-curso="${k.id}">
+          <span class="acad-ico">${ico(k.icono)}</span><span class="acad-txt"><small>${esc(k.idioma)} · ${esc(k.nivel)} · ${nTemas} lecciones</small><b>${esc(k.titulo)}</b><em>${esc(k.frase)}</em>
+          <span class="acad-barra"><i style="width:${a ? Math.max(4, a.pct) : 0}%"></i></span></span>
+          <span class="acad-ir">${a ? (a.pct >= 100 ? ico('circle-check') : a.pct + ' %') : 'Empezar'}</span></button>`; }).join('')}</div>
+      <p class="acad-pie">Pronto: portugués, italiano y más.</p></div>`;
+  c.addEventListener('click', (e) => {
+    if(e.target.closest('[data-cerrar]')){ cerrarCapa(); pintar(); return; }
+    const b = e.target.closest('[data-curso]'); if(!b) return;
+    const k = IDIOMAS.find((x) => x.id === b.dataset.curso); if(!k) return;
+    tono(SON.toque);
+    const id = 'p-' + k.id;
+    if(!planes[id]){ guardarPlan(planDeIdioma(k, armarCamino)); brindis(`Empezaste «${k.titulo}»`, 'vino', 'languages'); }
+    actualId = id; guardarLocal(); cerrarCapa(); vista = 'plan'; pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 });
+  });
+}
+
 /* ══ 11 · CELEBRACIONES ══════════════════════════════════════════════════ */
 function confeti(){
   if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -1448,9 +1492,10 @@ $('#bPlanes').addEventListener('click', () => {
   const lista = Object.values(planes).sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
   const h = hoja('Tus planes', `<div class="menu">${lista.map((p) => `<button data-plan="${esc(p.id)}">${ico('notebook-pen')}<span>${esc(p.titulo)}<br><small style="color:var(--suave);font-weight:600">${esc(cuandoTexto(p.fecha))} · ${avanceDe(p).pct} %</small></span>${p.id === actualId ? `<span class="sel">${ico('circle-check')}</span>` : ''}</button>`).join('')}</div>
     <button class="bt blanco ancho" style="margin-top:12px" data-plan="nuevo">${ico('plus')}Crear un nuevo plan</button>
+    <button class="bt ancho" style="margin-top:10px" data-plan="idiomas">${ico('languages')}Idiomas</button>
     <button class="bt ancho" style="margin-top:10px" data-plan="juegos">${ico('swords')}Juegos de mesa</button>
     <button class="bt ancho" style="margin-top:10px" data-plan="academia">${ico('graduation-cap')}Academia Grupo Mazi</button>`);
-  h.addEventListener('click', (e) => { const b = e.target.closest('[data-plan]'); if(!b) return; cerrarHoja(); if(b.dataset.plan === 'nuevo') alta(); else if(b.dataset.plan === 'academia') abrirAcademia(); else if(b.dataset.plan === 'juegos') juegos.abrir(); else { actualId = b.dataset.plan; guardarLocal(); pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); } });
+  h.addEventListener('click', (e) => { const b = e.target.closest('[data-plan]'); if(!b) return; cerrarHoja(); if(b.dataset.plan === 'nuevo') alta(); else if(b.dataset.plan === 'academia') abrirAcademia(); else if(b.dataset.plan === 'juegos') juegos.abrir(); else if(b.dataset.plan === 'idiomas') abrirIdiomas(); else { actualId = b.dataset.plan; guardarLocal(); pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); } });
 });
 function editarPlan(p){
   const h = hoja('Editar plan', `<label class="seccion-t" for="eNom">Nombre</label><input class="campo" id="eNom" value="${esc(p.titulo)}"><label class="seccion-t" for="eFecha" style="display:block">Fecha del examen</label><input type="date" class="campo" id="eFecha" value="${esc(p.fecha)}"><button class="bt fuerte ancho" style="margin-top:16px" id="eGuardar">Guardar</button>`);
@@ -1948,4 +1993,4 @@ $('#pCubos').addEventListener('click', () => companero.abrir());
     history.back();
   });
 })();
-window.__estudio = { prueba: { brindis, dice, comboVFX, reaccion }, hoja, cerrarHoja, ir: (v) => { vista = v; pintar(); }, yo: () => yo, vestidor: () => vestidor, avisos: () => avisos, companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };
+window.__estudio = { prueba: { brindis, dice, comboVFX, reaccion, nodo: abrirNodo }, hoja, cerrarHoja, ir: (v) => { vista = v; pintar(); }, yo: () => yo, vestidor: () => vestidor, avisos: () => avisos, companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };
