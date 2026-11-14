@@ -264,6 +264,9 @@ svg.i{width:20px; height:20px; flex:none}
   border:0; border-radius:18px; background:var(--tinta); color:var(--blanco); cursor:pointer; box-shadow:0 16px 40px -14px rgba(0,0,0,.55);
   transform:translateY(140%); transition:transform .32s cubic-bezier(.2,.8,.2,1)}
 .flota.ver{transform:none}
+/* sin platillos, la barra se ESCONDE de verdad: en el iPhone el «translate» no la sacaba de la pantalla y se asomaba
+   aplastada al fondo con «0 platillos» (capturas de Carlos, 14 nov) */
+.flota:not(.ver){visibility:hidden; pointer-events:none; transition:transform .32s cubic-bezier(.2,.8,.2,1), visibility 0s .32s}
 .flota__bola{display:grid; place-items:center; min-width:38px; height:38px; padding:0 8px; border-radius:12px; background:var(--amarillo); color:var(--tinta); font:600 16px/1 var(--mono)}
 .flota__txt{flex:1; min-width:0; text-align:left; line-height:1.2}
 .flota__bola, .flota__ir{flex:none}
@@ -302,7 +305,9 @@ dialog[open]{animation:sube .26s cubic-bezier(.2,.8,.2,1)}
 .hoja__cab{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 16px 12px 20px; border-bottom:1px solid var(--linea)}
 .hoja__cab h2{margin:0; font-weight:900; font-size:22px; letter-spacing:-.02em; font-stretch:110%}
 .cerrar{display:grid; place-items:center; width:44px; height:44px; border:0; border-radius:50%; background:var(--papel); cursor:pointer}
-.hoja__cuerpo{padding:16px 20px; overflow:auto; flex:1 1 auto; min-height:0; overscroll-behavior:contain; -webkit-overflow-scrolling:touch}
+/* el alto del cuerpo NO se deja al reparto de flex: Safari le daba CERO (la hoja salía con cabeza y botón y nada en medio).
+   Toma su alto natural y el tope (--cuerpo-max) lo calcula el JS con lo que se ve, menos la cabeza y el pie. */
+.hoja__cuerpo{padding:16px 20px; overflow:auto; flex:none; max-height:var(--cuerpo-max, 60svh); overscroll-behavior:contain; -webkit-overflow-scrolling:touch}
 .hoja__pie{padding:12px 20px calc(14px + env(safe-area-inset-bottom)); border-top:1px solid var(--linea); background:var(--blanco)}
 .ficha__foto{margin:-16px -20px 14px; aspect-ratio:16/10; background:var(--papel2)}
 .ficha__foto img{width:100%; height:100%; object-fit:cover}
@@ -768,7 +773,17 @@ function medirVista(){
 medirVista();
 if(window.visualViewport){ visualViewport.addEventListener("resize", medirVista); visualViewport.addEventListener("scroll", medirVista); }
 addEventListener("resize", medirVista);
-function abrir(d){ medirVista(); if(typeof d.showModal === "function") d.showModal(); else d.setAttribute("open",""); }
+/* el tope del cuerpo de cada hoja abierta: el 92 % de lo visible (máx. 860) menos su cabeza y su pie */
+function topeHoja(d){
+  var c = d.querySelector(".hoja__cuerpo"); if(!c) return;
+  var v = window.visualViewport ? visualViewport.height : innerHeight, total = Math.min(v * 0.92, 860), resto = 0;
+  [].forEach.call(d.children, function(h){ if(h !== c && !h.hidden) resto += h.getBoundingClientRect().height; });
+  c.style.setProperty("--cuerpo-max", Math.max(120, Math.floor(total - resto)) + "px");
+}
+function topeHojas(){ $$("dialog[open]").forEach(topeHoja); }
+if(window.visualViewport) visualViewport.addEventListener("resize", topeHojas);
+addEventListener("resize", topeHojas);
+function abrir(d){ medirVista(); if(typeof d.showModal === "function") d.showModal(); else d.setAttribute("open",""); topeHoja(d); requestAnimationFrame(function(){ topeHoja(d); }); }
 $$("dialog").forEach(function(d){ $$("[data-cerrar]", d).forEach(function(b){ b.addEventListener("click", function(){ d.close(); }); });
   d.addEventListener("click", function(e){ if(e.target === d) d.close(); }); });
 
@@ -831,7 +846,7 @@ function pintar(){
   $("#total").textContent = pesos(t);
   $("#hojaResumen").replaceChildren(resumen(false));
   $("#ladoCuerpo").replaceChildren(resumen(true));
-  $("#datos").hidden = n === 0; $("#pedidoPie").hidden = n === 0;
+  $("#datos").hidden = n === 0; $("#pedidoPie").hidden = n === 0; topeHojas();
   /* el «+» de cada platillo dice cuántos lleva */
   var por = {}; ped.renglones.forEach(function(r){ por[r.n] = (por[r.n] || 0) + r.cant; });
   todos.forEach(function(p){ var k = por[p.n] || 0; p.mas.classList.toggle("tiene", k > 0); $(".en", p.mas).textContent = k ? String(k) : "";

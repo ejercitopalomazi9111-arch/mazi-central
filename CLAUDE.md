@@ -601,6 +601,8 @@ dependemos.
 
    | un escaneo con el papel blanco parejo y la tinta oscura ya se lee | el LÁPIZ quedaba gris claro y de un pixel: limpio y aun así ilegible, sobre todo con la hoja encogida a márgenes de 2.54 cm | Carlos: «el texto no es legible» con las tareas de física ya entregadas. El trazo se encuentra con un sombrero negro (cerrar con 11 px y restar: sólo lo delgado y oscuro), se engorda un pixel y se oscurece; las hojas van con margen de 1.27 cm (`limpiar` en `reportes/tarea/escaner.js`) |
 
+   | una hoja `<dialog>` en columna (`flex`) con `max-height` y el cuerpo en `flex:1` reparte bien el alto | en el iPhone el cuerpo se quedaba a su alto natural y Safari **encogía el pie**: el botón de WhatsApp aplastado y el pedido cortado; en Chromium se ve perfecto | lo reportó el cliente de District Roll, que ya había comprado. Cabeza y pie con `flex:none`, cuerpo con `min-height:0`, alto con `visualViewport` (`--vv`, `--vvb`) y la página quieta con `html:has(dialog[open]){overflow:hidden}`. Aquí no hay WebKit: lo de Safari se prueba en el teléfono |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---
