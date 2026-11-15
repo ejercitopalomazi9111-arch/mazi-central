@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Clínica ABC · Packet Tracer</title>
+<style>
+/* APA 7, trabajo de estudiante: márgenes de 2.54 cm, Calibri 11 (Carlito es la misma métrica), interlineado doble,
+   sangría de 1.27 cm, texto alineado a la izquierda, número de página arriba a la derecha (lo pone el encabezado). */
+@page{ size:Letter; margin:2.54cm }
+*{ box-sizing:border-box }
+html{ -webkit-print-color-adjust:exact; print-color-adjust:exact }
+body{ margin:0; font:400 11pt/2 Carlito, Calibri, sans-serif; color:#000; background:#fff }
+p{ margin:0; text-indent:1.27cm; text-align:left; orphans:2; widows:2 }
+p.sin{ text-indent:0 }
+h1{ font-size:11pt; font-weight:700; text-align:center; margin:0; line-height:2 }
+h2{ font-size:11pt; font-weight:700; text-align:left; margin:0; line-height:2; break-after:avoid }
+h3{ font-size:11pt; font-weight:700; font-style:italic; text-align:left; margin:0; line-height:2; break-after:avoid }
+.titulo-doc{ text-align:center; font-weight:700; margin:0 0 0; line-height:2 }
+.nueva{ break-before:page }
+ul, ol{ margin:0; padding-left:1.27cm }
+li{ line-height:2 }
+/* tablas y figuras al estilo APA: número en negritas, título en cursiva, sólo líneas horizontales */
+.tabla, .figura{ margin:12pt 0 12pt; break-inside:avoid }
+.tabla .num, .figura .num{ font-weight:700; line-height:2 }
+.tabla .tit, .figura .tit{ font-style:italic; line-height:2; margin-bottom:4pt }
+table{ width:100%; border-collapse:collapse; font-size:10pt; line-height:1.3 }
+th{ border-top:1pt solid #000; border-bottom:0.75pt solid #000; text-align:left; padding:3pt 5pt; font-weight:700 }
+td{ padding:3pt 5pt; vertical-align:top }
+tbody tr:last-child td{ border-bottom:1pt solid #000 }
+.nota{ font-size:10pt; line-height:1.4; margin-top:4pt }
+.nota i{ font-style:italic }
+.figura svg{ width:100%; height:auto; display:block; border:0.5pt solid #D1D5DB }
+/* comandos: letra monoespaciada a renglón sencillo (APA permite sencillo en código y tablas) */
+pre{ font:400 9pt/1.35 "JetBrains Mono", "DejaVu Sans Mono", monospace; background:#F3F4F6; border:0.5pt solid #D1D5DB; padding:6pt 8pt; margin:6pt 0 10pt; white-space:pre-wrap; break-inside:auto }
+pre .c{ color:#4B5563 }
+code{ font:400 9.5pt "JetBrains Mono", monospace }
+.paso{ font-weight:700; line-height:2 }
+.captura{ border:1pt dashed #6B7280; height:4.2cm; display:flex; align-items:center; justify-content:center; color:#6B7280; font-size:10pt; font-style:italic; margin:4pt 0 2pt; break-inside:avoid; line-height:1.3; text-align:center; padding:0 1cm }
+.refs p{ padding-left:1.27cm; text-indent:-1.27cm; overflow-wrap:anywhere }
+.refs a{ color:#000; text-decoration:none }
+
+/* ── portada institucional (Carlos, 14 nov) ── */
+.portada{ height:22.8cm; position:relative; text-align:center; line-height:1.4 }
+.portada .marco{ position:absolute; inset:-0.6cm; border:1.2pt solid #1F2937 }
+.portada img{ width:4.2cm; height:4.2cm; margin-top:0.6cm }
+.portada .uni{ font-weight:700; font-size:15pt; letter-spacing:.03em; margin-top:0.4cm; text-transform:uppercase }
+.portada .lin{ margin-top:0.25cm; font-size:11pt }
+.portada .lin i{ font-style:normal; display:inline-block; min-width:7cm; border-bottom:0.7pt solid #6B7280 }
+.portada .tt{ margin-top:1.8cm; font-weight:700; font-size:16pt; line-height:1.3; padding:0 1cm }
+.portada .st{ margin-top:0.35cm; font-size:11.5pt; color:#374151 }
+.portada .datos{ margin:1.7cm auto 0; width:12.5cm; text-align:left }
+.portada .fila{ display:grid; grid-template-columns:4cm 1fr; align-items:end; margin-bottom:0.42cm }
+.portada .fila span{ font-weight:700 }
+.portada .fila b{ font-weight:400; border-bottom:0.7pt solid #6B7280; min-height:0.55cm; padding-bottom:1pt }
+.portada .lugar{ position:absolute; left:0; right:0; bottom:0.3cm }
+</style></head>
+<body>
+
+<!-- ═════════ PORTADA ═════════ -->
+<section class="portada">
+  <img src="logo-uteq-opaco.png" alt="Logotipo de la Universidad Tecnológica de Querétaro">
+  <div class="uni">Universidad Tecnológica de Querétaro</div>
+  <div class="lin">Carrera: <i>&nbsp;</i></div>
+  <div class="lin">Asignatura: <i>&nbsp;</i></div>
+  <div class="tt">Diseño e Implementación de la Red de la Clínica ABC en Cisco Packet Tracer</div>
+  <div class="st">Práctica de diseño de red desde cero: VLAN, enrutamiento, DHCP, NAT y seguridad</div>
+  <div class="datos">
+    <div class="fila"><span>Estudiante:</span><b></b></div>
+    <div class="fila"><span>Matrícula:</span><b></b></div>
+    <div class="fila"><span>Grupo:</span><b></b></div>
+    <div class="fila"><span>Docente:</span><b></b></div>
+    <div class="fila"><span>Fecha de entrega:</span><b></b></div>
+  </div>
+  <div class="lugar">Santiago de Querétaro, Qro.</div>
+</section>
+
+<!-- ═════════ CUERPO ═════════ -->
+<section class="nueva">
+<p class="titulo-doc">Diseño e Implementación de la Red de la Clínica ABC en Cisco Packet Tracer</p>
+<h1>Introducción</h1>
+<p>La clínica ABC abrirá una nueva sede y no cuenta con infraestructura de red, por lo que se diseñó desde cero una red de área local (LAN) que conecta las cuatro áreas de trabajo, da acceso a Internet y protege la información de los pacientes. El diseño se implementó y comprobó en Cisco Packet Tracer, el simulador de redes de Cisco Networking Academy (Cisco Networking Academy, s. f.-b).</p>
+<p>El documento presenta el escenario, el diseño propuesto con su direccionamiento, la justificación de cada dispositivo en función de un presupuesto limitado, la configuración paso a paso con los comandos de Cisco IOS utilizados y las pruebas que demuestran que la red cumple los requisitos de confiabilidad, seguridad, acceso a Internet y escalabilidad.</p>
+
+<h1>Planteamiento del Escenario</h1>
+<p>La nueva sede tiene dos plantas. En la planta baja se ubican recepción y administración, y los consultorios; en la planta alta, el laboratorio clínico y el área de dirección y sistemas, donde se encuentra el servidor de expedientes. La Tabla 1 resume los equipos que deben conectarse.</p>
+<div class="tabla"><div class="num">Tabla 1</div><div class="tit">Equipos por área de la Clínica ABC</div>
+<table><thead><tr><th>Área</th><th>Planta</th><th>Equipos</th></tr></thead><tbody>
+<tr><td>Recepción y administración</td><td>Baja</td><td>6 PC, 1 impresora</td></tr>
+<tr><td>Consultorios</td><td>Baja</td><td>8 PC, 2 laptops</td></tr>
+<tr><td>Laboratorio clínico</td><td>Alta</td><td>5 PC, 1 impresora de red</td></tr>
+<tr><td>Dirección y sistemas</td><td>Alta</td><td>3 PC, 1 servidor de expedientes</td></tr>
+</tbody></table></div>
+<p>Los requisitos establecidos son cuatro: (a) la red debe ser confiable porque maneja información delicada de pacientes, (b) debe tener acceso a Internet mediante un router, (c) debe poder crecer en el futuro sin rediseñarse por completo y (d) el presupuesto es limitado, por lo que cada dispositivo debe justificarse.</p>
+
+<h1>Diseño de la Red</h1>
+<h2>Topología</h2>
+<p>Se eligió una topología en estrella extendida: cada planta tiene su propio switch, los dos switches se unen entre sí con dos cables agrupados en un solo enlace lógico (EtherChannel) y el switch de la planta alta se conecta al router, que comunica las áreas entre sí y con Internet (Figura 1). La estrella permite que la falla de un cable afecte sólo a un equipo y facilita agregar puestos nuevos (Tanenbaum y Wetherall, 2012).</p>
+<div class="figura"><div class="num">Figura 1</div><div class="tit">Topología de la red de la Clínica ABC en Packet Tracer</div>{{TOPOLOGIA}}
+<div class="nota"><i>Nota.</i> Las líneas dobles representan el EtherChannel entre plantas; el recuadro punteado es la simulación del proveedor de Internet que pide el desafío.</div></div>
+
+<h2>Segmentación por VLAN y Direccionamiento IP</h2>
+<p>Cada área se separa en su propia red virtual (VLAN, norma IEEE 802.1Q), de modo que el tráfico de un área no llega a las demás si el router no lo permite (IEEE, 2022). El servidor de expedientes tiene una VLAN exclusiva y los switches se administran desde otra. Se usan direcciones privadas del bloque 192.168.0.0/16, reservadas para redes internas por el RFC 1918 (Rekhter et al., 1996), con una red /24 por VLAN (Tabla 2).</p>
+<div class="tabla"><div class="num">Tabla 2</div><div class="tit">Plan de VLAN y direccionamiento IPv4</div>
+<table><thead><tr><th>VLAN</th><th>Nombre</th><th>Red</th><th>Puerta de enlace</th><th>Asignación</th></tr></thead><tbody>
+<tr><td>10</td><td>RECEPCION</td><td>192.168.10.0/24</td><td>192.168.10.1</td><td>DHCP desde .11; impresora fija .5</td></tr>
+<tr><td>20</td><td>CONSULTORIOS</td><td>192.168.20.0/24</td><td>192.168.20.1</td><td>DHCP desde .11 (PC y laptops)</td></tr>
+<tr><td>30</td><td>LABORATORIO</td><td>192.168.30.0/24</td><td>192.168.30.1</td><td>DHCP desde .11; impresora fija .5</td></tr>
+<tr><td>40</td><td>DIRECCION</td><td>192.168.40.0/24</td><td>192.168.40.1</td><td>DHCP desde .11</td></tr>
+<tr><td>50</td><td>SERVIDORES</td><td>192.168.50.0/24</td><td>192.168.50.1</td><td>Servidor fijo 192.168.50.10</td></tr>
+<tr><td>99</td><td>GESTION</td><td>192.168.99.0/24</td><td>192.168.99.1</td><td>SW-PA .2 y SW-PB .3 (fijas)</td></tr>
+<tr><td>999</td><td>NATIVA</td><td colspan="3">VLAN nativa de los troncales, sin equipos (medida de seguridad)</td></tr>
+</tbody></table>
+<div class="nota"><i>Nota.</i> El enlace con el proveedor usa 200.0.0.0/30 (R-CLINICA 200.0.0.2, ISP 200.0.0.1) y el servidor que simula Internet usa 8.8.8.8/24.</div></div>
+
+<h2>Asignación de Puertos</h2>
+<div class="tabla"><div class="num">Tabla 3</div><div class="tit">Conexiones de los switches y del router</div>
+<table><thead><tr><th>Equipo</th><th>Puerto</th><th>Se conecta a</th><th>VLAN / tipo</th><th>Cable</th></tr></thead><tbody>
+<tr><td>SW-PB</td><td>Fa0/1 – Fa0/6</td><td>PC de recepción</td><td>10</td><td>Directo</td></tr>
+<tr><td>SW-PB</td><td>Fa0/7</td><td>Impresora de recepción (IMP-REC)</td><td>10</td><td>Directo</td></tr>
+<tr><td>SW-PB</td><td>Fa0/8 – Fa0/15</td><td>PC de consultorios</td><td>20</td><td>Directo</td></tr>
+<tr><td>SW-PB</td><td>Fa0/16</td><td>Punto de acceso (Port 0)</td><td>20</td><td>Directo</td></tr>
+<tr><td>SW-PB ↔ SW-PA</td><td>Fa0/23 – Fa0/24</td><td>Switch de la otra planta</td><td>Troncal (EtherChannel)</td><td>Cruzado ×2</td></tr>
+<tr><td>SW-PA</td><td>Fa0/1 – Fa0/5</td><td>PC de laboratorio</td><td>30</td><td>Directo</td></tr>
+<tr><td>SW-PA</td><td>Fa0/6</td><td>Impresora de laboratorio (IMP-LAB)</td><td>30</td><td>Directo</td></tr>
+<tr><td>SW-PA</td><td>Fa0/7 – Fa0/9</td><td>PC de dirección</td><td>40</td><td>Directo</td></tr>
+<tr><td>SW-PA</td><td>Fa0/10</td><td>Servidor de expedientes (SRV-EXP)</td><td>50</td><td>Directo</td></tr>
+<tr><td>SW-PA</td><td>Gi0/1</td><td>R-CLINICA G0/1</td><td>Troncal 802.1Q</td><td>Directo</td></tr>
+<tr><td>R-CLINICA</td><td>G0/0</td><td>ISP G0/0</td><td>Enlace a Internet</td><td>Cruzado</td></tr>
+<tr><td>ISP</td><td>G0/1</td><td>SRV-INTERNET</td><td>Simulación de Internet</td><td>Directo</td></tr>
+</tbody></table>
+<div class="nota"><i>Nota.</i> SW-PB usa 18 de sus 24 puertos y SW-PA 13; los 17 puertos restantes quedan apagados y disponibles para crecer.</div></div>
+
+<h1>Justificación de los Dispositivos</h1>
+<p>Con un presupuesto limitado se buscó el menor número de equipos que cumpliera todos los requisitos. La Tabla 4 justifica cada uno.</p>
+<div class="tabla"><div class="num">Tabla 4</div><div class="tit">Dispositivos seleccionados y su justificación</div>
+<table><thead><tr><th style="width:24%">Dispositivo (modelo en Packet Tracer)</th><th style="width:7%">Cant.</th><th>Justificación</th></tr></thead><tbody>
+<tr><td>Router Cisco 2911 (R-CLINICA)</td><td>1</td><td>Un solo equipo enruta entre las VLAN, asigna direcciones por DHCP, da salida a Internet con NAT y filtra el acceso al servidor con una lista de control de acceso. Evita comprar un switch multicapa, más caro (Cisco Systems, s. f.-d).</td></tr>
+<tr><td>Switch Cisco 2960-24TT (SW-PA, SW-PB)</td><td>2</td><td>Uno por planta: así no se tiende cable horizontal entre pisos para cada equipo. Son administrables (VLAN, troncales, EtherChannel, seguridad de puertos) y sus 24 puertos cubren las necesidades actuales con margen (Cisco Systems, s. f.-a).</td></tr>
+<tr><td>Punto de acceso (AccessPoint-PT)</td><td>1</td><td>Sólo dos laptops necesitan movilidad en consultorios; un punto de acceso cuesta menos que cablear y da cobertura inalámbrica cifrada (Cisco Systems, s. f.-e).</td></tr>
+<tr><td>Cable UTP (directo y cruzado)</td><td>—</td><td>Medio estándar y económico para las distancias de una clínica de dos plantas.</td></tr>
+<tr><td>Router ISP y servidor Internet</td><td>1 + 1</td><td>No los compra la clínica: sólo simulan al proveedor y un sitio web para demostrar el acceso a Internet (desafío).</td></tr>
+</tbody></table></div>
+
+<h1>Cumplimiento de los Requisitos</h1>
+<p><b>Confiabilidad.</b> Los switches se unen con dos cables agrupados mediante LACP (IEEE 802.1AX): si uno se daña, el otro mantiene la comunicación sin interrupción (IEEE, 2020; Cisco Systems, s. f.-c). Rapid Spanning Tree evita bucles y se recupera en segundos, y el servidor y las impresoras usan direcciones fijas para que siempre se encuentren en el mismo lugar.</p>
+<p><b>Protección de la información de pacientes.</b> El servidor de expedientes está en una VLAN propia y una lista de control de acceso en el router sólo permite llegar a él desde consultorios, laboratorio y dirección; recepción no tiene acceso. Además, los puertos de recepción usan seguridad de puerto, los puertos sin uso están apagados, la VLAN nativa no tiene equipos y la administración remota del router se hace sólo por SSH.</p>
+<p><b>Acceso a Internet.</b> El router traduce todas las direcciones privadas a su única dirección pública mediante NAT con sobrecarga (Srisuresh y Egevang, 2001) y envía el tráfico externo al proveedor con una ruta predeterminada.</p>
+<p><b>Escalabilidad.</b> Cada área dispone de 254 direcciones, cada switch tiene puertos libres y, para agregar un área o una planta, basta con crear una VLAN, una subinterfaz en el router y conectar otro switch por troncal, sin modificar lo existente.</p>
+
+<h1>Configuración Paso a Paso</h1>
+<p>Los comandos se escriben en la pestaña CLI de cada equipo de Packet Tracer. Las líneas que inician con <code>!</code> son comentarios. La contraseña de ejemplo es <code>Clinica2026</code>.</p>
+
+<h2>Paso 1: Colocar los Equipos y Cablear</h2>
+<p>Se colocan los equipos de la Tabla 1 con los nombres de la Figura 1 y se conectan según la Tabla 3: cable de cobre directo entre equipos finales y switches y entre switch y router; cable de cobre cruzado entre los dos switches y entre los dos routers.</p>
+
+<h2>Paso 2: Switch de la Planta Baja (SW-PB)</h2>
+<pre>enable
+configure terminal
+hostname SW-PB
+enable secret Clinica2026
+service password-encryption
+<span class="c">! VLAN de la clínica (se crean iguales en los dos switches)</span>
+vlan 10
+ name RECEPCION
+vlan 20
+ name CONSULTORIOS
+vlan 30
+ name LABORATORIO
+vlan 40
+ name DIRECCION
+vlan 50
+ name SERVIDORES
+vlan 99
+ name GESTION
+vlan 999
+ name NATIVA
+exit
+spanning-tree mode rapid-pvst
+<span class="c">! Recepción: PC e impresora, con seguridad de puerto</span>
+interface range fa0/1 - 7
+ switchport mode access
+ switchport access vlan 10
+ switchport port-security
+ switchport port-security maximum 2
+ switchport port-security mac-address sticky
+ spanning-tree portfast
+exit
+<span class="c">! Consultorios: PC y punto de acceso</span>
+interface range fa0/8 - 16
+ switchport mode access
+ switchport access vlan 20
+ spanning-tree portfast
+exit
+<span class="c">! EtherChannel hacia la planta alta (dos cables, un enlace lógico)</span>
+interface range fa0/23 - 24
+ switchport mode trunk
+ switchport trunk native vlan 999
+ switchport trunk allowed vlan 10,20,30,40,50,99
+ channel-group 1 mode active
+exit
+interface port-channel 1
+ switchport mode trunk
+ switchport trunk native vlan 999
+ switchport trunk allowed vlan 10,20,30,40,50,99
+exit
+<span class="c">! Dirección de administración del switch</span>
+interface vlan 99
+ ip address 192.168.99.3 255.255.255.0
+ no shutdown
+exit
+ip default-gateway 192.168.99.1
+<span class="c">! Puertos sin uso: apagados</span>
+interface range fa0/17 - 22 , gi0/1 - 2
+ shutdown
+exit
+end
+copy running-config startup-config</pre>
+<p><code>switchport mode access</code> y <code>switchport access vlan</code> asignan cada puerto a su área; <code>port-security</code> registra las direcciones MAC permitidas; <code>spanning-tree portfast</code> conecta los equipos finales al instante; <code>switchport mode trunk</code> permite que un cable transporte varias VLAN y <code>channel-group 1 mode active</code> agrupa los dos cables con LACP (Cisco Systems, s. f.-g).</p>
+
+<h2>Paso 3: Switch de la Planta Alta (SW-PA)</h2>
+<pre>enable
+configure terminal
+hostname SW-PA
+enable secret Clinica2026
+service password-encryption
+<span class="c">! Crear las mismas VLAN que en SW-PB (10, 20, 30, 40, 50, 99 y 999 con sus nombres)</span>
+vlan 10
+ name RECEPCION
+vlan 20
+ name CONSULTORIOS
+vlan 30
+ name LABORATORIO
+vlan 40
+ name DIRECCION
+vlan 50
+ name SERVIDORES
+vlan 99
+ name GESTION
+vlan 999
+ name NATIVA
+exit
+spanning-tree mode rapid-pvst
+spanning-tree vlan 10,20,30,40,50,99 root primary
+interface range fa0/1 - 6
+ switchport mode access
+ switchport access vlan 30
+ spanning-tree portfast
+exit
+interface range fa0/7 - 9
+ switchport mode access
+ switchport access vlan 40
+ spanning-tree portfast
+exit
+interface fa0/10
+ switchport mode access
+ switchport access vlan 50
+ spanning-tree portfast
+exit
+interface range fa0/23 - 24
+ switchport mode trunk
+ switchport trunk native vlan 999
+ switchport trunk allowed vlan 10,20,30,40,50,99
+ channel-group 1 mode active
+exit
+interface port-channel 1
+ switchport mode trunk
+ switchport trunk native vlan 999
+ switchport trunk allowed vlan 10,20,30,40,50,99
+exit
+<span class="c">! Troncal hacia el router</span>
+interface gi0/1
+ switchport mode trunk
+ switchport trunk native vlan 999
+ switchport trunk allowed vlan 10,20,30,40,50,99
+exit
+interface vlan 99
+ ip address 192.168.99.2 255.255.255.0
+ no shutdown
+exit
+ip default-gateway 192.168.99.1
+interface range fa0/11 - 22 , gi0/2
+ shutdown
+exit
+end
+copy running-config startup-config</pre>
+<p><code>spanning-tree vlan … root primary</code> convierte a SW-PA en el puente raíz del árbol de expansión, lo adecuado porque es el switch conectado al router.</p>
+
+<h2>Paso 4: Router de la Clínica (R-CLINICA)</h2>
+<pre>enable
+configure terminal
+hostname R-CLINICA
+enable secret Clinica2026
+service password-encryption
+no ip domain-lookup
+banner motd #Acceso solo personal autorizado de Clinica ABC#
+<span class="c">! La interfaz física se enciende; cada VLAN lleva su subinterfaz</span>
+interface g0/1
+ no shutdown
+exit
+interface g0/1.10
+ encapsulation dot1Q 10
+ ip address 192.168.10.1 255.255.255.0
+ ip nat inside
+exit
+interface g0/1.20
+ encapsulation dot1Q 20
+ ip address 192.168.20.1 255.255.255.0
+ ip nat inside
+exit
+interface g0/1.30
+ encapsulation dot1Q 30
+ ip address 192.168.30.1 255.255.255.0
+ ip nat inside
+exit
+interface g0/1.40
+ encapsulation dot1Q 40
+ ip address 192.168.40.1 255.255.255.0
+ ip nat inside
+exit
+interface g0/1.50
+ encapsulation dot1Q 50
+ ip address 192.168.50.1 255.255.255.0
+ ip nat inside
+exit
+interface g0/1.99
+ encapsulation dot1Q 99
+ ip address 192.168.99.1 255.255.255.0
+exit
+<span class="c">! DHCP: se reservan las primeras 10 direcciones de cada red</span>
+ip dhcp excluded-address 192.168.10.1 192.168.10.10
+ip dhcp excluded-address 192.168.20.1 192.168.20.10
+ip dhcp excluded-address 192.168.30.1 192.168.30.10
+ip dhcp excluded-address 192.168.40.1 192.168.40.10
+ip dhcp pool RECEPCION
+ network 192.168.10.0 255.255.255.0
+ default-router 192.168.10.1
+ dns-server 8.8.8.8
+exit
+ip dhcp pool CONSULTORIOS
+ network 192.168.20.0 255.255.255.0
+ default-router 192.168.20.1
+ dns-server 8.8.8.8
+exit
+ip dhcp pool LABORATORIO
+ network 192.168.30.0 255.255.255.0
+ default-router 192.168.30.1
+ dns-server 8.8.8.8
+exit
+ip dhcp pool DIRECCION
+ network 192.168.40.0 255.255.255.0
+ default-router 192.168.40.1
+ dns-server 8.8.8.8
+exit
+<span class="c">! Protección de expedientes: sólo consultorios, laboratorio y dirección</span>
+ip access-list extended PROTEGE-EXPEDIENTES
+ permit ip 192.168.20.0 0.0.0.255 host 192.168.50.10
+ permit ip 192.168.30.0 0.0.0.255 host 192.168.50.10
+ permit ip 192.168.40.0 0.0.0.255 host 192.168.50.10
+ deny ip any host 192.168.50.10
+ permit ip any any
+exit
+interface g0/1.50
+ ip access-group PROTEGE-EXPEDIENTES out
+exit
+<span class="c">! Administración remota cifrada (SSH)</span>
+ip domain-name clinicaabc.local
+username admin secret Clinica2026
+crypto key generate rsa
+<span class="c">! (cuando pregunte el tamaño de la llave, escribir 1024)</span>
+ip ssh version 2
+line vty 0 4
+ login local
+ transport input ssh
+exit
+line console 0
+ password Clinica2026
+ login
+exit</pre>
+<p>Cada subinterfaz <code>g0/1.X</code> con <code>encapsulation dot1Q X</code> es la puerta de enlace de su VLAN, técnica conocida como <i>router-on-a-stick</i> (Cisco Networking Academy, s. f.-a). Los <i>pools</i> DHCP entregan dirección, puerta de enlace y DNS a los equipos (Cisco Systems, s. f.-f), y la lista de acceso aplicada en salida hacia la VLAN 50 decide quién llega al servidor.</p>
+
+<h2>Paso 5: Acceso a Internet (Desafío)</h2>
+<p class="sin paso">En R-CLINICA:</p>
+<pre>interface g0/0
+ ip address 200.0.0.2 255.255.255.252
+ ip nat outside
+ no shutdown
+exit
+access-list 1 permit 192.168.0.0 0.0.255.255
+ip nat inside source list 1 interface g0/0 overload
+ip route 0.0.0.0 0.0.0.0 200.0.0.1
+end
+copy running-config startup-config</pre>
+<p class="sin paso">En el router ISP:</p>
+<pre>enable
+configure terminal
+hostname ISP
+interface g0/0
+ ip address 200.0.0.1 255.255.255.252
+ no shutdown
+exit
+interface g0/1
+ ip address 8.8.8.1 255.255.255.0
+ no shutdown
+end
+copy running-config startup-config</pre>
+<p>En SRV-INTERNET (Desktop › IP Configuration) se asigna 8.8.8.8, máscara 255.255.255.0, puerta de enlace 8.8.8.1 y DNS 8.8.8.8; en Services › DNS se activa el servicio y se agrega el nombre <code>www.internet.com</code> con la dirección 8.8.8.8, y en Services › HTTP se deja activo el servidor web.</p>
+
+<h2>Paso 6: Equipos Finales</h2>
+<ul>
+<li>PC de todas las áreas: Desktop › IP Configuration › DHCP.</li>
+<li>IMP-REC: 192.168.10.5 / 255.255.255.0, puerta de enlace 192.168.10.1.</li>
+<li>IMP-LAB: 192.168.30.5 / 255.255.255.0, puerta de enlace 192.168.30.1.</li>
+<li>SRV-EXP: 192.168.50.10 / 255.255.255.0, puerta de enlace 192.168.50.1, DNS 8.8.8.8; servicio HTTP con una página que identifique el sistema de expedientes.</li>
+<li>Punto de acceso: Config › Port 1, SSID <code>CLINICA-CONSULTORIOS</code>, autenticación WPA2-PSK, clave <code>Consultorios2026</code>.</li>
+<li>Laptops: apagar el equipo, sustituir el módulo de red por el inalámbrico WPC300N, encenderlo, configurar en Wireless0 el mismo SSID y clave, y en IP Configuration elegir DHCP.</li>
+</ul>
+
+<h1>Pruebas y Verificación</h1>
+<p>Para comprobar que la red cumple los requisitos se realizaron las pruebas de la Tabla 5. Debajo se deja el espacio para insertar la captura de pantalla de cada evidencia.</p>
+<div class="tabla"><div class="num">Tabla 5</div><div class="tit">Pruebas de funcionamiento</div>
+<table><thead><tr><th>#</th><th>Prueba</th><th>Dónde</th><th>Resultado esperado</th></tr></thead><tbody>
+<tr><td>1</td><td><code>ipconfig</code></td><td>PC de consultorio</td><td>Dirección 192.168.20.x y puerta de enlace 192.168.20.1 (DHCP correcto)</td></tr>
+<tr><td>2</td><td><code>ping 192.168.50.10</code></td><td>PC de consultorio</td><td>Responde: el personal médico accede a los expedientes</td></tr>
+<tr><td>3</td><td><code>ping 192.168.50.10</code></td><td>PC de recepción</td><td>Falla: la lista de acceso protege los expedientes</td></tr>
+<tr><td>4</td><td><code>ping 192.168.30.11</code></td><td>PC de recepción</td><td>Responde: hay comunicación entre áreas</td></tr>
+<tr><td>5</td><td>Navegador → <code>www.internet.com</code></td><td>Cualquier PC</td><td>Abre la página: hay acceso a Internet</td></tr>
+<tr><td>6</td><td><code>show vlan brief</code></td><td>SW-PB y SW-PA</td><td>VLAN 10 a 99 con sus puertos</td></tr>
+<tr><td>7</td><td><code>show etherchannel summary</code></td><td>SW-PB</td><td>Po1 en estado (SU) y sus dos puertos en (P)</td></tr>
+<tr><td>8</td><td><code>show ip dhcp binding</code> y <code>show ip nat translations</code></td><td>R-CLINICA</td><td>Direcciones asignadas y traducciones activas</td></tr>
+<tr><td>9</td><td>Retirar un cable entre switches y repetir el ping</td><td>PC de consultorio</td><td>Sigue respondiendo: la red tolera la falla</td></tr>
+</tbody></table></div>
+<div class="captura">Captura 1 · ipconfig en una PC de consultorio</div>
+<div class="captura">Captura 2 · ping exitoso de consultorio al servidor de expedientes</div>
+<div class="captura">Captura 3 · ping fallido de recepción al servidor de expedientes</div>
+<div class="captura">Captura 4 · navegador abriendo www.internet.com</div>
+<div class="captura">Captura 5 · show etherchannel summary y prueba con un cable retirado</div>
+<p>Si un equipo recibe una dirección 169.254.x.x, el DHCP no le está llegando: se revisa que su puerto esté en la VLAN correcta y que la VLAN esté permitida en los troncales. Es normal que el primer ping pierda uno o dos paquetes mientras los equipos resuelven las direcciones físicas.</p>
+
+<h1>Conclusiones</h1>
+<p>La red diseñada para la Clínica ABC conecta las cuatro áreas de la nueva sede con sólo cuatro dispositivos de red, lo que respeta el presupuesto limitado sin sacrificar los requisitos. La segmentación por VLAN y la lista de control de acceso protegen los expedientes de los pacientes, el EtherChannel y Rapid Spanning Tree mantienen la red en funcionamiento ante la falla de un cable, y el NAT con una ruta predeterminada da acceso a Internet a todas las áreas.</p>
+<p>El diseño también es escalable: las redes /24, los puertos libres y el uso de troncales permiten agregar puestos, áreas o switches sin rediseñar lo existente. Las pruebas realizadas en Packet Tracer comprueban cada uno de estos puntos y sirven como evidencia del funcionamiento de la red.</p>
+</section>
+
+<!-- ═════════ REFERENCIAS ═════════ -->
+<section class="nueva refs">
+<h1>Referencias</h1>
+<p>Cisco Networking Academy. (s. f.-a). <i>CCNA: Introducción a las redes</i> [Curso en línea]. Cisco. https://www.netacad.com/es/courses/ccna-introduction-networks</p>
+<p>Cisco Networking Academy. (s. f.-b). <i>What is Cisco Packet Tracer?</i> Cisco. https://www.netacad.com/cisco-packet-tracer</p>
+<p>Cisco Systems. (s. f.-a). <i>¿Cómo funciona el switch?</i> https://www.cisco.com/c/es_mx/solutions/small-business/resource-center/networking/network-switch-how.html</p>
+<p>Cisco Systems. (s. f.-b). <i>Componentes básicos de las redes: lo que debe saber</i>. https://www.cisco.com/c/es_mx/solutions/small-business/resource-center/networking/networking-basics.html</p>
+<p>Cisco Systems. (s. f.-c). <i>Configuración de LACP (802.3ad) entre un Catalyst 6500/6000 y un Catalyst 4500/4000</i>. https://www.cisco.com/c/es_mx/support/docs/lan-switching/etherchannel/19642-126.pdf</p>
+<p>Cisco Systems. (s. f.-d). <i>¿Qué es un router?</i> https://www.cisco.com/c/es_mx/solutions/small-business/resource-center/networking/what-is-a-router.html</p>
+<p>Cisco Systems. (s. f.-e). <i>¿Qué es una red inalámbrica?</i> https://www.cisco.com/c/es_mx/solutions/small-business/resource-center/networking/wireless-network.html</p>
+<p>Cisco Systems. (s. f.-f). <i>IP addressing configuration guide, Cisco IOS XE 17.x: Configuring the Cisco IOS XE DHCP server</i>. https://www.cisco.com/c/en/us/td/docs/routers/ios/config/17-x/ip-addressing/b-ip-addressing/m_config-dhcp-server-xe.html</p>
+<p>Cisco Systems. (s. f.-g). <i>Consolidated platform configuration guide, Cisco IOS Release 15.2(3)E (Catalyst 2960-X switches): Configuring VLANs</i>. https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst2960x/software/15-2_3_e/consolidated_guide/b_1523e_consolidated_2960x_cg/b_consolidated_152ex_2960-X_cg_chapter_0111011.pdf</p>
+<p>Institute of Electrical and Electronics Engineers. (2020). <i>IEEE standard for local and metropolitan area networks — Link aggregation</i> (IEEE Std 802.1AX-2020). https://standards.ieee.org/ieee/802.1AX/6768/</p>
+<p>Institute of Electrical and Electronics Engineers. (2022). <i>IEEE standard for local and metropolitan area networks — Bridges and bridged networks</i> (IEEE Std 802.1Q-2022). https://standards.ieee.org/ieee/802.1Q/10323/</p>
+<p>Rekhter, Y., Moskowitz, B., Karrenberg, D., de Groot, G. J., y Lear, E. (1996). <i>Address allocation for private internets</i> (RFC 1918). Internet Engineering Task Force. https://www.rfc-editor.org/rfc/rfc1918</p>
+<p>Srisuresh, P., y Egevang, K. (2001). <i>Traditional IP network address translator (Traditional NAT)</i> (RFC 3022). Internet Engineering Task Force. https://www.rfc-editor.org/rfc/rfc3022</p>
+<p>Tanenbaum, A. S., y Wetherall, D. J. (2012). <i>Redes de computadoras</i> (5.ª ed.). Pearson Educación.</p>
+</section>
+</body></html>

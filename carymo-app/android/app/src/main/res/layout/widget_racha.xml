@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget mediano: la mascota a la izquierda; racha, cómo está, XP y cubitos a la derecha -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/raiz" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="horizontal"
+    android:background="@drawable/widget_fondo" android:padding="8dp">
+    <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@drawable/widget_frase" android:clipToOutline="true">
+        <ImageView android:id="@+id/foto" android:layout_width="match_parent" android:layout_height="match_parent"
+            android:scaleType="centerCrop" android:visibility="gone" android:contentDescription="Tu mascota en su cuarto" />
+    </FrameLayout>
+    <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.15" android:orientation="vertical"
+        android:paddingStart="10dp" android:gravity="center_vertical">
+        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+            <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/widget_flama" android:contentDescription="Racha" />
+            <TextView android:id="@+id/racha" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="4dp"
+                android:text="0" android:textColor="#FFFFFF" android:textSize="24sp" android:textStyle="bold" />
+        </LinearLayout>
+        <TextView android:id="@+id/avisoRacha" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxLines="2"
+            android:text="Estudia hoy y empieza tu racha" android:textColor="#FFB27A" android:textSize="11sp" />
+        <TextView android:id="@+id/mascota" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp"
+            android:maxLines="1" android:ellipsize="end" android:text="" android:textColor="#FFFFFF" android:textSize="12sp" android:textStyle="bold" />
+        <TextView android:id="@+id/frase" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:maxLines="1" android:ellipsize="end" android:text="" android:textColor="#C9B8E0" android:textSize="11sp" />
+        <LinearLayout android:id="@+id/barras" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="4dp">
+            <ProgressBar android:id="@+id/barraHambre" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="5dp"
+                android:max="100" android:progress="80" android:progressDrawable="@drawable/widget_barra_hambre" android:contentDescription="Llenito" />
+            <ProgressBar android:id="@+id/barraLimpieza" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="5dp"
+                android:layout_marginTop="3dp" android:max="100" android:progress="80" android:progressDrawable="@drawable/widget_barra_limpieza" android:contentDescription="Limpio" />
+            <ProgressBar android:id="@+id/barraAnimo" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="5dp"
+                android:layout_marginTop="3dp" android:max="100" android:progress="80" android:progressDrawable="@drawable/widget_barra_animo" android:contentDescription="Contento" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="6dp" android:gravity="center_vertical">
+            <TextView android:id="@+id/xp" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                android:text="0 XP" android:textColor="#C77DFF" android:textSize="12sp" android:textStyle="bold" />
+            <ImageView android:layout_width="14dp" android:layout_height="14dp" android:src="@drawable/widget_cubo" android:contentDescription="Cubitos" />
+            <TextView android:id="@+id/cubos" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="3dp"
+                android:text="0" android:textColor="#FFFFFF" android:textSize="12sp" android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

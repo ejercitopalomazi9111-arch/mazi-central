@@ -99,7 +99,7 @@ console.log('\n── la navegación de dos niveles ──');
   const cruzados = await p.evaluate(() => {
     const modoDe = { escribir:'reporte', ver:'reporte', formato:'reporte', plantilla:'reporte',
                      registro:'reporte', verificar:'reporte', guardados:'reporte',
-                     credencial:'credencial', avisos:'aviso', cartel:'aviso' };
+                     credencial:'credencial', avisos:'aviso', cartel:'aviso', tarea:'tarea' };
     const malos = [];
     for(const b of document.querySelectorAll('.modo')){
       b.click();

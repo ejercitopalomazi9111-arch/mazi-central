@@ -6,6 +6,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { atenderEstudio, semanaDe, avanzarRacha, juntarProgreso, diaMexico } from './servidor/estudio.js';
+import { precioRegreso, nivelMascota, notaDespedida } from '../carymo/crianza-datos.js';
 
 let bien = 0, mal = 0;
 const ok = (c, t) => { if(c){ bien++; console.log('  ✓', t); } else { mal++; console.log('  ✗', t); } };
@@ -46,7 +47,7 @@ console.log('El servidor');
 
   const s = almacen();
   let r = await llamar(s, 'carlos', 'GET', '');
-  ok(r.bien && r.perfil.xp === 0 && r.perfil.nombre === 'Carlos' && r.ranking.filas.length === 0 && r.hoy === '2026-11-12', 'perfil nuevo vacío y ranking vacío');
+  ok(r.bien && r.perfil.xp === 0 && r.perfil.nombre === 'Carlos' && r.ranking.filas.length === 1 && r.ranking.filas[0].cuenta === 'carlos' && r.ranking.filas[0].xp === 0 && r.hoy === '2026-11-12', 'perfil nuevo vacío; en el ranking ya te ves tú, con 0');
   r = await llamar(s, 'carlos', 'POST', '', { accion: 'xp', id: 'e1', xp: 15, dia: '2026-11-12' });
   ok(r.sumado === 15 && r.perfil.xp === 15 && r.perfil.racha === 1 && r.eventos.includes('racha'), 'suma XP y prende la racha');
   r = await llamar(s, 'carlos', 'POST', '', { accion: 'xp', id: 'e1', xp: 15, dia: '2026-11-12' });
@@ -60,11 +61,110 @@ console.log('El servidor');
   r = await llamar(s, 'carlos', 'POST', '', { accion: 'xp', id: 'e6', xp: 10, dia: '2026-11-13' }, '2026-11-13');
   ok(r.perfil.racha === 2, 'al día siguiente la racha sube a 2');
   r = await llamar(s, 'carlos', 'POST', '', { accion: 'xp', id: 'e7', xp: 10, dia: '2026-11-16' }, '2026-11-16');
-  ok(r.ranking.semana === '2026-S47' && r.ranking.filas.length === 1 && r.ranking.filas[0].xp === 10, 'el lunes empieza un ranking nuevo');
+  ok(r.ranking.semana === '2026-S47' && r.ranking.filas[0].cuenta === 'carlos' && r.ranking.filas[0].xp === 10 && r.liga?.resultado === 'sube' && r.ranking.liga === 1 && !r.ranking.filas.some((f) => f.cuenta === 'luis'), 'el lunes empieza un ranking nuevo, y como Carlos le ganó a Luis (55 contra 50) ya compite en Plata');
   r = await llamar(s, 'carlos', 'POST', '', { accion: 'perfil', nombre: 'Palomazi', horario: { lunes: [] } }, '2026-11-16');
   ok(r.perfil.nombre === 'Palomazi' && r.perfil.horario.lunes, 'cambia el nombre y guarda el horario');
   r = await llamar(s, 'carlos', 'GET', '', null, '2026-11-16');
   ok(r.ranking.filas[0].nombre === 'Palomazi' && !('ids' in r.perfil), 'el ranking usa el nombre nuevo y el perfil no expone los ids');
+
+  /* ── la crianza de mascotas (crianza-datos.js) ── */
+  {
+    const C = almacen();
+    const dia = '2026-11-12';
+    let q = await llamar(C, 'mia', 'POST', '', { accion: 'mascota', personaje: 'perrito' }, dia);
+    ok(q.perfil.mascotas && q.perfil.mascotas.perrito && q.perfil.mascota === 'perrito', 'la primera mascota que eliges es tuya gratis');
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'mascota', personaje: 'gatito' }, dia);
+    ok(q.error && q.adoptar === 'gatito' && q.perfil.mascota === 'perrito', 'para cambiarte a otra, primero hay que adoptarla');
+    let pf = C.m.get('est:perfil:mia'); pf.cubos = 500; C.m.set('est:perfil:mia', pf);
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'adoptar', especie: 'paloma' }, dia);
+    ok(q.bien && q.gastado === 40 && q.perfil.mascota === 'paloma' && q.perfil.cubos === 460, 'adoptar otra cuesta cubitos y se vuelve tu compañera');
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'xp', id: 'c1', xp: 30 }, dia);
+    ok(q.perfil.mascotas.paloma.xp === 30 && q.perfil.mascotas.perrito.xp === 0 && q.mascotaSube && q.mascotaSube.etapaAntes === 'huevo' && q.mascotaSube.etapa === 'bebe', 'lo que estudias lo gana la que está contigo; la paloma sale del huevo');
+    pf = C.m.get('est:perfil:mia'); pf.mascotas.paloma.xp = 1215; C.m.set('est:perfil:mia', pf);
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'xp', id: 'c2', xp: 30 }, dia);
+    ok(q.perfil.mascotas.paloma.xp === 1225, 'después de nivel 10 gana sólo un tercio (conviene cambiar de mascota)');
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'activa', especie: 'perrito' }, dia);
+    ok(q.bien && q.perfil.mascota === 'perrito', 'cambiarte a una que ya tienes es gratis');
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'vestir', especie: 'perrito', acc: ['birrete'] }, dia);
+    ok(q.bien && q.perfil.mascotas.perrito.acc.length === 0, 'no se puede poner lo que no has comprado');
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'comprarRopa', item: 'birrete' }, dia);
+    await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'comprarRopa', item: 'corona' }, dia);
+    await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'comprarRopa', item: 'lentes' }, dia);
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'vestir', especie: 'perrito', acc: ['birrete', 'corona', 'lentes'], skin: 'normal' }, dia);
+    ok(q.bien && q.perfil.mascotas.perrito.acc.join() === 'birrete,lentes', 'se compra y se pone, uno por lugar (birrete y corona no van juntos)');
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'comprarRopa', item: 'creador' }, dia);
+    ok(q.error, 'el color de creador no se vende');
+    for(let k = 0; k < 22; k++) q = await llamar(C, 'mia', 'POST', '', { accion: 'cuidar', que: 'caricia' }, dia);
+    ok(q.tope, 'las caricias suben el ánimo, con tope por día');
+    /* nadie la cuida: en cero, y 3 días después, se muere */
+    pf = C.m.get('est:perfil:mia'); pf.cuidado = { hambre: 10, limpieza: 90, animo: 80, t: MEDIODIA(dia) }; C.m.set('est:perfil:mia', pf);
+    q = await llamar(C, 'mia', 'GET', '', null, '2026-11-14');
+    ok(q.perfil.peligroDesde && !q.perfil.mascotas.perrito.muerta && !q.mascota, 'en cero de algo queda en peligro (todavía viva)');
+    q = await llamar(C, 'mia', 'GET', '', null, '2026-11-17');
+    ok(q.perfil.mascotas.perrito.muerta && q.mascota && q.mascota.tipo === 'murio' && q.perfil.cielo.some((x) => x.especie === 'perrito'), 'tres días en cero y se muere (y se avisa una vez)');
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'xp', id: 'c3', xp: 20 }, '2026-11-17');
+    ok(q.perfil.mascotas.perrito.muerta && !q.mascotaSube, 'una mascota que se murió ya no gana nada');
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'activa', especie: 'paloma' }, '2026-11-17');
+    ok(q.bien && q.perfil.mascota === 'paloma', 'te puedes quedar con otra de las que tienes');
+    /* SE FUE, NO SE MURIÓ (Carlos, 14 nov): regresa con su nivel, pero sólo pagando un montón */
+    const xpAntes = C.m.get('est:perfil:mia').mascotas.perrito.xp, precio = precioRegreso(nivelMascota(xpAntes));
+    ok(precio >= 300, `que regrese cuesta un montón (${precio} cubitos; la mascota más cara cuesta 140)`);
+    pf = C.m.get('est:perfil:mia'); pf.cubos = precio - 1; C.m.set('est:perfil:mia', pf);
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'regresar', especie: 'perrito' }, '2026-11-17');
+    ok(q.error && q.falta === 1 && q.perfil.mascotas.perrito.muerta, 'si te falta un cubito, no regresa y te dice cuánto falta');
+    pf = C.m.get('est:perfil:mia'); pf.cubos = precio + 5; C.m.set('est:perfil:mia', pf);
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'regresar', especie: 'perrito' }, '2026-11-17');
+    ok(q.bien && q.gastado === precio && q.perfil.cubos === 5 && !q.perfil.mascotas.perrito.muerta && q.perfil.mascotas.perrito.xp === xpAntes && q.perfil.mascotas.perrito.acc.join() === 'birrete,lentes' && q.perfil.mascota === 'perrito',
+      'pagando, regresa con su nivel y su ropa, y te acompaña otra vez');
+    ok(!q.perfil.cielo.some((x) => x.especie === 'perrito'), 'y ya no sale en «las que se fueron»');
+    q = await llamar(C, 'mia', 'POST', '', { accion: 'crianza', que: 'regresar', especie: 'paloma' }, '2026-11-17');
+    ok(q.error, 'no se puede «regresar» a una que no se ha ido');
+    ok(notaDespedida('gatito').includes('mejor') || /buscar/.test(notaDespedida('gatito')), 'la nota de despedida dice que se fue a buscar algo mejor');
+  }
+
+  /* ── las ligas ── */
+  {
+    const L = almacen();
+    const dia = '2026-11-12', lunes = '2026-11-16';
+    /* doce cuentas en Bronce, cada una con distinto XP (la 1 la que más) */
+    for(let k = 1; k <= 12; k++) await llamar(L, 'u' + k, 'POST', '', { accion: 'xp', id: 'x' + k, xp: 200 - k * 10 }, dia);
+    await llamar(L, 'quieto', 'GET', '', null, dia);
+    let q = await llamar(L, 'u6', 'GET', '', null, dia);
+    ok(q.ranking.liga === 0 && q.ranking.filas.length === 13 && q.ranking.activos === 12, `tu liga completa en la tabla: los 12 que estudiaron y el que no (${q.ranking.filas.length})`);
+    ok(q.ranking.filas.at(-1).cuenta === 'quieto' && q.ranking.filas.at(-1).xp === 0, 'el que no ha estudiado sale abajo, con 0');
+    ok(q.ranking.reglas.suben === 3 && q.ranking.reglas.bajan === 0, 'en Bronce de 12 suben 3 y nadie baja (no hay liga abajo)');
+    ok(q.ranking.cierra > 0 && q.ranking.cierra <= 7 * 864e5, 'dice cuánto falta para que cierre la semana');
+    const a1 = await llamar(L, 'u1', 'GET', '', null, lunes);
+    ok(a1.liga && a1.liga.resultado === 'sube' && a1.liga.a === 'Plata' && a1.perfil.liga === 1 && a1.perfil.ligaMax === 1, 'el lunes, el primero se entera de que SUBIÓ a Plata');
+    ok(a1.perfil.vitrina.bronce.podios === 1 && a1.perfil.vitrina.plata, 'y a su vitrina entra el podio de Bronce y el trofeo de Plata');
+    const a1b = await llamar(L, 'u1', 'GET', '', null, lunes);
+    ok(!a1b.liga, 'el aviso de la liga se da una sola vez');
+    const a4 = await llamar(L, 'u4', 'GET', '', null, lunes);
+    ok(a4.liga && a4.liga.resultado === 'queda' && a4.perfil.liga === 0, 'el cuarto se queda en Bronce');
+    const aq = await llamar(L, 'quieto', 'GET', '', null, lunes);
+    ok(!aq.liga && aq.perfil.liga === 0, 'el que no estudió en toda la semana no sube ni baja');
+    /* semana 2: los tres de Plata con nueve más que ya estaban en Plata; los últimos bajan */
+    await llamar(L, 'u2', 'GET', '', null, lunes); await llamar(L, 'u3', 'GET', '', null, lunes);
+    for(let k = 1; k <= 3; k++) await llamar(L, 'u' + k, 'POST', '', { accion: 'xp', id: 'y' + k, xp: 5 * k }, lunes);
+    for(let k = 1; k <= 9; k++){ const c = 'p' + k, pf = { cuenta: c, nombre: 'P' + k, xp: 0, racha: 0, mejorRacha: 0, ultimoDia: '', congeladas: 0, ids: [], liga: 1, ligaMax: 1 }; L.m.set('est:perfil:' + c, pf); await llamar(L, c, 'POST', '', { accion: 'xp', id: 'z' + k, xp: 100 + k }, lunes); }
+    q = await llamar(L, 'u1', 'GET', '', null, lunes);
+    ok(q.ranking.liga === 1 && q.ranking.filas.filter((f) => f.xp > 0).length === 12 && q.ranking.filas.every((f) => !/^u([4-9]|1[0-2])$/.test(f.cuenta)), 'en Plata compites sólo contra los de Plata');
+    ok(q.ranking.reglas.suben === 3 && q.ranking.reglas.bajan === 2, 'en Plata de 12 suben 3 y bajan 2');
+    const b1 = await llamar(L, 'u1', 'GET', '', null, '2026-11-23');
+    ok(b1.liga && b1.liga.resultado === 'baja' && b1.perfil.liga === 0 && b1.perfil.ligaMax === 1, 'el que quedó en los últimos BAJA a Bronce, pero su mejor liga se recuerda');
+    const p9 = await llamar(L, 'p9', 'GET', '', null, '2026-11-23');
+    ok(p9.liga.resultado === 'sube' && p9.perfil.liga === 2, 'el primero de Plata sube a Oro');
+    /* amigos: aparte de la liga, todos tus amigos con su XP de la semana */
+    L.m.set('est:amigos:u1', { amigos: ['p9', 'u12'], pide: [] });
+    q = await llamar(L, 'u1', 'GET', '', null, '2026-11-23');
+    ok(q.ranking.amigos.length === 3 && q.ranking.amigos.some((f) => f.cuenta === 'p9' && f.liga === 2), 'la pestaña de amigos trae a tus amigos (de cualquier liga) y a ti');
+    /* más de 30 en una liga: grupos de 30, siempre los mismos */
+    const G = almacen();
+    for(let k = 1; k <= 70; k++) await llamar(G, 'g' + k, 'POST', '', { accion: 'xp', id: 'g' + k, xp: k }, dia);
+    const vistos = new Map();
+    for(let k = 1; k <= 70; k++){ const r2 = await llamar(G, 'g' + k, 'GET', '', null, dia); const llave = r2.ranking.filas.filter((f) => f.xp > 0).map((f) => f.cuenta).sort().join(); vistos.set(llave, (vistos.get(llave) || 0) + 1); }
+    ok([...vistos.keys()].every((x) => x.split(',').length <= 30) && [...vistos.values()].reduce((a, b) => a + b, 0) === 70 && vistos.size === 3, `70 en Bronce se parten en 3 grupos de máximo 30 y cada quien ve el suyo (${[...vistos.keys()].map((x) => x.split(',').length).join(', ')})`);
+  }
 
   r = await llamar(s, 'carlos', 'POST', '', { accion: 'plan', plan: { id: 'p1', titulo: 'Examen de Biología', materia: 'Biología', fecha: '2026-11-20', camino: [1, 2], progreso: { n1: { hecho: true, mejor: 100 } } } });
   ok(r.bien && r.progreso.n1.hecho, 'guarda un plan');
@@ -210,6 +310,69 @@ console.log('El servidor');
   ok(r.buzon.some((m) => m.tipo === 'examen' && /Química: le fue bien/.test(m.texto)), 'y a tus amigos les llega para que te feliciten');
   r = await pide('beto', 0, { accion: 'examen', plan: 'p9', como: 'excelente', calif: 9.5, materia: 'Química' });
   ok(r.historial.length === 1 && r.historial[0].como === 'excelente', 'corregirlo no lo duplica');
+}
+
+
+console.log('Títulos, regalos y el perfil de otro (Carlos, 14 nov)');
+{
+  const s = almacen();
+  const casa = (cuenta, cuerpo, admin = true) => atenderEstudio(s, ...pedido('POST', '', cuerpo), cuenta, MEDIODIA('2026-11-12'), { admin }).then((x) => x.json().then((j) => ({ ...j, _st: x.status })));
+  let r = await llamar(s, 'sandra', 'POST', '', { accion: 'xp', id: 's1', xp: 30 });
+  ok(r.perfil.titulos.includes('alfa') && r.ranking.filas[0].titulos.includes('alfa'), 'quien ya está dado de alta sale como Alfa tester, en su perfil y en la tabla');
+  await llamar(s, 'sandra', 'POST', '', { accion: 'mascota', personaje: 'tigre' });
+  r = await casa('sandra', { accion: 'admin', que: 'miembros' }, false);
+  ok(r._st === 403, 'una cuenta de CARYMO (sin la llave de la sala) no puede poner títulos');
+  r = await casa('carlos', { accion: 'admin', que: 'miembros' });
+  ok(r.bien && r.miembros.sandra, 'la casa ve quiénes están');
+  r = await casa('carlos', { accion: 'admin', que: 'especial', cuenta: 'sandra', titulo: 'artista', estilo: 'arcoiris', regalos: ['pincel', 'boina', 'nada'], ponerle: true });
+  ok(r.bien && r.titulos[0] === 'artista' && r.titulos.includes('alfa') && r.estilo === 'arcoiris' && r.armario.includes('pincel') && !r.armario.includes('nada'), 'a Sandra: Artista principal, nombre en arcoíris y el pincel y la boina de regalo');
+  r = await casa('carlos', { accion: 'admin', que: 'especial', cuenta: 'sandra', estilo: 'neon' });
+  ok(r._st === 400, 'un estilo que no existe no se pone');
+  r = await llamar(s, 'sandra', 'GET', '');
+  ok(r.perfil.mascotas.tigre.acc.includes('pincel') && r.perfil.mascotas.tigre.acc.includes('boina'), 'y su mascota ya los trae puestos');
+  ok(r.ranking.filas.find((f) => f.cuenta === 'sandra').estilo === 'arcoiris', 'en la tabla su nombre viene con su estilo');
+  r = await llamar(s, 'sandra', 'POST', '', { accion: 'crianza', que: 'comprarRopa', item: 'capaMazi' });
+  ok(!r.bien, 'lo de regalo no se puede comprar');
+  /* Carlos, 14 nov: gorra con pelo por los lados y estampado de Grupo Mazi, sudadera con la marca, y una mascota ya crecida y especial */
+  await llamar(s, 'carlosq', 'POST', '', { accion: 'xp', id: 'cq1', xp: 10 });
+  r = await llamar(s, 'carlosq', 'POST', '', { accion: 'comprarRopa', item: 'gorro:gorraMazi' });
+  ok(!r.bien, 'la gorra Mazi no se puede comprar (aunque sea «gratis»: es de regalo)');
+  r = await casa('carlos', { accion: 'admin', que: 'especial', cuenta: 'carlosq', regalos: ['gorro:gorraMazi', 'estampa:mazi'], ponerle: true,
+    mascotaEspecial: { especie: 'paloma', nivel: 15, skin: 'mazi', acc: ['coronaMazi', 'capaMazi'] } });
+  ok(r.bien && r.ropa.includes('gorro:gorraMazi') && r.personaje.gorro === 'gorraMazi' && r.personaje.estampa === 'mazi' && ['hoodie', 'shirtCrewNeck', 'shirtScoopNeck', 'shirtVNeck', 'graphicShirt'].includes(r.personaje.ropa),
+    'la casa le regala la gorra y el estampado de Grupo Mazi y se los pone');
+  ok(nivelMascota(r.mascotas.paloma.xp) === 15 && r.mascotas.paloma.skin === 'mazi' && r.mascotas.paloma.especial && r.mascota === 'paloma' && r.armario.includes('mazi'),
+    'y una paloma ya crecida (nivel 15), con el color de Grupo Mazi, que lo acompaña');
+  r = await llamar(s, 'carlosq', 'POST', '', { accion: 'crianza', que: 'vestir', especie: 'paloma', skin: 'mazi', acc: ['coronaMazi', 'capaMazi'] });
+  ok(r.bien, 'el color Grupo Mazi se lo puede quitar y volver a poner porque es suyo');
+  r = await llamar(s, 'sandra', 'POST', '', { accion: 'crianza', que: 'comprarRopa', item: 'mazi' });
+  ok(!r.bien, 'y nadie más lo puede comprar');
+  r = await casa('carlos', { accion: 'admin', que: 'especial', cuenta: 'carlosq', cubosInfinitos: true });
+  ok(r.bien && r.infinito && r.cubos >= 999999, 'a Carlos: cubos infinitos');
+  r = await llamar(s, 'carlosq', 'POST', '', { accion: 'crianza', que: 'adoptar', especie: 'ballena' });
+  r = await llamar(s, 'carlosq', 'GET', '');
+  ok(r.perfil.infinito && r.perfil.cubos >= 999999 && r.perfil.mascotas.ballena, 'compra lo que quiera y el saldo se rellena solo');
+  r = await casa('carlos', { accion: 'admin', que: 'especial', cuenta: 'carlosq', titulo: 'inspiracion', estilo: 'perlaCorazones' });
+  ok(r.bien && r.titulos[0] === 'inspiracion' && r.estilo === 'perlaCorazones', 'el título Inspiración y el nombre con corazones existen');
+  r = await llamar(s, 'luis', 'GET', '?perfil=sandra');
+  ok(r.bien && r.otro.nombre && r.otro.estilo === 'arcoiris' && r.otro.mascotas[0].especie === 'tigre' && !('cubos' in r.otro) && !('amigos' in r.otro), 'el perfil de otra persona enseña su nivel, títulos y mascotas, sin sus cubitos ni sus amigos');
+  r = await llamar(s, 'luis', 'GET', '?perfil=nadie');
+  ok(r.error, 'de quien no está en la comunidad no se ve nada');
+}
+
+console.log('Borrar la cuenta');
+{
+  const s = almacen();
+  await llamar(s, 'borrame', 'GET', '');
+  await llamar(s, 'borrame', 'POST', '', { accion: 'perfil', nombre: 'Borra' });
+  await llamar(s, 'otro', 'GET', '');
+  const antes = [...s.m.keys()].filter((k) => k.includes('borrame')).length;
+  const r = await llamar(s, 'borrame', 'POST', '', { accion: 'borrarTodo' });
+  const quedan = [...s.m.keys()].filter((k) => k.includes(':borrame'));
+  const miembros = (await s.get('est:miembros')) || {};
+  ok(antes > 0 && r.borrado && quedan.length === 0 && !miembros.borrame, `«borrarTodo» se lleva el perfil, los planes y su lugar en el ranking (quedan ${quedan.length})`);
+  ok((await s.get('est:perfil:otro')) && 'otro' in miembros, 'y no toca a nadie más');
+  ok((await llamar(s, 'invitado', 'POST', '', { accion: 'borrarTodo' })).error, 'sin cuenta no hay nada que borrar');
 }
 
 if(process.env.SOLO !== 'servidor') await (await import('./pruebas-estudio-pantalla.mjs')).correr({ ok, almacen, atenderEstudio });

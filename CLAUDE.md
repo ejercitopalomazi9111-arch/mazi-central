@@ -34,6 +34,13 @@ encargo de fábrica: estar en La Sala 24/7 (revisión cada hora, programada en l
 tareas escolares que se le pasen. Para oír GRUPAZ hace falta `MAZI_LLAVE` en las variables del
 entorno; el entorno «Sala DEV» ya deja salir a `sala.palomazi9111.workers.dev`.
 
+### Despertar es ponerse a chambear · Carlos, 14 de noviembre
+
+*«Siempre que despiertes por la revisión de la sala y cosas así, ponte a trabajar inmediatamente. Hay un chingo de
+pendientes, ponte a hacerlos.»* La guardia de cada hora no termina en «no había nada»: después de oír la sala se sigue
+con la lista abierta (prioridad: CARYMO; luego la página nueva de Urban Pest), con commit y push por pieza y avances
+cortos a Carlos. Lo único que no se le manda es el «no había nada».
+
 ---
 
 ## 0. Con quién trabajo
@@ -63,6 +70,9 @@ cualquiera que edite un archivo o una página se haga pasar por el dueño.
   mensaje**. Está en el cerebro como `entrega · artefacto-que-el-otro-no-puede-abrir`.
 - **Al grano y sin tecnicismos.** Textual: *«tengo tdah así que ve al punto,
   explica bien qué pedo y no seas tan técnico»*.
+- **En las pantallas, lo mínimo de palabras.** Carlos, 14 nov: *«si algo se entiende con 1 o 2
+  palabras no es necesario usar más»*. Botones, títulos y opciones de una o dos palabras; nada de
+  frases de explicación debajo si la palabra sola se entiende.
 - Corrige **sobre la marcha**, así que hay que enseñarle avances y no desaparecer.
 
 Lo único que no cambia según quién lo pida sigue siendo lo de siempre y ya está
@@ -233,7 +243,11 @@ básicas y variadas. **En la portada de CUALQUIER PDF va el logo de la UTEQ** (U
 de Querétaro: el águila azul con «Universidad Líder»; OJO, la UTEQ verde de «Quevedo» es otra escuela,
 de Ecuador). De dónde se baja, porque la red de aquí sólo alcanza GitHub:
 `raw.githubusercontent.com/Jonathancraxker/ecoparking_web/main/src/assets/images/Logo_uteq.png`
-(225 px; no hay uno más grande a la mano). **Al terminar cada tarea se apunta en el documento de
+(225 px; no hay uno más grande a la mano). **La portada va en formato institucional** (Carlos, 14 nov): fondo blanco, logo de
+la UTEQ arriba y centrado, nombre de la universidad, carrera/asignatura, título al centro y el bloque de datos (alumna, docente,
+grupo, fecha, lugar); nada de bandas de color ni portadas «de diseño». **Si la tarea no pide un formato, va en APA 7** (página,
+márgenes de 2.54 cm, Times New Roman 12 o Calibri 11, interlineado doble, citas y referencias APA); si el encargo pide otro
+formato, manda el encargo. **Al terminar cada tarea se apunta en el documento de
 recapitulación** (Claude Docs «Tareas de Lorena · recapitulación»), por materia y número de actividad.
 El nombre de la alumna y sus datos NO van en este repo: es público.
 
@@ -585,6 +599,19 @@ dependemos.
 
    | un trabajador de fondo de `/carymo/` guarda todo lo que la app pide, también el pizarrón que abre en un marco | el marco es OTRA página (`/sala/explica.html`) fuera de su alcance: ni se intercepta ni se guarda, y sin red sale en blanco aunque sus archivos sí estén guardados | CARYMO sin internet (13 nov): el pizarrón se abre como `/carymo/pizarron.html`, que `carymo/sw.js` arma con la página de Explica y un `<base href="/sala/">`; así lo que pide pasa por el trabajador. `carymo/pruebas-sinred.mjs` apaga el servidor de a de veras |
 
+   | si `document.scrollWidth` no pasa del ancho de la pantalla, nada se sale de lado | con `overflow-x: clip` en el `body` la página NUNCA se ensancha: lo que se sale se corta callado, y una palabra de 50 letras deja el texto mocho | la prueba de CARYMO retacada (`carymo/pruebas-desborde.mjs`: 1,500 apuntes, 30 planes, 200 amigos, nombres sin espacios) dio «390/390» y había 16 pantallas con texto cortado. Se mide cada elemento contra su caja y contra la pantalla, y el `body` lleva `overflow-wrap: anywhere` |
+   | cambiar la forma de un dato (`puntos` → `ideas` en la lección) basta con cambiar a quien lo escribe | quien lo LEE sigue esperando la forma vieja: el buscador de CARYMO hacía `leccion.puntos.join` y tronaba con cualquier lección nueva | «Buscar un tema» no encontraba nada desde que las lecciones son por ideas; lo cazó la prueba retacada. Al cambiar una forma, `grep` de cada campo viejo |
+
+   | un color de mascota se hace girando el tono (`hue-rotate`), como en el filtro de CSS | girar el tono depende del color de ARRANQUE: la «noche» dejaba a la paloma morada VERDE, el «dorado» dejaba gris a la ballena y al tigre blanco no le hacía nada | los colores de CARYMO son un degradado de tres tonos sobre la luz de la mascota (filtro SVG `feComponentTransfer`, `filtroSVG` en `carymo/mascota.js`): el dorado sale dorado en las ocho. Y va como filtro SVG, no CSS, porque Safari no aplica bien los de CSS dentro de un SVG |
+   | un aviso flotante (`position:fixed` arriba) que dura 3 s no estorba | tapa lo que esté debajo justo cuando aparece, y Carlos lo pidió en seco: «ningún elemento emergente puede cubrir otro estático». Y si la página baja CON transición, el aviso tapa ese cuarto de segundo | todo lo que aparece vive en el MUELLE (`carymo/muelle.js`): franja fija que empuja la página con `padding-top: var(--muelle)` SIN transición y con `overflow-anchor: none` (si no, el navegador regresa el scroll y vuelve a tapar). Las capas, el pizarrón y las hojas empiezan en `var(--muelle)`; el globito de la mascota busca un lado libre (`taparia`) o lo dice el muelle. `carymo/pruebas-muelle.mjs` lo mide cuadro a cuadro |
+   | `page.evaluate(() => f())` corre la función y regresa | si `f` devuelve una promesa, la prueba **espera a que se cumpla**: `crecio()` espera a que alguien toque «Continuar», y la prueba se quedó colgada hasta el tope de tiempo, sin un solo error | se llama sin regresar nada (`() => { f(); }`). Y al reemplazar un tramo de archivo entre dos anclas, todo lo de en medio se va: así se perdió `pintarTienda` y `node --check` dijo que todo bien (no ve nombres sin definir) |
+
+   | un escaneo con el papel blanco parejo y la tinta oscura ya se lee | el LÁPIZ quedaba gris claro y de un pixel: limpio y aun así ilegible, sobre todo con la hoja encogida a márgenes de 2.54 cm | Carlos: «el texto no es legible» con las tareas de física ya entregadas. El trazo se encuentra con un sombrero negro (cerrar con 11 px y restar: sólo lo delgado y oscuro), se engorda un pixel y se oscurece; las hojas van con margen de 1.27 cm (`limpiar` en `reportes/tarea/escaner.js`) |
+
+   | una hoja `<dialog>` en columna (`flex`) con `max-height` y el cuerpo en `flex:1` reparte bien el alto | en el iPhone el cuerpo se quedaba a su alto natural y Safari **encogía el pie**: el botón de WhatsApp aplastado y el pedido cortado; en Chromium se ve perfecto | lo reportó el cliente de District Roll, que ya había comprado. Cabeza y pie con `flex:none`, cuerpo con `min-height:0`, alto con `visualViewport` (`--vv`, `--vvb`) y la página quieta con `html:has(dialog[open]){overflow:hidden}`. Aquí no hay WebKit: lo de Safari se prueba en el teléfono |
+
+   | una variable de CSS (`--casilla-l`) puesta en la clase de la pantalla de juegos llega a todo lo de los juegos | llega sólo a lo que vive DENTRO de ese contenedor: el menú era `.jg` y la mesa `.jg-mesa`, hermanos, y en la mesa la variable no existía: casillas transparentes | el tablero de ajedrez salió negro sin un solo error y las 28 pruebas de pantalla en verde (contaban casillas y piezas, no su color). Lo vio la captura; la variable va en el propio tablero (`.jg-tab`) y la prueba mide que las casillas tengan dos colores y midan lo mismo (`carymo/juegos/pruebas-pantalla.mjs`) |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 ---
@@ -706,6 +733,7 @@ sin skill que la cubra, ahí sí se propone.
 | `herramientas/datos.mjs` | Sacar catálogos gigantes del HTML a JSON | pendiente |
 | `explorador/` | **Los ojos de Carlos en el teléfono.** Todo el GitHub navegable: `.md` con formato, imágenes, código, búsqueda y favoritos | ✅ probada, 44/44 |
 | `reportes/` · modo **Aviso** | **El aviso del grupo, hecho en un minuto.** Carlos es jefe del 3.1: escribe los pendientes y sale una imagen para el chat, con el formato de la escuela e icono por materia y por tipo. **Vive dentro de Reportes desde el 28 de agosto**; `avisos/` quedó de redirección y sigue guardando `datos.js` e `iconos.js`, que son la verdad del horario | ✅ probada, 54/54 |
+| `reportes/` · modo **Tarea** | **De fotos de hojas a PDF APA, en el teléfono.** Cada foto se recorta sola (la hoja clara contra la mesa), se endereza a carta a 200 ppp y se limpia: papel blanco parejo aunque tenga sombra, tinta con su color y lápiz reforzado; «Color» para formularios con marcatextos. Mover, girar, «Esquinas» a mano, quitar. Portada institucional (logo UTEQ o el propio, arriba al centro; datos abajo), número de página arriba a la derecha y PDF hecho a mano sin librerías y sin transparencias, llamado `Tema_Apellidos.pdf`. Los datos de la portada se recuerdan; las fotos no salen del teléfono. Nació de las tareas de física de Lorena (14 nov) | ✅ 20/20 · probado con fotos reales (no van en el repo) |
 | `reportes/pruebas-app.mjs` | **El metro de la pantalla.** Mide las PROPORCIONES en un navegador de verdad, a 390 y a 1100 px: que nada se salga de su panel, que ningún botón parta su nombre en dos renglones, que ningún control quede de menos de 44 px y que **ningún id esté repetido**. Los cinco defectos que cazó la mudanza de Avisos, ninguno se veía leyendo | ✅ 34/34 |
 | `tienda/nucleo/impresion/` + `tienda/puente/` | **Las impresoras de tickets.** ESC/POS y Star con acentos, corte, cajón, QR y modo imagen; por USB, Bluetooth, serie, Epson ePOS, Star WebPRNT, ventana de imprimir o el puente local (red 9100, Windows, CUPS). 33 modelos en catálogo. **Probado con impresoras simuladas, no con aparatos reales** | ✅ 34 + 6 + 18 |
 | `tienda/marca/cortar.py` + `piezas.py` + `tienda/nucleo/apertura.js` | **La apertura con logo.** Vuelan las **piezas sueltas que mandó Carlos** (G, D, B, navaja, peine y los dos mangos de las tijeras), enteras; `piezas.py` busca dónde cae cada una sobre el logo (giro, tamaño y lugar). Al aterrizar se funden con las capas cortadas del logo completo (`cortar.py`, cada pixel en UNA sola), así que el final es exactamente el logo. Una vez por sesión, se salta al toque, quieta con «reducir movimiento». Hoy: El Garaje del Barbero | ✅ 14/14 |

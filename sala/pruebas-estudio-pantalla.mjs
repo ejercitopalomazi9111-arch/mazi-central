@@ -99,6 +99,8 @@ export async function correr({ ok, almacen, atenderEstudio }){
   /* Wikipedia de mentiras (aquí no hay internet): la foto del corazón es una del repo */
   await ctx.route(/wikipedia\.org/, (r) => r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ title: 'Corazón humano', thumbnail: { source: `${base}/urban-pest/web/img/planta.webp` } }) }));
   const pagina = await ctx.newPage();
+  /* cuando tu mascota crece sale su fiesta (carymo/companero.js · crecio): aquí se cierra sola para seguir el recorrido */
+  await pagina.addLocatorHandler(pagina.locator('.fiesta-crece button'), async (b) => { await b.click(); });
   const errores = [];
   pagina.on('pageerror', (e) => errores.push(e.message));
   pagina.on('console', (m) => { if(m.type() === 'error' && !/favicon|404/.test(m.text())) errores.push(m.text()); });
@@ -213,7 +215,9 @@ export async function correr({ ok, almacen, atenderEstudio }){
     ok(pedidosIA.some((c) => /UNA lección/.test(c.sistema) && /Sistema circulatorio/.test(c.mensajes[0].texto)), 'el primer nivel se prepara solo mientras ves las cátedras');
 
     await pagina.evaluate(() => document.querySelectorAll('.nodo.cerrado')[2].click());
-    ok(await pagina.isVisible('text=Primero termina el que está brillando'), 'un nodo cerrado avisa en vez de abrirse');
+    ok(await pagina.isVisible('text=¿Saltar hasta aquí?') && /Te saltas 3 temas/.test(await pagina.textContent('#hoja')), 'tocar uno bloqueado pregunta si quieres saltar hasta ahí, y cuántos te saltas');
+    await pagina.click('[data-quedarme]'); await espera(250);
+    ok(!(await pagina.$('#hoja')) && (await pagina.$$('.nodo.cerrado')).length === 17 && !(await pagina.$('.nodo.saltado')), '«Mejor sigo en orden» no mueve nada');
 
     /* 1 · panorama de la unidad */
     ok(await siguienteEs() === 'Panorama de la unidad', 'lo primero es el panorama de la unidad');
@@ -250,6 +254,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
     await pagina.click('[data-empezar]');
     const datos = leccionDe('Sistema circulatorio');
     let vistas = 0, falle = false, vioPista = false, maxComboVisto = 0;
+    const reaccionesPj = [];
     const tiposVistos = new Set(), fotosTipo = new Set();
     for(let vuelta = 0; vuelta < 14; vuelta++){
       if(await pagina.isVisible('.resultado')) break;
@@ -262,6 +267,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
       ok(await pagina.isEnabled('[data-verificar]'), `«${tipo}»: Verificar se prende al contestar`);
       await pagina.click('[data-verificar]');
       await pagina.waitForSelector('.hoja-res');
+      reaccionesPj.push(await pagina.$eval('.pv-quiz .pv', (e) => e.dataset.reaccion || '').catch(() => 'sin personaje'));
       const estaLaFalle = !falle;
       if(!falle){
         falle = true;
@@ -279,12 +285,14 @@ export async function correr({ ok, almacen, atenderEstudio }){
     ok(vioPista, 'la pista sale al pedirla');
     ok(maxComboVisto >= 6, `el combo sale en CADA acierto seguido, con sus efectos (llegó a x${maxComboVisto})`);
     ok(vistas === 9, `la que fallé regresó al final (${vistas} ejercicios para 8)`);
+    ok(reaccionesPj[0] === 'mal' && reaccionesPj.slice(1).every((x) => x === 'bien' || x === 'combo') && reaccionesPj.includes('combo'), `tu personaje, arriba, reacciona a cada respuesta: se apura con la mala, sonríe con las buenas y se enamora en el combo (${reaccionesPj.join(', ')})`);
     await pagina.waitForSelector('.resultado');
     ok(await pagina.isVisible('text=XP') && /\d+ %/.test(await pagina.textContent('.medallas')), 'el resultado trae XP, aciertos y tiempo');
     await pagina.click('[data-estrella="5"]');
     ok((await pagina.$$('.estrellas .on')).length === 5, 'se califica con estrellas');
     await foto('09-resultado');
     ok(await pagina.$eval('#mascFin .masc svg', () => true).catch(() => false), 'al terminar, la mascota reacciona al resultado');
+    ok(await pagina.$eval('#pjFin .pv svg', () => true).catch(() => false), 'y tu personaje también, junto a ella');
     await pagina.click('[data-continuar]');
     await pagina.waitForSelector('.camino'); await espera(1200);
     ok(await hechos() === 3, 'el nivel hecho se vuelve moneda');
@@ -379,7 +387,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
     await pagina.click('[data-ir="ranking"]'); await espera(300);
     const filas = await pagina.$$eval('.fila-rank', (fs) => fs.map((f) => f.textContent));
     ok(filas.length === 2 && /Luis/.test(filas[0]) && /\(tú\)/.test(filas[1]), 'el ranking junta las cuentas de La Sala y marca la tuya');
-    ok(await pagina.isVisible('text=para llegar a la cima'), 'dice cuántos lugares faltan');
+    ok(/Te faltan [0-9,.]+ (k |M )?XP para pasar a Luis/.test(await pagina.textContent('.rank-frase')), 'dice cuántos XP te faltan para pasar al de arriba');
     await foto('13-ranking');
 
     /* amigos: Luis tiene la app abierta, lo agrego, me invita a estudiar juntos, y al final «¿cómo te fue?» */
@@ -409,6 +417,9 @@ export async function correr({ ok, almacen, atenderEstudio }){
       await pagina.evaluate(() => window.__estudio.amigos().latido()); await espera(1200);
       ok(/Luis 12/.test(await pagina.textContent('#barraSesion')), 'el marcador muestra lo que va juntando el otro');
       await foto('16-sesion');
+      ok(await pagina.$eval('#barraSesion', (b) => b.classList.contains('mini') && b.getBoundingClientRect().width < 260), 'la barra es una pastilla chica que no estorba');
+      await pagina.click('#barraSesion'); await espera(250);
+      ok(await pagina.isVisible('[data-salir-ses]'), 'al tocarla se abre con el marcador y el botón de salir');
       await pagina.click('[data-salir-ses]'); await pagina.click('[data-salir-ses]'); await espera(500);
       ok(/Ganó Luis/.test(await pagina.textContent('#hoja')) && await pagina.isVisible('#sesFelicita'), 'al salir sale quién ganó y el botón de felicitarlo');
       await pagina.click('#sesFelicita'); await espera(400);
@@ -516,6 +527,6 @@ export async function correr({ ok, almacen, atenderEstudio }){
     ok(await desborde() <= 0, 'a 320 px el camino no se sale de lado');
 
     ok(!errores.length, 'sin errores en la consola' + (errores.length ? ': ' + errores.slice(0, 3).join(' | ') : ''));
-  }catch(e){ ok(false, 'la prueba tronó: ' + e.message.split('\n')[0]); if(process.env.FOTOS) await foto('99-error'); }
+  }catch(e){ ok(false, 'la prueba tronó: ' + e.message.split('\n')[0]); if(process.env.PILA) console.log(e.message); if(process.env.FOTOS) await foto('99-error'); }
   finally{ await nav.close(); servidor.close(); }
 }

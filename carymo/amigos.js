@@ -15,6 +15,7 @@
  *     cronómetro y el marcador de los dos, y el final de la sesión;
  *   · después de la fecha de un examen, «¿cómo te fue?» → historial + aviso a amigos.
  * ===========================================================================*/
+import { alMuelle } from './muelle.js';
 
 /* LOS MODOS DE «ESTUDIAR JUNTOS» (Carlos, 13 nov: «invéntate más maneras… de lo de los cooperativos»).
    Las reglas viven en el servidor (sala/servidor/estudio.js · MODOS_JUNTOS); aquí, cómo se ven. */
@@ -53,6 +54,7 @@ export function iniciarAmigos(h){
   /* lo que llega al buzón */
   function avisar(m){
     if(m.tipo === 'invita'){ invitacion(m); return; }
+    if(['reta', 'retoAcepta', 'retoRechaza', 'juegoFin'].includes(m.tipo)){ h.alJuego?.(m); return; }
     const t = m.tipo === 'saludo' ? `${m.nombre} te saludó${m.texto ? ': ' + m.texto : ''}` : m.tipo === 'felicita' ? `${m.nombre} te felicitó${m.texto ? ': ' + m.texto : ''}`
       : m.tipo === 'examen' ? `${m.nombre} · ${m.texto}. ¡Felicítalo!` : `${m.nombre} ${MSG[m.tipo] || ''}`;
     tono(m.tipo === 'felicita' || m.tipo === 'amigos' ? SON.moneda : SON.mensaje || SON.pop); vibrar(12);
@@ -78,8 +80,15 @@ export function iniciarAmigos(h){
     if(!x || (x.estado !== 'activa' && x.estado !== 'terminada' && x.estado !== 'invitada')){ b?.remove(); clearInterval(tic); return; }
     if(x.estado === 'terminada'){ b?.remove(); clearInterval(tic); finSesion(x); return; }
     const yo = h.cuenta(), el = x.de === yo ? x.a : x.de;
-    if(!b){ b = document.createElement('div'); b.id = 'barraSesion'; b.className = 'barra-sesion entra'; document.body.append(b);
-      b.addEventListener('click', async (e) => { if(!e.target.closest('[data-salir-ses]')) return; if(!b.dataset.seguro){ b.dataset.seguro = '1'; e.target.closest('[data-salir-ses]').textContent = '¿Salir?'; setTimeout(() => { delete b.dataset.seguro; pintarSesion(); }, 2500); return; }
+    if(!b){ b = document.createElement('div'); b.id = 'barraSesion'; b.className = 'barra-sesion mini entra'; alMuelle(b);
+      /* Carlos, 14 nov: «el cronómetro de en equipo estorba» y luego «ningún elemento emergente puede cubrir otro». Es una
+         PASTILLA chica en el muelle de arriba (muelle.js): la página se recorre para hacerle lugar y no tapa nada. Al tocarla
+         se abre unos segundos con todo. */
+      b.innerHTML = `<span class="crono">${ico('timer')}<b class="t"></b></span><span class="mini-mar"></span><span class="marcador"></span><button class="bt redondo fantasma" data-salir-ses aria-label="Salir de la sesión">${ico('x')}</button>`;
+      b.setAttribute('role', 'button'); b.setAttribute('aria-label', 'Tu sesión de estudio juntos: toca para ver más');
+      let cerrar = 0;
+      b.addEventListener('click', (e) => { if(e.target.closest('[data-salir-ses]')) return; b.classList.toggle('mini'); clearTimeout(cerrar); if(!b.classList.contains('mini')) cerrar = setTimeout(() => b.classList.add('mini'), 6000); });
+      b.addEventListener('click', async (e) => { if(!e.target.closest('[data-salir-ses]')) return; if(!b.dataset.seguro){ b.dataset.seguro = '1'; e.target.closest('[data-salir-ses]').textContent = '¿Salir?'; setTimeout(() => { delete b.dataset.seguro; const bs = b.querySelector('[data-salir-ses]'); if(bs) bs.innerHTML = ico('x'); }, 2500); return; }
         try{ const r = await sala({ accion: 'salirSesion', sesion: x.id }); estado.sesion = r.sesion; finSesion(r.sesion); b.remove(); }catch{} }); }
     const pinta = () => {
       const s = x.estado === 'invitada' ? null : Math.max(0, Math.round((x.fin - ahoraServidor()) / 1000));
@@ -97,7 +106,9 @@ export function iniciarAmigos(h){
         const etiqueta = x.logrado ? (modo === 'jefe' ? '¡Jefe vencido!' : '¡Meta lograda!') : modo === 'jefe' ? `Jefe · ${falta} de vida` : modo === 'relevo' ? (turno === yo ? 'Tu turno' : `Turno de ${suNombre}`) + ` · ${x.equipo || 0}/${x.meta}` : `Juntos ${x.equipo || 0}/${x.meta}`;
         centro = `<span class="modo-barra ${modo}${x.logrado ? ' logrado' : ''}">${ico(MODOS[modo].ico)}<span class="txt">${etiqueta}</span><i style="--k:${(modo === 'jefe' ? k : 1 - k).toFixed(3)}"></i></span>`;
       }
-      b.innerHTML = `<span class="crono">${ico('timer')}<b>${t}</b></span><span class="marcador">${centro}</span><button class="bt redondo fantasma" data-salir-ses aria-label="Salir de la sesión">${ico('x')}</button>`;
+      /* sólo se toca lo que CAMBIÓ: reescribir la barra cada segundo cancela toques en el iPhone (CLAUDE.md) */
+      const pon = (sel, v, html) => { const el = b.querySelector(sel); if(el && el.dataset.v !== v){ el.dataset.v = v; if(html) el.innerHTML = v; else el.textContent = v; } };
+      pon('.t', t); pon('.marcador', centro, true); pon('.mini-mar', modo === 'duelo' ? `${mio} – ${suyo}` : modo === 'biblioteca' ? '' : `${x.equipo || 0}/${x.meta || 0}`);
       if(s === 0){ clearInterval(tic); latido(); }
     };
     pinta(); clearInterval(tic); tic = setInterval(pinta, 1000);
@@ -127,7 +138,7 @@ export function iniciarAmigos(h){
   function pintarSeccion(){
     const v = document.getElementById('vRanking'); if(!v) return;
     let s = document.getElementById('secAmigos');
-    if(!s){ s = document.createElement('section'); s.id = 'secAmigos'; s.className = 'sec-amigos'; v.prepend(s); }
+    if(!s){ s = document.createElement('section'); s.id = 'secAmigos'; s.className = 'sec-amigos'; v.append(s); }   /* abajo de la tabla: la tabla es lo primero que se ve (Carlos, 14 nov) */
     const enLinea = estado.enLinea || [], amigos = estado.amigos || [], pide = estado.pide || [];
     const ses = estado.sesion && (estado.sesion.estado === 'activa' || estado.sesion.estado === 'invitada');
     s.innerHTML = `<div class="seccion-t">Personas conectadas ${enLinea.length ? `<small>· ${enLinea.length}</small>` : ''}</div>

@@ -24,9 +24,14 @@
 
    Sin `cloudflare:workers`: las pruebas cargan esto en Node.
    ═════════════════════════════════════════════════════════════════════════ */
-import { atenderAvisos, avisoDePrueba } from './avisos-estudio.js';
+import { atenderAvisos, avisoDePrueba, kAvisos, K_INDICE } from './avisos-estudio.js';
 import { atenderVestidor } from './vestidor.js';
-import { conEconomia, premiar, premiarUnaVez, cobrarNivel, estudioAnima, comprar, cuidar, PREMIOS, TIENDA, nivelDe, animoDe, parejaDe, avanzarRachaJuntos, rachaJuntosHoy } from './palomium.js';
+import { atenderJuegos, llavesJuegos } from './juegos-mesa.js';
+import { LIGAS, grupoDe, reglasDe, resultadoSemana, TAM_GRUPO } from '../../carymo/ligas.js';
+import { conEconomia, premiar, premiarUnaVez, cobrarNivel, estudioAnima, comprar, cuidar, PREMIOS, TIENDA, nivelDe, animoDe, parejaDe, avanzarRachaJuntos, rachaJuntosHoy, crecer, crianza, vivas, conCrianza } from './palomium.js';
+import { ESPECIES, nivelMascota, etapaDe, ACCESORIOS, SKINS, xpDeNivel } from '../../carymo/crianza-datos.js';
+import { titulosDe, TITULOS, ESTILOS_NOMBRE } from '../../carymo/titulos.js';
+import { TIENDA_ROPA, personajeDeArranque, normalizarPersonaje } from '../../carymo/ropa.js';
 export const MAX_PLAN = 1_500_000;
 const kPerfil = (c) => `est:perfil:${c}`;
 const kSem = (s) => `est:sem:${s}`;
@@ -53,9 +58,9 @@ export function semanaDe(dia){
 }
 
 function perfilNuevo(cuenta){
-  return { cuenta, nombre: cuenta.charAt(0).toUpperCase() + cuenta.slice(1), xp: 0, racha: 0, mejorRacha: 0, ultimoDia: '', congeladas: 0, horario: null, ids: [], t: 0 };
+  return { cuenta, nombre: cuenta.charAt(0).toUpperCase() + cuenta.slice(1), xp: 0, racha: 0, mejorRacha: 0, ultimoDia: '', congeladas: 0, horario: null, ids: [], t: 0, liga: 0, ligaMax: 0, vitrina: { bronce: { semanas: 0, podios: 0, mejor: 0 } } };
 }
-const publico = (p) => { const { ids, premiados, ...resto } = p; return { ...resto, nivel: nivelDe(p.xp || 0), siente: p.cuidado ? animoDe(p.cuidado) : 'feliz' }; };
+const publico = (p) => { const { ids, premiados, ligaAviso, avisoMascota, mimosDia, ...resto } = p; return { ...resto, titulos: titulosDe(p), nivel: nivelDe(p.xp || 0), siente: p.cuidado ? animoDe(p.cuidado) : 'feliz' }; };
 
 /* la racha: qué pasa al estudiar el día `dia` */
 export function avanzarRacha(p, dia){
@@ -73,10 +78,71 @@ export function avanzarRacha(p, dia){
   return eventos;
 }
 
-async function ranking(storage, semana, nombres = {}){
+/* ══ LIGAS (carymo/ligas.js tiene las reglas) ══
+     est:miembros            { <cuenta>: { nombre, liga } }   quién está en qué liga, aunque no haya estudiado esta semana
+   Carlos, 14 nov: «no se ve la tabla y eso no invita a la competitividad». Antes la tabla sólo traía a quien
+   ya ganó XP esta semana: el lunes salías solo. Ahora trae a TU liga completa (los que no han estudiado, con 0
+   y abajo) y aparte a tus amigos, para que siempre haya a quién alcanzar. */
+const K_MIEMBROS = 'est:miembros';
+/* también guarda lo que se ve de cada quien en la tabla: sus títulos (alfa tester…) y el estilo de su nombre */
+async function apuntarMiembro(storage, cuenta, nombre, liga, p = null){
+  const m = (await storage.get(K_MIEMBROS)) || {};
+  const v = m[cuenta], titulos = p ? titulosDe(p) : (v?.titulos || []), estilo = p ? (p.estiloNombre || '') : (v?.estilo || '');
+  if(v && v.nombre === nombre && (v.liga | 0) === (liga | 0) && (v.titulos || []).join() === titulos.join() && (v.estilo || '') === estilo) return m;
+  m[cuenta] = { nombre, liga: liga | 0, titulos, ...(estilo ? { estilo } : {}) };
+  await storage.put(K_MIEMBROS, m);
+  return m;
+}
+/* cerrar la semana que quedó pendiente: sube, baja o se queda, y la vitrina */
+function cerrarLiga(tabla, perfil, cuenta){
+  const r = resultadoSemana(tabla || {}, cuenta, perfil.ligaSem);
+  perfil.ligaSem = null;
+  if(!r) return null;
+  perfil.liga = Math.max(0, Math.min(LIGAS.length - 1, r.nueva));
+  perfil.ligaMax = Math.max(perfil.ligaMax | 0, perfil.liga);
+  const v = perfil.vitrina || (perfil.vitrina = {});
+  const de = LIGAS[r.liga].id;
+  v[de] = v[de] || { semanas: 0, podios: 0, mejor: 0 };
+  v[de].semanas += 1;
+  if(r.lugar <= 3 && r.n >= 2) v[de].podios += 1;
+  v[de].mejor = v[de].mejor ? Math.min(v[de].mejor, r.lugar) : r.lugar;
+  if(r.nueva !== r.liga){ const a = LIGAS[perfil.liga].id; v[a] = v[a] || { semanas: 0, podios: 0, mejor: 0 }; }
+  perfil.ligaAviso = { ...r, de: LIGAS[r.liga].nombre, a: LIGAS[perfil.liga].nombre };
+  return perfil.ligaAviso;
+}
+/* cuánto falta para que cierre la semana (domingo a medianoche en México) */
+function cierraEn(dia, ahora){
+  const d = new Date(aMs(dia)); const dow = (d.getUTCDay() + 6) % 7;
+  return Math.max(0, aMs(dia) + (7 - dow) * DIA_MS + 6 * 36e5 - ahora);
+}
+async function ranking(storage, semana, cuenta, perfil, dia, ahora){
   const tabla = (await storage.get(kSem(semana))) || {};
-  return { semana, filas: Object.entries(tabla).map(([cuenta, f]) => ({ cuenta, nombre: nombres[cuenta] || f.nombre || cuenta, xp: f.xp || 0 }))
-    .sort((a, b) => b.xp - a.xp || a.nombre.localeCompare(b.nombre)) };
+  const miembros = (await storage.get(K_MIEMBROS)) || {};
+  const liga = perfil.liga | 0;
+  const grupo = grupoDe(tabla, cuenta, semana, liga).map((f) => ({ ...f, nombre: f.cuenta === cuenta ? perfil.nombre : (miembros[f.cuenta]?.nombre || f.nombre) }));
+  const activos = grupo.filter((f) => f.xp > 0).length;
+  /* los de tu liga que aún no estudian esta semana: abajo, con 0, para llenar el grupo */
+  const ya = new Set(grupo.map((f) => f.cuenta));
+  const quietos = Object.entries(miembros).filter(([k, v]) => !ya.has(k) && (v.liga | 0) === liga && !(tabla[k]?.xp > 0))
+    .map(([k, v]) => ({ cuenta: k, nombre: v.nombre || k, xp: 0 })).sort((a, b) => a.nombre.localeCompare(b.nombre)).slice(0, Math.max(0, TAM_GRUPO - grupo.length));
+  const am = await amigosDe(storage, cuenta);
+  const amigos = [cuenta, ...am.amigos.filter((k) => k !== cuenta)].slice(0, 200).map((k) => ({ cuenta: k, nombre: k === cuenta ? perfil.nombre : (miembros[k]?.nombre || tabla[k]?.nombre || k), xp: tabla[k]?.xp || 0, liga: k === cuenta ? liga : (miembros[k]?.liga | 0) }))
+    .sort((a, b) => b.xp - a.xp || a.nombre.localeCompare(b.nombre));
+  /* cada fila con sus títulos y el estilo de su nombre (Carlos, 14 nov: «alfa tester», el nombre de Sandra en arcoíris) */
+  const con = (f) => { const v = f.cuenta === cuenta ? { titulos: titulosDe(perfil), estilo: perfil.estiloNombre } : miembros[f.cuenta] || {}; return { ...f, titulos: v.titulos || [], ...(v.estilo ? { estilo: v.estilo } : {}) }; };
+  return { semana, liga, filas: grupo.concat(quietos).map(con), activos, reglas: reglasDe(liga, Math.max(activos, 1)), amigos: amigos.map(con), cierra: cierraEn(dia, ahora) };
+}
+
+/* lo que se enseña de alguien en su perfil */
+async function perfilPublico(storage, cuenta, p, hoy){
+  const ind = (await storage.get(kPlanes(cuenta))) || {};
+  const cursos = Object.values(ind).filter((x) => !x.borrado).sort((a, b) => (b.t || 0) - (a.t || 0)).slice(0, 30).map((x) => ({ titulo: x.titulo, materia: x.materia }));
+  const materias = {}; for(const c of cursos){ const m = c.materia || 'Otros'; materias[m] = (materias[m] || 0) + 1; }
+  const tabla = (await storage.get(kSem(semanaDe(hoy)))) || {};
+  const mascotas = Object.entries(p.mascotas || {}).map(([especie, m]) => { const n = nivelMascota(m.xp || 0); return { especie, nombre: m.nombre || '', nivel: n, etapa: etapaDe(especie, n), skin: m.skin || 'normal', acc: m.acc || [], adn: m.adn || null, muerta: !!m.muerta }; });
+  return { cuenta, nombre: p.nombre || cuenta, titulos: titulosDe(p), estilo: p.estiloNombre || '', nivel: nivelDe(p.xp || 0), xp: p.xp || 0, xpSemana: tabla[cuenta]?.xp || 0,
+    racha: p.racha || 0, mejorRacha: p.mejorRacha || 0, liga: p.liga | 0, ligaMax: p.ligaMax | 0, vitrina: p.vitrina || {}, desde: p.desde || null,
+    personaje: p.personaje || null, ropa: p.ropa || [], mascota: p.mascota || null, mascotas, cursos, materias };
 }
 
 /* junta el progreso de dos versiones de un plan: lo hecho se queda hecho y gana la mejor calificación */
@@ -161,7 +227,8 @@ export async function guardarEnMemoria(storage, { tipo, materia, titulo, nivel, 
 export const EN_LINEA_MS = 45_000;
 const kAmigos = (c) => `est:amigos:${c}`, kBuzon = (c) => `est:buzon:${c}`, kSes = (id) => `est:ses:${id}`, kSesAct = (c) => `est:sesactual:${c}`, kExam = (c) => `est:examenes:${c}`;
 const TIPOS_MSG = { saludo: 'te saludó', felicita: 'te felicitó', invita: 'te invita a estudiar juntos', acepta: 'aceptó estudiar contigo', rechaza: 'ahorita no puede estudiar',
-  amistad: 'quiere ser tu amigo', amigos: 'ya es tu amigo', examen: 'ya hizo su examen', fin: 'terminó la sesión contigo', estudio: 'acaba de estudiar' };
+  amistad: 'quiere ser tu amigo', amigos: 'ya es tu amigo', examen: 'ya hizo su examen', fin: 'terminó la sesión contigo', estudio: 'acaba de estudiar',
+  reta: 'te retó a una partida', retoAcepta: 'aceptó tu reto', retoRechaza: 'ahorita no puede jugar', juegoFin: 'terminó la partida' };
 async function amigosDe(storage, c){ return (await storage.get(kAmigos(c))) || { amigos: [], pide: [] }; }
 async function alBuzon(storage, para, m, ahora){
   const b = (await storage.get(kBuzon(para))) || [];
@@ -288,11 +355,22 @@ async function atenderSesion(storage, c, cuenta, perfil, ahora){
   return null;
 }
 
-export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.now(), { vapid, enviar } = {}){
+export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.now(), { vapid, enviar, admin = false } = {}){
   cuenta = limpio(cuenta || 'invitado', 40).toLowerCase() || 'invitado';
   const hoy = diaMexico(ahora);
   const perfil = conEconomia((await storage.get(kPerfil(cuenta))) || perfilNuevo(cuenta), ahora);
+  /* desde cuándo está: decide si es alfa o beta tester (titulos.js). Los de antes de esto, todos alfa */
+  if(!perfil.desde){ perfil.desde = ahora; if(cuenta !== 'invitado') await storage.put(kPerfil(cuenta), perfil); }
   const indice = (await storage.get(kPlanes(cuenta))) || {};
+  /* la semana que estudiaste ya cerró: se decide si subes o bajas antes de cualquier otra cosa */
+  if(perfil.ligaSem && perfil.ligaSem !== semanaDe(hoy)){
+    cerrarLiga(await storage.get(kSem(perfil.ligaSem)), perfil, cuenta);
+    perfil.t = ahora; await storage.put(kPerfil(cuenta), perfil);
+  }
+  /* el aviso de liga se entrega una sola vez */
+  const avisoLiga = async () => { const a = perfil.ligaAviso; if(!a) return undefined; delete perfil.ligaAviso; await storage.put(kPerfil(cuenta), perfil); return a; };
+  /* si tu mascota se murió mientras no estabas, se avisa una sola vez */
+  const avisoMasc = async () => { const a = perfil.avisoMascota; if(!a) return undefined; delete perfil.avisoMascota; await storage.put(kPerfil(cuenta), perfil); return a; };
 
   if(pedido.method === 'GET'){
     const id = url.searchParams.get('plan');
@@ -302,7 +380,21 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
       return Response.json({ bien: true, plan });
     }
     if(url.searchParams.get('tienda')) return Response.json({ bien: true, tienda: TIENDA, premios: PREMIOS, perfil: publico(perfil) });
-    return Response.json({ bien: true, hoy, perfil: publico(perfil), planes: Object.values(indice), ranking: await ranking(storage, semanaDe(hoy), { [cuenta]: perfil.nombre }), hora: ahora });
+    /* EL PERFIL DE OTRO (Carlos, 14 nov: «alguien quiere ver a alguien más que está en el ranking: qué nivel tiene, qué
+       cursos ha tomado, para qué ha usado la aplicación, cuánta experiencia, las mascotas que tiene, los estilos»).
+       Sólo de quien está en la comunidad, y sólo lo que se enseña: nada de amigos, avisos, inventario ni cubitos. */
+    const de = url.searchParams.get('perfil');
+    if(de){
+      const k = limpio(de, 40).toLowerCase(), miembros = (await storage.get(K_MIEMBROS)) || {};
+      if(k !== cuenta && !miembros[k]) return Response.json({ error: 'No encontré a esa persona.' }, { status: 404 });
+      const o = k === cuenta ? perfil : await storage.get(kPerfil(k));
+      if(!o) return Response.json({ error: 'No encontré a esa persona.' }, { status: 404 });
+      return Response.json({ bien: true, otro: await perfilPublico(storage, k, o, hoy) });
+    }
+    await apuntarMiembro(storage, cuenta, perfil.nombre, perfil.liga, perfil);
+    const ligaAviso = await avisoLiga();
+    const mascotaAviso = await avisoMasc();
+    return Response.json({ bien: true, hoy, perfil: publico(perfil), planes: Object.values(indice), ranking: await ranking(storage, semanaDe(hoy), cuenta, perfil, hoy, ahora), liga: ligaAviso, mascota: mascotaAviso, hora: ahora });
   }
   if(pedido.method !== 'POST') return Response.json({ error: 'Usa GET o POST.' }, { status: 405 });
 
@@ -310,6 +402,25 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
   if(crudo.length > MAX_PLAN + 50_000) return Response.json({ error: 'El plan es demasiado grande para guardarlo.' }, { status: 413 });
   let c; try{ c = JSON.parse(crudo || '{}'); }catch{ return Response.json({ error: 'No entendí la petición.' }, { status: 400 }); }
 
+  /* ── BORRAR TODO lo de la cuenta (App Store y Play Store lo exigen: borrar la cuenta desde la app, 14 nov).
+     Perfil, planes, amigos, buzón, exámenes, avisos al teléfono y su lugar en el ranking. La cuenta de usuario y
+     contraseña se borra aparte, en la comunidad (comunidad.js · borrarCuenta). ── */
+  if(c.accion === 'borrarTodo'){
+    if(cuenta === 'invitado') return Response.json({ error: 'No hay cuenta que borrar.' }, { status: 400 });
+    const llaves = [kPerfil(cuenta), kPlanes(cuenta), kAmigos(cuenta), kBuzon(cuenta), kExam(cuenta), kSesAct(cuenta), kAvisos(cuenta), ...llavesJuegos(cuenta), ...Object.keys(indice).map((id) => kPlan(cuenta, id))];
+    for(let i = 0; i < llaves.length; i += 100) await storage.delete(llaves.slice(i, i + 100));
+    const miembros = (await storage.get(K_MIEMBROS)) || {};
+    if(miembros[cuenta]){ delete miembros[cuenta]; await storage.put(K_MIEMBROS, miembros); }
+    const conAvisos = (await storage.get(K_INDICE)) || [];
+    if(Array.isArray(conAvisos) && conAvisos.includes(cuenta)) await storage.put(K_INDICE, conAvisos.filter((x) => x !== cuenta));
+    return Response.json({ bien: true, borrado: true });
+  }
+
+  /* ── juegos de mesa en línea (juegos-mesa.js) ── */
+  if(typeof c.accion === 'string' && /^juego/.test(c.accion)){
+    const r = await atenderJuegos(storage, c, cuenta, perfil, ahora, { alBuzon });
+    if(r) return Response.json(r, { status: r.estado || 200 });
+  }
   /* ── amigos y estudiar juntos ── */
   if(['latido', 'amistad', 'quitarAmigo', 'mandar', 'invitar'].includes(c.accion)){
     const r = await atenderAmigos(storage, c, cuenta, perfil, ahora);
@@ -370,7 +481,7 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
   if(c.accion === 'xp'){
     const eventos = (Array.isArray(c.eventos) ? c.eventos : [c]).slice(0, 50);
     const vistos = new Set(perfil.ids || []);
-    let suma = 0; const dijo = [], premios = [];
+    let suma = 0, mascotaSube = null; const dijo = [], premios = [];
     const dar = (motivo, n) => { if(n) premios.push({ motivo, cubos: n, que: PREMIOS[motivo].que }); };
     for(const e of eventos){
       if(!e || !idValido(e.id) || vistos.has(e.id)) continue;
@@ -388,9 +499,11 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
       /* lo que terminaste: la página dice QUÉ fue; cuánto vale y el tope del día lo pone el servidor */
       if(['leccion', 'grado', 'plan'].includes(e.motivo)) dar(e.motivo, premiar(perfil, e.motivo, dia));
       estudioAnima(perfil, xp);
+      { const sube = crecer(perfil, xp); if(sube) mascotaSube = sube; }
       const sem = semanaDe(dia), tabla = (await storage.get(kSem(sem))) || {};
-      tabla[cuenta] = { xp: (tabla[cuenta]?.xp || 0) + xp, nombre: perfil.nombre };
+      tabla[cuenta] = { xp: (tabla[cuenta]?.xp || 0) + xp, nombre: perfil.nombre, liga: tabla[cuenta] ? (tabla[cuenta].liga | 0) : (perfil.liga | 0) };
       await storage.put(kSem(sem), tabla);
+      if(sem === semanaDe(hoy)) perfil.ligaSem = sem;
     }
     if(c.nombre) perfil.nombre = limpio(c.nombre, 30) || perfil.nombre;
     dar('nivel', cobrarNivel(perfil, hoy));
@@ -406,7 +519,9 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
     } }
     perfil.t = ahora;
     await storage.put(kPerfil(cuenta), perfil);
-    return Response.json({ bien: true, sumado: suma, premios, eventos: [...new Set(dijo)], perfil: publico(perfil), ranking: await ranking(storage, semanaDe(hoy), { [cuenta]: perfil.nombre }) });
+    await apuntarMiembro(storage, cuenta, perfil.nombre, perfil.liga, perfil);
+    const ligaAviso = await avisoLiga();
+    return Response.json({ bien: true, sumado: suma, premios, eventos: [...new Set(dijo)], perfil: publico(perfil), ranking: await ranking(storage, semanaDe(hoy), cuenta, perfil, hoy, ahora), liga: ligaAviso, mascotaSube });
   }
 
   /* ── COMPARTIR UN PLAN (Carlos, 13 nov) ──
@@ -444,8 +559,66 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
     return Response.json({ ...r, perfil: publico(perfil) });
   }
   /* la mascota que elegiste y su voz (0, 1 o 2), para que al volver siga igual */
+  /* la crianza: adoptar, cambiar, vestir, comprar ropa y ponerle nombre (palomium.js) */
+  /* LO QUE SÓLO HACE QUIEN TIENE LA LLAVE DE LA SALA (Carlos, Luis): ver quiénes están y ponerle a alguien su título,
+     el estilo de su nombre y regalarle accesorios que no se venden (el pincel de Sandra, la capa de Carlos…) */
+  if(c.accion === 'admin'){
+    if(!admin) return Response.json({ error: 'Eso sólo lo hace la casa.' }, { status: 403 });
+    const miembros = (await storage.get(K_MIEMBROS)) || {};
+    if(c.que === 'miembros') return Response.json({ bien: true, miembros });
+    if(c.que === 'especial'){
+      const k = limpio(c.cuenta, 40).toLowerCase(), o = k && await storage.get(kPerfil(k));
+      if(!o) return Response.json({ error: 'No encontré esa cuenta.' }, { status: 404 });
+      if('titulo' in c){ if(c.titulo && !TITULOS[c.titulo]) return Response.json({ error: 'Ese título no existe.' }, { status: 400 }); o.titulo = c.titulo || null; }
+      if('cubosInfinitos' in c){ o.infinito = !!c.cubosInfinitos; if(o.infinito) o.cubos = Math.max(o.cubos || 0, 999999); }
+      if('estilo' in c){ if(c.estilo && !ESTILOS_NOMBRE[c.estilo]) return Response.json({ error: 'Ese estilo no existe.' }, { status: 400 }); o.estiloNombre = c.estilo || ''; }
+      const pedidos = (Array.isArray(c.regalos) ? c.regalos : []).map(String);
+      const regalos = pedidos.filter((x) => ACCESORIOS[x] || SKINS[x]);
+      if(regalos.length) o.armario = [...new Set([...(o.armario || []), ...regalos])];
+      /* ropa de regalo para su personaje (la gorra y el estampado de Grupo Mazi) */
+      const ropaRegalo = pedidos.filter((x) => TIENDA_ROPA[x]);
+      if(ropaRegalo.length){ o.ropa = [...new Set([...(o.ropa || []), ...ropaRegalo])];
+        if(c.ponerle){ const pj = { ...(o.personaje || personajeDeArranque(k)) }; for(const x of ropaRegalo) pj[TIENDA_ROPA[x].parte] = TIENDA_ROPA[x].valor;
+          if(ropaRegalo.includes('estampa:mazi') && !['hoodie', 'shirtCrewNeck', 'shirtScoopNeck', 'shirtVNeck', 'graphicShirt'].includes(pj.ropa)) pj.ropa = 'hoodie';
+          o.personaje = normalizarPersonaje(pj, o.ropa, k, o.personaje); } }
+      /* y se los pone a su mascota activa, para que los vea luego luego */
+      if(c.ponerle && o.mascota && o.mascotas?.[o.mascota]){ const m = o.mascotas[o.mascota], acc = regalos.filter((x) => ACCESORIOS[x]);
+        const lugares = new Set(acc.map((x) => ACCESORIOS[x].lugar)); m.acc = [...acc, ...(m.acc || []).filter((x) => !lugares.has(ACCESORIOS[x]?.lugar))].slice(0, 3); }
+      /* UNA MASCOTA ESPECIAL YA CRECIDA (Carlos, 14 nov: «dame a mí una pet ya full crecida y especial para mí»):
+         se la da la casa con el nivel que diga, su color y sus accesorios de regalo, y queda como su compañera */
+      if(c.mascotaEspecial && typeof c.mascotaEspecial === 'object'){
+        const e = c.mascotaEspecial, esp = String(e.especie || '');
+        if(!ESPECIES[esp]) return Response.json({ error: 'Esa mascota no existe.' }, { status: 400 });
+        conCrianza(o, ahora);
+        const nivel = Math.max(1, Math.min(30, Math.round(Number(e.nivel) || 15)));
+        const skin = SKINS[e.skin] ? String(e.skin) : 'normal';
+        const acc = (Array.isArray(e.acc) ? e.acc : []).map(String).filter((x) => ACCESORIOS[x]).slice(0, 3);
+        o.armario = [...new Set([...(o.armario || []), ...(skin !== 'normal' ? [skin] : []), ...acc])];
+        const ya = o.mascotas[esp] || {};
+        o.mascotas[esp] = { ...ya, xp: Math.max(xpDeNivel(nivel), ya.muerta ? 0 : (ya.xp || 0)), nacio: ya.nacio || ahora, skin, acc, especial: true, ...(e.nombre ? { nombre: limpio(e.nombre, 20) } : {}) };
+        delete o.mascotas[esp].muerta;
+        o.mascota = esp; o.cuidado = { hambre: 100, limpieza: 100, animo: 100, t: ahora }; o.peligroDesde = null;
+      }
+      o.t = ahora; await storage.put(kPerfil(k), o);
+      await apuntarMiembro(storage, k, o.nombre, o.liga, o);
+      return Response.json({ bien: true, cuenta: k, titulos: titulosDe(o), estilo: o.estiloNombre, armario: o.armario, infinito: !!o.infinito, cubos: o.cubos, ropa: o.ropa, personaje: o.personaje, mascotas: o.mascotas, mascota: o.mascota });
+    }
+    return Response.json({ error: 'No sé hacer eso.' }, { status: 400 });
+  }
+  if(c.accion === 'crianza'){
+    const r = crianza(perfil, c, ahora);
+    if(r.error) return Response.json({ ...r, perfil: publico(perfil) }, { status: 400 });
+    perfil.t = ahora; await storage.put(kPerfil(cuenta), perfil);
+    return Response.json({ ...r, perfil: publico(perfil) });
+  }
   if(c.accion === 'mascota'){
-    if(typeof c.personaje === 'string' && /^[a-z]{1,20}$/.test(c.personaje)) perfil.mascota = c.personaje;
+    /* elegir: si ya es tuya (y vive), queda como tu compañera; si no tienes ninguna viva, la primera es gratis; si no, hay que adoptarla */
+    if(typeof c.personaje === 'string' && /^[a-z]{1,20}$/.test(c.personaje)){
+      const q = c.personaje, m = perfil.mascotas[q];
+      if(q === 'no' || (m && !m.muerta)) perfil.mascota = q;
+      else if(ESPECIES[q] && !vivas(perfil).length) crianza(perfil, { que: 'adoptar', especie: q }, ahora);
+      else if(ESPECIES[q]) return Response.json({ error: `Primero adopta a tu ${ESPECIES[q].nombre.toLowerCase()} en el cuarto de tu compañero.`, adoptar: q, precio: ESPECIES[q].precio, perfil: publico(perfil) }, { status: 400 });
+    }
     if(c.voz != null && typeof c.personaje === 'string' && /^[a-z]{1,20}$/.test(c.personaje)) perfil.voces[c.personaje] = Math.max(0, Math.min(2, Math.round(Number(c.voz)) || 0));
     perfil.t = ahora; await storage.put(kPerfil(cuenta), perfil);
     return Response.json({ bien: true, perfil: publico(perfil) });
@@ -464,6 +637,7 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
     /* el nombre nuevo también en el ranking de esta semana */
     const sem = semanaDe(hoy), tabla = await storage.get(kSem(sem));
     if(tabla && tabla[cuenta]){ tabla[cuenta].nombre = perfil.nombre; await storage.put(kSem(sem), tabla); }
+    await apuntarMiembro(storage, cuenta, perfil.nombre, perfil.liga, perfil);
     return Response.json({ bien: true, perfil: publico(perfil) });
   }
 

@@ -10,12 +10,18 @@
  *   decorar     pone el personaje de cada quien en el ranking, en amigos y en tu perfil. NO toca el
  *               código del ranking: lo VIGILA (MutationObserver) y cambia la letra por el dibujo.
  * ===========================================================================*/
-import { OPCIONES, TIENDA_ROPA, articuloDe, personajeDeArranque, normalizarPersonaje, opcionesAvataaars } from './ropa.js';
+import { OPCIONES, TIENDA_ROPA, articuloDe, personajeDeArranque, normalizarPersonaje, opcionesAvataaars, extrasMazi } from './ropa.js';
 import { CUBO } from './cosas.js';
 
 let lib = null;
 const libreria = () => (lib ||= import('./vendor/avatar.js'));
-export async function svgPersonaje(p){ const m = await libreria(); return m.svgPersonaje(opcionesAvataaars(p)); }
+export async function svgPersonaje(p){
+  const m = await libreria(), svg = m.svgPersonaje(opcionesAvataaars(p)), extra = extrasMazi(p);
+  /* lo nuestro va dentro del círculo (la máscara), justo antes de que se cierre */
+  if(!extra) return svg;
+  const i = svg.lastIndexOf('</g></svg>');
+  return i < 0 ? svg.replace('</svg>', extra + '</svg>') : svg.slice(0, i) + extra + svg.slice(i);
+}
 
 const NOMBRES = {
   ojos: { default: 'Normales', happy: 'Felices', wink: 'Guiño', side: 'De lado', squint: 'Entrecerrados', surprised: 'Sorpresa', hearts: 'Enamorados', closed: 'Cerrados' },
@@ -56,7 +62,7 @@ export function iniciarVestidor(h){
     c.addEventListener('click', alTocar);
     pintarSaldo(); pintarGrande(); pintarOpciones();
   }
-  function pintarSaldo(){ const e = $('#cubosVest'); if(e) e.innerHTML = `<span class="cubo-ico">${CUBO}</span>${h.perfil().cubos || 0}`; }
+  function pintarSaldo(){ const e = $('#cubosVest'); if(e) e.innerHTML = `<span class="cubo-ico">${CUBO}</span>${h.perfil().infinito ? '∞' : (h.perfil().cubos || 0)}`; }
   async function pintarGrande(){
     const e = $('#pjGrande'); if(!e) return;
     const svg = await svgPersonaje(borrador); e.innerHTML = svg;
@@ -66,12 +72,14 @@ export function iniciarVestidor(h){
     const caja = $('#pjOpciones'); if(!caja) return;
     $$('[data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === pestana)));
     const pt = PESTANAS.find((p) => p.id === pestana);
-    caja.innerHTML = pt.partes.map(([k, t]) => `<div class="seccion-t">${t}</div><div class="${DE_COLOR.has(k) ? 'pj-colores' : 'pj-rejilla'}" data-parte="${k}">${OPCIONES[k].map((v) => boton(k, v)).join('')}</div>`).join('');
+    /* lo de regalo sólo le sale a quien lo tiene */
+    const visible = (k, v) => { const a = articuloDe(k, v); return !a || !TIENDA_ROPA[a].regalo || tengo(a); };
+    caja.innerHTML = pt.partes.map(([k, t]) => `<div class="seccion-t">${t}</div><div class="${DE_COLOR.has(k) ? 'pj-colores' : 'pj-rejilla'}" data-parte="${k}">${OPCIONES[k].filter((v) => visible(k, v)).map((v) => boton(k, v)).join('')}</div>`).join('');
     /* las miniaturas: tu personaje con esa pieza puesta */
     for(const b of caja.querySelectorAll('.pj-op[data-valor]')){
       const prueba = { ...borrador, [b.dataset.parte]: b.dataset.valor };
       if(b.dataset.parte === 'pelo') prueba.gorro = '';
-      if(b.dataset.parte === 'estampa' && b.dataset.valor) prueba.ropa = 'graphicShirt';
+      if(b.dataset.parte === 'estampa' && b.dataset.valor && b.dataset.valor !== 'mazi') prueba.ropa = 'graphicShirt';
       const mini = b.querySelector('.pj-mini'); if(mini) mini.innerHTML = await svgPersonaje(prueba);
       if(!$('#pjOpciones')) return;      /* cerraron mientras se pintaba */
     }
@@ -96,7 +104,7 @@ export function iniciarVestidor(h){
   function poner(k, val){
     borrador[k] = val;
     if(k === 'pelo') borrador.gorro = '';                          /* elegir peinado quita el gorro: si no, no se ve */
-    if(k === 'estampa' && val && borrador.ropa !== 'graphicShirt' && tengo('ropa:graphicShirt')) borrador.ropa = 'graphicShirt';
+    if(k === 'estampa' && val && val !== 'mazi' && borrador.ropa !== 'graphicShirt' && tengo('ropa:graphicShirt')) borrador.ropa = 'graphicShirt';
     h.tono(h.SON.pop); h.vibrar(8);
     pintarGrande();
     $$(`[data-parte="${k}"][data-valor]`).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.valor === val)));

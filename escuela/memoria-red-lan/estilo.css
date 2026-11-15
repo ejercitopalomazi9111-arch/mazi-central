@@ -1,0 +1,89 @@
+@page { size: A4; margin: 24mm 20mm 22mm 20mm; }
+:root{ --oscuro:#0B2545; --azul:#1565C0; --cian:#0EA5E9; --gris:#5B6675; --gris-2:#8A94A3; --linea:#D5DCE6; --claro:#EEF3F9; --claro-2:#F6F8FB; --texto:#1C2533; }
+*{ box-sizing:border-box }
+html{ -webkit-print-color-adjust:exact; print-color-adjust:exact }
+body{ margin:0; font:400 10.4pt/1.55 Inter, "DejaVu Sans", sans-serif; color:var(--texto); background:#fff; font-feature-settings:"tnum" 0, "cv11" 1 }
+h1,h2,h3,h4{ font-family:"Inter Display", Inter, sans-serif; color:var(--oscuro); line-height:1.2 }
+h1{ font-size:22pt; font-weight:800; margin:0 0 4mm; padding-bottom:3mm; border-bottom:2.2pt solid var(--azul); break-after:avoid }
+h1 .num{ color:var(--azul); margin-right:3mm }
+h2{ font-size:13.5pt; font-weight:700; margin:7mm 0 2.5mm; break-after:avoid }
+h2 .num{ color:var(--azul); margin-right:2mm }
+h3{ font-size:11pt; font-weight:700; margin:5mm 0 2mm; color:var(--azul); break-after:avoid }
+p{ margin:0 0 2.6mm; text-align:justify; hyphens:auto; orphans:3; widows:3 }
+.capitulo{ break-before:page }
+ul,ol{ margin:0 0 3mm; padding-left:6mm }
+li{ margin:0 0 1.2mm; text-align:justify }
+strong{ color:var(--oscuro); font-weight:650 }
+code, .mono{ font-family:"JetBrains Mono", "DejaVu Sans Mono", monospace; font-size:8.6pt }
+p code, li code, td code{ background:var(--claro); padding:0 1.2mm; border-radius:1mm; color:var(--oscuro) }
+.cita{ color:var(--gris) }
+
+/* tablas */
+table{ width:100%; border-collapse:collapse; margin:2mm 0 4mm; font-size:8.9pt; line-height:1.4; break-inside:auto }
+thead{ display:table-header-group }
+tr{ break-inside:avoid }
+th{ background:var(--oscuro); color:#fff; font-weight:600; text-align:left; padding:1.8mm 2.2mm; border:0.4pt solid var(--oscuro) }
+td{ padding:1.6mm 2.2mm; border:0.4pt solid var(--linea); vertical-align:top }
+tbody tr:nth-child(even) td{ background:var(--claro-2) }
+td.c, th.c{ text-align:center }
+.leyenda{ font-size:8.4pt; color:var(--gris); margin:-2mm 0 4mm; text-align:left }
+.leyenda b{ color:var(--oscuro) }
+
+/* figuras */
+figure{ margin:3mm 0 4mm; break-inside:avoid; border:0.5pt solid var(--linea); border-radius:2mm; padding:3mm; background:#fff }
+figure svg{ display:block; width:100%; height:auto }
+figcaption{ font-size:8.4pt; color:var(--gris); margin-top:2mm; text-align:center }
+figcaption b{ color:var(--oscuro) }
+
+/* recuadros */
+.nota{ border-left:2.5pt solid var(--azul); background:var(--claro); padding:2.5mm 3.5mm; margin:2mm 0 4mm; font-size:9.4pt; break-inside:avoid }
+.nota p:last-child{ margin:0 }
+.nota b{ color:var(--oscuro) }
+
+/* configuraciones */
+pre.cfg{ margin:2mm 0 4mm; padding:3mm 3.5mm; background:#0F1B2D; color:#E6EDF6; border-radius:2mm; font:400 8.2pt/1.45 "JetBrains Mono", monospace; white-space:pre-wrap; break-inside:auto }
+pre.cfg .c{ color:#7FB3E6 }
+pre.cfg .p{ color:#8FD18F }
+.cfg-tit{ font-size:8.6pt; font-weight:700; color:var(--oscuro); margin:3mm 0 0; break-after:avoid }
+
+/* fichas de componentes */
+.ficha{ border:0.5pt solid var(--linea); border-radius:2mm; margin:0 0 3.2mm; break-inside:avoid; overflow:hidden }
+.ficha h4{ margin:0; padding:2mm 3mm; background:var(--claro); font-size:10pt; display:flex; justify-content:space-between; gap:3mm }
+.ficha h4 small{ font-weight:500; color:var(--gris); font-size:8.4pt }
+.ficha dl{ display:grid; grid-template-columns:30mm 1fr; margin:0; font-size:8.9pt; line-height:1.45 }
+.ficha dt{ padding:1.4mm 3mm; color:var(--oscuro); font-weight:600; border-top:0.4pt solid var(--linea) }
+.ficha dd{ margin:0; padding:1.4mm 3mm 1.4mm 0; border-top:0.4pt solid var(--linea); text-align:justify }
+
+/* índice */
+.indice{ list-style:none; padding:0; margin:4mm 0 0 }
+.indice li{ display:flex; align-items:baseline; gap:2mm; margin:0 0 1.6mm; font-size:10.4pt; text-align:left }
+.indice li.n1{ font-weight:700; color:var(--oscuro); margin-top:3mm }
+.indice li.n2{ padding-left:8mm; font-size:9.8pt }
+.indice li .t{ flex:none; max-width:150mm }
+.indice li .punt{ flex:1; border-bottom:0.8pt dotted var(--gris-2); transform:translateY(-1mm) }
+.indice li .pg{ flex:none; min-width:8mm; text-align:right; font-variant-numeric:tabular-nums }
+
+/* línea del tiempo */
+.linea{ position:relative; margin:3mm 0 2mm; padding-left:30mm }
+.linea::before{ content:""; position:absolute; left:23mm; top:0; bottom:0; width:1.2pt; background:var(--linea) }
+.hito{ position:relative; margin:0 0 3mm; break-inside:avoid }
+.hito .anio{ position:absolute; left:-30mm; top:0; width:20mm; text-align:right; font:800 11pt "Inter Display", Inter; color:var(--oscuro) }
+.hito::before{ content:""; position:absolute; left:-8.6mm; top:1.2mm; width:3.2mm; height:3.2mm; border-radius:50%; background:#fff; border:1.6pt solid var(--azul) }
+.hito.conf::before{ background:var(--azul) }
+.hito .caja{ border:0.5pt solid var(--linea); border-radius:1.6mm; padding:2mm 3mm; background:#fff }
+.hito.conf .caja{ background:var(--claro); border-color:#B9CCE6 }
+.hito b.t{ display:block; font-size:9.8pt; color:var(--oscuro); margin-bottom:.6mm }
+.hito .d{ font-size:8.9pt; line-height:1.45; margin:0; text-align:justify }
+.hito .imp{ font-size:8.5pt; color:var(--azul); margin:.8mm 0 0; line-height:1.4 }
+.hito .tag{ display:inline-block; font-size:7.2pt; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:#fff; background:var(--gris); border-radius:1mm; padding:.2mm 1.4mm; margin-left:1.5mm; vertical-align:1pt }
+.tag.inf{ background:var(--oscuro) } .tag.std{ background:#3B5B86 } .tag.ina{ background:var(--cian) } .tag.cnf{ background:var(--azul) }
+
+/* anexo */
+.prompt{ border:0.6pt solid var(--linea); background:var(--claro-2); border-radius:2mm; padding:3mm 4mm; font:400 8.1pt/1.45 "JetBrains Mono", monospace; white-space:pre-wrap; color:#2A3443 }
+
+/* referencias */
+.refs p{ padding-left:10mm; text-indent:-10mm; text-align:left; font-size:9.4pt; line-height:1.5; margin-bottom:2.4mm; overflow-wrap:anywhere }
+.refs a{ color:var(--azul); text-decoration:none }
+.refs h3{ color:var(--oscuro) }
+
+.junto{ break-inside:avoid }

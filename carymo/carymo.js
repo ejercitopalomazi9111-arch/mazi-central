@@ -20,10 +20,16 @@ import { sonar, encender as encenderSonidos } from '../sala/sonidos/sonidos.js';
 import { llave, ponerLlave, llamar, SERVIDOR, SALA } from '../presentaciones/ia.js';
 import { CURSOS, MATERIAL, HECHOS, planDeCurso } from './academia.js';
 import { crearVoz, todas as todasLasVoces, VOZ_DE_FABRICA, despertar } from '../sala/voces.js';
-import { crearMascota, PERSONAJES, NOMBRE_PERSONAJE } from './mascota.js';
+import { alMuelle, muelleArriba } from './muelle.js';
+import { crearMascota, PERSONAJES, NOMBRE_PERSONAJE, configurarVestido, refrescarVestidos } from './mascota.js';
+import { ESPECIES, ETAPAS, nivelMascota, xpDeNivel, etapaDe } from './crianza-datos.js';
 import { iniciarAmigos } from './amigos.js';
+import { nombreHTML, insigniasHTML } from './nombre.js';
+import { iniciarPerfilOtro } from './perfil-otro.js';
 import { iniciarCompanero } from './companero.js';
-import { iniciarCuenta } from './cuenta.js';
+import { iniciarWidget } from './widget.js';
+import { iniciarJuegos } from './juegos/juegos.js';
+import { iniciarCuenta, ESCOLAR, NIVEL_DE_ESCOLAR } from './cuenta.js';
 import { iniciarApuntes } from './apuntes.js';
 import { iniciarSesionEstudio } from './sesion.js';
 import { pedirSala, conAcceso } from '../sala/acceso.js';
@@ -31,6 +37,9 @@ import { entrada } from './entrada.js';
 import { iniciarAvisos } from './avisos.js';
 import { iniciarVestidor } from './vestidor.js';
 import { iniciarYo, SUBVISTAS } from './yo.js';
+import { configurarPersonaje, personajeVivo, reaccion } from './personaje-vivo.js';
+import { LIGAS, ligaDe, trofeoSVG } from './ligas.js';
+import { personajeDeArranque, normalizarPersonaje } from './ropa.js';
 import { leerClase, guardarClase, hayClase } from '../sala/clases-guardadas.js';
 
 const $ = (s, d = document) => d.querySelector(s);
@@ -75,7 +84,18 @@ if(!ajustes.mascota) ajustes.mascota = 'tigre';
 /* la mascota (tigre o paloma, de las hojas de Carlos): acompaña, reacciona y festeja */
 /* las mascotas que hay en pantalla: la más reciente y visible es la que dice los avisos */
 const enPantalla = new Set();
-const mascotaEn = (caja, op = {}) => { if(ajustes.mascota === 'no' || !caja) return null; const m = crearMascota(caja, { personaje: ajustes.mascota, ...op }); enPantalla.add(m); return m; };
+/* la mascota que te acompaña: la que elegiste, salvo que se haya muerto (entonces ninguna hasta que adoptes otra) */
+const muerta = (q) => !!(perfil.mascotas && perfil.mascotas[q] && perfil.mascotas[q].muerta);
+const mascotaActiva = () => ajustes.mascota === 'no' || muerta(ajustes.mascota) ? 'no' : ajustes.mascota;
+const mascotaEn = (caja, op = {}) => { if(mascotaActiva() === 'no' || !caja) return null; const m = crearMascota(caja, { personaje: mascotaActiva(), ...op }); enPantalla.add(m); return m; };
+/* tu mascota sale como va: su etapa (huevo, bebé, joven, adulta, sabia), su color y lo que trae puesto (crianza) */
+function vestidoDe(especie){
+  const m = perfil.mascotas && perfil.mascotas[especie]; if(!m || m.muerta) return null;
+  const n = nivelMascota(m.xp || 0), a = xpDeNivel(n), b = xpDeNivel(n + 1);
+  return { etapa: etapaDe(especie, n), skin: m.skin || 'normal', acc: m.acc || [], progreso: Math.max(0, Math.min(1, ((m.xp || 0) - a) / Math.max(1, b - a))) };
+}
+configurarVestido(vestidoDe);
+muelleArriba();   /* la franja de arriba donde vive todo lo que aparece (muelle.js) */
 /* SIN VOZ. Carlos, 13 nov: «quítales la voz a las mascotas». Hablan sólo con su globito; la voz se queda
    para el pizarrón, que es donde explica. (Antes cada mascota tenía 3 voces: VOCES_MASCOTA, en la historia de git.) */
 /* que el aviso lo diga la mascota que está a la vista (con su modo); si no hay ninguna, el letrerito de siempre */
@@ -90,6 +110,7 @@ function dice(frase, accion = 'bien', { si = null } = {}){
 encenderSonidos(ajustes.sonido !== false);
 let vista = 'plan';
 let amigos = null;   /* amigos.js; se arranca al final, cuando ya existe todo */
+let juegos = null;   /* juegos/juegos.js */
 let companero = null;   /* companero.js: el cuarto, el cuidado y la tienda de palomium */
 let avisos = null;   /* avisos.js: los recordatorios con notificación */
 let vestidor = null;   /* vestidor.js: tu personaje de perfil, su ropa y sus accesorios */
@@ -126,19 +147,60 @@ async function ia({ sistema, texto, imagenes = [], motor = imagenes.length ? 'ge
 
 /* ══ 1 · LO QUE SE LE PIDE A LA IA ════════════════════════════════════════ */
 const corta = (t, n) => String(t ?? '').trim().slice(0, n);
+/* LOS PASOS SIN NÚMERO (Carlos, 14 nov, captura: «Ordena los pasos» salía con «1. Consultar al médico», «2. …»: la
+   IA los numeraba y eso ES la respuesta). Se quita «1.», «2)», «Paso 3:», «(4)» o «Primero,» del principio. */
+const sinNumero = (t) => { const o = String(t ?? '').trim(), r = o.replace(/^(?:paso\s*)?\(?\d{1,2}\s*(?:[.)\-:–](?!\d))\s*|^(?:primero|segundo|tercero|cuarto|quinto|sexto|luego|despu[eé]s|al final|finalmente)\s*[,:]\s*/i, '').trim();
+  return r ? r.charAt(0).toUpperCase() + r.slice(1) : o; };
+/* revuelve sin dejarlo igual que la respuesta (con 3 pasos, 1 de cada 6 veces salía ya ordenado) */
+const revueltoDistinto = (xs) => { let r = barajar(xs); for(let k = 0; k < 8 && r.every((x, i) => x === xs[i]); k++) r = barajar(xs); return r; };
+/* EL NIVEL DE ESTUDIO (Carlos, 14 nov: «suma un nivel kids para kínder, primaria, secundaria… y un nivel prepa está casi a
+   nivel universidad, bájalos un poco»). Se elige en Ajustes; lo usan el plan, las lecciones y el pizarrón. */
+const NIVELES = { kids: 'Kids · kínder y primaria', secu: 'Secundaria', prepa: 'Prepa', uni: 'Universidad' };
+const TUTOR = {
+  kids: 'de niños de kínder y primaria en México. Hablas con frases muy cortas, palabras sencillas, tono alegre y ejemplos con juguetes, animales, comida y la escuela; nada de tecnicismos',
+  secu: 'de secundaria en Querétaro, México, claro y con ejemplos cotidianos',
+  prepa: 'de preparatoria en Querétaro, México. Te quedas en lo que de verdad se ve en clase de prepa y entra en el examen: nada de temas ni términos de universidad',
+  uni: 'de universidad en México',
+};
+const nivelEstudio = () => NIVELES[ajustes.nivel] ? ajustes.nivel : 'prepa';
+/* qué tan a fondo: «automático» = general cuando el examen está cerca (Carlos: «mientras más se acerca la fecha, que se vaya
+   volviendo más general y más útil para datos que sí te pueden preguntar»), normal si falta mucho */
+/* QUÉ TAN FUERTE ESTUDIAS (Carlos, 14 nov: «3 opciones de configuración general: superficial, esencial y a profundidad»).
+   Lo de antes (ajustes.profundidad: general/normal/detalle/auto) se traduce solo. Esencial conserva el «automático»:
+   normal si falta mucho y lo general cerca del examen. */
+const ESTUDIO = {
+  superficial: { nombre: 'Superficial', ico: 'feather', desc: 'Lo clave' },
+  esencial: { nombre: 'Esencial', ico: 'target', desc: 'Lo del examen' },
+  profundo: { nombre: 'A profundidad', ico: 'microscope', desc: 'Todo a detalle' },
+};
+const estudioElegido = () => ESTUDIO[ajustes.estudio] ? ajustes.estudio : ({ general: 'superficial', detalle: 'profundo' }[ajustes.profundidad] || 'esencial');
+function profundidadDe(p){
+  const e = estudioElegido();
+  if(e === 'superficial') return 'general';
+  if(e === 'profundo') return 'detalle';
+  if(ajustes.profundidad === 'normal') return 'normal';
+  const dias = p && p.fecha ? Math.ceil((Date.parse(p.fecha + 'T12:00:00') - Date.now()) / 864e5) : 99;
+  return dias <= 10 ? 'general' : 'normal';
+}
+const REGLA_ESTUDIO = {
+  superficial: '- Es un repaso SUPERFICIAL: 3 unidades de 2 temas, sólo lo indispensable.',
+  esencial: '',
+  profundo: '- Es un estudio A PROFUNDIDAD: 4 unidades de 3 temas, sin dejar fuera nada importante del temario.',
+};
+const llaveNivel = (nivel, largo, prof) => `${nivel}-${largo}${prof && prof !== 'normal' ? '-' + prof : ''}`;
 function sistemaPlan(){
-  return `Eres un tutor de preparatoria en Querétaro, México. Armas PLANES DE ESTUDIO para un examen, en español de México.
+  return `Eres un tutor ${TUTOR[nivelEstudio()]}. Armas PLANES DE ESTUDIO para un examen, en español de México.
 Contesta SÓLO con JSON válido, sin texto antes ni después, con esta forma:
 { "titulo": "Examen de <materia>", "notas": "resumen corto de lo que traen los apuntes o temas (máx 600 caracteres)",
   "unidades": [ { "titulo": "nombre corto de la unidad (2 a 5 palabras)", "frase": "una frase corta y motivadora de qué se aprende aquí", "temas": [ { "titulo": "tema (2 a 6 palabras)", "resumen": "de qué trata, 1 o 2 frases" } ] } ] }
 Reglas:
 - De 3 a 4 unidades, de lo básico a lo difícil (la primera son los fundamentos; la última, lo que más cuesta).
-- De 2 a 3 temas por unidad, sin repetir. Sólo temas que de verdad entran en el examen.
+- De 2 a 3 temas por unidad, sin repetir. Sólo temas que de verdad entran en el examen, del tamaño de un tema de clase (ej. «Partes del aparato reproductor femenino», NO «El endometrio»): nada de subtemas tan específicos que un examen de este nivel no preguntaría.
 - Si te mandan temas o fotos de apuntes, el plan se arma con ESO (no inventes otro temario).
-- Nada de emojis.`;
+${REGLA_ESTUDIO[estudioElegido()] ? REGLA_ESTUDIO[estudioElegido()] + '\n' : ''}- Nada de emojis.`;
 }
 function sistemaLeccion(){
-  return `Eres un tutor de preparatoria en Querétaro, México. Escribes en español de México, claro y sin relleno.
+  return `Eres un tutor ${TUTOR[nivelEstudio()]}. Escribes en español de México, claro y sin relleno.
 Vas a escribir UNA lección corta y su cuestionario. Contesta SÓLO con JSON válido, sin texto antes ni después:
 { "leccion": { "titulo": "título corto (máximo 6 palabras)", "ideas": [ { "titulo": "2 a 4 palabras", "texto": "UNA sola idea en máximo 22 palabras, con **una** palabra clave en negritas", "icono": "un dibujo de la lista" } ], "dato": "un truco o ejemplo para recordarlo, máximo 18 palabras" },
   "preguntas": [
@@ -155,7 +217,7 @@ Reglas:
 - "icono": escoge el dibujo que mejor ilustre cada idea, SÓLO de esta lista: ${DIBUJOS_LISTA}
 - De 8 a 9 preguntas MUY VARIADAS: 2 de "opcion" y una de cada uno de los demás tipos (hueco, escribir, unir, error, ordenar, clasificar). Si el tema de plano no tiene un proceso para "error" u "ordenar", cámbialo por otro tipo, pero usa al menos 6 tipos distintos. Que todo se conteste con lo que dice la lección.
 - "error": de 4 a 6 pasos de un proceso real con UNO cambiado para que esté mal; "error" es su número (empieza en 0).
-- "ordenar": de 4 a 6 pasos de un proceso en su orden correcto (la app los revuelve).
+- "ordenar": de 4 a 6 pasos de un proceso en su orden correcto (la app los revuelve). SIN números ni «primero», «luego» al principio: eso delata la respuesta.
 - "clasificar": 2 o 3 grupos con 2 a 3 elementos cada uno.
 - "unir": 4 pares; "escribir": respuestas cortas que se puedan escribir en el teléfono.
 - En "opcion": 4 opciones del mismo largo más o menos, UNA sola correcta; "correcta" es su número (0 a 3). Las incorrectas tienen que sonar posibles.
@@ -201,8 +263,8 @@ export function normalizarLeccion(j){
     if(tipo === 'unir'){ const pares = (Array.isArray(p.pares) ? p.pares : []).map((x) => Array.isArray(x) ? [corta(x[0], 80), corta(x[1], 120)] : x && typeof x === 'object' ? [corta(x.a || x.concepto || x[0], 80), corta(x.b || x.definicion || x[1], 120)] : null).filter((x) => x && x[0] && x[1]).slice(0, 5);
       if(pares.length < 3 || new Set(pares.map((x) => quitarAcentos(x[0]))).size !== pares.length || new Set(pares.map((x) => quitarAcentos(x[1]))).size !== pares.length) return null; return { tipo, pregunta: corta(p.pregunta, 200), pares, ...base }; }
     if(tipo === 'imagen'){ const q = sinImagen(p); if(!q) return null; return { ...q, ...base }; }
-    if(tipo === 'error'){ const pasos = lista(p.pasos, 120, 7), e0 = Number(p.error); if(pasos.length < 3 || !Number.isInteger(e0) || e0 < 0 || e0 >= pasos.length) return null; return { tipo, pregunta: corta(p.pregunta, 200), pasos, error: e0, correccion: corta(p.correccion, 160) || 'otro paso', ...base }; }
-    if(tipo === 'ordenar'){ const pasos = lista(p.pasos, 100, 7); if(pasos.length < 3 || new Set(pasos.map(quitarAcentos)).size !== pasos.length) return null; return { tipo, pregunta: corta(p.pregunta, 200), pasos, ...base }; }
+    if(tipo === 'error'){ const pasos = lista(p.pasos, 120, 7).map(sinNumero), e0 = Number(p.error); if(pasos.length < 3 || !Number.isInteger(e0) || e0 < 0 || e0 >= pasos.length) return null; return { tipo, pregunta: corta(p.pregunta, 200), pasos, error: e0, correccion: corta(p.correccion, 160) || 'otro paso', ...base }; }
+    if(tipo === 'ordenar'){ const pasos = lista(p.pasos, 100, 7).map(sinNumero); if(pasos.length < 3 || new Set(pasos.map(quitarAcentos)).size !== pasos.length) return null; return { tipo, pregunta: corta(p.pregunta, 200), pasos, ...base }; }
     if(tipo === 'clasificar'){ const grupos = (Array.isArray(p.grupos) ? p.grupos : []).map((g) => ({ nombre: corta(g && g.nombre, 40), items: lista(g && g.items, 50, 4) })).filter((g) => g.nombre && g.items.length).slice(0, 3);
       if(grupos.length < 2 || grupos.reduce((a, g) => a + g.items.length, 0) < 4) return null; return { tipo, pregunta: corta(p.pregunta, 200), grupos, ...base }; }
     const opciones = (Array.isArray(p.opciones) ? p.opciones : []).map((x) => corta(x, 200)).filter(Boolean);
@@ -260,10 +322,15 @@ export function migrarCamino(p){
   return true;
 }
 const hecho = (p, n) => !!(p.progreso && p.progreso[n.id] && p.progreso[n.id].hecho);
+/* Carlos, 14 nov: «pon que puedas saltar de tema, porque a veces ya le entiendes y te quieres pasar al que necesitas».
+   Lo que brincas queda «saltado»: ya no te bloquea el camino, pero NO cuenta como hecho (no te sube el grado) y lo
+   puedes hacer cuando quieras. */
+const saltado = (p, n) => !!(p.progreso && p.progreso[n.id] && p.progreso[n.id].saltado && !p.progreso[n.id].hecho);
+const pasado = (p, n) => hecho(p, n) || saltado(p, n);
 export function avanceDe(p){
   const ns = todosLosNodos(p), h = ns.filter((n) => hecho(p, n)).length;
   const frac = ns.length ? h / ns.length : 0;
-  return { hechos: h, total: ns.length, pct: Math.round(frac * 100), grado: Math.min(10, 6 + 4 * frac), siguiente: ns.find((n) => !hecho(p, n)) || null };
+  return { hechos: h, total: ns.length, pct: Math.round(frac * 100), grado: Math.min(10, 6 + 4 * frac), siguiente: ns.find((n) => !pasado(p, n)) || null, saltados: ns.filter((n) => saltado(p, n)).length };
 }
 const temaDe = (p, id) => { for(const u of p.unidades) for(const t of u.temas) if(t.id === id) return t; return null; };
 
@@ -288,10 +355,40 @@ function hoja(titulo, html, alAbrir){
   const h = document.createElement('div'); h.className = 'hoja'; h.id = 'hoja'; h.setAttribute('role', 'dialog'); h.setAttribute('aria-modal', 'true'); h.setAttribute('aria-label', titulo);
   h.innerHTML = `<div class="dentro"><div class="agarre"></div>${titulo ? `<h3>${esc(titulo)}</h3>` : ''}${html}</div>`;
   v.addEventListener('click', cerrarHoja); document.body.append(v, h);
+  deslizarParaCerrar(h, v);
   alAbrir?.(h); h.querySelector('button, input')?.focus({ preventScroll: true });
   return h;
 }
 function cerrarHoja(){ $('#velo')?.remove(); $('#hoja')?.remove(); }
+/* DESLIZAR PARA CERRAR (Carlos, 14 nov: «en los menús que se levantan sobre otra página, que si los deslizo desde arriba,
+   donde tienen la línea blanca, hacia abajo, los pueda cerrar»). Se agarra de la franja de arriba (la rayita y el título)
+   cuando la hoja no está bajada; si se suelta pasando un tercio, o con un jalón rápido, se va; si no, regresa. Un toque
+   ahí mismo sigue siendo un toque: el arrastre empieza hasta que el dedo baja 8 px. */
+function deslizarParaCerrar(h, v){
+  let y0 = null, t0 = 0, dy = 0, arrastra = false;
+  h.addEventListener('touchstart', (e) => {
+    const t = e.touches[0], arriba = t.clientY - h.getBoundingClientRect().top;
+    if(e.touches.length !== 1 || h.scrollTop > 0 || arriba > 64){ y0 = null; return; }
+    y0 = t.clientY; t0 = performance.now(); dy = 0; arrastra = false;
+  }, { passive: true });
+  h.addEventListener('touchmove', (e) => {
+    if(y0 == null) return;
+    dy = e.touches[0].clientY - y0;
+    if(!arrastra){ if(dy < 8) { if(dy < -4) y0 = null; return; } arrastra = true; h.style.animation = 'none'; h.style.transition = 'none'; }
+    e.preventDefault();
+    h.style.transform = `translateY(${Math.max(0, dy)}px)`; v.style.opacity = String(Math.max(.2, 1 - dy / (h.offsetHeight * 1.2)));
+  }, { passive: false });
+  const soltar = () => {
+    if(y0 == null || !arrastra){ y0 = null; return; }
+    const rapido = dy / Math.max(1, performance.now() - t0) > .6 && dy > 30;
+    y0 = null; arrastra = false;
+    if(dy > h.offsetHeight / 3 || rapido){
+      h.style.transition = 'transform .2s ease-in'; h.style.transform = 'translateY(105%)'; v.style.transition = 'opacity .2s'; v.style.opacity = '0';
+      tono(SON.toque); setTimeout(() => { if(h.isConnected) cerrarHoja(); }, 190);
+    } else { h.style.transition = 'transform .25s cubic-bezier(.2,.9,.3,1)'; h.style.transform = ''; v.style.opacity = ''; }
+  };
+  h.addEventListener('touchend', soltar); h.addEventListener('touchcancel', soltar);
+}
 /* una capa encima de todo (alta, lección, cuestionario…). Se recrea entera cada vez: sin oyentes viejos colgados */
 function capa(clase = ''){
   cerrarCapa(); tono(SON.whoosh);
@@ -327,14 +424,17 @@ async function mandarCola(){
       const ids = new Set(lote.map((x) => x.id)); cola = cola.filter((x) => !ids.has(x.id)); guarda.poner('est.cola', cola);
       const antes = posicion();
       ponerPerfil(r.perfil); ponerRanking(r.ranking);
+      if(r.liga) await fiestaLiga(r.liga);
+      if(r.mascotaSube) await companero?.crecio(r.mascotaSube);
       companero?.premios(r);
-      if((r.premios || []).some((x) => x.motivo === 'nivel')) tono(SON.nivel);
-      if(r.eventos.includes('racha-perdida')) tono(SON.perdio);
+      if((r.premios || []).some((x) => x.motivo === 'nivel')){ tono(SON.nivel); reaccion('sube', { cameo: true }); }
+      if(r.eventos.includes('racha-perdida')){ tono(SON.perdio); reaccion('baja', { cameo: true }); }
       if(r.eventos.includes('congelada-ganada')) await fiestaHielo('Ganaste una racha congelada', 'Las rachas congeladas mantienen tu racha viva si un día no estudias.');
       if(r.eventos.includes('congelada-usada')) brindis('Usaste una racha congelada: tu racha sigue', '', 'snowflake');
-      if(r.eventos.includes('racha') && r.perfil.racha > 1){ const n = r.perfil.racha; tono(SON.racha); dice(`¡Llevamos ${n} días seguidos! No le aflojes.`, 'festeja', { si: () => brindis(`Racha de ${n} días`, 'vino', 'flame') }); }
+      if(r.eventos.includes('racha') && r.perfil.racha > 1){ const n = r.perfil.racha; tono(SON.racha); reaccion('racha', { cameo: true }); dice(`¡Llevamos ${n} días seguidos! No le aflojes.`, 'festeja', { si: () => brindis(`Racha de ${n} días`, 'vino', 'flame') }); }
       const despues = posicion();
-      if(antes && despues && despues < antes) brindis(`Subiste al lugar ${despues} del ranking`, 'oro', 'trophy');
+      if(antes && despues && despues < antes){ brindis(`Subiste al lugar ${despues} del ranking`, 'oro', 'trophy'); reaccion('sube', { cameo: true }); }
+      else if(antes && despues && despues > antes) reaccion('baja');
       return r;
     }catch(e){ if(e.llave) pintarFaltaLlave(); return null; }
     finally{ mandando = null; }
@@ -342,10 +442,17 @@ async function mandarCola(){
   return mandando;
 }
 function posicion(){ const i = ranking.filas.findIndex((f) => f.yo); return i < 0 ? 0 : i + 1; }
-function ponerPerfil(p){ if(!p) return; perfil = { ...perfil, ...p }; delete perfil._localRacha; guarda.poner('est.perfil', perfil); pintarCabeza(); companero?.pintarPastilla(); }
+function ponerPerfil(p){ if(!p) return; perfil = { ...perfil, ...p }; delete perfil._localRacha; guarda.poner('est.perfil', perfil); try{ widget?.avisar(); }catch{}
+  /* la mascota activa la decide el servidor (la crianza vive allá); si la tuya de antes todavía no está allá, se le manda una vez */
+  if(perfil.mascotas){
+    const q = perfil.mascota;
+    if(q && (q === 'no' || perfil.mascotas[q]) && q !== ajustes.mascota){ ajustes.mascota = q; guarda.poner('est.ajustes', ajustes); }
+    else if(!Object.keys(perfil.mascotas).length && ESPECIES[ajustes.mascota] && !ponerPerfil.migrada && conAcceso()){ ponerPerfil.migrada = true; sala({ accion: 'mascota', personaje: ajustes.mascota }).then((r) => r && ponerPerfil(r.perfil)).catch(() => {}); }
+  }
+  refrescarVestidos(); pintarCabeza(); companero?.pintarPastilla(); }
 /* un premio sin XP (subir de grado): el servidor decide cuántos cubitos vale */
 function encolarPremio(motivo){ cola.push({ id: 'x' + nuevoId(), xp: 0, dia: hoyLocal(), motivo }); guarda.poner('est.cola', cola); }
-function ponerRanking(r){ if(!r) return; ranking = { semana: r.semana, filas: r.filas.map((f) => ({ ...f, yo: f.cuenta === perfil.cuenta })) }; guarda.poner('est.ranking', ranking); if(vista === 'ranking') pintarRanking(); }
+function ponerRanking(r){ if(!r) return; const yoEs = (f) => ({ ...f, yo: f.cuenta === perfil.cuenta }); ranking = { ...r, liga: r.liga | 0, filas: r.filas.map(yoEs), amigos: (r.amigos || []).map(yoEs), recibido: Date.now() }; guarda.poner('est.ranking', ranking); if(vista === 'ranking') pintarRanking(); }
 
 /* ══ 5 · SINCRONÍA DE PLANES ══════════════════════════════════════════════ */
 const porGuardar = new Set(); let reloj = null;
@@ -367,7 +474,8 @@ async function sincronizar(){
   if(!conAcceso()){ pintarFaltaLlave(); return; }
   try{
     const r = await sala(null);
-    perfil.cuenta = r.perfil.cuenta; ponerPerfil(r.perfil); ponerRanking(r.ranking);
+    perfil.cuenta = r.perfil.cuenta; ponerPerfil(r.perfil); ponerRanking(r.ranking); if(r.liga) setTimeout(() => fiestaLiga(r.liga), 900);
+    if(r.mascota && r.mascota.tipo === 'murio') setTimeout(() => companero?.murio(r.mascota), r.liga ? 1800 : 900);
     for(const x of r.planes){
       if(x.borrado){ if(planes[x.id]){ delete planes[x.id]; if(actualId === x.id) actualId = null; } continue; }
       if(!planes[x.id] || (planes[x.id].t || 0) < x.t){
@@ -381,7 +489,7 @@ async function sincronizar(){
     guardarLocal(); subirPlanes(); mandarCola(); pintar();
   }catch(e){ if(e.llave) pintarFaltaLlave(); }
 }
-const soloHechos = (p) => { const o = {}; for(const [k, v] of Object.entries((p && p.progreso) || {})) if(v.hecho) o[k] = v; return o; };
+const soloHechos = (p) => { const o = {}; for(const [k, v] of Object.entries((p && p.progreso) || {})) if(v.hecho || v.saltado) o[k] = v; return o; };
 
 /* ══ 6 · PINTAR ═══════════════════════════════════════════════════════════ */
 function pintarCabeza(){
@@ -439,8 +547,10 @@ function pintarPlan(){
       <p>Dinos la materia, la fecha y qué temas vienen, o súbele foto a tus apuntes. Te armamos el camino hasta el día del examen.</p>
       <button class="bt fuerte ancho" id="bCrear">${ico('plus')} Crear mi plan</button>
       <button class="bt ancho" id="bAnadir" style="margin-top:12px">${ico('share-2')} Añadir curso con link o código</button>
+      <button class="bt ancho" id="bJuegos" style="margin-top:12px">${ico('swords')} Juegos de mesa</button>
       <button class="bt ancho academia-bt" id="bAcademia" style="margin-top:12px">${ico('graduation-cap')} Academia Grupo Mazi</button></div>`;
     $('#bCrear').addEventListener('click', alta);
+    $('#bJuegos').addEventListener('click', () => juegos.abrir());
     $('#bAcademia').addEventListener('click', abrirAcademia);
     $('#bAnadir').addEventListener('click', () => anadirCurso());
     { const m = mascotaEn($('#mascVacio'), { tam: 120 }); if(m) setTimeout(() => m.play('saluda', { decir: '¡Hola! ¿Qué estudiamos hoy?' }), 500); }
@@ -460,11 +570,11 @@ function pintarPlan(){
     const nodosHtml = u.nodos.map((n, i) => {
       const x = 50 + ONDA[(k + i) % ONDA.length] * 30, y = 70 + i * paso;
       puntos.push([x, y]);
-      const h = hecho(p, n), actual = sig && sig.id === n.id, cerrado = !h && !actual;
-      const cl = ['nodo', h ? 'hecho' : '', actual ? 'actual' : '', cerrado ? 'cerrado' : '', n.tipo === 'examen' ? 'grande' : ''].join(' ');
+      const h = hecho(p, n), sal = saltado(p, n), actual = sig && sig.id === n.id, cerrado = !h && !sal && !actual;
+      const cl = ['nodo', h ? 'hecho' : '', sal ? 'saltado' : '', actual ? 'actual' : '', cerrado ? 'cerrado' : '', n.tipo === 'examen' ? 'grande' : ''].join(' ');
       const tv = tipoVisto(n), etq = tv === 'panorama' ? 'Panorama' : tv === 'pizarra' ? 'Cátedra' : n.titulo;
       if(actual) mascotaPos = { x: x >= 50 ? x - 34 : x + 34, y, u: p.unidades.indexOf(u) };
-      return `<button class="${cl}${tv === 'pizarra' || tv === 'panorama' ? ' catedra' : ''}" data-nodo="${n.id}" style="left:${x}%;top:${y}px;--color:${u.color}" aria-label="${esc(NOMBRE_NODO[tv])}: ${esc(n.titulo)}${h ? ' (hecho)' : cerrado ? ' (bloqueado)' : ''}">${ico(h ? 'check' : ICONO_NODO[tv])}<span class="etq">${esc(etq)}</span></button>`;
+      return `<button class="${cl}${tv === 'pizarra' || tv === 'panorama' ? ' catedra' : ''}" data-nodo="${n.id}" style="left:${x}%;top:${y}px;--color:${u.color}" aria-label="${esc(NOMBRE_NODO[tv])}: ${esc(n.titulo)}${h ? ' (hecho)' : sal ? ' (saltado: tócalo para hacerlo)' : cerrado ? ' (bloqueado: tócalo para saltar hasta aquí)' : ''}">${ico(h ? 'check' : sal ? 'fast-forward' : ICONO_NODO[tv])}<span class="etq">${esc(etq)}</span></button>`;
     }).join('');
     k += u.nodos.length;
     const d = puntos.map(([x, y], i) => `${i ? 'L' : 'M'}${x * 4} ${y}`).join(' ');
@@ -605,10 +715,10 @@ async function prepararPlan(datos, anadirA = null){
     /* sin fotos ni comentarios, el mismo temario de la misma materia ya se armó antes: se reusa */
     const generico = !datos.fotos.length && !datos.extra && !anadirA && datos.temas.length;
     const claveTemas = datos.temas.map((x) => x.trim()).filter(Boolean).sort().join(' · ');
-    let j = generico ? await deLaBiblioteca('plan', datos.materia.nombre, claveTemas, 'prepa', normalizarPlan) : null;
+    let j = generico ? await deLaBiblioteca('plan', datos.materia.nombre, claveTemas, nivelEstudio(), normalizarPlan) : null;
     if(!j){
       j = await ia({ sistema: sistemaPlan(), texto, imagenes: datos.fotos.map(({ mime, data }) => ({ mime, data })), tope: 4000, revisar: normalizarPlan });
-      if(generico) aLaBiblioteca('plan', datos.materia.nombre, claveTemas, 'prepa', j);
+      if(generico) aLaBiblioteca('plan', datos.materia.nombre, claveTemas, nivelEstudio(), j);
     }
     clearInterval(giro); bolas.forEach((b) => b.classList.add('ve')); lis.forEach((l) => l.classList.add('ya'));
     let p;
@@ -662,7 +772,7 @@ function contenidoDe(p, temaId){
   const t = temaDe(p, temaId);
   const u = p.unidades.find((x) => x.temas.some((y) => y.id === temaId));
   const pr = (async () => {
-    const nivel = p.academia ? 'academia' : 'prepa';
+    const nivel = p.academia ? 'academia' : nivelEstudio();
     let j = await deLaBiblioteca('leccion', p.materia, t.titulo, nivel, normalizarLeccion);
     if(!j){
       j = await ia({ sistema: sistemaLeccion(), tope: 7000, revisar: normalizarLeccion,
@@ -725,13 +835,28 @@ function prepararUna(q){
   });
 }
 
+/* tocar uno bloqueado: «¿saltar hasta aquí?» */
+function preguntarSalto(p, n, ns){
+  const i = ns.indexOf(n), antes = ns.slice(0, i).filter((x) => !pasado(p, x));
+  tono(SON.pop);
+  hoja('¿Saltar hasta aquí?', `<p class="sub-vista" style="margin:0 0 6px">Si ya entiendes lo de antes, pásate directo a <b>${esc(n.titulo)}</b>.</p>
+    <p class="sub-vista" style="margin:0 0 14px">${antes.length === 1 ? 'Te saltas 1 tema' : `Te saltas ${antes.length} temas`}: quedan marcados y los puedes hacer cuando quieras. No cuentan para tu grado hasta que los hagas.</p>
+    <div style="display:grid;gap:8px"><button class="bt fuerte ancho" data-saltar>${ico('fast-forward')}Saltar a este tema</button><button class="bt ancho" data-quedarme>Mejor sigo en orden</button></div>`, (h) => {
+    h.querySelector('[data-quedarme]').addEventListener('click', cerrarHoja);
+    h.querySelector('[data-saltar]').addEventListener('click', () => {
+      const ahora = Date.now();
+      for(const x of antes) p.progreso[x.id] = { ...(p.progreso[x.id] || {}), saltado: true, cuando: ahora };
+      guardarPlan(p); cerrarHoja(); tono(SON.whoosh); pintar();
+      brindis(antes.length === 1 ? 'Saltaste 1 tema' : `Saltaste ${antes.length} temas`, '', 'fast-forward');
+      setTimeout(() => abrirNodo(n.id), 350);
+    });
+  });
+}
 async function abrirNodo(id, repaso = false){
   const p = plan(); if(!p) return;
   const ns = todosLosNodos(p), n = ns.find((x) => x.id === id); if(!n) return;
   const a = avanceDe(p);
-  if(!hecho(p, n) && a.siguiente && a.siguiente.id !== n.id && !repaso){
-    vibrar(30); tono(SON.golpe); brindis('Primero termina el que está brillando', 'vino', 'target'); return;
-  }
+  if(!pasado(p, n) && a.siguiente && a.siguiente.id !== n.id && !repaso) return preguntarSalto(p, n, ns);
   if(n.tipo === 'quiz') return abrirLeccion(p, n);
   if(n.tipo === 'pizarra') return abrirPizarra(p, n);
   if(n.tipo === 'tarjetas') return abrirTarjetas(p, n);
@@ -893,7 +1018,7 @@ const EJ = {
     marcar(q, r, c){ $$('.caja-f', c).forEach((b) => { b.disabled = true; const k = +b.dataset.err; if(k === q.error){ b.classList.add('mal-real'); b.insertAdjacentHTML('beforeend', `<small class="corrige">Debía decir: ${esc(q.correccion)}</small>`); } else if(k === q._r) b.classList.add('mal'); }); },
   },
   ordenar: {
-    pintar(q){ q._fichas ||= barajar(q.pasos.map((t, k) => ({ t, k }))); q._puestos ||= [];
+    pintar(q){ q._fichas ||= revueltoDistinto(q.pasos.map((t, k) => ({ t: sinNumero(t), k }))); q._puestos ||= [];
       return `<p class="instruccion">${esc(q.pregunta || 'Arma el diagrama en orden')}</p>
         <div class="flujo armar">${q.pasos.map((_, k) => `${k ? `<span class="flecha-f">${ico('arrow-down')}</span>` : ''}<div class="hueco-f" data-hueco="${k}"><span class="n-f">${k + 1}</span></div>`).join('')}</div>
         <div class="fichas sueltas">${q._fichas.map((f, j) => `<div class="ficha-lugar" data-lugar-o="${j}"><button class="ficha" data-ord="${j}">${esc(f.t)}</button></div>`).join('')}</div>`; },
@@ -942,7 +1067,7 @@ function comboVFX(n){
   const capaC = document.createElement('div'); capaC.className = 'combo-vfx n' + nivel; capaC.setAttribute('aria-hidden', 'true');
   const titulo = n >= 10 ? '¡IMPARABLE!' : n >= 8 ? '¡EN LLAMAS!' : n >= 5 ? '¡RACHA!' : '';
   capaC.innerHTML = `<div class="onda" style="border-color:${color}"></div><div class="combo-txt" style="--c:${color}"><small>${titulo}</small>COMBO <b>x${n}</b></div>`;
-  document.body.append(capaC);
+  alMuelle(capaC);   /* en el muelle de arriba: el combo ya no sale encima de la pregunta */
   /* chispas que salen del centro: más mientras más largo el combo */
   if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
     const cuantas = 10 + nivel * 8;
@@ -973,8 +1098,10 @@ function cuestionario(p, n, preguntas, { simulacro = false } = {}){
   const c = capa();
   const fila = barajar(preguntas.map(sinImagen)).filter((q) => q && EJ[q.tipo]).map((q) => ({ ...q, intento: 0 }));
   const total = fila.length;
-  let i = 0, combo = 0, maxCombo = 0, buenasPrimera = 0, contestadas = 0;
+  let i = 0, combo = 0, maxCombo = 0, buenasPrimera = 0, contestadas = 0, fallosSeguidos = 0, piensaT = 0;
   const t0 = Date.now();
+  /* tu personaje te acompaña arriba a la derecha y reacciona a cada respuesta (personaje-vivo.js) */
+  const pjCaja = document.createElement('span'); pjCaja.className = 'pv-quiz'; const pj = personajeVivo(pjCaja, { tam: 46 });
   const limpiarEstado = (q) => { for(const k of Object.keys(q)) if(k.startsWith('_') && k !== '_pista') delete q[k]; return q; };
   function pintarPregunta(){
     const q = fila[i], ej = EJ[q.tipo];
@@ -984,6 +1111,9 @@ function cuestionario(p, n, preguntas, { simulacro = false } = {}){
       <div class="cuerpo entra" id="qCuerpo" data-tipo="${q.tipo}"><p class="tipo-ej">${simulacro ? `Simulacro · ${contestadas + 1} de ${total} · ` : ''}${INSTRUCCION[q.tipo]}</p>${ej.pintar(q)}<div id="pistaCaja"></div></div>
       <div class="abajo"><div class="botones-quiz"><button class="bt" data-pista ${q.pista ? '' : 'disabled'}>${ico('lightbulb')}Pista</button><button class="bt blanco" data-verificar disabled>Verificar</button></div></div>`;
     ej.montar && ej.montar(q, c);
+    if(pj) $('.arriba', c).append(pjCaja);
+    /* si llevas rato en la misma pregunta, se pone a pensar contigo */
+    clearTimeout(piensaT); piensaT = setTimeout(() => { if(fila[i] === q && !q._verificada) pj?.reaccionar('piensa'); }, 14000);
     if(q.tipo === 'escribir') setTimeout(() => $('#escribe', c)?.focus({ preventScroll: true }), 350);
   }
   function puedeVerificar(){ const q = fila[i]; const b = $('[data-verificar]', c); if(b) b.disabled = !EJ[q.tipo].listo(q); }
@@ -997,9 +1127,11 @@ function cuestionario(p, n, preguntas, { simulacro = false } = {}){
     if(bien){
       if(q.intento === 0 && !q._pista){ buenasPrimera++; }
       combo = q._pista ? combo : combo + 1; maxCombo = Math.max(maxCombo, combo);
-      tono(SON.bien); vibrar(15);
+      tono(SON.bien); vibrar(15); fallosSeguidos = 0;
       if(combo >= 2) setTimeout(() => comboVFX(combo), 120);
+      reaccion(combo >= 3 ? 'combo' : 'bien');
     } else {
+      fallosSeguidos++; reaccion(fallosSeguidos >= 3 ? 'mareado' : 'mal');
       combo = 0; tono(SON.mal); vibrar([40, 60, 40]); $('#qCuerpo', c).classList.add('sacude');
       /* la que fallaste regresa al final (una vez), como en la escuela: hasta que salga */
       if(q.intento === 0) fila.push(limpiarEstado({ ...q, intento: 1, _pista: false }));
@@ -1027,15 +1159,16 @@ function cuestionario(p, n, preguntas, { simulacro = false } = {}){
   }
   function terminar(){
     document.querySelectorAll('.combo-vfx').forEach((x) => x.remove());
+    clearTimeout(piensaT); pj?.destruir();
     const seg = Math.round((Date.now() - t0) / 1000);
     const pct = Math.round(buenasPrimera / total * 100);
     const xp = simulacro ? 10 + buenasPrimera * 3 + (pct === 100 ? 10 : 0) : 5 + buenasPrimera * 2 + (pct === 100 ? 5 : 0) + Math.min(5, Math.floor(maxCombo / 2));
     resultado(p, n, { xp, pct, seg, maxCombo, titulo: pct === 100 ? '¡La rompiste!' : pct >= 70 ? '¡Bien hecho!' : 'Ya casi', frase: pct === 100 ? 'Todo correcto. Estás volando.' : pct >= 70 ? 'Vas muy bien; lo que fallaste ya lo repasaste.' : 'Lo que fallaste ya lo repasaste. Si quieres, hazlo otra vez.' });
   }
   c.addEventListener('click', (e) => {
-    if(e.target.closest('[data-cerrar]')){ $('.hoja-res')?.remove(); cerrarCapa(); pintar(); return; }
+    if(e.target.closest('[data-cerrar]')){ clearTimeout(piensaT); pj?.destruir(); $('.hoja-res')?.remove(); cerrarCapa(); pintar(); return; }
     const q = fila[i]; if(!q) return;
-    if(e.target.closest('[data-pista]')){ q._pista = true; $('#pistaCaja', c).innerHTML = `<div class="pista entra">${ico('lightbulb')} ${esc(q.pista)}</div>`; e.target.closest('[data-pista]').disabled = true; return; }
+    if(e.target.closest('[data-pista]')){ q._pista = true; pj?.reaccionar('piensa'); $('#pistaCaja', c).innerHTML = `<div class="pista entra">${ico('lightbulb')} ${esc(q.pista)}</div>`; e.target.closest('[data-pista]').disabled = true; return; }
     if(e.target.closest('[data-verificar]')){ verificar(); return; }
     if(!q._verificada && EJ[q.tipo].tocar && EJ[q.tipo].tocar(e, q, c)) puedeVerificar();
   });
@@ -1053,10 +1186,11 @@ function resultado(p, n, r){
     <div class="medallas"><div class="medalla" style="--c:#7A2FBF;--c2:var(--claro-txt)"><small>XP</small><b>${ico('zap')}+${r.xp}</b></div>
     <div class="medalla" style="--c:var(--vino);animation-delay:.12s"><small>${r.pct === 100 ? 'Perfecto' : 'Aciertos'}</small><b>${r.pct} %</b></div>
     <div class="medalla" style="--c:#4A3560;animation-delay:.24s"><small>Tiempo</small><b>${ico('clock')}${mm}</b></div></div>
-    <div class="masc-fin" id="mascFin"></div>
+    <div class="fin-duo"><span class="pj-fin" id="pjFin"></span><div class="masc-fin" id="mascFin"></div></div>
     <h2 class="titulo" style="font-size:20px">¿Qué te pareció?</h2><div class="estrellas" id="estrellas">${[1, 2, 3, 4, 5].map((k) => `<button data-estrella="${k}" aria-label="${k} de 5">${ico('star')}</button>`).join('')}</div></div></div>
     <div class="abajo"><button class="bt blanco ancho" data-continuar>Continuar</button></div>`;
   if(r.pct === 100) confeti();
+  { const v = personajeVivo($('#pjFin', c), { tam: 108 }); if(v) setTimeout(() => v.reaccionar(r.pct === 100 ? 'perfecto' : r.pct >= 70 ? 'bien' : 'regular'), 380); }
   { const m = mascotaEn($('#mascFin', c), { tam: 110 }); if(m) setTimeout(() => m.play(r.pct === 100 ? 'festeja' : r.pct >= 70 ? 'bien' : 'calma', { decir: r.pct === 100 ? '¡Perfecto!' : r.pct >= 70 ? '¡Bien hecho!' : 'Lo repasamos y sale', dura: r.pct === 100 ? 3400 : 2200 }), 450); }
   let nota = 0;
   c.addEventListener('click', (e) => {
@@ -1081,7 +1215,7 @@ async function completarNodo(p0, n, { xp = 0, mejor = 100, nota = 0 } = {}){
   if(Math.floor(despues.grado) > Math.floor(antes.grado)) encolarPremio('grado');
   const subir = sumarXP(ya ? Math.round(xp / 3) : xp, ya ? '' : ({ quiz: 'leccion', simulacro: 'leccion', examen: 'plan' }[n.tipo] || ''));
   if(Math.floor(despues.grado) > Math.floor(antes.grado)){
-    await espera(500); tono(SON.subir); const g = Math.floor(despues.grado);
+    await espera(500); tono(SON.subir); const g = Math.floor(despues.grado); reaccion('sube', { cameo: true });
     dice(`¡Subimos a grado ${g}! Vamos que vamos.`, 'festeja', { si: () => brindis(`¡Subiste a grado ${g}!`, 'oro', 'arrow-up') });
   }
   const etiqueta = { quiz: '¡Nivel completado!', tarjetas: '¡Tarjetas dominadas!', pizarra: '¡Cátedra vista!', panorama: '¡Panorama visto!', simulacro: '¡Simulacro listo!', examen: '¡Repaso logrado!' }[tipoVisto(n)];
@@ -1090,6 +1224,8 @@ async function completarNodo(p0, n, { xp = 0, mejor = 100, nota = 0 } = {}){
     panorama: ['Ya viste el panorama: ahora tema por tema.'], simulacro: ['¡Simulacro listo! Ya casi.'], examen: ['¡Repaso logrado! Vas listo.'] }[tipoVisto(n)];
   if(!ya && etiqueta) setTimeout(() => dice(suyo[Math.floor(Math.random() * suyo.length)], 'bien', { si: () => brindis(etiqueta, '', 'circle-check') }), 650);
   if(despues.grado >= 10 && antes.grado < 10) setTimeout(() => fiestaGrado(), 900);
+  /* si el grado BAJA (el plan creció y lo hecho pesa menos), tu personaje también lo resiente */
+  if(Math.floor(despues.grado) < Math.floor(antes.grado)) setTimeout(() => reaccion('baja', { cameo: true }), 700);
   precargar(p);
   await subir;
 }
@@ -1162,10 +1298,10 @@ async function abrirSimulacro(p, n, _repaso){
 /* la clase en el pizarrón: Explica, la misma de la mesa, dentro de una capa */
 /* lo que se le pide a Explica para la cátedra de un nodo: lo usan abrirla y prepararla de antemano */
 function pizarraDe(p, n){
-  const q = new URLSearchParams(); q.set('nivel', 'prepa');
+  const q = new URLSearchParams(); q.set('nivel', nivelEstudio()); q.set('profundidad', profundidadDe(p));
   const unidad = n.alcance === 'unidad' && p.unidades ? p.unidades.find((u) => u.nodos.some((x) => x.id === n.id)) : null;
-  if(unidad){ q.set('tema', `Panorama general de «${unidad.titulo}» (${p.materia}): de qué trata y cómo se conectan ${unidad.temas.map((t) => t.titulo).join(', ')}. Explica la idea general; cada tema se verá a fondo después.`); q.set('largo', 'normal'); }
-  else { q.set('tema', `${n.titulo} (${p.materia})`); q.set('largo', 'corta'); }
+  if(unidad){ q.set('tema', `Panorama general de «${unidad.titulo}» (${p.materia}): de qué trata y cómo se conectan ${unidad.temas.map((t) => t.titulo).join(', ')}. Explica la idea general; cada tema se verá a fondo después.`); q.set('largo', estudioElegido() === 'superficial' ? 'corta' : 'normal'); }
+  else { q.set('tema', `${n.titulo} (${p.materia})`); q.set('largo', estudioElegido() === 'profundo' ? 'normal' : 'corta'); }
   /* para que la clase sea SUYA: qué examen prepara, cuándo, qué ya vio y qué le costó (Explica lo mete en lo que le pide a la IA) */
   if(p.academia){
     /* Academia: la IA explica SÓLO con la hoja oficial de Grupo Mazi (academia.js), para que no invente precios ni clientes */
@@ -1182,7 +1318,7 @@ function pizarraDe(p, n){
   }
   /* lo demás de la dirección de CARYMO pasa igual (?servidor=, ?sala=: con qué sala habla) */
   for(const [k, v] of new URLSearchParams(location.search)) if(!q.has(k) && !['ir', 'abrir', 'plan'].includes(k)) q.set(k, v);
-  return { q, unidad, nivelB: `${q.get('nivel')}-${q.get('largo')}` };
+  return { q, unidad, nivelB: llaveNivel(q.get('nivel'), q.get('largo'), q.get('profundidad')) };
 }
 /* SIN INTERNET Y SIN CLASE GUARDADA: una básica con las ideas de la lección del tema (la que ya está en
    el teléfono). Se marca «basica»: en cuanto haya red, Explica pide la de verdad y la pisa. */
@@ -1210,12 +1346,15 @@ function abrirPizarra(p, n){
      preciado en teléfono»). Se dobla sola a los 4 s; la flechita de arriba la vuelve a abrir; al terminar la clase se abre sola. */
   const plegar = (si) => { c.classList.toggle('plegada', si); $$('[data-plegar]', c).forEach((b) => b.setAttribute('aria-expanded', String(!si))); };
   let tocoCabeza = false; setTimeout(() => { if(!tocoCabeza && c.isConnected) plegar(true); }, 4000);
-  const alTerminar = (e) => { if(e.origin === location.origin && e.data && e.data.explica === 'fin' && n.id){ plegar(false); const b = $('[data-vista]', c); if(b){ b.classList.add('blanco'); b.textContent = 'Terminar'; brindis('Clase completa', '', 'presentation'); } } };
+  /* Carlos, 14 nov: «da puntos también por ver los panoramas y las clases». Antes contaba sólo si tocabas «Ya la vi», y esa
+     cabecera se dobla sola: casi nadie lo veía. Ahora, si la clase llegó al final, cuenta aunque salgas con la X. */
+  const xpClase = unidad ? 15 : 12; let terminada = false;
+  const alTerminar = (e) => { if(e.origin === location.origin && e.data && e.data.explica === 'fin' && n.id){ terminada = true; plegar(false); const b = $('[data-vista]', c); if(b){ b.classList.add('blanco'); b.textContent = 'Terminar'; } brindis(`Clase completa · +${xpClase} XP`, 'oro', 'zap'); tono(SON.moneda); } };
   addEventListener('message', alTerminar);
   c.addEventListener('click', (e) => {
     if(e.target.closest('[data-plegar]')){ tocoCabeza = true; plegar(!c.classList.contains('plegada')); tono(SON.toque); return; }
-    if(e.target.closest('[data-cerrar]')){ removeEventListener('message', alTerminar); cerrarCapa(); pintar(); return; }
-    if(e.target.closest('[data-vista]')){ removeEventListener('message', alTerminar); completarNodo(planes[p.id], n, { xp: unidad ? 15 : 12 }); }
+    if(e.target.closest('[data-cerrar]')){ removeEventListener('message', alTerminar); if(terminada && n.id) completarNodo(planes[p.id], n, { xp: xpClase }); else { cerrarCapa(); pintar(); } return; }
+    if(e.target.closest('[data-vista]')){ removeEventListener('message', alTerminar); completarNodo(planes[p.id], n, { xp: xpClase }); }
   });
 }
 
@@ -1309,8 +1448,9 @@ $('#bPlanes').addEventListener('click', () => {
   const lista = Object.values(planes).sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
   const h = hoja('Tus planes', `<div class="menu">${lista.map((p) => `<button data-plan="${esc(p.id)}">${ico('notebook-pen')}<span>${esc(p.titulo)}<br><small style="color:var(--suave);font-weight:600">${esc(cuandoTexto(p.fecha))} · ${avanceDe(p).pct} %</small></span>${p.id === actualId ? `<span class="sel">${ico('circle-check')}</span>` : ''}</button>`).join('')}</div>
     <button class="bt blanco ancho" style="margin-top:12px" data-plan="nuevo">${ico('plus')}Crear un nuevo plan</button>
+    <button class="bt ancho" style="margin-top:10px" data-plan="juegos">${ico('swords')}Juegos de mesa</button>
     <button class="bt ancho" style="margin-top:10px" data-plan="academia">${ico('graduation-cap')}Academia Grupo Mazi</button>`);
-  h.addEventListener('click', (e) => { const b = e.target.closest('[data-plan]'); if(!b) return; cerrarHoja(); if(b.dataset.plan === 'nuevo') alta(); else if(b.dataset.plan === 'academia') abrirAcademia(); else { actualId = b.dataset.plan; guardarLocal(); pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); } });
+  h.addEventListener('click', (e) => { const b = e.target.closest('[data-plan]'); if(!b) return; cerrarHoja(); if(b.dataset.plan === 'nuevo') alta(); else if(b.dataset.plan === 'academia') abrirAcademia(); else if(b.dataset.plan === 'juegos') juegos.abrir(); else { actualId = b.dataset.plan; guardarLocal(); pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); } });
 });
 function editarPlan(p){
   const h = hoja('Editar plan', `<label class="seccion-t" for="eNom">Nombre</label><input class="campo" id="eNom" value="${esc(p.titulo)}"><label class="seccion-t" for="eFecha" style="display:block">Fecha del examen</label><input type="date" class="campo" id="eFecha" value="${esc(p.fecha)}"><button class="bt fuerte ancho" style="margin-top:16px" id="eGuardar">Guardar</button>`);
@@ -1531,7 +1671,7 @@ function pegarHorario(){
 /* ══ 14 · BUSCAR ══════════════════════════════════════════════════════════ */
 function pintarBuscar(){
   const v = $('#vBuscar');
-  const temas = Object.values(planes).flatMap((p) => p.unidades.flatMap((u) => u.temas.map((t) => ({ p, t }))));
+  const temas = Object.values(planes).flatMap((p) => (p.unidades || []).flatMap((u) => (u.temas || []).map((t) => ({ p, t }))));
   v.innerHTML = `<h1 class="titulo-vista">Buscar</h1><p class="sub-vista">En tus lecciones, o pídele a la IA que te lo explique en el pizarrón.</p>
     <label class="buscador">${ico('search')}<input id="busca" type="search" placeholder="Busca un tema…" autocomplete="off" aria-label="Buscar un tema"></label>
     <div id="resultados" class="resultados"></div>
@@ -1540,7 +1680,8 @@ function pintarBuscar(){
     const q = quitarAcentos($('#busca').value);
     const r = $('#resultados');
     if(!q){ r.innerHTML = ''; return; }
-    const hits = temas.filter(({ p, t }) => { const c = (p.contenido || {})[t.id]; return quitarAcentos([t.titulo, t.resumen, c && c.leccion.parrafo, c && c.leccion.puntos.join(' ')].join(' ')).includes(q); }).slice(0, 12);
+    /* la lección nueva trae «ideas» y la vieja «puntos»: se busca en las dos (con sólo «puntos», el buscador tronaba) */
+    const hits = temas.filter(({ p, t }) => { const l = ((p.contenido || {})[t.id] || {}).leccion || {}; return quitarAcentos([t.titulo, t.resumen, l.titulo, l.parrafo, l.dato, ...(l.puntos || []), ...(l.ideas || []).map((i) => `${i.titulo || ''} ${i.texto || ''}`)].filter(Boolean).join(' ')).includes(q); }).slice(0, 12);
     r.innerHTML = hits.map(({ p, t }) => `<button data-leer="${esc(p.id)}|${esc(t.id)}">${ico('book-open')}<span>${esc(t.titulo)}<small>${esc(p.titulo)}${(p.contenido || {})[t.id] ? '' : ' · todavía sin lección'}</small></span>${ico('chevron-right')}</button>`).join('')
       + `<button data-explica="${esc($('#busca').value.trim())}">${ico('presentation')}<span>Explícame «${esc($('#busca').value.trim())}»<small>Clase con voz en el pizarrón</small></span>${ico('chevron-right')}</button>`;
   };
@@ -1561,21 +1702,82 @@ async function leerTema(p, tid){
 
 /* ══ 15 · RANKING ═════════════════════════════════════════════════════════ */
 let ordenAnterior = [];
+let rankTab = guarda.leer('est.rankTab', 'liga');
+/* 9999999 → «10 M», 254300 → «254 k», 9999 → «9,999»: armado a mano (Intl compact escribe distinto en cada navegador) */
+function xpCorto(n){
+  n = Math.max(0, Math.round(+n || 0));
+  if(n >= 1e6){ const x = n / 1e6; return (x >= 100 ? Math.round(x) : Math.round(x * 10) / 10) + ' M'; }
+  if(n >= 1e5) return Math.round(n / 1e3) + ' k';
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+/* «falta 2 d 5 h»: cuánto le queda a la semana, con lo que se recibió del servidor */
+function faltaCierre(){
+  const ms = Math.max(0, (ranking.cierra || 0) - (Date.now() - (ranking.recibido || Date.now())));
+  const d = Math.floor(ms / 864e5), h = Math.floor(ms % 864e5 / 36e5), m = Math.floor(ms % 36e5 / 6e4);
+  return d ? `${d} d ${h} h` : h ? `${h} h ${m} min` : `${m} min`;
+}
+/* Carlos, 14 nov: «no se ve la tabla y eso no invita a la competitividad». Arriba, chiquito, tu liga y su trofeo;
+   luego la TABLA de tu liga entera (con los que aún no estudian, en gris) y sus zonas de subir y bajar, o la de tus
+   amigos. La frase de arriba te dice a quién alcanzar y por cuántos XP. */
 function pintarRanking(){
-  const v = $('#vRanking'), f = ranking.filas, yo = posicion();
-  const arriba = yo > 1 ? yo - 1 : 0;
-  v.innerHTML = `<div style="text-align:center;margin-top:calc(26px + env(safe-area-inset-top))"><div class="sello" style="width:96px;height:96px;margin-bottom:14px">${ico('trophy')}</div>
-    <h1 class="titulo" style="font-size:26px">${!f.length ? 'El ranking de la semana' : yo === 1 ? '¡Vas en primer lugar!' : yo ? `¡Sólo ${arriba} ${arriba === 1 ? 'lugar' : 'lugares'} para llegar a la cima!` : 'El ranking de la semana'}</h1>
-    <p class="sub-vista" style="margin-top:6px">${f.length ? 'Se reinicia cada lunes. Gana XP terminando lecciones.' : 'Termina tu primera lección para aparecer aquí.'}</p></div>
-    <div class="ranking podio" id="rankLista">${f.map((x, i) => `<div class="fila-rank ${x.yo ? 'yo' : ''}" data-cuenta="${esc(x.cuenta)}"><span class="n">${i + 1}</span><span class="av" style="background:${colorMateria(x.cuenta)}">${esc((x.nombre || '?').charAt(0).toUpperCase())}</span><span class="nom">${esc(x.nombre)}${x.yo ? ' (tú)' : ''}</span><span class="xp">${ico('zap')}${x.xp} XP</span></div>`).join('')}</div>
-    <p class="version" style="margin-top:18px">${f.length ? `Semana ${esc((ranking.semana || '').split('-S')[1] || '')}` : ''}</p>`;
+  const v = $('#vRanking'); if(!v) return;
+  const liga = ranking.liga | 0, L = ligaDe(liga), sig = LIGAS[liga + 1], deAmigos = rankTab === 'amigos';
+  const f = deAmigos ? (ranking.amigos || []) : (ranking.filas || []);
+  const rg = ranking.reglas || { suben: 0, bajan: 0 }, act = ranking.activos ?? f.filter((x) => x.xp > 0).length;
+  const yoI = f.findIndex((x) => x.yo), yoF = f[yoI];
+  let frase = 'Termina una lección para entrar a la tabla.';
+  if(yoF && yoF.xp > 0){
+    if(yoI === 0) frase = f.length > 1 ? `¡Vas en primer lugar! Le llevas ${xpCorto(yoF.xp - (f[1]?.xp || 0))} XP al segundo.` : '¡Vas en primer lugar!';
+    else { const arriba = f[yoI - 1]; frase = `Te faltan ${xpCorto(arriba.xp - yoF.xp + 1)} XP para pasar a ${arriba.nombre}.`; }
+  } else if(yoF && f.some((x) => x.xp > 0)) frase = `${f.find((x) => x.xp > 0).nombre} ya va arriba: termina una lección para alcanzarlo.`;
+  const fila = (x, i) => {
+    const zona = deAmigos ? '' : i < rg.suben && x.xp > 0 ? 'sube' : rg.bajan && i >= act - rg.bajan && i < act ? 'baja' : '';
+    return `<div class="fila-rank ${x.yo ? 'yo' : ''} ${zona} ${x.xp > 0 ? '' : 'quieto'}" data-cuenta="${esc(x.cuenta)}"${x.yo ? '' : ` role="button" tabindex="0" aria-label="Ver el perfil de ${esc(x.nombre)}"`}><span class="n">${i + 1}</span><span class="av" style="background:${colorMateria(x.cuenta)}">${esc((x.nombre || '?').charAt(0).toUpperCase())}</span><span class="nom"><span class="nom-linea">${nombreHTML(x.nombre, x.estilo)}${x.yo ? ' <small>(tú)</small>' : ''}</span>${(x.titulos || []).length ? `<span class="insignias">${insigniasHTML(x.titulos, ico, { corto: true })}</span>` : ''}</span>${deAmigos ? `<span class="mini-liga" title="Liga ${esc(ligaDe(x.liga).nombre)}">${trofeoSVG(x.liga | 0, { tam: 20 })}</span>` : ''}<span class="xp" title="${x.xp} XP">${ico('zap')}${xpCorto(x.xp)} XP</span></div>`;
+  };
+  let lista = '';
+  f.forEach((x, i) => {
+    if(!deAmigos && x.xp <= 0 && (i === 0 || f[i - 1].xp > 0) && i > 0) lista += `<div class="zona-rank quieta">Aún no estudian esta semana</div>`;
+    if(!deAmigos && rg.bajan && i === act - rg.bajan && i > 0) lista += `<div class="zona-rank baja">${ico('chevrons-down')}Zona para bajar${liga > 0 ? ' a ' + esc(LIGAS[liga - 1].nombre) : ''}</div>`;
+    lista += fila(x, i);
+    if(!deAmigos && rg.suben && i === rg.suben - 1 && x.xp > 0 && sig) lista += `<div class="zona-rank sube">${ico('chevrons-up')}Zona para subir a ${esc(sig.nombre)}</div>`;
+  });
+  if(deAmigos && f.length <= 1) lista += `<p class="vacio-am">Agrega amigos abajo y aquí compites con ellos aunque estén en otra liga.</p>`;
+  v.innerHTML = `<div class="liga-cab" style="margin-top:calc(16px + env(safe-area-inset-top))">
+      <div class="liga-trofeo">${trofeoSVG(liga, { tam: 62 })}</div>
+      <div class="liga-txt"><small>Liga</small><h1>${esc(L.nombre)}</h1><p>${ico('clock')}<span>Cierra en ${faltaCierre()}${sig && rg.suben ? ` · suben ${rg.suben}` : ''}${rg.bajan ? ` · bajan ${rg.bajan}` : ''}</span></p></div>
+    </div>
+    <div class="liga-fila" aria-label="Las diez ligas">${LIGAS.map((x, i) => `<span class="${i === liga ? 'aqui' : ''}" title="${esc(x.nombre)}">${trofeoSVG(i, { tam: 26, apagado: i > Math.max(liga, perfil.ligaMax | 0) })}</span>`).join('')}</div>
+    <p class="rank-frase">${esc(frase)}</p>
+    <div class="rank-tabs" role="tablist"><button role="tab" data-rtab="liga" aria-selected="${!deAmigos}">Mi liga</button><button role="tab" data-rtab="amigos" aria-selected="${deAmigos}">Amigos${(ranking.amigos || []).length > 1 ? ` · ${(ranking.amigos || []).length - 1}` : ''}</button></div>
+    <div class="ranking podio" id="rankLista">${lista}</div>
+    <p class="version" style="margin-top:14px">${ranking.semana ? `Semana ${esc((ranking.semana || '').split('-S')[1] || '')} · los primeros suben y los últimos bajan cada lunes` : ''}</p>`;
   /* si cambió el orden, cada fila se desliza de donde estaba a donde va */
   const ahora = f.map((x) => x.cuenta);
   if(ordenAnterior.length && ordenAnterior.join() !== ahora.join()){
     $$('.fila-rank', v).forEach((el) => { const antes = ordenAnterior.indexOf(el.dataset.cuenta), hoy = ahora.indexOf(el.dataset.cuenta); if(antes >= 0 && antes !== hoy) el.animate([{ transform: `translateY(${(antes - hoy) * 66}px)` }, { transform: 'none' }], { duration: 700, easing: 'cubic-bezier(.2,.9,.3,1)' }); });
   }
   ordenAnterior = ahora;
+  /* tu fila a la vista: si vas en el 20, la tabla baja sola hasta ti */
   amigos?.pintarSeccion();
+}
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('[data-rtab]'); if(!t) return;
+  rankTab = t.dataset.rtab; guarda.poner('est.rankTab', rankTab); tono(SON.toque); ordenAnterior = []; pintarRanking();
+});
+/* el lunes: subiste, bajaste o te quedas, con tu trofeo y tu personaje reaccionando */
+function fiestaLiga(a){
+  return new Promise((listo) => {
+    const sube = a.resultado === 'sube', baja = a.resultado === 'baja';
+    const f = document.createElement('div'); f.className = 'fiesta fiesta-liga ' + a.resultado; f.setAttribute('role', 'dialog');
+    const titulo = sube ? `¡Subiste a la liga ${a.a}!` : baja ? `Bajaste a la liga ${a.a}` : `Te quedas en la liga ${a.a}`;
+    f.setAttribute('aria-label', titulo);
+    f.innerHTML = `<div class="liga-gira">${trofeoSVG(a.nueva, { tam: 150 })}</div><div class="liga-pj" id="ligaPj"></div><h1>${esc(titulo)}</h1>
+      <p>${sube ? `Quedaste en el lugar ${a.lugar} de ${a.n} y tu trofeo de ${esc(a.a)} ya está en tu vitrina.` : baja ? `Quedaste en el lugar ${a.lugar} de ${a.n}. Esta semana la recuperas.` : `Quedaste en el lugar ${a.lugar} de ${a.n}. Un empujón más y subes.`}</p><button class="bt blanco">Continuar</button>`;
+    document.body.append(f);
+    tono(sube ? SON.subir : baja ? SON.perdio : SON.fin); if(sube) confeti();
+    { const v = personajeVivo($('#ligaPj', f), { tam: 96 }); if(v) setTimeout(() => v.reaccionar(sube ? 'sube' : baja ? 'baja' : 'regular'), 500); }
+    $('button', f).addEventListener('click', () => { f.remove(); listo(); }); $('button', f).focus();
+  });
 }
 
 /* ══ 16 · PERFIL Y AJUSTES ════════════════════════════════════════════════ */
@@ -1599,14 +1801,14 @@ function pintarPerfil(){
   const v = $('#vPerfil'), ps = Object.values(planes);
   v.innerHTML = `<div class="perfil-cab"><span class="av">${esc((perfil.nombre || 'T').charAt(0).toUpperCase())}</span><div><h2>${esc(perfil.nombre || 'Tú')}</h2><small>${perfil.cuenta ? '@' + esc(perfil.cuenta) + ' · ' : ''}Instituto Rembrandt de Querétaro</small></div></div>
     <div class="stats">
-      <div class="stat"><span style="color:#FFB27A">${ico('flame')}</span><span><b>${perfil.racha || 0}</b><small>días de racha</small></span></div>
-      <div class="stat"><span style="color:var(--claro-txt)">${ico('zap')}</span><span><b>${perfil.xp || 0}</b><small>XP en total</small></span></div>
-      <div class="stat"><span style="color:#8EC5FF">${ico('snowflake')}</span><span><b>${perfil.congeladas || 0}</b><small>rachas congeladas</small></span></div>
-      <div class="stat"><span style="color:var(--oro)">${ico('medal')}</span><span><b>${perfil.mejorRacha || 0}</b><small>mejor racha</small></span></div></div>
+      <div class="stat"><span style="color:#FFB27A">${ico('flame')}</span><span><b>${xpCorto(perfil.racha)}</b><small>días de racha</small></span></div>
+      <div class="stat"><span style="color:var(--claro-txt)">${ico('zap')}</span><span><b>${xpCorto(perfil.xp)}</b><small>XP en total</small></span></div>
+      <div class="stat"><span style="color:#8EC5FF">${ico('snowflake')}</span><span><b>${xpCorto(perfil.congeladas)}</b><small>rachas congeladas</small></span></div>
+      <div class="stat"><span style="color:var(--oro)">${ico('medal')}</span><span><b>${xpCorto(perfil.mejorRacha)}</b><small>mejor racha</small></span></div></div>
     <div class="seccion-t">Tus planes</div><div class="resultados">${ps.map((p) => `<button data-abrir-plan="${esc(p.id)}">${ico('notebook-pen')}<span>${esc(p.titulo)}<small>${esc(cuandoTexto(p.fecha))} · ${avanceDe(p).pct} % · grado ${Math.floor(avanceDe(p).grado)}</small></span>${ico('chevron-right')}</button>`).join('') || '<p style="color:var(--tenue)">Todavía no tienes planes.</p>'}
       <button data-nuevo-plan>${ico('plus')}<span>Crear un plan</span></button><button data-anadir-plan>${ico('share-2')}<span>Añadir curso con link o código</span></button></div>
     <div class="seccion-t">Tu cuenta</div>
-    ${cuentaUI && cuentaUI.conCuenta() ? `<div class="ajuste">${ico('user')}<span>Entraste como <b>@${esc(cuentaUI.usuario())}</b></span><button class="bt mini" data-cuenta-p="salir">Salir</button></div>`
+    ${cuentaUI && cuentaUI.conCuenta() ? `<div class="ajuste">${ico('user')}<span>Entraste como <b>@${esc(cuentaUI.usuario())}</b></span><button class="bt mini" data-cuenta-p="salir">Salir</button></div><button class="bt mini fantasma borrar-cuenta" data-cuenta-p="borrar">${ico('trash')}Borrar cuenta</button>`
       : `<div class="fila-bt" style="margin-bottom:6px"><button class="bt fuerte" data-cuenta-p="crear">${ico('user-plus')}Crear cuenta</button><button class="bt" data-cuenta-p="entrar">Ya tengo cuenta</button></div>`}
     <div class="seccion-t">Tú</div>
     <label class="ajuste">${ico('pencil')}<span>Tu nombre en el ranking</span><input id="pNombre" class="campo" style="max-width:150px;min-height:40px" value="${esc(perfil.nombre || '')}" aria-label="Tu nombre en el ranking"></label>
@@ -1614,7 +1816,12 @@ function pintarPerfil(){
     <button class="bt ancho" data-abrir-vestidor style="margin-bottom:12px">${ico('shirt')}Vístelo: cara, pelo, ropa y accesorios</button>
     <div class="seccion-t">Tu compañero</div>
     <button class="bt fuerte ancho" data-abrir-companero style="margin-bottom:12px">${ico('house')}Su cuarto y la tienda</button>
-    <div class="elige-masc" role="radiogroup" aria-label="Tu compañero">${[...PERSONAJES.map((k) => [k, NOMBRE_PERSONAJE[k]]), ['no', 'Ninguno']].map(([k, t]) => `<button role="radio" aria-checked="${ajustes.mascota === k}" data-masc="${k}">${k === 'no' ? ico('x') : `<span class="masc-mini" data-mini="${k}"></span>`}<span>${t}</span></button>`).join('')}</div>
+    <div class="elige-masc" role="radiogroup" aria-label="Tu compañero">${[...PERSONAJES.map((k) => [k, NOMBRE_PERSONAJE[k]]), ['no', 'Ninguno']].map(([k, t]) => { const mia = k === 'no' || !perfil.mascotas || (perfil.mascotas[k] && !perfil.mascotas[k].muerta);
+      return `<button role="radio" aria-checked="${mascotaActiva() === k}" data-masc="${k}" class="${mia ? '' : 'sin-adoptar'}">${k === 'no' ? ico('x') : `<span class="masc-mini" data-mini="${k}"></span>`}<span>${t}</span>${mia ? '' : `<small>${ico('lock')}Adoptar</small>`}</button>`; }).join('')}</div>
+    <div class="seccion-t">Tu nivel</div>
+    <div class="chips-nivel" role="radiogroup" aria-label="Tu nivel de estudio">${Object.entries(NIVELES).map(([k, t]) => `<button role="radio" aria-checked="${nivelEstudio() === k}" data-nivel="${k}">${esc(t)}</button>`).join('')}</div>
+    <div class="seccion-t">Intensidad</div>
+    <div class="chips-estudio" role="radiogroup" aria-label="Qué tan fuerte estudias">${Object.entries(ESTUDIO).map(([k, e]) => `<button role="radio" aria-checked="${estudioElegido() === k}" data-estudio="${k}">${ico(e.ico)}<b>${e.nombre}</b><small>${e.desc}</small></button>`).join('')}</div>
     <div class="seccion-t">La voz que te explica</div>
     <div class="ajuste voz-aj">${ico('mic')}<span>Voz del pizarrón<small style="display:block;color:var(--tenue);font-weight:500">Las «de estudio» suenan como persona</small></span>
       <select id="pVoz" class="campo" style="max-width:170px;min-height:40px" aria-label="Voz del pizarrón">${opcionesVoz()}</select>
@@ -1623,19 +1830,23 @@ function pintarPerfil(){
     <div class="seccion-t">App</div>
     <div class="ajuste">${ico('volume-2')}<span>Efectos de sonido</span><button class="interruptor" role="switch" data-aj="sonido" aria-checked="${!!ajustes.sonido}" aria-label="Efectos de sonido"></button></div>
     <div class="ajuste">${ico('vibrate')}<span>Vibración</span><button class="interruptor" role="switch" data-aj="vibrar" aria-checked="${!!ajustes.vibrar}" aria-label="Vibración"></button></div>
-    <p class="version">${esc(VERSION_ESTUDIO)} · ${cola.length ? `${cola.length} logros por mandar a La Sala` : 'todo guardado en La Sala'}</p>`;
+    <p class="version">${esc(VERSION_ESTUDIO)} · ${cola.length ? `${cola.length} logros por mandar a La Sala` : 'todo guardado en La Sala'}</p>
+    <p class="dedicatoria">Un proyecto de Grupo Mazi<br><span>dedicado con amor para Mónica</span></p>`;
   /* el selector de compañero con las mascotas vivas (sin imágenes recortadas) */
   $$('[data-mini]', v).forEach((d) => crearMascota(d, { personaje: d.dataset.mini, tam: 62 }));
   avisos?.pintar(v.querySelector('#pAvisos'));
 }
 $('#vPerfil').addEventListener('click', (e) => {
+  const nv = e.target.closest('[data-nivel]'); if(nv){ ajustes.nivel = nv.dataset.nivel; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); brindis(`Nivel: ${NIVELES[ajustes.nivel]}`, '', 'graduation-cap'); return; }
+  const pf = e.target.closest('[data-estudio]'); if(pf){ ajustes.estudio = pf.dataset.estudio; delete ajustes.profundidad; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); brindis(`Estudio: ${ESTUDIO[ajustes.estudio].nombre}`, '', ESTUDIO[ajustes.estudio].ico); return; }
   const a = e.target.closest('[data-aj]'); if(a){ ajustes[a.dataset.aj] = !ajustes[a.dataset.aj]; guarda.poner('est.ajustes', ajustes); a.setAttribute('aria-checked', ajustes[a.dataset.aj]); encenderSonidos(ajustes.sonido !== false); tono(SON.toque); return; }
   const p = e.target.closest('[data-abrir-plan]'); if(p){ actualId = p.dataset.abrirPlan; guardarLocal(); vista = 'plan'; pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); return; }
   if(e.target.closest('[data-nuevo-plan]')) alta();
   if(e.target.closest('[data-anadir-plan]')) anadirCurso();
-  const cb = e.target.closest('[data-cuenta-p]'); if(cb){ if(cb.dataset.cuentaP === 'salir') cuentaUI.salir(); else cuentaUI.abrir(cb.dataset.cuentaP); return; }
+  const cb = e.target.closest('[data-cuenta-p]'); if(cb){ if(cb.dataset.cuentaP === 'salir') cuentaUI.salir(); else if(cb.dataset.cuentaP === 'borrar') cuentaUI.borrar(); else cuentaUI.abrir(cb.dataset.cuentaP); return; }
   if(e.target.closest('[data-probar-voz]')) probarVoz();
-  const mb = e.target.closest('[data-masc]'); if(mb){ ajustes.mascota = mb.dataset.masc; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); pintarPlan.saludo = false; try{ sessionStorage.removeItem('carymo.saludo'); }catch{} if(conAcceso()) sala({ accion: 'mascota', personaje: mb.dataset.masc }).catch(() => {}); }
+  const mb = e.target.closest('[data-masc]'); if(mb && mb.classList.contains('sin-adoptar')){ tono(SON.toque); companero.abrir({ adoptar: mb.dataset.masc }); return; }
+  if(mb){ ajustes.mascota = mb.dataset.masc; guarda.poner('est.ajustes', ajustes); tono(SON.pop); pintarPerfil(); pintarPlan.saludo = false; try{ sessionStorage.removeItem('carymo.saludo'); }catch{} if(conAcceso()) sala({ accion: 'mascota', personaje: mb.dataset.masc }).catch(() => {}); }
   if(e.target.closest('[data-abrir-companero]')){ companero.abrir(); return; }
 });
 $('#vPerfil').addEventListener('change', (e) => {
@@ -1678,24 +1889,36 @@ if(typeof navigator !== 'undefined' && 'serviceWorker' in navigator && !/[?&]sin
 setTimeout(() => { const p = plan(); if(p && conAcceso() && navigator.onLine !== false) precargar(p); }, 8000);
 document.addEventListener('visibilitychange', () => { if(!document.hidden) sincronizar(); });
 /* amigos, estudiar juntos y «¿cómo te fue?» (amigos.js) */
-amigos = iniciarAmigos({ sala, brindis, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, mascotaEn, $, guardarPlan, colorDe: colorMateria, alPerfil: ponerPerfil,
+/* juegos de mesa (juegos/juegos.js): clases jugando, contra la máquina y en línea */
+juegos = iniciarJuegos({ capa, cerrarCapa, hoja, cerrarHoja, ico, esc, sala, tono, SON, brindis, mascotaEn, confeti, sumarXP, conAcceso, amigos: () => amigos?.estado });
+amigos = iniciarAmigos({ sala, brindis, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, mascotaEn, $, guardarPlan, colorDe: colorMateria, alPerfil: ponerPerfil, alJuego: (m) => juegos?.avisoDeJuego(m),
   perfil: () => perfil, planes: () => planes, actual: () => actualId, vista: () => vista, cuenta: () => perfil.cuenta, estudiando: () => !!$('#capa') });
 pintar();
 sincronizar();
 if(conAcceso()){ amigos.arrancar(); setTimeout(() => { if(vista === 'plan' && !$('#capa')) amigos.preguntarExamen(); }, 2500); }
-cuentaUI = iniciarCuenta({ hoja, cerrarHoja, esc, ico, brindis, tono, SON, $, perfil: () => perfil,
+cuentaUI = iniciarCuenta({ hoja, cerrarHoja, esc, ico, brindis, tono, SON, $, perfil: () => perfil, escolar: () => ajustes.escolar,
+  alEscolar: (k) => { ajustes.escolar = k; ajustes.nivel = NIVEL_DE_ESCOLAR[k] || 'prepa'; guarda.poner('est.ajustes', ajustes); },
   alEntrar: (yo) => { $('#cajaLlave')?.remove(); try{ const pend = sessionStorage.getItem('carymo.planPendiente'); if(pend){ sessionStorage.removeItem('carymo.planPendiente'); setTimeout(() => anadirCurso(pend), 900); } }catch{} if(yo && yo.nombre && (!perfil.nombre || perfil.nombre === 'Tú')){ perfil.nombre = yo.nombre; guarda.poner('est.perfil', perfil); sala({ accion: 'perfil', nombre: yo.nombre }).catch(() => {}); } sincronizar(); amigos.arrancar(); pintar(); },
-  alSalir: () => { pintar(); pintarFaltaLlave(); } });
+  alSalir: () => { pintar(); pintarFaltaLlave(); },
+  /* borrar la cuenta: primero el avance en el servidor; luego se limpia este teléfono y se empieza de cero */
+  borrarDatos: async () => { const r = await sala({ accion: 'borrarTodo' }); if(!r || !r.borrado) throw new Error((r && r.error) || 'No se pudo borrar tu avance.'); },
+  alBorrar: () => { try{ for(const k of Object.keys(localStorage)) if(/^(est\.|carymo\.)/.test(k)) localStorage.removeItem(k); }catch{} location.reload(); } });
 apuntes = iniciarApuntes({ $, esc, ico, hoja, cerrarHoja, capa, cerrarCapa, brindis, tono, SON, nuevoId, planes: () => planes });
 sesionEst = iniciarSesionEstudio({ $, esc, ico, hoja, cerrarHoja, brindis, tono, SON, dice, avanceDe, colorDe: colorMateria, cuando: cuandoTexto,
   planes: () => planes, actual: () => actualId, ocupado: () => !!$('#capa'), alCambiar: () => { if(vista === 'plan') pintar(); },
   cambiarPlan: (id) => { if(!planes[id]) return; actualId = id; guardarLocal(); vista = 'plan'; pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); } });
 companero = iniciarCompanero({ sala, capa, cerrarCapa, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, crearMascota, $, brindis, ponerPerfil,
-  perfil: () => perfil, ajustes: () => ajustes, alCerrar: () => pintar() });
+  perfil: () => perfil, ajustes: () => ajustes, activa: mascotaActiva, vestidoDe, confeti,
+  elegir: (q) => { ajustes.mascota = q; guarda.poner('est.ajustes', ajustes); refrescarVestidos(); }, alCerrar: () => pintar() });
 companero.pintarPastilla();
+/* los widgets de la pantalla de inicio (sólo dentro de la app de las tiendas): mascota en su cuarto, racha y cómo está */
+const widget = iniciarWidget({ perfil: () => perfil, activa: mascotaActiva, hoy: hoyLocal, crearMascota });
 yo = iniciarYo({ esc, ico, $, tono, SON, crearMascota, perfil: () => perfil, ajustes: () => ajustes, planes: () => planes,
-  cuantosApuntes: () => apuntes?.cuantos?.() || 0, pintarCubos: (el) => { if(el) el.innerHTML = $('#pCubos')?.innerHTML || ''; },
-  svgPersonaje: (p) => vestidor.svgPersonaje(p), abrirVestidor: () => vestidor.abrir(), abrirCompanero: () => companero.abrir() });
+  cuantosApuntes: () => apuntes?.cuantos?.() || 0, pintarCubos: (el) => { if(el) el.innerHTML = $('#pCubos .pm-cubos')?.innerHTML || $('#pCubos')?.innerHTML || ''; },
+  svgPersonaje: (p) => vestidor.svgPersonaje(p), personajeVivo, hoja, abrirVestidor: () => vestidor.abrir(), abrirCompanero: () => companero.abrir(), abrirJuegos: () => juegos?.abrir() });
+/* tu personaje vivo: el mismo del vestidor, con lo que te pusiste (personaje-vivo.js) */
+configurarPersonaje({ personaje: () => normalizarPersonaje(perfil.personaje || personajeDeArranque(perfil.cuenta || perfil.nombre || ''), perfil.ropa || [], perfil.cuenta || ''), svg: (p) => vestidor.svgPersonaje(p) });
+iniciarPerfilOtro({ sala, hoja, esc, ico, tono, SON, svgPersonaje: (p) => vestidor.svgPersonaje(p) });
 vestidor = iniciarVestidor({ sala, capa, cerrarCapa, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, brindis, $, ponerPerfil, conAcceso, perfil: () => perfil });
 /* tocar un aviso abre lo que dice: el cuarto del compañero o el plan del examen */
 avisos = iniciarAvisos({ sala, esc, ico, brindis, tono, SON,
@@ -1707,4 +1930,22 @@ entrada({ personaje: ajustes.mascota });
 $('#pCubos').addEventListener('click', () => companero.abrir());
 { const cod = codigoDe(location.search); if(cod){ history.replaceState(null, '', location.pathname); setTimeout(() => anadirCurso(cod), 3400); } }
 /* para las pruebas */
-window.__estudio = { ir: (v) => { vista = v; pintar(); }, yo: () => yo, vestidor: () => vestidor, avisos: () => avisos, companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };
+/* EL BOTÓN DE ATRÁS (Carlos, 14 nov: «el botón de regresar de Android te saca de la app; debería regresarte al apartado
+   anterior»). Se deja una entrada de más en el historial; cuando el teléfono la «regresa», la app cierra lo que esté
+   encima (una hoja, una pantalla de lección o de clase, una fiesta) o vuelve a la pantalla de antes, y deja la trampa otra
+   vez. Sólo cuando ya estás en el inicio sin nada abierto, el siguiente «atrás» sí sale de la app. */
+(function botonAtras(){
+  const trampa = () => { try{ history.pushState({ carymo: Date.now() }, ''); }catch{} };
+  trampa();
+  addEventListener('popstate', () => {
+    if($('#hoja')){ cerrarHoja(); return trampa(); }
+    const fiesta = $('.fiesta'); if(fiesta){ fiesta.querySelector('button')?.click(); return trampa(); }
+    const res = $('.hoja-res'); if(res){ res.querySelector('[data-continuar]')?.click(); return trampa(); }
+    const c = $('#capa');
+    if(c){ const x = c.querySelector('[data-cerrar], [data-atras], [data-v="cerrar"], [data-volver]'); if(x) x.click(); else { cerrarCapa(); pintar(); } return trampa(); }
+    if(SUBVISTAS[vista]){ vista = 'yo'; pintar(); scrollTo({ top: 0 }); return trampa(); }
+    if(vista !== 'plan'){ vista = 'plan'; pintar(); scrollTo({ top: 0 }); return trampa(); }
+    history.back();
+  });
+})();
+window.__estudio = { prueba: { brindis, dice, comboVFX, reaccion }, hoja, cerrarHoja, ir: (v) => { vista = v; pintar(); }, yo: () => yo, vestidor: () => vestidor, avisos: () => avisos, companero: () => companero, amigos: () => amigos, estado: () => ({ planes, actualId, perfil, ranking, cola, vista }), avanceDe, normalizarLeccion, normalizarPlan, leerHorarioPegado, normalizarHorarioFoto };

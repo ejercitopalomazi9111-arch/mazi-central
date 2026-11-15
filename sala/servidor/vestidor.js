@@ -24,7 +24,7 @@ export async function atenderVestidor(storage, c, cuenta, perfil, ahora){
 
   if(c.accion === 'comprarRopa'){
     const it = TIENDA_ROPA[String(c.item || '')];
-    if(!it) return { error: 'Eso no está en la tienda.', estado: 400 };
+    if(!it || it.precio == null) return { error: 'Eso no está en la tienda.', estado: 400 };
     if(perfil.ropa.includes(c.item)) return { error: 'Ya es tuyo.', estado: 400 };
     if((perfil.cubos || 0) < it.precio) return { error: `Te faltan ${it.precio - (perfil.cubos || 0)} cubitos.`, estado: 400 };
     perfil.cubos -= it.precio; perfil.ropa.push(c.item);

@@ -378,7 +378,7 @@ const revuelto = (t) => {
    búsqueda copiada es el defecto `renombrar-de-un-lado` esperando a pasar. */
 import { buscar as buscarNeuronas, vecinas, CAMPOS, claseDe } from '../../cerebro/buscador.mjs';
 import { generarVapid, empujarATodos } from './push.mjs';
-import { atenderBanco } from './banco.js';
+import { atenderBanco, atenderBancoEscuela } from './banco.js';
 import { atenderElementos } from './elementos.js';
 import { atenderPizarron } from './pizarron.js';
 import { RESPALDOS, ORDEN_RESPALDO, respaldosVivos, respaldosApagados, preguntarRespaldo, probarLlaveRespaldo } from './respaldos.js';
@@ -1825,13 +1825,19 @@ export class Sala {
         await this.ctx.storage.put(kVinculo, suya);
         return Response.json({ bien: true, cuenta: suya });
       }
-      if(!['estudio', 'ia-texto', 'ia-voz'].includes(ruta)) return Response.json({ error: 'Eso no es de CARYMO.' }, { status: 403 });
+      if(!['estudio', 'ia-texto', 'ia-voz', 'banco-escuela'].includes(ruta)) return Response.json({ error: 'Eso no es de CARYMO.' }, { status: 403 });
       const vinculo = await this.ctx.storage.get(kVinculo);
+      /* «borrar mi cuenta» desde CARYMO: si ese usuario está VINCULADO a una cuenta de la sala (Carlos, Luis),
+         sólo se suelta el vínculo; el avance de la cuenta de siempre no se toca */
+      if(ruta === 'estudio' && vinculo && pedido.method === 'POST' && /"accion"\s*:\s*"borrarTodo"/.test(await pedido.clone().text().catch(() => ''))){
+        await this.ctx.storage.delete(kVinculo);
+        return Response.json({ bien: true, borrado: true, soloVinculo: true });
+      }
       /* nadie se queda con el avance de «carlos» por registrarse con ese nombre: los nombres de las
          cuentas de la sala se apartan (u_carlos) salvo que se vinculen con su llave */
       const deLaSala = new Set([...Object.values(this.llaves || {}), ...String(this.env.LLAVES || '').split(',').map((x) => x.split(':')[0].trim()).filter(Boolean)]);
       cuenta = vinculo || (deLaSala.has(usuario) ? 'u_' + usuario : usuario);
-      if(ruta !== 'estudio' && !vinculo){
+      if(ruta !== 'estudio' && ruta !== 'banco-escuela' && !vinculo){
         const k = `carymo:uso:${diaMexico(Date.now())}:${usuario}`, n = (await this.ctx.storage.get(k)) || 0, tope = ruta === 'ia-voz' ? 200 : 80;
         if(n >= tope) return Response.json({ error: ruta === 'ia-voz' ? 'Por hoy ya se acabó la voz de tu cuenta. Mañana vuelve.' : 'Por hoy ya usaste toda la IA de tu cuenta. Mañana vuelve, o sigue con lo que ya está preparado.' }, { status: 429 });
         await this.ctx.storage.put(k, n + 1);
@@ -2351,12 +2357,15 @@ export class Sala {
        desconocido no se gaste el saldo de Carlos. No publican nada en el hilo. */
     /* ── /banco · las imágenes de Carlos para sus presentaciones (banco.js) ── */
     if(ruta === 'banco') return atenderBanco(this.ctx.storage, pedido, url, cuenta);
+    if(ruta === 'banco-escuela') return atenderBancoEscuela(this.ctx.storage, pedido, url);
     /* ── /elementos · lo que Carlos arma y guarda para reusar (elementos.js) ── */
     if(ruta === 'elementos') return atenderElementos(this.ctx.storage, pedido, url, cuenta);
     /* ── /pizarron · los pendientes por proyecto (pizarron.js) ── */
     if(ruta === 'pizarron') return atenderPizarron(this.ctx.storage, pedido, url, cuenta);
     /* ── /estudio · planes de examen, XP, racha y ranking (estudio.js) ── */
-    if(ruta === 'estudio') return atenderEstudio(this.ctx.storage, pedido, url, cuenta, ahora(), { vapid: () => this.llavesDeAviso(), enviar: (subs, mensaje) => this.empujarEstudio(subs, mensaje) });
+    if(ruta === 'estudio') return atenderEstudio(this.ctx.storage, pedido, url, cuenta, ahora(), { vapid: () => this.llavesDeAviso(), enviar: (subs, mensaje) => this.empujarEstudio(subs, mensaje),
+      /* la casa (quien entra con la llave de la sala, no con cuenta de CARYMO) puede poner títulos y regalos */
+      admin: !deCarymo && !!cuenta && cuenta !== 'invitado' });
     /* ── /secre · el cajón cifrado de Secre (secre.js). Sólo la cuenta dueña ── */
     if(ruta === 'secre'){
       if(cuenta !== (this.dueno || 'carlos')) return Response.json({ error: 'Esto es sólo de la cuenta dueña de la sala.' }, { status: 403 });

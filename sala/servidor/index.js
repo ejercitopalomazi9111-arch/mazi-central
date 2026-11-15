@@ -158,7 +158,7 @@ export default {
        El token es el de la cuenta de la comunidad (usuario y contraseña: /api/sala/comunidad/registro).
        Aquí se comprueba y se pasa a la sala GRUPAZ por dentro, con el usuario ya comprobado; la sala
        sólo deja usar estudio, ia-texto e ia-voz (sala.js, «CARYMO SIN LA LLAVE»). */
-    const cy = url.pathname.match(/^\/api\/carymo\/(estudio|ia-texto|ia-voz|vincular)$/);
+    const cy = url.pathname.match(/^\/api\/carymo\/(estudio|ia-texto|ia-voz|vincular|banco-escuela)$/);
     if(cy){
       if(!env.COMUNIDAD) return conCORS(Response.json({ bien:false, error:'Las cuentas todavía no están encendidas.' }, { status:503 }), pedido);
       const usuario = await usuarioDeToken(env, pedido.headers.get('x-token') || '');

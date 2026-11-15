@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Portada</title>
+<!-- Portada en formato institucional (Carlos, 14 nov): fondo blanco, logo de la UTEQ arriba al centro, datos al pie -->
+<style>
+@page{ size:A4; margin:0 }
+*{ box-sizing:border-box }
+html,body{ margin:0; width:210mm; height:297mm; -webkit-print-color-adjust:exact; print-color-adjust:exact }
+body{ font-family:Inter, sans-serif; color:#1C2533; background:#fff; position:relative; overflow:hidden; text-align:center }
+.marco{ position:absolute; inset:12mm; border:1.2pt solid #0B2545 }
+.marco::after{ content:""; position:absolute; inset:1.6mm; border:0.5pt solid #9AA8BA }
+.logo{ position:absolute; left:0; right:0; top:24mm; text-align:center }
+.logo img{ width:46mm; height:46mm }
+.inst{ position:absolute; left:20mm; right:20mm; top:74mm }
+.inst b{ display:block; font:800 18pt/1.2 "Inter Display", Inter; color:#0B2545; letter-spacing:.02em; text-transform:uppercase }
+.inst .lin{ font:500 11pt/1.6 Inter; color:#3E4A5C; margin-top:3mm }
+.inst .lin i{ font-style:normal; display:inline-block; min-width:80mm; border-bottom:0.7pt solid #9AA8BA }
+.sep{ width:40mm; height:1.6pt; background:#1565C0; margin:9mm auto }
+.titulo{ position:absolute; left:24mm; right:24mm; top:122mm }
+.titulo small{ display:block; font:700 10pt Inter; letter-spacing:.16em; color:#1565C0; text-transform:uppercase; margin-bottom:5mm }
+.titulo h1{ margin:0; font:800 24pt/1.15 "Inter Display", Inter; color:#0B2545 }
+.titulo p{ margin:5mm auto 0; font:400 11pt/1.45 Inter; color:#5B6675; max-width:140mm }
+.datos{ position:absolute; left:34mm; right:34mm; top:186mm; text-align:left; font:500 10.5pt/1 Inter }
+.fila{ display:grid; grid-template-columns:42mm 1fr; align-items:end; margin-bottom:5.2mm }
+.fila span{ color:#5B6675; font-weight:600 }
+.fila b{ font-weight:600; color:#0B2545; border-bottom:0.7pt solid #9AA8BA; padding-bottom:1.4mm; min-height:6mm }
+.pie{ position:absolute; left:0; right:0; bottom:22mm; font:500 10pt Inter; color:#3E4A5C }
+</style></head>
+<body>
+<div class="marco"></div>
+<div class="logo"><img src="logo-uteq-opaco.png" alt="Logotipo de la Universidad Tecnológica de Querétaro"></div>
+<div class="inst">
+  <b>Universidad Tecnológica de Querétaro</b>
+  <div class="lin">Carrera: <i>&nbsp;</i></div>
+  <div class="lin">Asignatura: <i>&nbsp;</i></div>
+</div>
+<div class="titulo">
+  <small>Evaluación de la primera unidad</small>
+  <h1>Memoria Técnica de Diseño e Implementación de una Red LAN</h1>
+  <p>Caso de estudio: Distribuidora Técnica del Bajío, S. A. de C. V. (empresa ficticia)</p>
+</div>
+<div class="datos">
+  <div class="fila"><span>Estudiante:</span><b></b></div>
+  <div class="fila"><span>Matrícula:</span><b></b></div>
+  <div class="fila"><span>Grupo:</span><b></b></div>
+  <div class="fila"><span>Docente:</span><b></b></div>
+  <div class="fila"><span>Unidad:</span><b>Primera unidad</b></div>
+  <div class="fila"><span>Fecha de entrega:</span><b></b></div>
+</div>
+<div class="pie">Santiago de Querétaro, Qro.</div>
+</body></html>
