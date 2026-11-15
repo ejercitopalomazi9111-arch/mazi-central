@@ -49,3 +49,18 @@ servidor: `cp urban-pest/servidor/src/centro.js urban-pest/centro/motor.js` y vo
 4. **Chat central, cotización a mano y carpeta** son otras páginas: todavía necesitan internet.
 5. **FALTA del cliente:** el registro de cada producto, las placas y los mínimos reales de su
    inventario.
+
+## La cara (15 nov, Godines)
+
+Luis: «se ve muy mal, hazlo de acuerdo a la estética, con animaciones e imágenes». El centro ya no usa el verde
+genérico del chat: lleva la marca de Urban Pest, la misma de su página (`../web/LEEME.md`).
+
+- **Colores:** marino `#143361`, azul `#165D9B`, naranja `#F29923`. Los tokens del chat se redefinen aquí; la hoja
+  `../chat/estilo.css` no se toca.
+- **Letras:** Archivo (títulos y cifras) e Inter (lo demás), en `fuentes/`.
+- **Logo:** en piezas (`marca/`, las cortó Luna). Al entrar se arma pieza por pieza y sube la cortina, una vez por
+  sesión; no bloquea los toques. `sello.webp` y `palabra-clara.webp` son el logo para fondo azul.
+- **Fotos:** las dos de la página nueva (Pexels) en duotono marino: `ciudad.webp` en «Hoy» y `planta.webp` en
+  Inventario. Nada de insectos ni de fumigadores (Carlos, 11 nov). Los dibujos de cada sección son SVG hechos aquí.
+- **Movimiento:** sólo transform y recortes; con «reducir movimiento» se mueve menos, sin apagarse.
+- Todo va en el cascarón de `sw.js` (v2): sin internet abre igual, con su cara.
