@@ -25,6 +25,12 @@ async function abrir(pagina, ancho, alto, escala){
 }
 /* la hoja: PDF de verdad (texto seleccionable) y una imagen por página */
 const hoja = await abrir('servicios.html', 816, 1056, 2);
+/* el logo nuevo trae degradados que Chromium escribe con máscaras (2 /SMask, medido 15 nov): se hornea como
+   foto OPACA de su propio pedazo de portada (con el fondo que tiene detrás) y esa foto lo sustituye */
+for(const el of await hoja.$$('.logo-nuevo')){
+  const jpg = await el.screenshot({ type: 'jpeg', quality: 95 });
+  await el.evaluate((img, src) => new Promise((ok) => { img.onload = ok; img.src = src; }), 'data:image/jpeg;base64,' + jpg.toString('base64'));
+}
 await hoja.pdf({ path: path.join(SAL, 'Grupo-Mazi-servicios-2026.pdf'), width: '8.5in', height: '11in', printBackground: true, preferCSSPageSize: true });
 /* el visor del iPhone pinta cada máscara de transparencia (sombra difuminada, degradado a
    transparente, emoji) como un RECUADRO SÓLIDO: la sombra de la Recomendada salió como un bloque
