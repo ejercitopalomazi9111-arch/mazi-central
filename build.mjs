@@ -316,11 +316,15 @@ async function copiar(desde, hasta){
   }
 }
 
+/* SE PUBLICA CON OTRO NOMBRE (Carlos, 15 nov: Smiley's no ha pagado, «cámbiasela de ubicación para que no la
+   puedan estar usando»): /smileys/ deja de existir y la página vive en una dirección que el cliente no conoce.
+   Cuando paguen, se borra el renglón y vuelve a /smileys/. */
+const PUBLICA_COMO = { smileys: 'm-41ea842b' };
 for(const cosa of VA){
   const desde = join(RAIZ, cosa);
   if(!existsSync(desde)){ console.warn('· falta y se salta: ' + cosa); continue; }
   if(NO_VA(desde)){ saltados++; continue; }
-  await copiar(desde, join(DIST, cosa));
+  await copiar(desde, join(DIST, PUBLICA_COMO[cosa] || cosa));
 }
 
 /* Que nadie indexe lo que todavía no está para el público. Cuando el sitio

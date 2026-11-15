@@ -227,7 +227,18 @@ que nos distingue.
   del cubo)**, priorizando el oscuro y el vino. «Claro» NO es crema ni blanco. Nada de rosa: el
   acento de texto sobre oscuro es #C77DFF / #B44BFF.
 - **En toda animación del logo se tiene que NOTAR la M cubo volviéndose el cubo completo.**
-- **La voz de la casa es Chris** (ElevenLabs `iP95p4xoKVk53GoZ742B`, la del anuncio 07 «La
+- **LAS VOCES DE LA CASA, desde el 15 de noviembre: las de Google 1, 2, 4 y 7 de la muestra**
+  (`marca/anuncios/muestra-voces/`): **Charon, Orus, Fenrir y Despina** (`google:<nombre>` en el guion).
+  Carlos: *«para absolutamente cualquier video futuro, actual y que vayas a hacer remake»*. Sólo voces
+  buenas de Google o de ElevenLabs; ninguna otra (Piper ya no). Lo de Chris de abajo queda como historia.
+- **El logo: el COMPLETO siempre grande** (tiene mucho detalle; chico no se lee) y **el ícono es sólo la
+  cabeza, enorme**, sin la estrella y con su pico de abajo adentro (Carlos, 15 nov).
+- **En TODA animación donde salga el logo, las plumas y cristales LEVITAN** (Carlos, 15 nov): se separan un
+  poco, suben y bajan, cada uno a su ritmo, como un ser vivo fantasioso. **La pluma suelta de la cabeza
+  también levita.** El cuerpo y la estrella mandan y se quedan casi quietos. Ya lo hace
+  `marca/paloma-2026/vivo.js`: se usa ése, no un logo estático. `marca/paloma-2026/logo-icono.svg`; para papel,
+  `logo-plano.svg` (sin brillo).
+- *(historia)* **La voz de la casa era Chris** (ElevenLabs `iP95p4xoKVk53GoZ742B`, la del anuncio 07 «La
   plantilla»): «esa se guarda como predeterminada», y el 4 de noviembre: **«úsala siempre»**. Piper es sólo puente: lo que salga con Piper por falta de saldo se rehace con Chris en cuanto haya, y se le avisa a Carlos. **Ojo:** el plan gratis de ElevenLabs no permite uso comercial; los anuncios piden el Starter (USD 6 al mes, 30 mil caracteres, con licencia comercial; precio visto el 4 nov).
 - **Los modelos 3D NO los hago yo**: «te quedan muy chafas». Se usan gratuitos de internet (Poly
   Haven, Kenney, Quaternius, Sketchfab CC) con crédito, y **texturas e iluminación profesionales**

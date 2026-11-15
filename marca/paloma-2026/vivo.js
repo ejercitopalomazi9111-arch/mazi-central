@@ -54,6 +54,8 @@ export async function crearPaloma(contenedor, { reloj = 'auto', brillo = true, f
     /* la CABEZA (cuerpo y mejilla) es el ícono y la que manda: nunca es pluma ni ladrillo (Carlos, 14 nov) */
     const esCabeza = p.el.tagName === 'polygon' && (p.el.getAttribute('fill') === '#F6ECFF' || (b.x < X0 && X0 < b.x + b.width && b.y < centro.y && centro.y < b.y + b.height && b.width > 200));
     p.papel = i < 3 ? 'estrella' : esCabeza ? 'cabeza' : (p.c.y < yGrupo || p.c.y > yCola) && p.el.tagName === 'polygon' && Math.max(b.width, b.height) > 60 ? 'pluma' : 'letra';
+    /* la pluma suelta de la cabeza (la blanca) es parte del ícono pero TAMBIÉN levita (Carlos, 15 nov) */
+    p.plumaCabeza = esCabeza && p.el.getAttribute('fill') === '#F6ECFF';
     p.fase = p.dist * .0045 + Math.atan2(dy, dx) * .5 + i * .37;
     p.x = p.y = p.r = 0; p.s = 1; p.vx = p.vy = p.vr = p.vs = 0;
     p.forma = null;
@@ -78,6 +80,13 @@ export async function crearPaloma(contenedor, { reloj = 'auto', brillo = true, f
       const manda = p.papel === 'cabeza' || p.papel === 'estrella';
       let tx = p.dir.x * 14 * E.respira * ola * (manda ? .35 : 1), ty = p.dir.y * 14 * E.respira * ola * (manda ? .35 : 1);
       let tr = Math.sin(t * .7 + p.fase * 2) * 1.6 * E.respira, ts = 1;
+      /* LEVITACIÓN (Carlos, 15 nov: «en toda animación que salga el logo, las plumas y cristales levitan: se separan
+         un poco, suben, bajan, como un ser vivo fantasioso»): cada pieza flota con su propio ritmo; el cuerpo y la
+         estrella no, porque son los que mandan. La pluma de la cabeza sí, y un poco más. */
+      if(!manda || p.plumaCabeza){ const lv = p.plumaCabeza ? 1.5 : 1;
+        ty += Math.sin(t * 1.3 + p.fase * 1.7) * 7 * E.respira * lv;
+        tx += Math.cos(t * .9 + p.fase * 1.3) * 2.5 * E.respira * lv;
+        tr += Math.sin(t * 1.1 + p.fase) * 1.2 * E.respira * lv; }
       if(p.papel === 'estrella') ts = 1 + .07 * E.respira * Math.sin(t * 2.2);
       /* 2 · abrirse: cada cristal se va hacia fuera y gira un poco, como hechizo que se expande */
       if(E.abre && !manda){ const a = E.abre; tx += p.dir.x * (60 + p.dist * .38) * a - p.dir.y * 40 * a * Math.sin(p.fase); ty += p.dir.y * (60 + p.dist * .38) * a + p.dir.x * 40 * a * Math.sin(p.fase);
