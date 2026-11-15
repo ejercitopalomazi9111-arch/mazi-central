@@ -551,7 +551,10 @@ export async function generarImagen(env, pedido = {}, hacer = fetch){
    Igual que la imagen: se recorre la respuesta buscando el audio, y si un
    modelo o una ruta da 404 se prueba la siguiente — los nombres cambian. */
 export const MODELOS_VOZ = ['gemini-3.8-flash-tts', 'gemini-3.8-flash-lite-tts', 'gemini-3.1-flash-tts-preview', 'gemini-2.5-flash-preview-tts'];
-export const VOCES = ['Kore', 'Aoede', 'Leda', 'Puck', 'Charon', 'Fenrir', 'Orus', 'Zephyr', 'Callirrhoe', 'Autonoe', 'Despina', 'Sulafat'];
+/* las 30 voces de Gemini TTS (lista de memoria, 15 nov 2026: se comprueba contra la documentación al publicar la sala); antes sólo había 12 y cualquier otra caía callada en Kore */
+export const VOCES = ['Kore', 'Aoede', 'Leda', 'Puck', 'Charon', 'Fenrir', 'Orus', 'Zephyr', 'Callirrhoe', 'Autonoe', 'Despina', 'Sulafat',
+  'Enceladus', 'Iapetus', 'Umbriel', 'Algieba', 'Erinome', 'Algenib', 'Rasalgethi', 'Laomedeia', 'Achernar', 'Alnilam', 'Schedar', 'Gacrux',
+  'Pulcherrima', 'Achird', 'Zubenelgenubi', 'Vindemiatrix', 'Sadachbia', 'Sadaltager'];
 
 /** El último audio que haya en cualquier parte de una respuesta. */
 export function buscarAudio(j){

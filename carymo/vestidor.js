@@ -10,7 +10,7 @@
  *   decorar     pone el personaje de cada quien en el ranking, en amigos y en tu perfil. NO toca el
  *               código del ranking: lo VIGILA (MutationObserver) y cambia la letra por el dibujo.
  * ===========================================================================*/
-import { OPCIONES, TIENDA_ROPA, articuloDe, personajeDeArranque, normalizarPersonaje, opcionesAvataaars, extrasMazi } from './ropa.js';
+import { NOMBRE_DETALLE, OPCIONES, TIENDA_ROPA, articuloDe, personajeDeArranque, normalizarPersonaje, opcionesAvataaars, extrasMazi } from './ropa.js';
 import { CUBO } from './cosas.js';
 
 let lib = null;
@@ -24,16 +24,18 @@ export async function svgPersonaje(p){
 }
 
 const NOMBRES = {
-  ojos: { default: 'Normales', happy: 'Felices', wink: 'Guiño', side: 'De lado', squint: 'Entrecerrados', surprised: 'Sorpresa', hearts: 'Enamorados', closed: 'Cerrados' },
-  boca: { smile: 'Sonrisa', default: 'Normal', twinkle: 'Coqueta', serious: 'Seria', tongue: 'Lengua', eating: 'Comiendo', concerned: 'Preocupada', disbelief: '¿En serio?' },
+  detalle: NOMBRE_DETALLE,
+  ojos: { default: 'Normales', happy: 'Felices', wink: 'Guiño', side: 'De lado', squint: 'Entrecerrados', surprised: 'Sorpresa', hearts: 'Enamorados', closed: 'Cerrados', eyeRoll: 'Ojos en blanco', cry: 'Llorando', xDizzy: 'Mareado' },
+  boca: { smile: 'Sonrisa', default: 'Normal', twinkle: 'Coqueta', serious: 'Seria', tongue: 'Lengua', eating: 'Comiendo', concerned: 'Preocupada', disbelief: '¿En serio?', grimace: 'Mueca', sad: 'Triste', screamOpen: 'Grito' },
 };
 /* las pestañas del vestidor: qué partes trae cada una */
 const PESTANAS = [
-  { id: 'cara', t: 'Cara', icono: 'smile', partes: [['piel', 'Piel'], ['ojos', 'Ojos'], ['cejas', 'Cejas'], ['boca', 'Boca'], ['barba', 'Barba y bigote']] },
+  { id: 'cara', t: 'Cara', icono: 'smile', partes: [['piel', 'Piel'], ['detalle', 'Detalles de la piel'], ['ojos', 'Ojos'], ['cejas', 'Cejas'], ['boca', 'Boca'], ['barba', 'Barba y bigote']] },
   { id: 'pelo', t: 'Pelo', icono: 'user-round', partes: [['pelo', 'Peinado'], ['colorPelo', 'Color']] },
   { id: 'ropa', t: 'Ropa', icono: 'shirt', partes: [['ropa', 'Prenda'], ['colorRopa', 'Color'], ['estampa', 'Estampado']] },
   { id: 'gorros', t: 'Gorros', icono: 'crown', partes: [['gorro', 'Gorro'], ['colorGorro', 'Color del gorro']] },
   { id: 'lentes', t: 'Lentes', icono: 'glasses', partes: [['lentes', 'Lentes']] },
+  { id: 'extras', t: 'Extras', icono: 'sparkles', partes: [['extra', 'Extra']] },
   { id: 'fondo', t: 'Fondo', icono: 'palette', partes: [['fondo', 'Fondo']] },
 ];
 const DE_COLOR = new Set(['piel', 'colorPelo', 'colorRopa', 'colorGorro', 'fondo']);
@@ -89,7 +91,7 @@ export function iniciarVestidor(h){
     const nombre = art ? TIENDA_ROPA[art].nombre : (NOMBRES[k] && NOMBRES[k][v]) || (v ? '' : 'Ninguno');
     if(DE_COLOR.has(k)) return `<button class="pj-color" data-parte="${k}" data-valor="${v}" aria-pressed="${sel}" aria-label="Color ${v}" style="--c:#${v}"></button>`;
     return `<button class="pj-op ${precio ? 'de-paga' : ''}" data-parte="${k}" data-valor="${esc(v)}" aria-pressed="${sel}" aria-label="${esc(nombre || v || 'Ninguno')}${precio ? `, ${precio} cubitos` : ''}">
-      <span class="pj-mini">${!v && ['barba', 'estampa', 'gorro', 'lentes', 'pelo'].includes(k) ? ico('x') : ''}</span>${nombre ? `<small>${esc(nombre)}</small>` : ''}${precio ? `<span class="pj-precio"><span class="cubo-ico">${CUBO}</span>${precio}</span>` : ''}</button>`;
+      <span class="pj-mini">${!v && ['barba', 'estampa', 'gorro', 'lentes', 'pelo', 'extra'].includes(k) ? ico('x') : ''}</span>${nombre ? `<small>${esc(nombre)}</small>` : ''}${precio ? `<span class="pj-precio"><span class="cubo-ico">${CUBO}</span>${precio}</span>` : ''}</button>`;
   }
   async function alTocar(e){
     const v = e.target.closest('[data-v]');

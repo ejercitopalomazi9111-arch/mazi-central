@@ -298,6 +298,18 @@ for(const ev of ['gesturestart', 'gesturechange']) document.addEventListener(ev,
 
   /* vacío / portada de la app */
   .vacio{ text-align:center; padding:56px 8px 24px }
+  .enlace-suave{ display:inline-flex; align-items:center; gap:6px; margin:14px auto 0; background:none; border:0; color:var(--claro-txt); font-weight:800; min-height:44px; padding:0 8px }
+  .enlace-suave .i{ width:18px; height:18px }
+  .enlace-suave.tenue{ display:flex; margin:26px auto 0; color:var(--suave); font-weight:700; font-size:14px; opacity:.75 }
+  .bitacora section + section{ margin-top:18px } .bitacora h4{ font:800 13px/1 Titulo; letter-spacing:.12em; text-transform:uppercase; color:var(--suave); margin:0 0 8px }
+  .bit-item{ padding:10px 12px; border-radius:14px; background:var(--sup); margin-bottom:8px } .bit-item b{ display:block; font:800 16px/1.2 Titulo } .bit-item p{ margin:4px 0 0; font-size:14px; line-height:1.4; color:var(--suave) }
+  .explora{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:10px }
+  .explora button{ display:grid; justify-items:center; gap:8px; padding:14px 4px 12px; border:1px solid var(--borde); border-radius:18px; background:var(--sup); min-width:0 }
+  .explora button .i{ width:26px; height:26px; color:var(--c); padding:9px; box-sizing:content-box; border-radius:14px; background:color-mix(in srgb, var(--c) 18%, transparent) }
+  .explora b{ font-size:13px; font-weight:800 }
+  .repaso-hoy{ display:flex; align-items:center; gap:12px; width:100%; max-width:560px; margin:14px auto; padding:14px 16px; text-align:left; border:1px solid #E8B54A66; border-radius:18px; background:linear-gradient(135deg, #E8B54A22, #AC27FF22); color:inherit }
+  .repaso-hoy > .i:first-child{ width:24px; height:24px; color:#E8B54A; flex:none }
+  .repaso-hoy span{ flex:1; min-width:0 } .repaso-hoy b{ display:block; font:800 17px Titulo } .repaso-hoy small{ color:var(--suave) }
   .vacio h1{ font:900 34px/1.05 Titulo } .vacio h1 em{ font-style:normal; color:var(--claro-txt); display:block }
   .vacio p{ color:var(--suave); margin:14px auto 26px; max-width:340px }
   .sello{ width:120px; height:120px; margin:0 auto 22px; border-radius:32px; display:grid; place-items:center; background:linear-gradient(145deg, var(--vino-2), var(--vino)); box-shadow:0 8px 0 var(--vino-osc), 0 20px 40px #0007; color:#fff }
@@ -496,6 +508,9 @@ for(const ev of ['gesturestart', 'gesturechange']) document.addEventListener(ev,
   .historia h2{ font:900 27px/1.12 Titulo; margin:0 0 12px; max-width:340px }
   .historia .txt-hist{ font-size:20px; line-height:1.5; color:#E6DDEE; max-width:340px; text-wrap:balance }
   .historia .txt-hist b{ color:#fff; background:linear-gradient(transparent 62%, #AC27FF66 62%) }
+  .historia .txt-hist .decir{ display:inline-flex; align-items:center; gap:6px; font:inherit; font-weight:800; color:#fff; background:#AC27FF33; border:1px solid #C77DFF88; border-radius:10px; padding:0 8px; margin:2px 0; min-height:36px; cursor:pointer; vertical-align:baseline }
+  .historia .txt-hist .decir svg{ width:16px; height:16px; opacity:.8 }
+  .historia .txt-hist .decir.hablando{ background:#AC27FF77 }
   .historia.es-dato .aro-dib{ background:radial-gradient(circle at 50% 40%, #5A1530, #3A0D1F 70%); box-shadow:0 0 0 1px #ffffff14, 0 18px 40px -18px #7E1735 }
   .historia.es-dato h2{ color:#FFC1CF; font-size:15px; letter-spacing:.14em; text-transform:uppercase }
   .historia .acciones-mini{ justify-content:center; margin-top:26px }
@@ -571,6 +586,39 @@ for(const ev of ['gesturestart', 'gesturechange']) document.addEventListener(ev,
   .tarjeta .reves b{ display:block; font:900 24px/1.2 Titulo; margin-bottom:10px }
   .tarjeta small{ position:absolute; bottom:16px; font-size:12px; color:#ffffffa0; font-family:Texto; font-weight:700 }
 
+  /* diagramas (diagrama.js) */
+  .capa.diagrama .cuerpo{ text-align:center }
+  .dg-titulo{ font:800 24px/1.15 Titulo; margin:4px 0 12px }
+  .dg-espera,.dg-pista{ color:var(--suave); margin:12px 0 }
+  .dg{ width:100%; max-width:440px; height:auto; display:block; margin:8px auto 0; overflow:visible }
+  .dg-rama{ stroke:#ffffff2e; stroke-width:2; pointer-events:none }
+  .dg-flecha, .dg text{ pointer-events:none }
+  .dg-flecha{ stroke:#C77DFF; stroke-width:2.5; fill:none }
+  .dg-n{ cursor:pointer }
+  .dg-n rect{ fill:#2A1640; stroke:var(--c); stroke-width:2 }
+  .dg-n text{ fill:#F1ECF4; font:800 14px Texto, sans-serif }
+  .dg-centro rect{ fill:#AC27FF; stroke:#C77DFF } .dg-centro{ cursor:default }
+  .dg-n.dg-elegida rect{ fill:#4A2470; stroke-width:3.5 }
+  .dg-n.dg-vacia rect{ fill:#170A26; stroke-dasharray:6 5 } .dg-n.dg-vacia text{ fill:#C77DFF; font-size:22px }
+  .dg-n.dg-puesta rect{ fill:#1E4B3A; stroke:#3FCB8A }
+  .dg-n.dg-mal rect{ fill:#5A1726; stroke:#F0566E }
+  .dg-modo{ display:inline-flex; background:var(--sup); border:1px solid var(--borde); border-radius:999px; padding:3px; margin-bottom:4px }
+  .dg-modo button{ border:0; background:none; padding:8px 18px; border-radius:999px; min-height:40px; color:var(--suave); font-weight:800 }
+  .dg-modo button[aria-pressed="true"]{ background:var(--morado, #AC27FF); color:#fff }
+  .dg-ficha{ text-align:left; background:var(--sup); border:1px solid var(--borde); border-radius:18px; padding:14px 16px; margin-top:14px }
+  .dg-ficha b{ font:800 18px Titulo; display:block; margin-bottom:4px }
+  .dg-ficha p{ margin:0 }
+  .dg-opciones{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center }
+  .chip-op{ border:1px solid var(--borde); background:var(--sup); border-radius:999px; padding:8px 14px; min-height:44px; font-weight:800 }
+  .chip-op[aria-pressed="true"]{ background:#AC27FF; color:#fff; border-color:#C77DFF }
+  /* modelos 3D (modelos/visor.html dentro, sin barra: el visor trae su propia X) */
+  .capa.modelo3d{ padding:0 }
+  .capa.modelo3d iframe{ position:absolute; inset:var(--muelle, 0px) 0 0 0; width:100%; height:calc(100% - var(--muelle, 0px)); border:0; background:#170A26 }
+  .mod-lista{ display:grid; gap:12px }
+  .mod-carta{ display:flex; align-items:center; gap:14px; text-align:left; border:1px solid var(--borde); background:var(--sup); border-radius:20px; padding:16px; color:inherit }
+  .mod-carta .acad-ico{ background:#AC27FF33 }
+  .mod-carta b{ font:800 18px/1.2 Titulo; display:block }
+  .mod-carta small{ color:var(--suave); font-size:14px }
   /* pizarra (Explica dentro) */
   .capa.pizarra iframe{ flex:1; width:100%; border:0; background:#100A18 }
   /* la cabecera de la clase, doblada en una flechita para dejarle la pantalla al pizarrón */

@@ -15,8 +15,12 @@ ok(perft(ajedrez, deFEN('8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1'), 4) === 432
   const j = elegir(ajedrez, mate, 'medio'); const e2 = ajedrez.aplicar(mate, j);
   ok(ajedrez.fin(e2)?.motivo === 'jaque mate', 'la máquina ve el mate del pasillo (Ta8)');
   const pastor = deFEN('r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 4 4');
-  const j2 = elegir(ajedrez, pastor, 'facil', () => .99);
-  ok(ajedrez.texto(j2) === 'f3f7', 'hasta en fácil ve el mate del pastor (Dxf7)');
+  /* por ELO (Carlos, 14 nov): el difícil (1000) y el medio (600) siempre lo ven; el fácil (150) a veces sí y a veces no */
+  let s1 = 7; const rnd = () => (s1 = (s1 * 16807) % 2147483647) / 2147483647;
+  const veces = (n) => { let k = 0; for(let i = 0; i < 40; i++) if(ajedrez.texto(elegir(ajedrez, pastor, n, rnd)) === 'f3f7') k++; return k; };
+  const vM = veces('medio'), vF = veces('facil');
+  ok(vM >= 34, `el medio ve el mate del pastor casi siempre (${vM} de 40)`);
+  ok(vF >= 3 && vF <= 30, `el fácil (150 de ELO) lo ve a veces, no siempre (${vF} de 40)`);
   const ah = deFEN('7k/5Q2/6K1/8/8/8/8/8 b - - 0 1');
   ok(ajedrez.fin(ah)?.motivo === 'ahogado', 'ahogado es tablas');
   ok(ajedrez.fin(deFEN('8/8/8/4k3/8/8/2KB4/8 w - - 0 1'))?.motivo === 'no alcanza para dar mate', 'rey y alfil contra rey: tablas');

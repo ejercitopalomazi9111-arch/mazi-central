@@ -1,0 +1,20 @@
+{
+  "titulo": "CARYMO · Tráiler (con amor, inspirado por Mónica)",
+  "voces": { "Narrador": "google:Charon" },
+  "lento": { "Narrador": 1.12 },
+  "voz_de_la_casa": "Voz de Google por La Sala porque Chris (ElevenLabs) no tiene saldo; cuando haya, el narrador va con Chris y se vuelve a armar.",
+  "lineas": [
+    { "id": "01", "voz": "Narrador", "en": 4.0, "txt": "Toda historia grande empieza con algo pequeño." },
+    { "id": "02", "voz": "Narrador", "en": 8.5, "txt": "Ella tenía un examen." },
+    { "id": "03", "voz": "Narrador", "en": 11.3, "txt": "Y no le alcanzaba la noche." },
+    { "id": "04", "voz": "Narrador", "en": 14.2, "txt": "Él no sabía enseñar." },
+    { "id": "05", "voz": "Narrador", "en": 16.6, "txt": "Pero sabía construir." },
+    { "id": "06", "voz": "Narrador", "en": 19.8, "txt": "Noches sin dormir. Cientos de intentos." },
+    { "id": "07", "voz": "Narrador", "en": 25.4, "txt": "Hasta que estudiar se sintió como jugar." },
+    { "id": "08", "voz": "Narrador", "en": 38.8, "txt": "Lo hizo para una persona." },
+    { "id": "09", "voz": "Narrador", "en": 42.4, "txt": "Ahora es para todos." },
+    { "id": "10", "voz": "Narrador", "en": 48.8, "txt": "Grupo Mazi presenta." },
+    { "id": "11", "voz": "Narrador", "en": 53.0, "txt": "CARYMO.", "dice": "Carimo." },
+    { "id": "12", "voz": "Narrador", "en": 55.6, "txt": "Estudia como juegas." }
+  ]
+}

@@ -11,7 +11,9 @@ Sale del dibujo de línea de Carlos (`fuente/dibujo-carlos.png`, recortado de un
 **Lo que se completó a mano.** La captura cortaba las puntas de las alas y los botones de WhatsApp tapaban la cola:
 - el ala derecha y la cola derecha son el reflejo de las izquierdas (el dibujo es simétrico);
 - la banda del brazo derecho sí es la suya, porque el cuerpo no es simétrico;
-- las plumas cortadas rematan en punta, alargando sus dos orillas.
+- las plumas cortadas rematan en punta, alargando sus dos orillas;
+- **la cola termina en pico** (Carlos, 14 nov: «a la cola en la parte de hasta abajo termínala en pico»): las dos plumas del
+  centro bajan y se juntan en punta, medido contra el dibujo completo que mandó después (`fuente/dibujo-completo.jpg`). Va en `pico()` de `componer.py`.
 
 **Cómo se rehace** (en `receta/`):
 

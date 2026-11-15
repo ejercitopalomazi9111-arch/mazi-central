@@ -227,7 +227,18 @@ que nos distingue.
   del cubo)**, priorizando el oscuro y el vino. «Claro» NO es crema ni blanco. Nada de rosa: el
   acento de texto sobre oscuro es #C77DFF / #B44BFF.
 - **En toda animación del logo se tiene que NOTAR la M cubo volviéndose el cubo completo.**
-- **La voz de la casa es Chris** (ElevenLabs `iP95p4xoKVk53GoZ742B`, la del anuncio 07 «La
+- **LAS VOCES DE LA CASA, desde el 15 de noviembre: las de Google 1, 2, 4 y 7 de la muestra**
+  (`marca/anuncios/muestra-voces/`): **Charon, Orus, Fenrir y Despina** (`google:<nombre>` en el guion).
+  Carlos: *«para absolutamente cualquier video futuro, actual y que vayas a hacer remake»*. Sólo voces
+  buenas de Google o de ElevenLabs; ninguna otra (Piper ya no). Lo de Chris de abajo queda como historia.
+- **El logo: el COMPLETO siempre grande** (tiene mucho detalle; chico no se lee) y **el ícono es sólo la
+  cabeza, enorme**, sin la estrella y con su pico de abajo adentro (Carlos, 15 nov).
+- **En TODA animación donde salga el logo, las plumas y cristales LEVITAN** (Carlos, 15 nov): se separan un
+  poco, suben y bajan, cada uno a su ritmo, como un ser vivo fantasioso. **La pluma suelta de la cabeza
+  también levita.** El cuerpo y la estrella mandan y se quedan casi quietos. Ya lo hace
+  `marca/paloma-2026/vivo.js`: se usa ése, no un logo estático. `marca/paloma-2026/logo-icono.svg`; para papel,
+  `logo-plano.svg` (sin brillo).
+- *(historia)* **La voz de la casa era Chris** (ElevenLabs `iP95p4xoKVk53GoZ742B`, la del anuncio 07 «La
   plantilla»): «esa se guarda como predeterminada», y el 4 de noviembre: **«úsala siempre»**. Piper es sólo puente: lo que salga con Piper por falta de saldo se rehace con Chris en cuanto haya, y se le avisa a Carlos. **Ojo:** el plan gratis de ElevenLabs no permite uso comercial; los anuncios piden el Starter (USD 6 al mes, 30 mil caracteres, con licencia comercial; precio visto el 4 nov).
 - **Los modelos 3D NO los hago yo**: «te quedan muy chafas». Se usan gratuitos de internet (Poly
   Haven, Kenney, Quaternius, Sketchfab CC) con crédito, y **texturas e iluminación profesionales**
@@ -612,7 +623,20 @@ dependemos.
 
    | una variable de CSS (`--casilla-l`) puesta en la clase de la pantalla de juegos llega a todo lo de los juegos | llega sólo a lo que vive DENTRO de ese contenedor: el menú era `.jg` y la mesa `.jg-mesa`, hermanos, y en la mesa la variable no existía: casillas transparentes | el tablero de ajedrez salió negro sin un solo error y las 28 pruebas de pantalla en verde (contaban casillas y piezas, no su color). Lo vio la captura; la variable va en el propio tablero (`.jg-tab`) y la prueba mide que las casillas tengan dos colores y midan lo mismo (`carymo/juegos/pruebas-pantalla.mjs`) |
 
+   | un modelo GLB que carga sin errores y cuyas piezas ya se pueden tocar se ve en pantalla | el atlas BodyParts3D viene en **milímetros** (1,700 de alto) y la cámara cortaba a 100: todo quedaba fuera del alcance, sin un solo error, y además acostado (su «arriba» es +z) | los tres modelos de CARYMO salieron en negro con las fichas funcionando. El visor escala cada modelo a 2 unidades y lo endereza (`carymo/modelos/visor.html`) |
+
+   | una clase corta para el estado de una pieza nueva (`.oculto`, `.mal`, `.puesto`) es sólo mía | `.oculto` ya era la de lectores de pantalla de CARYMO (`position:absolute` y recortada): las cajas vacías del diagrama se pintaban y **no se podían tocar** | lo cazó la prueba que toca los huecos de «Completa» («svg intercepts pointer events»). Las clases de estado van con el prefijo del componente (`dg-vacia`, `dg-mal`), como ya decía el renglón de los `@keyframes` |
+
+   | un tablero que se vuelve a pintar entero en cada toque se ve igual que antes | se ve igual EN LA CAPTURA; en el iPhone cada `<img>` nueva se pinta en blanco un instante antes de cargar, aunque venga de la caché | el ajedrez de CARYMO parpadeaba con cada toque y cada jugada, y las piezas se teletransportaban. Ahora el tablero se crea una vez, cada pieza es el mismo nodo toda la partida y se desliza con `animate()` (`actualizar8` en `carymo/juegos/juegos.js`); regla 13 |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
+
+13. **CERO PARPADEO. Nunca, jamás, de los jamases** (Carlos, 14 nov, por el ajedrez de CARYMO). Tocar algo o que
+   algo cambie NO vuelve a crear lo que ya está en pantalla. Rehacer con `innerHTML` un tablero, una lista o una mesa
+   en cada toque vuelve a crear sus imágenes, y el iPhone las pinta en blanco un instante: eso es el parpadeo. Lo que
+   se ve se crea UNA vez y luego sólo se cambia lo que cambió (una clase, un texto, una pieza). Lo que se mueve es el
+   MISMO nodo y se desliza a su lugar nuevo; nada se teletransporta. Cada pantalla con piezas lleva una prueba que
+   guarda los nodos, toca y comprueba que siguen siendo los mismos (`carymo/juegos/pruebas-pantalla.mjs`).
 
 ---
 

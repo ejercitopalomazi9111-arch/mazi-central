@@ -1,0 +1,79 @@
+{
+ "caras": 7000,
+ "partes": [
+  {
+   "id": "craneo",
+   "conceptos": [
+    "skull"
+   ],
+   "color": "#EDE3CF",
+   "caras": 12000
+  },
+  {
+   "id": "columna",
+   "conceptos": [
+    "vertebral column"
+   ],
+   "color": "#D9C9A8",
+   "caras": 9000
+  },
+  {
+   "id": "costillas",
+   "conceptos": [
+    "rib cage",
+    "body of sternum"
+   ],
+   "color": "#E8DCC0",
+   "caras": 9000
+  },
+  {
+   "id": "pelvis",
+   "conceptos": [
+    "bony pelvis"
+   ],
+   "color": "#D6C39C"
+  },
+  {
+   "id": "brazos",
+   "conceptos": [
+    "left bony pectoral girdle",
+    "right bony pectoral girdle",
+    "left humerus",
+    "right humerus",
+    "left radius",
+    "right radius",
+    "left ulna",
+    "right ulna"
+   ],
+   "color": "#E3D5B5"
+  },
+  {
+   "id": "piernas",
+   "conceptos": [
+    "left femur",
+    "right femur",
+    "left tibia",
+    "right tibia",
+    "left fibula",
+    "right fibula",
+    "left patella",
+    "right patella"
+   ],
+   "color": "#DCCCA9"
+  },
+  {
+   "id": "manos",
+   "conceptos": [],
+   "color": "#EFE6D2",
+   "caras": 6000,
+   "patron": "(finger|thumb|metacarpal bone|scaphoid|lunate|triquetr|pisiform|trapezi|capitate|hamate)"
+  },
+  {
+   "id": "pies",
+   "conceptos": [],
+   "color": "#E6D9BC",
+   "caras": 6000,
+   "patron": "(toe|metatarsal bone|talus|calcaneus|navicular|cuboid|cuneiform)"
+  }
+ ]
+}

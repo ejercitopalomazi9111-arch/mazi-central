@@ -569,7 +569,9 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
     if(c.que === 'especial'){
       const k = limpio(c.cuenta, 40).toLowerCase(), o = k && await storage.get(kPerfil(k));
       if(!o) return Response.json({ error: 'No encontré esa cuenta.' }, { status: 404 });
-      if('titulo' in c){ if(c.titulo && !TITULOS[c.titulo]) return Response.json({ error: 'Ese título no existe.' }, { status: 400 }); o.titulo = c.titulo || null; }
+      if('titulo' in c){ if(c.titulo && !TITULOS[c.titulo]) return Response.json({ error: 'Ese título no existe.' }, { status: 400 }); o.titulo = c.titulo || null;
+        /* Carlos, 15 nov: «a los artistas dales cubitos infinitos» */
+        if(c.titulo === 'artista'){ o.infinito = true; o.cubos = Math.max(o.cubos || 0, 999999); } }
       if('cubosInfinitos' in c){ o.infinito = !!c.cubosInfinitos; if(o.infinito) o.cubos = Math.max(o.cubos || 0, 999999); }
       if('estilo' in c){ if(c.estilo && !ESTILOS_NOMBRE[c.estilo]) return Response.json({ error: 'Ese estilo no existe.' }, { status: 400 }); o.estiloNombre = c.estilo || ''; }
       const pedidos = (Array.isArray(c.regalos) ? c.regalos : []).map(String);

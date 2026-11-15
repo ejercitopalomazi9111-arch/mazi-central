@@ -5,13 +5,16 @@ import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { atenderEstudio } from '../sala/servidor/estudio.js';
-import { TIENDA_ROPA } from './ropa.js';
+import { TIENDA_ROPA, PIELES, OPCIONES, extrasMazi } from './ropa.js';
 
 const raiz = fileURLToPath(new URL('..', import.meta.url));
 const PUERTO = 8700 + Math.floor(Math.random() * 90);
 const srv = spawn('python3', ['-m', 'http.server', String(PUERTO), '--bind', '127.0.0.1'], { cwd: raiz, stdio: 'ignore' });
 await new Promise((r) => setTimeout(r, 900));
 let f = 0, n = 0; const ok = (c, t) => { n++; console.log((c ? '  ✓ ' : '  ✗ ') + t); if(!c) f++; };
+/* sólo tonos de piel humanos: el amarillo, el naranja y el café anaranjado de Avataaars se leen como burla (Carlos, 14 nov) */
+ok(!['f8d25c', 'fd9841', 'ae5d29'].some((c) => PIELES.includes(c)) && PIELES.length >= 18, `${PIELES.length} tonos de piel, ninguno amarillo ni naranja de caricatura`);
+ok(['vitiligo', 'pecas', 'lunar', 'mancha', 'rubor', 'acne', 'cicatriz', 'audifono'].every((d) => OPCIONES.detalle.includes(d) && !Object.values(TIENDA_ROPA).some((a) => a.valor === d)) && /piel-vitiligo/.test(extrasMazi({ piel: '8a5638', detalle: 'vitiligo' })), 'detalles de la piel (vitíligo, pecas, lunar, mancha, rosácea, acné, cicatriz, aparato auditivo): gratis y se dibujan');
 
 const m = new Map();
 const s = { async get(k){ return structuredClone(m.get(k)); }, async put(k, v){ if(typeof k === 'object'){ for(const [a, b] of Object.entries(k)) m.set(a, structuredClone(b)); } else m.set(k, structuredClone(v)); },
@@ -46,7 +49,7 @@ await pg.click('#nav [data-ir="yo"]').then(() => pg.click('#vYo [data-ir="perfil
 ok(await pg.locator('.perfil-cab .av svg').count() === 0, 'sin personaje, en tu perfil sigue la letra de siempre');
 await pg.click('[data-abrir-vestidor]');
 await pg.waitForSelector('#pjGrande svg', { timeout: 8000 });
-ok(await pg.locator('.pj-tabs [data-tab]').count() === 6, 'se abre con tu personaje en grande y 6 pestañas: cara, pelo, ropa, gorros, lentes y fondo');
+ok(await pg.locator('.pj-tabs [data-tab]').count() === 7, 'se abre con tu personaje en grande y 7 pestañas: cara, pelo, ropa, gorros, lentes, extras y fondo');
 await foto('vest-1-cara');
 await pg.click('[data-tab="pelo"]'); await pg.waitForTimeout(1200);
 ok(await pg.locator('[data-parte="pelo"] .pj-mini svg').count() >= 25, 'cada peinado sale como miniatura de TU personaje con ese peinado');

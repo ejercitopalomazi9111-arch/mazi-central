@@ -38,8 +38,17 @@ for i in IZQ:
     if i != 5: pon(esp(p), 'ala', i)
 # la banda del brazo derecho es la suya (el cuerpo no es simétrico): se cierra su punta reflejándola
 pon(esp(cerrar_punta(esp(simp(F[4], 3.2)), 'izq')), 'ala', 4)
+def pico(p, y_corte=1735, punta=(560.5, 1906)):
+    """La pluma del centro de la cola: la captura la cortaba plana. En el dibujo completo (14 nov) las dos del
+    centro se juntan en pico; se quita lo de abajo y se cierra en la punta. La punta sale de medir el dibujo:
+    del arranque (1494) al punto más ancho (1715) hay 109 px del dibujo, y del ancho a la punta 94 más."""
+    arriba = [q for q in p if q[1] < y_corte]
+    k = max(range(len(arriba)), key=lambda i: arriba[i][1])      # el punto más ancho, ahí empieza a cerrar
+    return arriba[:k + 1] + [punta] + arriba[k + 1:]
 for i in COLA:
-    p = simp(F[i], 3.0); pon(p, 'cola', i); pon(esp(p), 'cola', i)
+    p = simp(F[i], 3.0)
+    if i == 82: p = pico(p)
+    pon(p, 'cola', i); pon(esp(p), 'cola', i)
 for i in ORN: pon(F[i], 'orn', i); pon(esp(F[i]), 'orn', i)
 pon(F[76], 'linea', 76); pon(esp(F[76]), 'linea', 76)
 pon(F[75], 'orn', 75)

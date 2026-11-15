@@ -1,0 +1,93 @@
+{
+ "titulo": "Muestra de voces para los videos del inversionista",
+ "voces": {
+  "Charon": "google:Charon",
+  "Orus": "google:Orus",
+  "Puck": "google:Puck",
+  "Fenrir": "google:Fenrir",
+  "Kore": "google:Kore",
+  "Sulafat": "google:Sulafat",
+  "Despina": "google:Despina",
+  "Aoede": "google:Aoede",
+  "Leda": "google:Leda",
+  "Zephyr": "google:Zephyr",
+  "Callirrhoe": "google:Callirrhoe",
+  "Autonoe": "google:Autonoe"
+ },
+ "lineas": [
+  {
+   "id": "01",
+   "voz": "Charon",
+   "txt": "Grupo Mazi nació de una idea sencilla: si la herramienta no existe, se construye. Hoy hacemos las herramientas, las apps y las páginas que mueven a un negocio, y nos quedamos para que sigan funcionando."
+  },
+  {
+   "id": "02",
+   "voz": "Orus",
+   "txt": "Grupo Mazi nació de una idea sencilla: si la herramienta no existe, se construye. Hoy hacemos las herramientas, las apps y las páginas que mueven a un negocio, y nos quedamos para que sigan funcionando."
+  },
+  {
+   "id": "03",
+   "voz": "Puck",
+   "txt": "Grupo Mazi nació de una idea sencilla: si la herramienta no existe, se construye. Hoy hacemos las herramientas, las apps y las páginas que mueven a un negocio, y nos quedamos para que sigan funcionando."
+  },
+  {
+   "id": "04",
+   "voz": "Fenrir",
+   "txt": "Grupo Mazi nació de una idea sencilla: si la herramienta no existe, se construye. Hoy hacemos las herramientas, las apps y las páginas que mueven a un negocio, y nos quedamos para que sigan funcionando."
+  },
+  {
+   "id": "05",
+   "voz": "Kore",
+   "txt": "Grupo Mazi nació de una idea sencilla: si la herramienta no existe, se construye. Hoy hacemos las herramientas, las apps y las páginas que mueven a un negocio, y nos quedamos para que sigan funcionando."
+  },
+  {
+   "id": "06",
+   "voz": "Sulafat",
+   "txt": "Grupo Mazi nació de una idea sencilla: si la herramienta no existe, se construye. Hoy hacemos las herramientas, las apps y las páginas que mueven a un negocio, y nos quedamos para que sigan funcionando."
+  },
+  {
+   "id": "07",
+   "voz": "Despina",
+   "txt": "Grupo Mazi nació de una idea sencilla: si la herramienta no existe, se construye. Hoy hacemos las herramientas, las apps y las páginas que mueven a un negocio, y nos quedamos para que sigan funcionando."
+  },
+  {
+   "id": "08",
+   "voz": "Aoede",
+   "txt": "Grupo Mazi nació de una idea sencilla: si la herramienta no existe, se construye. Hoy hacemos las herramientas, las apps y las páginas que mueven a un negocio, y nos quedamos para que sigan funcionando."
+  },
+  {
+   "id": "09",
+   "voz": "Leda",
+   "txt": "Grupo Mazi nació de una idea sencilla: si la herramienta no existe, se construye. Hoy hacemos las herramientas, las apps y las páginas que mueven a un negocio, y nos quedamos para que sigan funcionando."
+  },
+  {
+   "id": "10",
+   "voz": "Zephyr",
+   "txt": "Grupo Mazi nació de una idea sencilla: si la herramienta no existe, se construye. Hoy hacemos las herramientas, las apps y las páginas que mueven a un negocio, y nos quedamos para que sigan funcionando."
+  },
+  {
+   "id": "11",
+   "voz": "Callirrhoe",
+   "txt": "Grupo Mazi nació de una idea sencilla: si la herramienta no existe, se construye. Hoy hacemos las herramientas, las apps y las páginas que mueven a un negocio, y nos quedamos para que sigan funcionando."
+  },
+  {
+   "id": "12",
+   "voz": "Autonoe",
+   "txt": "Grupo Mazi nació de una idea sencilla: si la herramienta no existe, se construye. Hoy hacemos las herramientas, las apps y las páginas que mueven a un negocio, y nos quedamos para que sigan funcionando."
+  }
+ ],
+ "descripcion": {
+  "Charon": "Hombre · grave, de documental",
+  "Orus": "Hombre · firme",
+  "Puck": "Hombre · alegre",
+  "Fenrir": "Hombre · con energía",
+  "Kore": "Mujer · firme",
+  "Sulafat": "Mujer · cálida",
+  "Despina": "Mujer · suave",
+  "Aoede": "Mujer · ligera",
+  "Leda": "Mujer · juvenil",
+  "Zephyr": "Mujer · brillante",
+  "Callirrhoe": "Mujer · tranquila",
+  "Autonoe": "Mujer · clara"
+ }
+}

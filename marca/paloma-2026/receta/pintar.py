@@ -40,7 +40,7 @@ for k, pz in enumerate(P):
 estrella = 'M563,188 Q570,318 694,340 Q570,356 563,497 Q556,356 434,340 Q556,318 563,188 Z'
 rombo = 'M563,293 L585,340 L563,387 L541,340 Z'
 fe = vgrad(188, 497, [(0, '#FFFFFF'), (.5, LILA), (1, CLARO)])
-capas.insert(0, f'<path d="{estrella}" fill="{fe}"/><path d="{rombo}" fill="{OSCURO if OSC else "#fff"}"/><path d="M563,312 L575,340 L563,368 L551,340 Z" fill="#fff"/>')
+if not ICONO: capas.insert(0, f'<path d="{estrella}" fill="{fe}"/><path d="{rombo}" fill="{OSCURO if OSC else "#fff"}"/><path d="M563,312 L575,340 L563,368 L551,340 Z" fill="#fff"/>')
 if not ICONO:
     # GRUPO: letras de contorno ochavado
     L = 'stroke-width="11" stroke-linejoin="miter" stroke-linecap="square" fill="none"'
@@ -64,11 +64,14 @@ xs = [x for pz in P for x, y in pz['pts']] + [434, 694]; ys = [y for pz in P for
 if ICONO:
     vb = (330, 160, 470, 470)  # cuadrado alrededor de estrella y cabeza
     vb = (595 - 470, 140, 940, 940)
+    # Carlos, 15 nov: «en el icono usa sólo la cabeza, enorme, para que se alcance a ver»: sin la estrella y
+    # encuadrada entera, con el pico de abajo adentro (Carlos: «el pico de abajo se pierde»)
+    vb = (244, 452, 630, 630)
 else:
     m = 40; vb = (min(xs) - m, min(ys) - m, max(xs) - min(xs) + 2*m, max(ys) - min(ys) + 2*m)
 VB = ' '.join(f'{v:.0f}' for v in vb)
 if ICONO:
-    fondo = f'<rect x="{vb[0]}" y="{vb[1]}" width="{vb[2]}" height="{vb[3]}" rx="210" fill="url(#fi)"/>'
+    fondo = f'<rect x="{vb[0]}" y="{vb[1]}" width="{vb[2]}" height="{vb[3]}" rx="{round(vb[2] * .223)}" fill="url(#fi)"/>'
     defs.append(f'<radialGradient id="fi" cx="50%" cy="38%" r="70%"><stop offset="0" stop-color="#3A1458"/><stop offset="1" stop-color="{OSCURO}"/></radialGradient>')
 else:
     fondo = f'<rect x="{vb[0]}" y="{vb[1]}" width="{vb[2]}" height="{vb[3]}" fill="{OSCURO}"/>' if TEMA == 'oscuro' else ''
