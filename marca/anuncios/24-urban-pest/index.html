@@ -136,6 +136,17 @@
   #frase{ position:absolute; left:0; right:0; top:1300px; text-align:center; font:800 84px/1.05 M; letter-spacing:-.03em }
   #frase span{ display:inline-block } #frase .y{ color:var(--amarillo) }
   #mazi{ position:absolute; left:0; right:0; top:1460px; text-align:center; font:600 28px/1 M; letter-spacing:.18em; text-transform:uppercase; color:#8FA9D0 }
+  /* EL GANCHO (15 nov, revisión contra empresa/inversionista/ESTUDIO.md: los primeros 2 s deciden y no deben ser sólo
+     el logo): la pregunta del cliente, desde el primer cuadro */
+  #gancho{ position:absolute; left:60px; right:60px; top:230px; text-align:center; font:800 82px/1.04 M; letter-spacing:-.03em; z-index:6 }
+  #gancho span{ display:inline-block } #gancho .y{ color:var(--amarillo) }
+  /* LA FIRMA DE GRUPO MAZI (Carlos, 15 nov: «que se den nota que está hecho por nosotros», el logo completo y grande,
+     con sus plumas levitando) */
+  #gm{ position:absolute; inset:0; z-index:20; background:radial-gradient(120% 80% at 50% 38%, #2C1145 0%, #170A26 60%, #0E0618 100%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:40px; visibility:hidden }
+  #gmLogo{ width:720px }
+  #gmTxt{ font:600 34px/1.2 M; letter-spacing:.2em; text-transform:uppercase; color:#E2B8FF; text-align:center }
+  #gmTxt b{ display:block; font-weight:800; font-size:58px; letter-spacing:.04em; color:#fff; margin-top:10px; text-transform:none }
 </style>
 </head>
 <body>
@@ -187,10 +198,14 @@
 <canvas id="atras" width="1080" height="1920"></canvas><div id="destello"></div><div id="logo"></div><canvas id="frente" width="1080" height="1920"></canvas><div id="dedo"></div>
 <div id="frase"><span>Tu&nbsp;precio,</span> <span>sin</span> <span class="y">adivinar.</span></div>
 <div id="mazi">Lo construimos en Grupo Mazi</div>
+<div id="gancho"><span>¿Cuánto</span> <span>cobras</span> <span>por</span> <span>fumigar?</span> <span class="y">¿A&nbsp;ojo?</span></div>
+<div id="gm"><div id="gmLogo"></div><div id="gmTxt">Hecho por<b>Grupo Mazi</b></div></div>
 
 <script type="module">
+import { crearPaloma } from '../../paloma-2026/vivo.js';
 window.listo = (async () => {
 const $ = (s) => document.querySelector(s);
+const PALOMA = await crearPaloma(document.querySelector('#gmLogo'), { reloj: 'manual', puntero: false });
 const cl = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const tramo = (t, a, b) => cl((t - a) / (b - a));
 const sale = (u) => 1 - Math.pow(1 - u, 3), entra = (u) => u * u * u, suave = (u) => u * u * (3 - 2 * u);
@@ -342,6 +357,7 @@ const nuevo = (v) => v < 13.6 ? v + 1 : v < 20 ? 14.6 + (v - 13.6) * 9 / 6.4 : v
 const PAUSAS = [[7.32, 1.0], [9.75, 3.4], [13.85, 2.6], [21.85, 1.3], [27.0, 1.2], [30.75, 1.0], [31.95, 2.2], [35.5, 1.8],
   [39.5, 1.2], [42.0, 0.8], [43.4, 1.0], [45.6, 0.6], [49.4, 0.8]];
 let acum = 0; const PF = PAUSAS.map(([p, e]) => { const f = p + acum; acum += e; return f; }); const EXTRA = acum;
+const FIN_UP = 50.2 + EXTRA;   /* donde acababa el video de Urban Pest; después va la firma de Grupo Mazi */
 const deF = (F) => { let T = F; for(const [p, e] of PAUSAS){ if(T <= p) break; T = T - e < p ? p : T - e; } return T; };
 const aF = (T) => T + PAUSAS.filter(([p]) => p < T).reduce((s, [, e]) => s + e, 0);
 const enPausa = (k, F) => cl(F - PF[k], 0, PAUSAS[k][1]);   // segundos que lleva la pausa k (se queda en su final después)
@@ -586,6 +602,11 @@ const pintarViejo = (t, T) => {
 window.pintar = (F) => {
   AHORA = F; const T = deF(F), t = viejo(T);
   pintarViejo(t, T);
+  /* el gancho: palabra por palabra desde el primer cuadro, se va justo antes del primer titular */
+  [...$('#gancho').children].forEach((w, i) => { const e = sale(tramo(T, .12 + i * .16, .5 + i * .16)) * (1 - tramo(T, 2.75, 3.0)); ver(w, e, `translateY(${(1 - e) * 36}px)`); });
+  /* la firma de Grupo Mazi, después de la de Urban Pest */
+  const gmV = tramo(F, FIN_UP - .35, FIN_UP + .25); ver($('#gm'), gmV, null);
+  if(gmV > 0){ PALOMA.paso(F); const tx = sale(tramo(F, FIN_UP + .7, FIN_UP + 1.3)); ver($('#gmTxt'), tx, `translateY(${(1 - tx) * 30}px)`); }
 
   /* 0 · LA ENTRADA (0–3 s): rectas que llegan corriendo, se vuelven anillos que envuelven el logo, y el logo se arma
      por partes: primero el sol de abajo, luego el globo de arriba, la persona y el chorro. Remata con un destello. */
@@ -625,7 +646,7 @@ window.pintar = (F) => {
   escribe($('#tDueno'), DUENO, T, 33.5, 35.4);
 };
 
-window.VIDEO = { w: 1080, h: 1920, fps: 30, dur: +(50.2 + EXTRA).toFixed(2),
+window.VIDEO = { w: 1080, h: 1920, fps: 30, dur: +(FIN_UP + 3.6).toFixed(2),
   musica: { archivo: '/tmp/claude-0/mus/173.mp3', desde: 30, vol: .55, entrada: .4, fin: 2.4 },
   sonidos: [
     ['../../../herramientas/video/efectos/whoosh.wav', .05, .3], ['../../../herramientas/video/efectos/whoosh.wav', .55, .22],
@@ -637,6 +658,7 @@ window.VIDEO = { w: 1080, h: 1920, fps: 30, dur: +(50.2 + EXTRA).toFixed(2),
       .map(([v, f, vol]) => [`../../../herramientas/video/efectos/${f}.wav`, aF(nuevo(v)), vol]),
     ...[15.0, 16.0, 17.1, 18.2, 18.7, 19.05, 19.4, 19.75, 20.6].map((x, i) => ['../../../herramientas/video/efectos/toque.wav', aF(x), i > 3 && i < 8 ? .2 : .4]),
     ['../../../herramientas/video/efectos/ding.wav', aF(21.4), .5],
+    ['../../../herramientas/video/efectos/whoosh.wav', FIN_UP - .45, .35], ['../../../herramientas/video/efectos/golpe.wav', FIN_UP + .2, .45],
     ['../../../herramientas/video/efectos/whoosh.wav', aF(29.0), .3], ['../../../herramientas/video/efectos/timbre.wav', aF(29.35), .35], ['../../../herramientas/video/efectos/toque.wav', aF(31.05), .35],
     ['../../../herramientas/video/efectos/toque.wav', aF(32.75), .45], ['../../../herramientas/video/efectos/whoosh.wav', aF(33.05), .3],
     ...LEE.map((_, k) => ['../../../herramientas/video/efectos/toque.wav', PF[1] + .2 + k * .75, .3]),
