@@ -1,0 +1,14 @@
+{
+ "titulo": "GM-2 · Herramientas (paquete del inversionista, 15 nov). Herramientas usadas de verdad con fotos de All's fashion",
+ "voces": { "Narrador": "google:Charon" },
+ "lineas": [
+  { "id": "01", "voz": "Narrador", "en": 0.3,  "txt": "¿Cuántas horas se le van a tu negocio en cosas que una herramienta hace en segundos?" },
+  { "id": "02", "voz": "Narrador", "en": 5.2,  "txt": "Quitar el fondo de tus fotos: un toque." },
+  { "id": "03", "voz": "Narrador", "en": 9.8,  "txt": "Cambiar el color de una prenda, sin perder sus sombras." },
+  { "id": "04", "voz": "Narrador", "en": 14.8, "txt": "Cambiar el fondo de doce láminas de un jalón." },
+  { "id": "05", "voz": "Narrador", "en": 19.8, "txt": "Tu propia tienda en línea, con inventario y reparto." },
+  { "id": "06", "voz": "Narrador", "en": 25.0, "txt": "Y un centro de operaciones que funciona aunque se vaya el internet." },
+  { "id": "07", "voz": "Narrador", "en": 30.6, "txt": "No rentamos herramientas. Las construimos a la medida de tu negocio." },
+  { "id": "08", "voz": "Narrador", "en": 35.8, "txt": "Grupo Mazi. Si no existe la herramienta, se construye." }
+ ]
+}
