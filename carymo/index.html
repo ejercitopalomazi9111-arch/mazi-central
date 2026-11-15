@@ -300,6 +300,9 @@ for(const ev of ['gesturestart', 'gesturechange']) document.addEventListener(ev,
   .vacio{ text-align:center; padding:56px 8px 24px }
   .enlace-suave{ display:inline-flex; align-items:center; gap:6px; margin:14px auto 0; background:none; border:0; color:var(--claro-txt); font-weight:800; min-height:44px; padding:0 8px }
   .enlace-suave .i{ width:18px; height:18px }
+  .enlace-suave.tenue{ display:flex; margin:26px auto 0; color:var(--suave); font-weight:700; font-size:14px; opacity:.75 }
+  .bitacora section + section{ margin-top:18px } .bitacora h4{ font:800 13px/1 Titulo; letter-spacing:.12em; text-transform:uppercase; color:var(--suave); margin:0 0 8px }
+  .bit-item{ padding:10px 12px; border-radius:14px; background:var(--sup); margin-bottom:8px } .bit-item b{ display:block; font:800 16px/1.2 Titulo } .bit-item p{ margin:4px 0 0; font-size:14px; line-height:1.4; color:var(--suave) }
   .explora{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:10px }
   .explora button{ display:grid; justify-items:center; gap:8px; padding:14px 4px 12px; border:1px solid var(--borde); border-radius:18px; background:var(--sup); min-width:0 }
   .explora button .i{ width:26px; height:26px; color:var(--c); padding:9px; box-sizing:content-box; border-radius:14px; background:color-mix(in srgb, var(--c) 18%, transparent) }

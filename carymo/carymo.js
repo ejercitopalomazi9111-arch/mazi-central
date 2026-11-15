@@ -44,6 +44,7 @@ import { iniciarYo, SUBVISTAS } from './yo.js';
 import { configurarPersonaje, personajeVivo, reaccion } from './personaje-vivo.js';
 import { LIGAS, ligaDe, trofeoSVG } from './ligas.js';
 import { personajeDeArranque, normalizarPersonaje } from './ropa.js';
+import { BITACORA } from './devlog.js';
 import { leerClase, guardarClase, hayClase } from '../sala/clases-guardadas.js';
 
 const $ = (s, d = document) => d.querySelector(s);
@@ -372,6 +373,10 @@ function brindis(texto, clase = '', icono = 'sparkles'){
   /* nunca más de dos a la vez: el tercero empuja al más viejo */
   const b = $('#brindis'); b.append(d); while(b.children.length > 2) b.firstElementChild.remove(); setTimeout(() => d.remove(), 2900);
 }
+/* LA BITÁCORA (devlog.js): medio escondida al pie del inicio; qué se ha hecho y por qué */
+function abrirBitacora(){
+  hoja('Bitácora', `<p class="sub" style="margin:-4px 0 12px">Lo que hemos hecho y por qué.</p><div class="bitacora">${BITACORA.map((d) => `<section><h4>${esc(d.dia)}</h4>${d.cosas.map(([t, por]) => `<div class="bit-item"><b>${esc(t)}</b><p>${esc(por)}</p></div>`).join('')}</section>`).join('')}</div>`);
+}
 function hoja(titulo, html, alAbrir){
   cerrarHoja();
   const v = document.createElement('div'); v.className = 'velo'; v.id = 'velo';
@@ -577,12 +582,14 @@ function pintarPlan(){
         <button id="bJuegos" style="--c:#F2B544">${ico('swords')}<b>Juegos</b></button>
         <button id="bModelos" style="--c:#7FD6A8">${ico('rotate-3d')}<b>3D</b></button>
         <button id="bAcademia" style="--c:#F06C8B">${ico('graduation-cap')}<b>Academia</b></button>
-      </div></div>`;
+      </div>
+      <button class="enlace-suave tenue" id="bBitacora">${ico('file-text')} Bitácora</button></div>`;
     $('#bCrear').addEventListener('click', alta);
     $('#bJuegos').addEventListener('click', () => juegos.abrir());
     $('#bIdiomas').addEventListener('click', abrirIdiomas);
     $('#bModelos').addEventListener('click', () => abrirModelos());
     $('#bAcademia').addEventListener('click', abrirAcademia);
+    $('#bBitacora').addEventListener('click', abrirBitacora);
     $('#bAnadir').addEventListener('click', () => anadirCurso());
     $('#bRepasoHoy')?.addEventListener('click', abrirRepaso);
     { const m = mascotaEn($('#mascVacio'), { tam: 120 }); if(m) setTimeout(() => m.play('saluda', { decir: '¡Hola! ¿Qué estudiamos hoy?' }), 500); }
