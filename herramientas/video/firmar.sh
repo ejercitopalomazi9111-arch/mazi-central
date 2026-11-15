@@ -8,7 +8,7 @@ set -euo pipefail
 ent="$1"; sal="$2"; firma="${3:-marca/anuncios/salida/firma-mazi.mp4}"
 X=0.4
 dur=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$ent")
-read -r W H < <(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=' ':p=0 "$ent")
+read -r W H < <(ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 "$ent" | tr ',' ' ')
 off=$(python3 -c "print(max(0, $dur - $X))" 2>/dev/null)
 tiene_audio=$(ffprobe -v error -select_streams a -show_entries stream=index -of csv=p=0 "$ent" | head -1)
 if [ -n "$tiene_audio" ]; then A0="[0:a]aresample=48000,aformat=channel_layouts=stereo[a0]"; else A0="anullsrc=r=48000:cl=stereo,atrim=0:$dur[a0]"; fi
