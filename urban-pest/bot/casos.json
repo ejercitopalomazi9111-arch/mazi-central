@@ -43,8 +43,23 @@
    "encargado",
    "dueno"
   ],
-  "respuesta": "Claro, ya le aviso al encargado para que te contacte.",
-  "dueno": true
+  "respuesta": "Claro, ya le aviso al Ing. Carlos Duarte, el encargado, para que te contacte.",
+  "dueno": true,
+  "fuente": "respuestas del cliente, 17 nov: su nombre (Ing. Carlos Duarte) y que el aviso le llega al 442 139 4023"
+ },
+ {
+  "id": "pagina",
+  "frases": [
+   "tienen pagina",
+   "tienen pagina web",
+   "cual es su pagina",
+   "tienen facebook",
+   "como los encuentro en facebook",
+   "tienen redes sociales",
+   "tienen instagram"
+  ],
+  "respuesta": "Te comparto nuestra página: urbanpest.mx. Ahí ves lo que hacemos y lo que dicen nuestros clientes.",
+  "fuente": "respuestas del cliente, 17 nov: su página es urbanpest.mx. FALTA el link de su página de Facebook (mandó una búsqueda, no la página) y su Instagram: cuando lleguen, se agregan aquí"
  },
  {
   "id": "palomas",

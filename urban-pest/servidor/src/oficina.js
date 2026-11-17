@@ -111,6 +111,10 @@ export class Oficina {
   cotiza(conv, tarifas, medidas){
     const d = conv.datos || {};
     if(d.km == null && d.zona) d.km = (tarifas.zonas || {})[normal(d.zona)] ?? null;
+    /* sin la distancia de esa zona: los km típicos de SU Excel (la mediana de sus últimas cotizaciones),
+       marcado como estimado. Sin esto el bot no daba precio a nadie que no estuviera en la lista de zonas. */
+    let kmEstimado = false;
+    if(d.km == null && tarifas.km_tipico > 0){ kmEstimado = true; }
     let m2 = d.m2, m2Estimado = false;
     /* si la IA no apuntó los metros pero el cliente sí los escribió («mide 2500 m2»), se toman de su mensaje */
     if(!(m2 > 0)) for(const msj of [...(conv.mensajes || [])].reverse().filter(x => x.de === 'cliente')){
@@ -122,7 +126,7 @@ export class Oficina {
       const e = estimarM2(d, medidas || MEDIDAS);
       if(e.bien){ m2 = e.m2; m2Estimado = true; conv.estimacion = e; }
     }
-    const c = cotizar({ plaga: d.plaga && normal(d.plaga), m2, m2Estimado, km: d.km, tipo: d.tipo || 'casa' }, tarifas);
+    const c = cotizar({ plaga: d.plaga && normal(d.plaga), m2, m2Estimado, km: kmEstimado ? tarifas.km_tipico : d.km, kmEstimado, tipo: d.tipo || 'casa' }, tarifas);
     return c.bien ? c : null;
   }
 
@@ -136,7 +140,10 @@ export class Oficina {
     await this.A.put(id, { motivo, canal: conv.canal, chat: conv.chat, nombre: conv.nombre, cuando: this.reloj(), estado: 'nuevo' });
     /* Al dueño por WhatsApp. ⚠ Fuera de las 24 h desde que él le escribió al número del bot,
        WhatsApp sólo deja mandar PLANTILLAS aprobadas: hay que dar de alta una «aviso» al conectar. */
-    if(this.env.DUENO_WA) await this.enviar(this.env, 'whatsapp', this.env.DUENO_WA, `Urban Pest · ${conv.nombre || conv.chat} (${conv.canal}): ${motivo}`);
+    /* El número sale de la variable DUENO_WA o, si no está, del negocio guardado (POST /api/negocio
+       { negocio: { dueno_wa } }): así se pone sin desplegar. El cliente dio el suyo el 17 nov. */
+    const dueno = this.env.DUENO_WA || ((await this.A.get('negocio')) || {}).dueno_wa;
+    if(dueno) await this.enviar(this.env, 'whatsapp', dueno, `Urban Pest · ${conv.nombre || conv.chat} (${conv.canal}): ${motivo}`);
     /* La llamada (Carlos quiere habilitarla) entra aquí cuando se conecte el servicio de voz. */
   }
 

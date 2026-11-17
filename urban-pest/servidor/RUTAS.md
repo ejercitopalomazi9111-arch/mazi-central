@@ -130,3 +130,36 @@ Carlos: «todo se cuenta». Las tarifas aceptan (y el Excel del cliente debe tra
 
 Precio = (material + técnico) × factor del lugar + camioneta, más el margen. El desglose trae costo y ganancia.
 Las tarifas viejas (`mano_obra_m2`, `costo_km`) siguen sirviendo.
+
+## Su Excel · 17 nov (Godines)
+
+Llegó el Excel del cliente (`CorridaCotizacion.xlsx`). **No está en el repo, y no debe entrar: el repo es
+público y trae sus costos y su lista de clientes.** Se carga desde el centro (pestaña «Cotizar» → «Cargar tu
+Excel»): el teléfono lo lee y guarda en el servidor sólo lo que sirve, con `POST /api/tarifas`.
+
+| Ruta | Qué hace |
+|---|---|
+| `GET /api/tarifas` | Lo guardado (o `null`). La pestaña «Cotizar» lo lee para cotizar con su Excel, también sin internet |
+| `POST /api/tarifas { tarifas }` | Ahora rechaza un cuerpo sin `tarifas` (antes guardaba `undefined`) |
+
+Lo que agrega el Excel a las tarifas:
+
+- `formula: { tipo: 'excel', x, entre, km, traslado_aparte }`: su «Cotización convencional»,
+  **precio = (químicos + técnico) × x ÷ entre + km × $km**. El km es el que él anota (de su bodega al lugar),
+  sin ida y vuelta, y sin factor por tipo de lugar: así lo hace su hoja. La industria sigue pidiendo visita.
+- `tecnico.costo_hora` (lo que cobra la hora) y `plagas.<plaga>.precio_litro` (el costo por litro de mezcla del
+  producto que más usa en esa columna de su Excel). `litros_m2` (0.025) y `m2_hora` (330) **no vienen en el
+  Excel**: salen del único ejemplo suyo con cuartos medidos y se calibran con el dueño.
+- `km_tipico`: la mediana de los km de sus últimas cotizaciones. Si la zona del cliente no está en `zonas`, el bot
+  cotiza con eso y la nota dice que la distancia es estimada.
+- `excel`: el catálogo completo (90 productos), su fórmula y la de su hoja «JADP», para la pestaña «Cotizar».
+
+Ratas, termitas, chinches y pulgas **no** se cotizan solas: en su Excel van con bloques, polvo o mucho más
+producto que una aspersión, y las ve él.
+
+**Orden al publicar:** primero se fusiona y se despliega este servidor, y DESPUÉS se carga el Excel. Con el
+servidor viejo, las tarifas nuevas cotizarían sin su sobreprecio (el código viejo no conoce `formula`).
+
+**El número para avisarle al dueño:** la variable `DUENO_WA` o, sin desplegar, `POST /api/negocio
+{ negocio: { dueno_wa: '524421394023' } }`. Es el 442 139 4023 que dio el cliente (el mismo de su página).
+Sirve hasta que se conecte WhatsApp (falta su acceso a Meta).

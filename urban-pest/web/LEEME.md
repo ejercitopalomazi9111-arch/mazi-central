@@ -3,6 +3,10 @@
 Un solo `index.html` con `img/` y `fuentes/`, sin compilación. Se edita `fuente.html` y se arma con
 `python3 urban-pest/web/armar.py` (le mete los íconos de Lucide que use).
 
+- **Su dominio está en GoDaddy (visto el 17 nov):** `urbanpest.mx` usa los servidores de nombres de GoDaddy
+  (`ns21/ns22.domaincontrol.com`) y su correo también es de GoDaddy (MX en `secureserver.net`). Para publicar
+  esta página en su dominio hace falta entrar a su GoDaddy y cambiar SÓLO los registros de la página (`@` y
+  `www`). **Los MX del correo no se tocan:** si se borran, deja de recibir correo en direccion@urbanpest.mx.
 - **Dirección actual del cliente:** https://urbanpest.mx (sin guion). De ahí salen su logo, sus colores
   (#143361, #165D9B, #F29923), su teléfono 442 139 4023, su correo, sus certificaciones y sus reseñas.
 - **Estilo (Carlos, 11 nov):** simple, limpio, pocas imágenes, nada de insectos ni de fumigadores; tono

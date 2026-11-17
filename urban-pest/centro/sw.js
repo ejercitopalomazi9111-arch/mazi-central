@@ -2,8 +2,8 @@
    en el teléfono. Los DATOS no pasan por aquí: de eso se encarga sin-red.js (réplica y cola).
    Estrategia: se contesta con lo guardado y, si hay señal, se refresca por detrás. Por eso un
    cambio publicado se ve en la SEGUNDA apertura, no en la primera. Subir V al cambiar la lista. */
-const V = 'urbanpest-centro-v2';
-const CASCARON = ['./', './index.html', './sin-red.js', './motor.js', './muestra.js', '../chat/estilo.css',
+const V = 'urbanpest-centro-v3';
+const CASCARON = ['./', './index.html', './sin-red.js', './motor.js', './muestra.js', './excel.js', './cotizar.js', '../chat/estilo.css',
   '../../presentaciones/vendor/lucide-1.48.0.json', '../web/img/sello.png',
   /* la marca (15 nov): logo en piezas, fotos y letras; sin esto el centro abriría sin internet pero sin su cara */
   './marca/globo.webp', './marca/sol.webp', './marca/personita.webp', './marca/chorro.webp', './marca/urban-claro.webp', './marca/pest.webp', './marca/control-claro.webp', './marca/sello.webp', './marca/palabra-clara.webp', './marca/ciudad.webp', './marca/planta.webp',

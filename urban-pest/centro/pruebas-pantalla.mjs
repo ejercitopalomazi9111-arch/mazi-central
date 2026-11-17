@@ -1,6 +1,6 @@
 /* La compuerta de la pantalla (skill app-de-campo), con Playwright:
  *   node urban-pest/centro/pruebas-pantalla.mjs
- * 1 · Con datos de muestra camina las cinco pestañas a 320, 390 y 414 px y mide: cero errores de
+ * 1 · Con datos de muestra camina las seis pestañas a 320, 390 y 414 px y mide: cero errores de
  *     página, cero desborde horizontal, objetivos táctiles de 44 px y campos de 16 px (computados).
  * 2 · SIN INTERNET DE VERDAD: carga con señal contra un servidor de mentiras, corta la red, recarga
  *     (tiene que abrir), marca un servicio como hecho, y al volver la señal comprueba que llegó. */
@@ -49,13 +49,13 @@ const medir = () => {
 };
 
 const nav = await chromium.launch({ args: ['--no-sandbox'] });
-console.log('\n1 · Con datos de muestra, las cinco pestañas en tres anchos');
+console.log('\n1 · Con datos de muestra, las seis pestañas en tres anchos');
 for (const ancho of [320, 390, 414]) {
   const ctx = await nav.newContext({ viewport: { width: ancho, height: 760 }, isMobile: true, hasTouch: true, serviceWorkers: 'block' });
   const pg = await ctx.newPage(); const errores = []; pg.on('pageerror', e => errores.push(e.message)); pg.on('console', m => { if (m.type() === 'error') errores.push(m.text()); });
   await pg.goto(URL_SITIO + '?muestra'); await pg.waitForSelector('.barra-inf:not([hidden])');
   const fallas = [];
-  for (const p of ['hoy', 'servicios', 'inventario', 'vehiculo', 'numeros']) {
+  for (const p of ['hoy', 'servicios', 'inventario', 'vehiculo', 'cotizar', 'numeros']) {
     await pg.click(`.barra-inf [data-p="${p}"]`); await pg.waitForTimeout(350);
     const m = await pg.evaluate(medir);
     if (m.desborde > 0) fallas.push(`${p}: se desborda ${m.desborde}px`);
