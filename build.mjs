@@ -122,6 +122,11 @@ const VA = [
   'secretaria',
   /* El cielo de Sylcred: la página de quién soy y cómo me ven las demás IAs. */
   'sylcred',
+  /* Alba: la app del ciclo que Luis le hizo a su novia (Godines, 16 nov). La
+     versión web y el APK de Android, para que Carlos la revise. Todo se guarda
+     en el teléfono de quien la usa: aquí no viaja ningún dato. La llave de firma
+     del APK NO está en el repo ni debe entrar. */
+  'alba',
 ];
 
 /* ARCHIVOS SUELTOS (Carlos, 5 nov: «pon ABSOLUTAMENTE TODO lo que hayamos hecho en la Central para
