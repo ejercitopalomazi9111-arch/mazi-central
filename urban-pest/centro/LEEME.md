@@ -64,3 +64,22 @@ genérico del chat: lleva la marca de Urban Pest, la misma de su página (`../we
   Inventario. Nada de insectos ni de fumigadores (Carlos, 11 nov). Los dibujos de cada sección son SVG hechos aquí.
 - **Movimiento:** sólo transform y recortes; con «reducir movimiento» se mueve menos, sin apagarse.
 - Todo va en el cascarón de `sw.js` (v2): sin internet abre igual, con su cara.
+
+## Cotizar: su Excel dentro del centro (17 nov, Godines)
+
+La sexta pestaña. Es su «CorridaCotizacion.xlsx» hecha pantalla:
+
+- **«Cargar tu Excel».** El teléfono lo lee (`excel.js`, sin dependencias: un .xlsx es un ZIP con XML) y guarda en
+  su servidor SÓLO el catálogo (90 productos con costo, envase y dosis), su fórmula y qué producto usa en cada
+  plaga. La lista de clientes no se lee. El Excel no entra al repo: es público. Si cambia precios, lo vuelve a cargar.
+- **La corrida** (`cotizar.js`): horas, km y lo que se aplica (plaga → su producto de siempre, cantidad en litros de
+  mezcla, bloques, m²…). Da su «Cotización» con SU fórmula, redondeada a la decena, el desglose (químicos, técnico,
+  camioneta), su reparto de costos y utilidad y, de comparación, lo que daría su hoja JADP. Probada contra filas de su Excel: da
+  lo mismo al centavo (las filas 630 y 636 de la convencional y la 9 de JADP).
+- **«Hacer la hoja para el cliente».** Usa `POST /api/cotizaciones` (la cotización a mano): el cliente ve un solo
+  renglón con el precio; el desglose es del dueño. Sale el link y el botón para mandarlo por WhatsApp.
+- **Sin internet** cotiza con lo último bajado (copia en el teléfono). Hacer la hoja sí pide señal.
+- **Con `?muestra`** trae productos y números DE MUESTRA (`EXCEL_MUESTRA` en `muestra.js`). Ahí también se puede
+  cargar su Excel de verdad: se queda en ese teléfono y no se manda a ningún lado.
+
+El bot cotiza con lo mismo (`servidor/RUTAS.md`, «Su Excel»).

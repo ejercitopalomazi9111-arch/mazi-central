@@ -5,7 +5,9 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import * as M from './motor.js';
 import { crearRed, describir, LLAVE } from './sin-red.js';
-import { muestra } from './muestra.js';
+import { muestra, EXCEL_MUESTRA } from './muestra.js';
+import { leerXlsx, deExcel, aTarifas } from './excel.js';
+import { corrida, unidadDe, redondear } from './cotizar.js';
 
 let bien = 0, mal = 0;
 const ok = (q, c, d = '') => { if (c) { bien++; console.log('  ✓ ' + q); } else { mal++; console.log('  ✗ ' + q + (d ? '  → ' + d : '')); } };
@@ -159,6 +161,66 @@ console.log('\nLas dos compuertas de la copia');
 {
   ok('motor.js es copia EXACTA de servidor/src/centro.js', readFileSync(aqui('./motor.js'), 'utf8') === readFileSync(aqui('../servidor/src/centro.js'), 'utf8'), 'vuelve a copiarlo: cp urban-pest/servidor/src/centro.js urban-pest/centro/motor.js');
   ok('cada cambio pendiente se describe en cristiano', describir('/api/insumos/mover', { id: 'x', delta: -2 }, { 'insumo:x': { nombre: 'Gel', unidad: 'jeringas' } }) === 'Salida de 2 jeringas de Gel' && describir('/api/citas/estado', { id: 'c', estado: 'cerrado' }, { 'cita:c': { cliente: 'Casa' } }) === 'Servicio de Casa: ya se cobró');
+}
+
+/* ── COTIZAR (17 nov): su Excel dentro del centro ───────────────────────────────────────────
+   Un Excel de MENTIRAS con la misma forma que el suyo (sus datos no van en el repo: es público).
+   Se arma aquí mismo como ZIP sin comprimir, con una fórmula compartida como las que guarda Excel. */
+console.log('cotizar');
+function zip(archivos) {
+  const enc = new TextEncoder(), partes = [], centro = []; let off = 0;
+  for (const [nombre, texto] of Object.entries(archivos)) {
+    const n = enc.encode(nombre), d = enc.encode(texto), h = new Uint8Array(30 + n.length), v = new DataView(h.buffer);
+    v.setUint32(0, 0x04034b50, true); v.setUint16(8, 0, true); v.setUint32(18, d.length, true); v.setUint32(22, d.length, true); v.setUint16(26, n.length, true); h.set(n, 30);
+    const c = new Uint8Array(46 + n.length), w = new DataView(c.buffer);
+    w.setUint32(0, 0x02014b50, true); w.setUint16(10, 0, true); w.setUint32(20, d.length, true); w.setUint32(24, d.length, true); w.setUint16(28, n.length, true); w.setUint32(42, off, true); c.set(n, 46);
+    partes.push(h, d); centro.push(c); off += h.length + d.length;
+  }
+  const tc = centro.reduce((s, c) => s + c.length, 0), fin = new Uint8Array(22), f = new DataView(fin.buffer);
+  f.setUint32(0, 0x06054b50, true); f.setUint16(8, centro.length, true); f.setUint16(10, centro.length, true); f.setUint32(12, tc, true); f.setUint32(16, off, true);
+  const todo = new Uint8Array(off + tc + 22); let p = 0; for (const x of [...partes, ...centro, fin]) { todo.set(x, p); p += x.length; } return todo;
+}
+const celda = (r, v, f) => `<c r="${r}"${typeof v === 'string' ? ' t="str"' : ''}>${f ? `<f>${f}</f>` : ''}${v != null ? `<v>${v}</v>` : ''}</c>`;
+const fila = (n, cs) => `<row r="${n}">${cs.join('')}</row>`;
+const hoja = [
+  fila(1, ['A', 'B', 'D', 'E', 'F', 'J', 'P', 'Q', 'R', 'S', 'T', 'U'].map((l, i) => `<c r="${l}1" t="s"><v>${i}</v></c>`)),
+  /* dos cotizaciones viejas (otra tarifa) y tres de ahora; la Q de la última es fórmula COMPARTIDA (sin texto) */
+  fila(2, [celda('A2', 'Cliente viejo'), celda('B2', 1), celda('Q2', '25', 'B2*25'), celda('R2', 5), celda('S2', '30', 'R2*6'), celda('T2', '1000', '((SUM(P2+Q2+S2))*2)/0.5')]),
+  fila(3, [celda('A3', 'Casa de un cliente'), celda('B3', 2), celda('D3', 20), celda('J3', '160', 'D3*F21'), celda('P3', '160', 'SUM(E3:O3)'), `<c r="Q3"><f t="shared" ref="Q3:Q5" si="0">B3*80</f><v>160</v></c>`,
+    celda('R3', 10), celda('S3', '70', 'R3*7'), celda('T3', '1403.33', '((((SUM(P3+Q3))*2.5)/0.6)+S3)'), celda('U3', '1', 'T3*0.7')]),
+  fila(4, [celda('A4', 'Planta de un cliente'), celda('B4', 3), celda('J4', '40', '5*F22'), `<c r="Q4"><f t="shared" si="0"/><v>240</v></c>`, celda('R4', 30), celda('S4', '210', 'R4*7'), celda('T4', '1', '((((SUM(P4+Q4))*2.5)/0.6)+S4)'), celda('U4', '1', 'T4*0.7')]),
+  fila(5, [celda('A5', 'Hotel de un cliente'), celda('B5', 1), celda('J5', '16', '2*F21'), `<c r="Q5"><f t="shared" si="0"/><v>80</v></c>`, celda('R5', 20), celda('S5', '140', 'R5*7'), celda('T5', '1', '((((SUM(P5+Q5))*2.5)/0.6)+S5)'), celda('U5', '1', 'T5*0.7')]),
+  fila(20, ['A', 'B', 'C', 'D', 'E', 'F'].map((l, i) => `<c r="${l}20" t="s"><v>${12 + i}</v></c>`)),
+  fila(21, [celda('A21', 'Insecticida A'), celda('B21', 800), celda('C21', 1000), celda('D21', 10), celda('E21', 'ml/lt'), celda('F21', '8.00', '(B21*D21)/C21')]),
+  fila(22, [celda('A22', 'Cebo B'), celda('B22', 1460), celda('C22', 473), celda('D22', 8), celda('E22', 'gr/bloque'), celda('F22', '24.69', '(B22*D22)/C22')]),
+  fila(23, [celda('A23', 'Trampa C'), celda('F23', 5)]),
+  fila(24, [celda('A24', 'Sin precio'), celda('C24', 500), celda('D24', 1), celda('F24', '0.00', '(B24*D24)/C24')]),
+].join('');
+const cad = ['Edificio', 'Mano de Obra', 'Consumo', 'Roedores', 'Cucaracha alemana', 'Insectos rastreros', 'Total Químicos', 'Costo de Mano de Obra', 'Kilómetros', 'Costo gasolina y auto', 'Cotización', 'Costos', 'Producto', 'Costo del producto', 'Contenido del envase', 'Dosis', 'Unidades', 'Costo por unidad de aplicación'];
+const XLSX = zip({
+  'xl/workbook.xml': '<workbook><sheets><sheet name="Cotización convencional" sheetId="1" r:id="rId1"/></sheets></workbook>',
+  'xl/_rels/workbook.xml.rels': '<Relationships><Relationship Id="rId1" Target="worksheets/sheet1.xml"/></Relationships>',
+  'xl/sharedStrings.xml': `<sst>${cad.map(t => `<si><t>${t}</t></si>`).join('')}</sst>`,
+  'xl/worksheets/sheet1.xml': `<worksheet><sheetData>${hoja}</sheetData></worksheet>`,
+});
+{
+  const ex = deExcel(await leerXlsx(XLSX), 'CorridaCotizacion.xlsx');
+  ok('lee su catálogo: costo por aplicación con TODOS los decimales (no el 24.69 redondeado que guarda el Excel)',
+    ex.catalogo.length === 3 && ex.catalogo.find(p => p.nombre === 'Cebo B').por_unidad === Math.round(1460 * 8 / 473 * 1e6) / 1e6, JSON.stringify(ex.catalogo));
+  ok('un producto sin precio no entra; una trampa con sólo su precio sí', !ex.catalogo.some(p => p.nombre === 'Sin precio') && ex.catalogo.find(p => p.nombre === 'Trampa C').por_unidad === 5);
+  ok('su fórmula sale de SUS fórmulas, la de ahora y no la vieja (también de una fórmula compartida)',
+    ex.convencional.mano_hora === 80 && ex.convencional.km === 7 && ex.convencional.x === 2.5 && ex.convencional.entre === .6 && ex.convencional.costos === .7 && ex.convencional.traslado_aparte, JSON.stringify(ex.convencional));
+  ok('sabe qué producto usa en cada columna de plaga', ex.columnas.find(c => c.nombre === 'Insectos rastreros').producto === ex.catalogo.find(p => p.nombre === 'Insecticida A').id);
+  ok('NO se lleva los nombres de sus clientes', !/cliente|Casa de|Planta de|Hotel de/i.test(JSON.stringify(ex)));
+  const c = corrida({ horas: 2, km: 10, renglones: [{ producto: ex.catalogo.find(p => p.nombre === 'Insecticida A').id, cantidad: 20 }] }, ex);
+  ok('la corrida da lo mismo que una fila de su Excel: (160 + 160) × 2.5 ÷ 0.6 + 70 = 1,403.33', c.cotizacion === 1403.33 && c.precio === 1410 && c.costos === 982.33, JSON.stringify(c));
+  ok('la unidad se dice como la mide el técnico', unidadDe({ unidad: 'ml/lt' }) === 'L de mezcla' && unidadDe({ unidad: 'gr/bloque' }) === 'bloques' && unidadDe({ unidad: 'gr/m2' }) === 'm²');
+  const t = aTarifas(ex, { zonas: { centro: 6 }, ejemplo: false });
+  ok('para el bot: su fórmula, su hora, y las zonas que ya había no se pierden', t.formula.tipo === 'excel' && t.tecnico.costo_hora === 80 && t.zonas.centro === 6 && t.plagas.alacran?.material === 'Insecticida A');
+  ok('las tarifas de EJEMPLO no se mezclan con las suyas', !('zonas' in aTarifas(ex, { ejemplo: true, zonas: { x: 1 } })));
+  let error = ''; try { await leerXlsx(new TextEncoder().encode('esto no es un excel')); } catch (e) { error = e.message; }
+  ok('un archivo que no es Excel se dice en cristiano', /no es un Excel/.test(error));
+  ok('la muestra trae la misma forma y dice que es muestra', EXCEL_MUESTRA.muestra && corrida({ horas: 1, km: 0, renglones: [] }, EXCEL_MUESTRA).precio === redondear(60 * 2.5 / .6));
 }
 
 console.log(`\n${bien} bien, ${mal} mal`);

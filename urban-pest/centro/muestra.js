@@ -33,3 +33,27 @@ export function muestra(hoy) {
   for (const v of vehiculos) datos['vehiculo:' + v.id] = v;
   return { datos, extra: { bot: { chats: 7, reflejo: 11, ia: 3, tu: 2, cotizaciones: 2 }, avisos: 1 } };
 }
+
+/* El cotizador de muestra (pestaña «Cotizar»). Su catálogo y su fórmula de verdad NO van aquí:
+   este repo es público y son sus costos. Aquí van productos genéricos y números redondos
+   «de muestra», con la MISMA forma que saca excel.js de su Excel. Con ?muestra también se
+   puede cargar su Excel de verdad: se queda en ese teléfono y no se manda a ningún lado. */
+export const EXCEL_MUESTRA = {
+  archivo: 'muestra', cargado: null, muestra: true,
+  catalogo: [
+    { id: 'm1', nombre: 'Insecticida líquido (muestra)', costo: 800, contenido: 1000, dosis: 10, unidad: 'ml/lt', por_unidad: 8 },
+    { id: 'm2', nombre: 'Insecticida microencapsulado (muestra)', costo: 2000, contenido: 1000, dosis: 10, unidad: 'ml/lt', por_unidad: 20 },
+    { id: 'm3', nombre: 'Gel para cucaracha (muestra)', costo: 300, contenido: 30, dosis: 1, unidad: 'gr/punto', por_unidad: 10 },
+    { id: 'm4', nombre: 'Cebo en bloque (muestra)', costo: 1500, contenido: 5000, dosis: 20, unidad: 'gr/bloque', por_unidad: 6 },
+    { id: 'm5', nombre: 'Granulado para hormiga (muestra)', costo: 900, contenido: 10000, dosis: 20, unidad: 'gr/m2', por_unidad: 1.8 },
+    { id: 'm6', nombre: 'Trampa de goma (muestra)', costo: null, contenido: null, dosis: null, unidad: '', por_unidad: 5 },
+  ],
+  convencional: { mano_hora: 60, km: 5, x: 2.5, entre: .6, traslado_aparte: true, costos: .65 },
+  jadp: null,
+  columnas: [
+    { col: 'E', nombre: 'Roedores', producto: 'm4' }, { col: 'F', nombre: 'Cucaracha alemana', producto: 'm3' },
+    { col: 'J', nombre: 'Insectos rastreros', producto: 'm1' }, { col: 'K', nombre: 'Hormigas', producto: 'm5' },
+    { col: 'O', nombre: 'Monitoreo', producto: 'm6' },
+  ],
+  km_tipico: 15,
+};

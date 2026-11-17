@@ -256,6 +256,26 @@ details.nuevo > summary > [data-ic]{ display:grid; place-items:center; width:34p
   @keyframes upAbFunde{ to{ opacity:0; visibility:hidden } }
   @keyframes upAbAparece{ from{ opacity:0 } }
 }
+
+/* ── COTIZAR (Godines, 17 nov): su Excel dentro del centro. Seis pestañas: la letra baja un punto ── */
+.barra-inf{ grid-template-columns:repeat(6, minmax(0, 1fr)) } .barra-inf button{ font-size:11px; letter-spacing:-.01em }
+.up-cot h2{ margin:14px 0 2px }
+.up-renglon{ gap:10px } .up-renglon .dos{ grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)) }
+.up-renglon__abajo{ display:grid; grid-template-columns:minmax(0,1fr) auto 44px; gap:10px; align-items:end }
+.up-con{ display:flex; align-items:center; gap:8px } .up-con input{ flex:1; min-width:0 } .up-con small{ color:var(--tenue); font-weight:600; white-space:nowrap }
+.up-importe{ font-variant-numeric:tabular-nums; font-size:16px; min-height:48px; display:flex; align-items:center }
+.up-quitar{ width:44px; padding:0; font-size:20px }
+.up-total{ margin:16px 0 10px; padding:16px; border-radius:var(--r); background:var(--sup); box-shadow:var(--elev1); display:grid; gap:12px }
+.up-precio{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:14px 16px; border-radius:var(--r2);
+  background:#143361; color:#fff } .up-precio small{ font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#B9C9E3; font-size:12px }
+.up-precio b{ font-size:34px; line-height:1; font-variant-numeric:tabular-nums; color:#FFC66B } .up-precio span{ width:100%; color:#B9C9E3; font-size:13px }
+.up-jadp{ margin:0; font-size:14px; color:var(--tenue) } .up-jadp b{ color:var(--tinta) }
+.up-cot-acc{ margin:4px 0 6px }
+.up-subir{ cursor:pointer }
+.up-catalogo{ list-style:none; margin:0; padding:0 16px 14px; display:grid; gap:0; max-height:420px; overflow:auto }
+.up-catalogo li{ display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid var(--linea); font-size:14px }
+.up-catalogo span{ color:var(--tenue); white-space:nowrap; font-variant-numeric:tabular-nums }
+.up-formula{ margin:0; padding:0 16px 16px; font-size:14px; color:var(--tenue); line-height:1.5 } .up-formula b{ color:var(--tinta) }
 </style>
 </head>
 <body>
@@ -268,6 +288,7 @@ details.nuevo > summary > [data-ic]{ display:grid; place-items:center; width:34p
   <button type="button" data-p="servicios"><span data-ic="calendar-days"></span>Servicios</button>
   <button type="button" data-p="inventario"><span data-ic="package"></span>Inventario<i id="nInv" hidden></i></button>
   <button type="button" data-p="vehiculo"><span data-ic="truck"></span>Vehículo<i id="nVeh" hidden></i></button>
+  <button type="button" data-p="cotizar"><span data-ic="calculator"></span>Cotizar</button>
   <button type="button" data-p="numeros"><span data-ic="wallet"></span>Números</button>
 </nav>
 <div class="up-aviso" id="upAviso" role="status" aria-live="polite"></div>
@@ -277,7 +298,9 @@ details.nuevo > summary > [data-ic]{ display:grid; place-items:center; width:34p
    Con ?muestra no toca la red: datos de muestra para probarlo de pie. Pruebas: node urban-pest/centro/pruebas.mjs */
 import { crearRed, LLAVE_MUESTRA } from './sin-red.js';
 import * as motor from './motor.js';
-import { muestra } from './muestra.js';
+import { muestra, EXCEL_MUESTRA } from './muestra.js';
+import { leerXlsx, deExcel, aTarifas } from './excel.js';
+import { corrida, unidadDe, concepto } from './cotizar.js';
 const q = new URLSearchParams(location.search);
 const DE_MUESTRA = q.has('muestra');
 const guarda = { leer: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, poner: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
@@ -361,7 +384,14 @@ const ARTE = {
     <path class="a-traza" pathLength="1" d="M26 62L58 44 84 52 112 22" fill="none" stroke="#FFC94D" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
     <g class="a-moneda"><circle cx="140" cy="24" r="14" fill="#FFC94D" stroke="#fff" stroke-width="2.5"/><path d="M140 15v18M144.5 18.5c-1-1.6-2.6-2.3-4.5-2.3-2.7 0-4.6 1.4-4.6 3.4 0 4.8 9.3 2.6 9.3 7.4 0 2-1.9 3.6-4.7 3.6-2.1 0-3.9-.9-4.9-2.6" fill="none" stroke="#143361" stroke-width="2.2" stroke-linecap="round"/></g></svg>`,
 };
-const ARTE_DE = { 'Servicios': 'servicios', 'Inventario': 'inventario', 'Vehículo': 'vehiculo', 'Números': 'numeros' }, FOTO_DE = { 'Inventario': 'marca/planta.webp' };
+ARTE.cotizar = `<svg class="up-arte" viewBox="0 0 160 120"><g class="a-flota">
+    <rect x="22" y="14" width="74" height="96" rx="10" fill="#fff"/><rect x="44" y="8" width="30" height="14" rx="5" fill="#FFC94D"/>
+    <path d="M34 40h50M34 54h50M34 68h34" stroke="#165D9B" stroke-width="4" stroke-linecap="round" opacity=".55"/>
+    <path class="a-traza" pathLength="1" d="M34 88h20l6-8 8 14 6-6h10" fill="none" stroke="#F29923" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <g class="a-moneda"><rect x="88" y="44" width="52" height="66" rx="10" fill="#0A1A38" stroke="#fff" stroke-width="3"/><rect x="96" y="52" width="36" height="14" rx="3" fill="#9CC3EA"/>
+    <g fill="#fff"><circle cx="102" cy="78" r="4"/><circle cx="114" cy="78" r="4"/><circle cx="126" cy="78" r="4"/><circle cx="102" cy="90" r="4"/><circle cx="114" cy="90" r="4"/><circle cx="102" cy="102" r="4"/><circle cx="114" cy="102" r="4"/></g>
+    <rect x="122" y="86" width="8" height="20" rx="3" fill="#F29923"/></g></svg>`;
+const ARTE_DE = { 'Servicios': 'servicios', 'Inventario': 'inventario', 'Vehículo': 'vehiculo', 'Números': 'numeros', 'Cotizar': 'cotizar' }, FOTO_DE = { 'Inventario': 'marca/planta.webp' };
 const cab = (t, s) => `<header class="top up-cab">${FOTO_DE[t] ? `<img class="up-cab__foto" src="${FOTO_DE[t]}" alt="" width="900" height="601" decoding="async">` : ''}
   <div><h1 class="up-cab__t">${t}</h1><small>${s}</small></div><div class="up-cab__arte" aria-hidden="true">${ARTE[ARTE_DE[t]] || ''}</div></header>`;
 const DIAS_L = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'], MESES_L = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -533,6 +563,90 @@ const PANTALLAS = {
         <div class="acc"><a class="btn b2" href="../cotizacion/?c=${esc(c.codigo)}">Ver hoja</a>${i.chat ? `<a class="btn b2" href="../chat/?abrir=${encodeURIComponent(i.canal + '|' + i.chat)}">Escribirle</a>` : ''}<button class="btn" type="button" data-agendar="${esc(c.codigo)}">Agendar</button></div></li>`; }).join('')}</ul>` : '<p class="vacio">Cuando el bot cotice, aquí sale cada cotización con su costo y su ganancia.</p>'}`;
     el.addEventListener('click', (e) => { const b = e.target.closest('[data-agendar]'); if(b){ q.set('agendar', b.dataset.agendar); ir('servicios'); } });
   },
+  async cotizar(el){
+    const r = await tarifasDelExcel(); if(r.falla) return falla(el, r.falla);
+    const ex = r.t?.excel || null;
+    const cargar = (b2) => `<label class="btn ${b2 ? 'b2 ' : ''}up-subir"><span data-ic="file-spreadsheet"></span>${ex && !ex.muestra ? 'Volver a cargar tu Excel' : 'Cargar tu Excel'}<input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden></label>`;
+    if(!ex){
+      el.innerHTML = cab('Cotizar', 'Tu Excel de cotizaciones, dentro del centro') + `<div class="item"><div class="t"><b>Carga tu «CorridaCotizacion.xlsx»</b></div>
+        <p>Se lee aquí, en tu teléfono. Del Excel sólo se guardan tus productos con su costo y tu fórmula. Tu lista de clientes no se lee ni se sube.</p>
+        <div class="acc">${cargar(false)}</div><p class="msj" id="msjCarga" role="status"></p></div>`;
+      return engancharCarga(el, r.t);
+    }
+    if(!borrador?.renglones) borrador = borradorNuevo(ex);
+    const v = ex.convencional, pct = (n) => Math.round(n * 100) + ' %';
+    el.innerHTML = cab('Cotizar', ex.muestra ? 'Con productos y números DE MUESTRA' : `Tu Excel · ${ex.catalogo.length} productos`) + (r.aviso ? `<p class="vacio">${esc(r.aviso)}</p>` : '') + `
+      <form class="f up-cot" id="fCot" style="padding:0" autocomplete="off">
+        <div class="dos"><label>Cliente o lugar<input name="cliente" value="${esc(borrador.cliente)}" placeholder="Casa en Juriquilla, Planta…"></label><label>Zona<input name="zona" value="${esc(borrador.zona)}" placeholder="Juriquilla, Centro…"></label></div>
+        <div class="dos"><label>Horas del técnico<input name="horas" inputmode="decimal" value="${esc(borrador.horas)}"></label><label>Kilómetros<input name="km" inputmode="decimal" value="${esc(borrador.km)}"></label></div>
+        <h2>Lo que se va a aplicar</h2>
+        <ul class="lista-c" id="renglones"></ul>
+        <div class="dos"><button class="btn b2" type="button" id="masR"><span data-ic="plus"></span>Agregar producto</button><label>Otro material, en pesos<input name="extra" inputmode="decimal" value="${esc(borrador.extra || '')}" placeholder="monitoreo, trampas…"></label></div>
+      </form>
+      <section class="up-total" id="total" aria-live="polite"></section>
+      <div class="acc up-cot-acc"><button class="btn" type="button" id="hoja"><span data-ic="file-text"></span>Hacer la hoja para el cliente</button><button class="btn b2" type="button" id="otra">Empezar otra</button></div>
+      <p class="msj" id="msjHoja" role="status"></p>
+      <details class="nuevo"><summary><span data-ic="package"></span>Tus productos (${ex.catalogo.length})</summary>
+        <ul class="up-catalogo">${[...ex.catalogo].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map(p => `<li><b>${esc(p.nombre)}</b><span>${pesos(Math.round(p.por_unidad * 100) / 100)} · ${esc(unidadDe(p).replace(/s$/, '').replace('L de mezcla', 'L de mezcla'))}</span></li>`).join('')}</ul></details>
+      <details class="nuevo"><summary><span data-ic="sigma"></span>Tu fórmula</summary>
+        <p class="up-formula">Cotización = (químicos + técnico) <b>× ${v.x} ÷ ${v.entre}</b> + camioneta. Técnico a <b>${pesos(v.mano_hora)} la hora</b>, camioneta a <b>${pesos(v.km)} el km</b>${v.costos != null ? `; luego la parte en <b>${pct(v.costos)} costos</b> y <b>${pct(1 - v.costos)} utilidad</b>` : ''}.
+        ${ex.muestra ? 'Son números de muestra: carga tu Excel para usar los tuyos.' : `Leída de tus últimas ${ex.cotizaciones_leidas} cotizaciones, del Excel cargado el ${dia(ex.cargado)}.`}${ex.jadp ? ` También trae tu hoja JADP, para comparar.` : ''}</p></details>
+      <div class="acc" style="margin-top:12px">${cargar(true)}</div><p class="msj" id="msjCarga" role="status"></p>`;
+    const f = el.querySelector('#fCot'), lista = el.querySelector('#renglones'), total = el.querySelector('#total');
+    const opcionesPlaga = (sel) => [...ex.columnas.map(c => c.nombre), 'Otro'].map(n => `<option${n === sel ? ' selected' : ''}>${esc(n)}</option>`).join('');
+    const catalogoOrden = [...ex.catalogo].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    const opcionesProd = (sel) => catalogoOrden.map(p => `<option value="${p.id}"${p.id === sel ? ' selected' : ''}>${esc(p.nombre)}</option>`).join('');
+    const prod = (id) => ex.catalogo.find(p => p.id === id);
+    const pintaRenglones = () => {
+      lista.innerHTML = borrador.renglones.map((g, i) => `<li class="item up-renglon" data-i="${i}">
+        <div class="dos"><label>Plaga<select name="plaga">${opcionesPlaga(g.plaga)}</select></label><label>Producto<select name="producto">${opcionesProd(g.producto)}</select></label></div>
+        <div class="up-renglon__abajo"><label>Cantidad<span class="up-con"><input name="cantidad" inputmode="decimal" value="${esc(g.cantidad)}" placeholder="0"><small>${esc(unidadDe(prod(g.producto)))}</small></span></label>
+          <b class="up-importe" data-imp>$0</b><button class="btn b2 up-quitar" type="button" data-quitar aria-label="Quitar este producto">×</button></div></li>`).join('');
+    };
+    const leer = () => {
+      const d = Object.fromEntries(new FormData(f));
+      borrador = { ...borrador, cliente: d.cliente, zona: d.zona, horas: d.horas, km: d.km, extra: d.extra,
+        renglones: [...lista.children].map(li => ({ plaga: li.querySelector('[name=plaga]').value, producto: li.querySelector('[name=producto]').value, cantidad: li.querySelector('[name=cantidad]').value })) };
+      guarda.poner(CLAVE_BORRADOR, JSON.stringify(borrador));
+    };
+    const numero = (s) => Number(String(s ?? '').replace(/[^\d.]/g, '')) || 0;
+    const calcula = () => corrida({ horas: numero(borrador.horas), km: numero(borrador.km),
+      renglones: [...borrador.renglones.map(g => ({ ...g, cantidad: numero(g.cantidad) })), { extra: numero(borrador.extra) }] }, ex);
+    const pintaTotal = () => {
+      const c = calcula(), fila = (t, x, k = '') => `<dt>${t}</dt><dd class="${k}">${x}</dd>`;
+      [...lista.children].forEach((li, i) => { li.querySelector('[data-imp]').textContent = pesos(c.lineas[i]?.importe || 0); });
+      total.innerHTML = `<div class="up-precio"><small>Cotización</small><b>${pesos(c.precio)}</b><span>${c.cotizacion ? `Tu Excel da ${pesos(c.cotizacion)}; se redondea a la decena.` : 'Pon horas, kilómetros y lo que se va a aplicar.'}</span></div>
+        <dl class="desg">${fila('Químicos', pesos(c.quimicos))}${fila(`Técnico · ${c.horas} h × ${pesos(v.mano_hora)}`, pesos(c.mano))}${fila(`Camioneta · ${c.km} km × ${pesos(v.km)}`, pesos(c.traslado))}
+          <span class="sep"></span>${fila('Lo que te cuesta hacerlo', pesos(c.directo))}${c.costos != null ? fila(`Costos (${pct(v.costos)})`, pesos(c.costos)) + fila(`Utilidad (${pct(1 - v.costos)})`, pesos(c.utilidad), 'gana') : ''}</dl>
+        ${c.jadp ? `<p class="up-jadp">Con tu hoja JADP saldría <b>${pesos(c.jadp.precio)}</b> (utilidad ${pesos(c.jadp.utilidad)}).</p>` : ''}`;
+      return c;
+    };
+    pintaRenglones(); pintaTotal();
+    f.addEventListener('input', () => { leer(); pintaTotal(); });
+    f.addEventListener('change', (e) => {
+      const li = e.target.closest('.up-renglon'); if(!li) return;
+      if(e.target.name === 'plaga'){ const col = ex.columnas.find(c => c.nombre === e.target.value); if(col?.producto) li.querySelector('[name=producto]').value = col.producto; }
+      li.querySelector('.up-con small').textContent = unidadDe(prod(li.querySelector('[name=producto]').value));
+      leer(); pintaTotal();
+    });
+    lista.addEventListener('click', (e) => { const b = e.target.closest('[data-quitar]'); if(!b) return; leer(); borrador.renglones.splice(+b.closest('[data-i]').dataset.i, 1); if(!borrador.renglones.length) borrador.renglones.push(renglonDe(ex)); guarda.poner(CLAVE_BORRADOR, JSON.stringify(borrador)); pintaRenglones(); pintaTotal(); });
+    el.querySelector('#masR').addEventListener('click', () => { leer(); borrador.renglones.push(renglonDe(ex)); pintaRenglones(); pintaTotal(); lista.lastElementChild?.querySelector('[name=cantidad]')?.focus(); });
+    el.querySelector('#otra').addEventListener('click', () => { borrador = borradorNuevo(ex); guarda.poner(CLAVE_BORRADOR, JSON.stringify(borrador)); ir('cotizar'); });
+    el.querySelector('#hoja').addEventListener('click', async (e) => {
+      leer(); const c = pintaTotal(), msj = el.querySelector('#msjHoja'), b = e.currentTarget;
+      if(!(c.precio > 0)){ msj.className = 'msj mal'; msj.textContent = 'Todavía no hay precio: pon horas y lo que se va a aplicar.'; return; }
+      if(!String(borrador.cliente || '').trim()){ msj.className = 'msj mal'; msj.textContent = 'Pon a nombre de quién va (cliente o lugar).'; f.cliente.focus(); return; }
+      if(DE_MUESTRA || ex.muestra){ msj.className = 'msj'; msj.textContent = `En la muestra no se hace la hoja. Con tu cuenta, aquí sale el link para mandársela al cliente por ${pesos(c.precio)}.`; return; }
+      b.disabled = true; msj.className = 'msj'; msj.textContent = 'Haciendo la hoja…';
+      const j = await apiRed('POST', '/api/cotizaciones', { cliente: borrador.cliente.trim(), zona: borrador.zona || undefined,
+        renglones: [{ concepto: concepto(borrador, ex), cantidad: 1, precio: c.precio }], nota: 'Incluye material, mano de obra y traslado.' });
+      b.disabled = false;
+      if(!j.bien){ msj.className = 'msj mal'; msj.textContent = j.error || 'No se pudo hacer la hoja.'; return; }
+      const url = new URL('../cotizacion/?c=' + encodeURIComponent(j.cotizacion.codigo), location.href).href;
+      msj.className = 'msj bien'; msj.innerHTML = `Lista. <a href="${esc(url)}">Ver la hoja</a> · <a href="https://wa.me/?text=${encodeURIComponent('Te comparto tu cotización de Urban Pest Control: ' + url)}">Mandarla por WhatsApp</a>`;
+    });
+    engancharCarga(el, r.t);
+  },
   async vehiculo(el){
     const j = await api('GET', '/api/vehiculos'); if(!j.bien) return falla(el, j);
     const TIPOS = ['aceite', 'llantas', 'frenos', 'afinación', 'verificación', 'seguro', 'tenencia', 'otro'];
@@ -551,6 +665,45 @@ const PANTALLAS = {
     el.querySelectorAll('form[data-v]').forEach(f => formEnvio(f, (d) => api('POST', '/api/vehiculos/revision', { ...d, vehiculo: f.dataset.v })));
   },
 };
+
+/* ── COTIZAR: de dónde salen su catálogo y su fórmula ──
+   De su servidor (POST /api/tarifas guarda lo que se sacó del Excel), con copia en el teléfono para
+   cotizar sin internet. Con ?muestra, el catálogo de muestra, o su Excel cargado SÓLO en ese teléfono. */
+const CLAVE_T = DE_MUESTRA ? 'up_tarifas_muestra' : 'up_tarifas', CLAVE_BORRADOR = DE_MUESTRA ? 'up_corrida_muestra' : 'up_corrida';
+const leerJSON = (k) => { try { return JSON.parse(guarda.leer(k) || 'null'); } catch { return null; } };
+let borrador = leerJSON(CLAVE_BORRADOR);
+const renglonDe = (ex, col = ex?.columnas?.find(c => /rastrero/i.test(c.nombre)) || ex?.columnas?.[0]) => ({ plaga: col?.nombre || 'Otro', producto: col?.producto || ex?.catalogo?.[0]?.id || '', cantidad: '' });
+const borradorNuevo = (ex) => ({ cliente: '', zona: '', horas: '1', km: ex?.km_tipico != null ? String(ex.km_tipico) : '', extra: '', renglones: [renglonDe(ex)] });
+async function tarifasDelExcel(){
+  if(DE_MUESTRA) return { t: leerJSON(CLAVE_T) || { excel: EXCEL_MUESTRA } };
+  const j = await apiRed('GET', '/api/tarifas');
+  if(j.bien){ guarda.poner(CLAVE_T, JSON.stringify(j.tarifas || null)); return { t: j.tarifas || null }; }
+  if(j.status === 401) return { falla: j };
+  const t = leerJSON(CLAVE_T);
+  return { t, aviso: j.sinRed ? (t ? 'Sin internet: cotizas con lo último guardado en este teléfono.' : 'Sin internet. La primera vez hace falta señal para bajar tu catálogo.') : (j.error || null) };
+}
+function engancharCarga(el, previas){
+  const input = el.querySelectorAll('input[type=file]'), msj = el.querySelector('#msjCarga');
+  input.forEach(i => i.addEventListener('change', async () => {
+    const a = i.files?.[0]; if(!a) return;
+    msj.className = 'msj'; msj.textContent = 'Leyendo tu Excel…';
+    try {
+      const ex = deExcel(await leerXlsx(await a.arrayBuffer()), a.name);
+      const t = aTarifas(ex, previas?.excel?.muestra ? {} : (previas || {}));
+      if(DE_MUESTRA) guarda.poner(CLAVE_T, JSON.stringify(t));
+      else {
+        msj.textContent = 'Guardando en tu servidor…';
+        const j = await apiRed('POST', '/api/tarifas', { tarifas: t });
+        if(!j.bien){ msj.className = 'msj mal'; msj.textContent = (j.sinRed ? 'Sin internet: ' : '') + 'no se pudo guardar. ' + (j.error || '') + ' Vuelve a intentarlo con señal.'; return; }
+        guarda.poner(CLAVE_T, JSON.stringify(t));
+      }
+      borrador = borradorNuevo(ex); guarda.poner(CLAVE_BORRADOR, JSON.stringify(borrador));
+      avisa(`Listo: ${ex.catalogo.length} productos y tu fórmula (× ${ex.convencional.x} ÷ ${ex.convencional.entre}).` + (DE_MUESTRA ? ' Sólo en este teléfono.' : ' El bot ya cotiza con esto.'));
+      ir('cotizar');
+    } catch(err){ msj.className = 'msj mal'; msj.textContent = err.message || 'No se pudo leer ese archivo.'; }
+    finally { i.value = ''; }
+  }));
+}
 function marca(id, n){ const e = document.getElementById(id); e.hidden = !n; e.textContent = n; }
 function falla(el, j){
   if(j.status === 401){

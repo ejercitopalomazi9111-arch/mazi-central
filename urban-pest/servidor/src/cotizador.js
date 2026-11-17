@@ -74,8 +74,18 @@ export function cotizar(p, t){
     for(const k of ['gasolina', 'llantas', 'balatas', 'motor']) vehiculo[k] = kmTotal * (t.vehiculo[k + '_km'] || 0);
     traslado = vehiculo.gasolina + vehiculo.llantas + vehiculo.balatas + vehiculo.motor;
   } else traslado = kmTotal * (t.costo_km || 0);
-  const costo = (producto + mano) * (tipo.factor || 1) + traslado;
-  const desde = Math.max(t.minimo || 0, redondear(costo * (1 + (t.margen || 0))));
+  let costo = (producto + mano) * (tipo.factor || 1) + traslado;
+  let desde = Math.max(t.minimo || 0, redondear(costo * (1 + (t.margen || 0))));
+  /* SU EXCEL (17 nov, Godines): «Cotización convencional» = (químicos + mano de obra) × su multiplicador + km × su
+     costo por km. Los números salen de su Excel al cargarlo en el centro (centro/excel.js), no de aquí. El km es el que
+     él anota en su Excel (de su bodega al lugar), sin ida y vuelta: así lo cobra él. */
+  let excel = null;
+  if(t.formula?.tipo === 'excel' && t.formula.x > 0 && t.formula.entre > 0){
+    const f = t.formula; traslado = p.km * (f.km || 0); vehiculo = null;
+    const precio = f.traslado_aparte === false ? (producto + mano + traslado) * f.x / f.entre : (producto + mano) * f.x / f.entre + traslado;
+    costo = producto + mano + traslado; desde = Math.max(t.minimo || 0, redondear(precio));
+    excel = { x: f.x, entre: f.entre, km: f.km, exacto: Math.round(precio * 100) / 100 };
+  }
   const fueraDeRadio = t.radio_km != null && p.km > t.radio_km;
   /* Fuera de la zona (Carlos, 11 nov): industria sí, con visita para confirmar; casa NO, salvo
      que sea un proyecto grande, y ése se ve caso por caso con el dueño. Siempre cuesta más por
@@ -87,12 +97,13 @@ export function cotizar(p, t){
     desglose: { producto: redondear(producto), mano_de_obra: redondear(mano), traslado: redondear(traslado),
       material: { nombre: plaga.material || null, litros: Math.round(litros * 100) / 100, costo: Math.round(producto) },
       tecnico, vehiculo: vehiculo && Object.fromEntries(Object.entries(vehiculo).map(([k, v]) => [k, Math.round(v * 10) / 10])),
-      factor: tipo.factor || 1, costo: Math.round(costo), ganancia: Math.round(desde - costo) },
+      factor: excel ? 1 : tipo.factor || 1, costo: Math.round(costo), ganancia: Math.round(desde - costo), ...(excel ? { excel } : {}) },
     visita: !!tipo.visita || (t.umbral_visita_m2 != null && p.m2 >= t.umbral_visita_m2),
     fueraDeRadio, atiende,
-    ...(p.m2Estimado ? { m2: p.m2, m2Estimado: true } : {}),
+    ...(p.m2Estimado ? { m2: p.m2, m2Estimado: true } : {}), ...(p.kmEstimado ? { kmEstimado: true } : {}),
     nota: 'Precio aproximado: si los datos que dio son correctos, ése es más o menos el costo. El técnico lo confirma al ver el lugar.'
-      + (p.m2Estimado ? ' Los metros son estimados por lo que contó.' : ''),
+      + (p.m2Estimado ? ' Los metros son estimados por lo que contó.' : '')
+      + (p.kmEstimado ? ' La distancia también es estimada: falta la zona exacta.' : ''),
   };
 }
 
