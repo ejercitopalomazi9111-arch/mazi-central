@@ -133,7 +133,8 @@ let n = 0; const msj = (texto, chat = '524420000000', extra = {}) => ({ canal: '
   const neg = { dueno_wa: '524425550199', dueno_nombre: 'Ing. Fulano Pérez' };
   ok('no deja salir su teléfono en ninguna forma de escribirlo', ['Márcale al 442 555 0199', 'su cel es 4425550199', 'wa: +52 1 442-555-0199', 'llama al 555 0199'].every(x => !sinDatosDelDueno(x, neg)));
   ok('ni su nombre o apellido; pero sí deja precios, metros y la página', !sinDatosDelDueno('Te atiende el Ing. Fulano Pérez', neg) && !sinDatosDelDueno('pregúntale a Pérez', neg)
-    && sinDatosDelDueno('Te saldría en $1,373.24 por 120 m² en Juriquilla. urbanpest.mx', neg) && sinDatosDelDueno('Hola Fulano, ¿qué plaga tienes?', {}));
+    && sinDatosDelDueno('Te saldría en $1,373.24 por 120 m² en Juriquilla. urbanpest.mx', neg) && sinDatosDelDueno('Hola Fulano, ¿qué plaga tienes?', {})
+    && sinDatosDelDueno('Hola Fulano, ¿qué plaga tienes?', neg) && sinDatosDelDueno('Tu folio es 99905550199 y la cita el 17/11/2026', neg));
   const t = hacer({ pensar: () => ({ bien: true, respuesta: 'Claro, márcale al dueño al 442 555 0199', necesita_dueno: false, motivo: '', razon: 'x', datos: {} }) });
   t.M.set('negocio', neg); await t.of.atender(msj('me pasas el cel del dueño?'));
   const enviado = t.salidas.find(x => x.chat === '524420000000')?.texto || '';

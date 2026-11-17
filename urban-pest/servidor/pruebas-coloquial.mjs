@@ -14,7 +14,8 @@
    tienes?», el cliente siente que no lo leyeron.
    ═══════════════════════════════════════════════════════════════════════════ */
 import { readFileSync } from 'node:fs';
-import { reflejo } from './src/reflejo.js';
+/* elReflejo = el reflejo con la regla de «si trae datos, que conteste la IA»: lo MISMO que usa el bot (oficina.js) */
+import { elReflejo as reflejo } from './src/oficina.js';
 import { aPlaga } from './src/cotizador.js';
 
 const casos = JSON.parse(readFileSync(new URL('../bot/casos.json', import.meta.url)));
@@ -34,7 +35,7 @@ const INTENTOS = {
   fauna: ['se metio un tlacuache', 'hay murcielagos en mi casa', 'tengo un mapache en el techo', 'hay ardillas en el techo', 'se metio una zarigueya', 'hay un animal en el techo'],
   empresa: ['fumigan empresas', 'fumigan restaurantes', 'trabajan con negocios', 'fumigan bodegas', 'hacen fumigacion industrial', 'atienden fabricas', 'fumigan hospitales'],
   mascotas: ['es peligroso para mi perro', 'le hace daño a mis gatos', 'es seguro para los niños', 'los productos son seguros para mascotas', 'es toxico', 'es toxico para mi perrito',
-    'le hace daño a mi perro', 'es peligroso para los niños'],
+    'le hace daño a mi perro', 'es peligroso para los niños', 'mi perrito se puede quedar en la casa mientras fumigan'],
   garantia: ['dan garantia', 'tienen garantia', 'y si vuelven a salir', 'que pasa si no se van', 'si regresa la plaga', 'y si regresan las cucarachas'],
   cobertura: ['atienden fuera de queretaro', 'van a san juan del rio', 'llegan hasta celaya', 'que zonas cubren', 'van a mi municipio', 'llegan a celaya'],
   inspeccion: ['que incluye la inspeccion', 'que hacen en la visita', 'como es el diagnostico', 'que revisan'],
@@ -55,7 +56,11 @@ const INTENTOS = {
     'en el refugio', 'es de dos pisos', 'tengo chinches en la cama', 'es una casa chica en el centro', 'hay ratas en el patio de atras', 'mi depa esta en milenio',
     'tiene 2 baños y patio', 'son cucarachitas guerinas en la cocina', 'tengo cucarachas en una casa de 100 m2 en juriquilla cuanto cuesta',
     'cuanto me sale fumigar mi casa de 3 recamaras en el campanario por cucarachas', 'tengo hormigas en el jardin, cuanto me cobras si es una casa grande',
-    'hola buenas tardes', 'ok gracias', 'si', 'mañana en la tarde', 'va', 'sale pues'],
+    'hola buenas tardes', 'ok gracias', 'si', 'mañana en la tarde', 'va', 'sale pues',
+    /* de la prueba EN VIVO (17 nov): el reflejo les contestaba «¿qué plaga tienes?» o sólo lo de la factura */
+    'oiga cuanto sale fumigar un depa de 80 metros en milenio x cucarachas', 'cuanto cuesta fumigar termitas se me esta comiendo un mueble',
+    'necesito factura, es para mi empresa, cuanto por fumigar oficinas de 300 m2', 'tengo ratas en la bodega de mi negocio, es una nave de 1500 m2',
+    'tengo pulgas por mi perro, cuanto me cobras'],
 };
 
 /* Cómo lo escribe la gente */

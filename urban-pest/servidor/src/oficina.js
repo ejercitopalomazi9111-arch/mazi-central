@@ -13,7 +13,7 @@
      7. si hace falta el dueño → aviso (y llamada, cuando se conecte)
    ═══════════════════════════════════════════════════════════════════════════ */
 import { reflejo, llenar } from './reflejo.js';
-import { cotizar } from './cotizador.js';
+import { cotizar, aPlaga } from './cotizador.js';
 import { estimarM2, MEDIDAS } from './medidor.js';
 import { pesos } from './cerebro.js';
 import { cotizacionDelBot } from './cotizacion.js';
@@ -64,7 +64,7 @@ export class Oficina {
     }
 
     /* 5 · REFLEJO */
-    const r = reflejo(m.texto, cfg.casos);
+    const r = elReflejo(m.texto, cfg.casos);
     if(r){
       const texto = llenar(r.caso.respuesta, conv.datos);
       await this.decir(conv, texto, { via: 'reflejo', caso: r.caso.id, confianza: r.confianza });
@@ -173,7 +173,9 @@ export function sinDatosDelDueno(texto, negocio = {}, env = {}){
   const tels = [env.DUENO_WA, negocio.dueno_wa].map(x => String(x || '').replace(/\D/g, '').slice(-10)).filter(x => x.length === 10);
   for(const m of String(texto || '').matchAll(/(?:\d[\s\-.()]*){7,}/g)){
     const d = m[0].replace(/\D/g, '');
-    if(tels.some(t => d.includes(t) || d.endsWith(t.slice(-7)) || d === t.slice(-7))) return false;
+    /* los 10 dígitos en cualquier número; los últimos 7 sólo en un número corto (el «local»): así una fecha o un folio
+       largo que por azar acabe igual no se bloquea (Paulina y Negro, 17 nov) */
+    if(tels.some(t => d.includes(t) || (d.length <= 8 && d.endsWith(t.slice(-7))))) return false;
   }
   const nombre = normal(negocio.dueno_nombre || '').replace(/\b(ing|lic|sr|don)\.?\s+/g, '').trim();
   if(nombre){
@@ -181,6 +183,16 @@ export function sinDatosDelDueno(texto, negocio = {}, env = {}){
     if(t.includes(' ' + partes.join(' ') + ' ') || (apellido && apellido.length >= 4 && t.includes(' ' + apellido + ' '))) return false;
   }
   return true;
+}
+
+/** El reflejo, con una regla (Godines, 17 nov, de la prueba en vivo): un caso marcado `conDatosALaIA` (precio, factura,
+    empresa, mascotas) NO contesta si el mensaje ya trae datos para cotizar —la plaga, los metros, los cuartos—. Antes,
+    «cuánto sale un depa de 80 metros en Milenio x cucarachas» recibía «¿qué plaga tienes?»: el cliente siente que no lo
+    leyeron. Con datos, contesta la IA (que ve las mismas respuestas aprobadas) y además cotiza. */
+export const traeDatos = (t) => !!aPlaga(t) || /\d+\s*(m2|m²|mts?\b|metros)|\brec[aá]maras?\b|\bcuartos?\b|\bpisos?\b|\bplantas?\b/i.test(String(t || ''));
+export function elReflejo(texto, casos){
+  const r = reflejo(texto, casos);
+  return r && r.caso.conDatosALaIA && traeDatos(texto) ? null : r;
 }
 
 export function ponerPrecio(texto, cot){

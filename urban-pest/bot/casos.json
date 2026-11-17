@@ -19,7 +19,8 @@
    "cotizar",
    "cotizan"
   ],
-  "respuesta": "Con gusto te cotizo. ¿Qué plaga tienes, tu casa la considerarías chica, mediana o grande, y en qué colonia estás?"
+  "respuesta": "Con gusto te cotizo. ¿Qué plaga tienes, tu casa la considerarías chica, mediana o grande, y en qué colonia estás?",
+  "conDatosALaIA": true
  },
  {
   "id": "factura",
@@ -37,7 +38,8 @@
    "facturan"
   ],
   "respuesta": "Sí te ayudamos con eso. En un momento te contacta el encargado para tus datos de facturación.",
-  "dueno": true
+  "dueno": true,
+  "conDatosALaIA": true
  },
  {
   "id": "hablar-dueno",
@@ -138,7 +140,8 @@
    "planta"
   ],
   "respuesta": "Sí, atendemos negocios e industria. Para eso vamos a ver el lugar antes de darte el precio final. ¿Qué giro es y en qué zona está?",
-  "dueno": true
+  "dueno": true,
+  "conDatosALaIA": true
  },
  {
   "id": "mascotas",
@@ -150,16 +153,23 @@
    "es toxico",
    "es peligroso para los ninos",
    "le hace dano a mi perro",
-   "es peligroso para mis mascotas"
+   "es peligroso para mis mascotas",
+   "mi perrito se puede quedar en la casa",
+   "se puede quedar mi perro",
+   "mi perro se puede quedar",
+   "pueden estar mis mascotas",
+   "mis gatos se pueden quedar"
   ],
   "palabras": [
    "mascotas",
    "toxico",
    "toxicos",
-   "peligroso"
+   "peligroso",
+   "mascota"
   ],
   "respuesta": "Sí. Trabajamos con productos de baja toxicidad, aplicados con protocolos que protegen a mascotas y niños en casa.",
-  "fuente": "urbanpest.mx, preguntas frecuentes"
+  "fuente": "urbanpest.mx, preguntas frecuentes",
+  "conDatosALaIA": true
  },
  {
   "id": "garantia",
@@ -467,10 +477,10 @@
   "frases": [
    "fumigan chinches o termitas"
   ],
-  "respuesta": "Chinches, termitas, pulgas, abejas y avispas no aparecen en la lista de su página: no afirmes que se atienden ni cómo. Di que lo confirma el encargado y avísale.",
+  "respuesta": "Chinches, termitas, pulgas, avispas (quitar panales) y serpientes: SÍ las atendemos (están en las cotizaciones del dueño), pero no tienen precio automático: di que sí las atendemos y que el encargado revisa su caso para darle precio; marca necesita_dueno. Abejas: no está confirmado; di que lo confirma el encargado. Nunca digas que no atendemos una plaga.",
   "dueno": true,
   "reflejo": false,
-  "fuente": "regla para la IA: no está en urbanpest.mx"
+  "fuente": "su Excel de cotizaciones (17 nov): trae servicios de chinches (7), termitas, pulgas, avispas y serpientes"
  },
  {
   "id": "lo-que-no-sabemos",
