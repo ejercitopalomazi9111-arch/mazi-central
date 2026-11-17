@@ -6,7 +6,7 @@ import { reflejo, llenar, juntarCasos } from './src/reflejo.js';
 import { cotizar, aPlaga } from './src/cotizador.js';
 import { corrida } from './src/corrida.js';
 import { firmaValida, leerAviso } from './src/meta.js';
-import { Oficina, ponerPrecio, sinDatosDelDueno, delTexto, elReflejo, sinPrecioAuto } from './src/oficina.js';
+import { Oficina, ponerPrecio, sinDatosDelDueno, delTexto, elReflejo, sinPrecioAuto, noQuiere } from './src/oficina.js';
 import { leerJSON, pesos } from './src/cerebro.js';
 
 let bien = 0, mal = 0;
@@ -158,6 +158,33 @@ let n = 0; const msj = (texto, chat = '524420000000', extra = {}) => ({ canal: '
   const vio = []; const t = hacer({ pensar: (a) => { vio.push(a.sinPrecio); return { bien: true, respuesta: 'Sí atendemos ratas; el encargado te da el precio.', necesita_dueno: true, motivo: 'ratas', razon: 'x', datos: { plaga: 'ratas', tipo: 'casa' } }; } });
   await t.of.atender(msj('me urge, tengo ratas'));
   ok('al decir «ratas», la IA recibe que no hay precio automático y se avisa al encargado', vio.includes('ratas y ratones') && [...t.M.keys()].some(k => k.startsWith('aviso:')), JSON.stringify(vio)); }
+{ /* Carlos, 17 nov: «No quiero nada escribes raro» → el bot repitió el precio y mandó otra hoja. Ya no. */
+  ok('«no quiero nada», «ya nada», «no gracias», «olvídalo» se entienden como que ya no quiere', ['No quiero nada escribes raro', 'Ya nada', 'no gracias', 'olvídalo', 'mejor no'].every(noQuiere) && !noQuiere('no quiero que se mueran mis plantas, es seguro?'));
+  let vez = 0;
+  const t = hacer({ pensar: (a) => (++vez, a.cotizacion
+    ? { bien: true, respuesta: vez > 2 ? 'Disculpa la confusión. Tu cotización aproximada es de {precio}.' : 'Te saldría aproximadamente en {precio}.', necesita_dueno: false, motivo: '', razon: 'x', datos: {} }
+    : { bien: true, respuesta: 'Va', necesita_dueno: false, motivo: '', razon: 'x', datos: { plaga: 'cucaracha', m2: 80, zona: 'Centro', tipo: 'casa' } }) });
+  await t.of.atender(msj('tengo cucarachas en mi casa del centro, son 80 metros'));
+  const hojas = () => t.salidas.filter(x => /por escrito/.test(x.texto)).length, antes = hojas();
+  await t.of.atender(msj('No quiero nada escribes raro'));
+  const ultima = t.salidas.filter(x => x.chat === '524420000000').at(-1)?.texto || '';
+  const conv = t.M.get('conv:whatsapp:524420000000'), ult = conv.mensajes.at(-1);
+  ok('si ya no quiere: se despide sin precio, sin otra hoja y sin tarjeta de cotización', !/\$/.test(ultima) && hojas() === antes && !ult.cotizacion, ultima);
+  { /* Carlos, 17 nov: cada mensaje le volvía a dar el precio (cada vez distinto) y una hoja nueva */
+    const vio = []; const t2 = hacer({ pensar: (a) => { vio.push(a.cotizacion?.yaDicho || false); return a.cotizacion
+      ? { bien: true, respuesta: a.cotizacion.yaDicho ? 'Casi nadie sabe los metros; con lo que me contaste el sistema los calcula.' : 'Te saldría aproximadamente en {precio}.', necesita_dueno: false, motivo: '', razon: 'x', datos: {} }
+      : { bien: true, respuesta: 'Va', necesita_dueno: false, motivo: '', razon: 'x', datos: { plaga: 'cucaracha', m2: 80, zona: 'Centro', tipo: 'casa' } }; } });
+    await t2.of.atender(msj('tengo cucarachas en mi casa del centro, son 80 metros', '524421000001'));
+    const p1 = t2.M.get('conv:whatsapp:524421000001').precioDicho;
+    await t2.of.atender(msj('Porque no pediste metros?', '524421000001'));
+    const c2 = t2.M.get('conv:whatsapp:524421000001'), hojas2 = t2.salidas.filter(x => /por escrito/.test(x.texto)).length;
+    ok('ya dicho el precio: no cambia sin datos nuevos, no se repite, y la hoja va UNA vez', p1 > 0 && c2.cotizacion.desde === p1 && vio.at(-1) === true && hojas2 === 1
+      && !/\$/.test(t2.salidas.filter(x => x.chat === '524421000001').at(-1).texto), JSON.stringify({ p1, vio, hojas2 })); }
+  { const t3 = hacer({ pensar: () => ({ bien: true, respuesta: 'Te saldría aproximadamente en {precio}.', necesita_dueno: false, motivo: '', razon: 'x', datos: {} }) });
+    await t3.of.atender(msj('Cuánto?', '524421000002'));
+    const dicho = t3.salidas.filter(x => x.chat === '524421000002').at(-1)?.texto || '';
+    ok('«¿Cuánto?» sin saber la plaga: se le pregunta qué plaga es (antes: «te contesta el encargado»)', /qué plaga/.test(dicho), dicho); }
+  ok('«cucharachas» y «chucharachas» (como lo escribió Carlos) son cucarachas', aPlaga('cucharachas') === 'cucaracha' && aPlaga('Chucharachas chica en ciudad del sol') === 'cucaracha'); }
 { /* el número para avisarle al dueño también se puede guardar en el negocio, sin desplegar */
   const t = hacer(); t.of.env = {}; t.M.set('negocio', { dueno_wa: '524421394023' });
   await t.of.aviso({ canal: 'whatsapp', chat: '524420000001', nombre: 'Cliente' }, 'prueba');

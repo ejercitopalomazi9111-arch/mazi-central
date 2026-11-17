@@ -26,7 +26,8 @@
 import { corrida } from './corrida.js';
 
 export const ALIAS = {
-  cucaracha: ['cucaracha', 'cucarachita', 'cuca', 'guerita', 'alemana', 'americana'],
+  /* «cucharachas», «chucharachas»: así lo escribió Carlos probándolo (17 nov) */
+  cucaracha: ['cucaracha', 'cucarachita', 'cuca', 'guerita', 'alemana', 'americana', 'cucharacha', 'chucharacha'],
   chinche: ['chinche', 'chinche de cama'],
   alacran: ['alacran', 'escorpion'],
   roedor: ['rata', 'raton', 'roedor', 'tuza'],
