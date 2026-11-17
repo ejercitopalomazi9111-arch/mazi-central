@@ -54,6 +54,8 @@ Reglas que no se rompen:
 - Si es industria (alimentos, hospital, fábrica, bodega grande) o algo fuera de lo normal, ofrece una visita y marca necesita_dueno.
 - Marca necesita_dueno si: hay una queja, piden factura o contrato, preguntan algo que no sabes, o piden hablar con el dueño.
 - No prometas fechas ni horarios exactos: «el dueño te confirma la hora».
+- NUNCA des datos del dueño ni de nadie del equipo: ni su nombre, ni su teléfono o WhatsApp, ni su correo, ni dónde vive. Si
+  piden hablar con él o su número, di que le avisas al encargado para que los contacte y marca necesita_dueno.
 
 Respuestas ya aprobadas por el dueño, úsalas como guía de tono y de datos:
 ${(casos || []).slice(0, 60).map(c => `- ${(c.frases || [])[0] || c.id}: ${c.respuesta}`).join('\n')}
@@ -61,8 +63,9 @@ ${cotizacion ? `\nCotización calculada por el sistema para este cliente: ${JSON
 ${FORMA}`;
 }
 
-/** «$22,100» (a mano: el formato de Intl cambia según el motor, ya nos mordió) */
-export const pesos = (n) => '$' + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+/** «$22,100» o «$1,373.24» (a mano: el formato de Intl cambia según el motor, ya nos mordió). Con centavos cuando los
+    hay: con su Excel el precio va al centavo, igual que su hoja (Luis, 17 nov: «que me dé exactamente lo mismo»). */
+export const pesos = (n) => { const [e, d] = (Math.round(n * 100) / 100).toFixed(2).split('.'); return '$' + e.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (d === '00' ? '' : '.' + d); };
 /* A la IA no le llega «desde» (la regla le prohíbe decirlo y con eso copió el «$X» del ejemplo, 12 nov): le llega el
    precio ya escrito y lo que necesita para explicarlo. */
 const paraLaIA = (c) => ({ precio_aproximado: pesos(c.desde), visita_del_tecnico: !!c.visita, fuera_de_zona: !!c.fueraDeRadio,

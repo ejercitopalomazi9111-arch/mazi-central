@@ -73,7 +73,7 @@ La sexta pestaña. Es su «CorridaCotizacion.xlsx» hecha pantalla:
   su servidor SÓLO el catálogo (90 productos con costo, envase y dosis), su fórmula y qué producto usa en cada
   plaga. La lista de clientes no se lee. El Excel no entra al repo: es público. Si cambia precios, lo vuelve a cargar.
 - **La corrida** (`cotizar.js`): horas, km y lo que se aplica (plaga → su producto de siempre, cantidad en litros de
-  mezcla, bloques, m²…). Da su «Cotización» con SU fórmula, redondeada a la decena, el desglose (químicos, técnico,
+  mezcla, bloques, m²…). Da su «Cotización» con SU fórmula, AL CENTAVO como su columna T (sin redondear), el desglose (químicos, técnico,
   camioneta), su reparto de costos y utilidad y, de comparación, lo que daría su hoja JADP. Probada contra filas de su Excel: da
   lo mismo al centavo (las filas 630 y 636 de la convencional y la 9 de JADP).
 - **«Hacer la hoja para el cliente».** Usa `POST /api/cotizaciones` (la cotización a mano): el cliente ve un solo

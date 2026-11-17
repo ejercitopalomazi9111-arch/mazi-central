@@ -265,7 +265,7 @@ persona.
 
 ## FALTA de Carlos
 
-**Respuestas del cliente, 17 nov** (Luis las pasó; el cliente es el Ing. Carlos Duarte):
+**Respuestas del cliente, 17 nov** (Luis las pasó):
 
 1. ✅ **El Excel** (`CorridaCotizacion.xlsx`). Dos hojas: «Cotización convencional» (la que usa: unas 640 filas; la
    fórmula de ahora es (químicos + mano de obra) × un multiplicador + km, con su hora y su km; los números viven en su servidor, no aquí) y «Cotización JADP» (otra
@@ -281,8 +281,17 @@ persona.
 4. ⏳ **Capturas de lo que le preguntan:** «necesito más tiempo». Sigue pendiente.
 5. ✅ **Número para avisarle:** 442 139 4023 (el mismo de su página). Va en `negocio.dueno_wa` o `DUENO_WA`.
 6. 🟠 **Logo y fotos:** el logo llegó por Carlos (`marca-oficial/`). Fotos de trabajos: no mandó.
-7. ✅ **LinkedIn:** el suyo personal, «Ing. Carlos Duarte» (él mismo dice que no ayuda mucho). No es de la
-   empresa, así que no va en la página; el bot usa su nombre cuando alguien pide al encargado.
+7. ✅ **LinkedIn:** el suyo personal (él mismo dice que no ayuda mucho). No es de la empresa, así que no va en la página.
+
+**El bot NO da datos del dueño (Luis, 17 nov):** ni su nombre ni su teléfono, aunque se los pidan. Avisa al encargado y ya.
+Hay una compuerta en el servidor (`sinDatosDelDueno`, en `oficina.js`) que revisa cada respuesta antes de salir: si trae su
+teléfono (`negocio.dueno_wa`) o su nombre (`negocio.dueno_nombre`), no sale y al dueño le llega por qué. Los dos datos viven
+en su servidor, no en el repo.
+
+**Excel = herramienta = bot, al centavo (Luis, 17 nov).** Una sola cuenta (`servidor/src/corrida.js`, copia exacta en
+`centro/cotizar.js`) y sin redondear. Probado contra su Excel de verdad (en privado, no está en el repo): las 165 filas con su
+fórmula de ahora dan lo mismo al centavo, 87 de sus 90 productos dan su columna F con todos los decimales (las 3 trampas no
+la tienen llena: se toma el precio de la pieza) y 180 cotizaciones del bot, puestas en una fila de su Excel, dan lo mismo.
 
 Lo de Grupo Mazi que sigue igual:
 

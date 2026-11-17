@@ -131,6 +131,14 @@ export class Oficina {
   }
 
   async decir(conv, texto, extra){
+    /* Luis, 17 nov: «el bot no debe dar datos del ing». Lo que contesta el bot (reflejo o IA) pasa por aquí: si trae el
+       teléfono o el nombre del dueño, NO sale; sale el aviso al encargado y al dueño le llega por qué. Lo que escribe
+       el dueño desde su chat central (via «dueno») no se toca: es suyo. */
+    if(extra?.via !== 'dueno' && extra?.via !== 'cotizacion' && !sinDatosDelDueno(texto, (await this.A.get('negocio')) || {}, this.env)){
+      extra = { ...extra, tapado: String(texto).slice(0, 300) };
+      texto = 'Claro, ya le aviso al encargado para que te contacte.';
+      await this.aviso(conv, 'La respuesta del bot traía tus datos (nombre o teléfono) y se cambió por «ya le aviso al encargado».');
+    }
     const r = await this.enviar(this.env, conv.canal, conv.chat, texto);
     conv.mensajes.push({ de: 'negocio', texto, cuando: this.reloj(), ...extra, ...(r.bien ? {} : { noSalio: r.error }) });
   }
@@ -159,14 +167,32 @@ export class Oficina {
 
 /** Cambia {precio} por la cantidad calculada. Regresa null si la respuesta trae un precio que no es el del sistema
     (un «$X» copiado del ejemplo, una cantidad inventada, o {precio} sin cotización). */
+/** true si `texto` NO trae datos del dueño: su teléfono (DUENO_WA o negocio.dueno_wa, con o sin lada, con espacios o
+    guiones) ni su nombre (negocio.dueno_nombre: el nombre completo o el apellido). Los datos viven en su servidor, no aquí. */
+export function sinDatosDelDueno(texto, negocio = {}, env = {}){
+  const tels = [env.DUENO_WA, negocio.dueno_wa].map(x => String(x || '').replace(/\D/g, '').slice(-10)).filter(x => x.length === 10);
+  for(const m of String(texto || '').matchAll(/(?:\d[\s\-.()]*){7,}/g)){
+    const d = m[0].replace(/\D/g, '');
+    if(tels.some(t => d.includes(t) || d.endsWith(t.slice(-7)) || d === t.slice(-7))) return false;
+  }
+  const nombre = normal(negocio.dueno_nombre || '').replace(/\b(ing|lic|sr|don)\.?\s+/g, '').trim();
+  if(nombre){
+    const t = ' ' + normal(texto).replace(/[^a-z0-9ñ]+/g, ' ') + ' ', partes = nombre.split(/\s+/), apellido = partes.length > 1 ? partes.at(-1) : null;
+    if(t.includes(' ' + partes.join(' ') + ' ') || (apellido && apellido.length >= 4 && t.includes(' ' + apellido + ' '))) return false;
+  }
+  return true;
+}
+
 export function ponerPrecio(texto, cot){
   const precio = cot ? pesos(cot.desde) : null;
   let t = String(texto).replace(/\{\s*precio\s*\}/gi, () => precio ?? '\u0000');
   if(t.includes('\u0000')) return null;
   if(/\$\s*[xX]\b|\$\s*\{/.test(t)) return null;
   for(const m of t.matchAll(/\$\s*([\d][\d,\.]*)/g)){
-    const n = Number(m[1].replace(/,/g, '').replace(/\.(?=\d{3}\b)/g, ''));
-    if(!cot || Math.abs(n - Math.round(cot.desde)) > 1) return null;
+    /* el punto final de la frase no es parte del número («…$1,373.24.»); antes «1373.24.» daba NaN y NaN nunca
+       se rechazaba: cualquier precio con un punto pegado pasaba */
+    const n = Number(m[1].replace(/[.,]+$/, '').replace(/,/g, '').replace(/\.(?=\d{3}\b)/g, ''));
+    if(!cot || !Number.isFinite(n) || Math.abs(n - cot.desde) > 1) return null;
   }
   return t;
 }

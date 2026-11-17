@@ -559,9 +559,15 @@ const PANTALLAS = {
           ${d.tecnico ? fila(`Técnico · ${d.tecnico.horas} h${d.tecnico.personas > 1 ? ' × ' + d.tecnico.personas : ''} a ${pesos(d.tecnico.costo_hora)}`, pesos(d.mano_de_obra)) : fila('Mano de obra', pesos(d.mano_de_obra))}
           ${d.factor && d.factor !== 1 ? fila(`${esc(c.lugar || 'Tipo de lugar')} (×${d.factor})`, '') : ''}
           ${d.vehiculo ? fila(`Camioneta · ${d.vehiculo.km} km ida y vuelta`, pesos(d.traslado)) + fila('&nbsp;&nbsp;Gasolina', pesos(d.vehiculo.gasolina)) + fila('&nbsp;&nbsp;Llantas', pesos(d.vehiculo.llantas)) + fila('&nbsp;&nbsp;Balatas', pesos(d.vehiculo.balatas)) + fila('&nbsp;&nbsp;Motor y aceite', pesos(d.vehiculo.motor)) : fila('Traslado', pesos(d.traslado))}
-          <span class="sep"></span>${fila('Costo', pesos(d.costo))}${fila('Precio al cliente', pesos(c.precio))}${fila('Ganancia', pesos(d.ganancia), 'gana')}</dl></details>` : ''}
+          <span class="sep"></span>${fila('Costo', pesos(d.costo))}${fila('Precio al cliente', pesos(c.precio))}${fila('Ganancia', pesos(d.ganancia), 'gana')}</dl>
+          ${d.excel?.corrida ? ((e) => `<p class="up-formula" style="padding:10px 0 0">Para sacarla igual en tu Excel: Mano de obra <b>${e.horas}</b> · Kilómetros <b>${e.km}</b> · ${e.columna ? esc(e.columna) + ': ' : ''}<b>${e.cantidad} L</b> de ${esc(e.material || 'su producto')}. Da ${pesos(c.precio)}.</p>
+          <div class="acc"><button class="btn b2" type="button" data-en-cotizar="${esc(JSON.stringify({ cliente: c.cliente || '', zona: c.zona || '', ...e }))}"><span data-ic="calculator"></span>Abrirla en Cotizar</button></div>`)(d.excel.corrida) : ''}</details>` : ''}
         <div class="acc"><a class="btn b2" href="../cotizacion/?c=${esc(c.codigo)}">Ver hoja</a>${i.chat ? `<a class="btn b2" href="../chat/?abrir=${encodeURIComponent(i.canal + '|' + i.chat)}">Escribirle</a>` : ''}<button class="btn" type="button" data-agendar="${esc(c.codigo)}">Agendar</button></div></li>`; }).join('')}</ul>` : '<p class="vacio">Cuando el bot cotice, aquí sale cada cotización con su costo y su ganancia.</p>'}`;
-    el.addEventListener('click', (e) => { const b = e.target.closest('[data-agendar]'); if(b){ q.set('agendar', b.dataset.agendar); ir('servicios'); } });
+    el.addEventListener('click', (e) => { const b = e.target.closest('[data-agendar]'); if(b){ q.set('agendar', b.dataset.agendar); ir('servicios'); }
+      /* la cotización del bot, abierta en «Cotizar» con los mismos datos: da el mismo precio (corrida.js es la misma cuenta) */
+      const k = e.target.closest('[data-en-cotizar]'); if(k){ const x = JSON.parse(k.dataset.enCotizar);
+        borrador = { cliente: x.cliente, zona: x.zona, horas: String(x.horas), km: String(x.km), extra: '', renglones: [{ plaga: x.columna || 'Otro', producto: x.producto || '', cantidad: String(x.cantidad) }] };
+        guarda.poner(CLAVE_BORRADOR, JSON.stringify(borrador)); ir('cotizar'); } });
   },
   async cotizar(el){
     const r = await tarifasDelExcel(); if(r.falla) return falla(el, r.falla);
@@ -615,10 +621,10 @@ const PANTALLAS = {
     const pintaTotal = () => {
       const c = calcula(), fila = (t, x, k = '') => `<dt>${t}</dt><dd class="${k}">${x}</dd>`;
       [...lista.children].forEach((li, i) => { li.querySelector('[data-imp]').textContent = pesos(c.lineas[i]?.importe || 0); });
-      total.innerHTML = `<div class="up-precio"><small>Cotización</small><b>${pesos(c.precio)}</b><span>${c.cotizacion ? `Tu Excel da ${pesos(c.cotizacion)}; se redondea a la decena.` : 'Pon horas, kilómetros y lo que se va a aplicar.'}</span></div>
+      total.innerHTML = `<div class="up-precio"><small>Cotización</small><b>${pesos(c.cotizacion)}</b><span>${c.cotizacion ? 'Lo mismo que da tu Excel con estos datos, al centavo. El bot cotiza con esta misma cuenta.' : 'Pon horas, kilómetros y lo que se va a aplicar.'}</span></div>
         <dl class="desg">${fila('Químicos', pesos(c.quimicos))}${fila(`Técnico · ${c.horas} h × ${pesos(v.mano_hora)}`, pesos(c.mano))}${fila(`Camioneta · ${c.km} km × ${pesos(v.km)}`, pesos(c.traslado))}
           <span class="sep"></span>${fila('Lo que te cuesta hacerlo', pesos(c.directo))}${c.costos != null ? fila(`Costos (${pct(v.costos)})`, pesos(c.costos)) + fila(`Utilidad (${pct(1 - v.costos)})`, pesos(c.utilidad), 'gana') : ''}</dl>
-        ${c.jadp ? `<p class="up-jadp">Con tu hoja JADP saldría <b>${pesos(c.jadp.precio)}</b> (utilidad ${pesos(c.jadp.utilidad)}).</p>` : ''}`;
+        ${c.jadp ? `<p class="up-jadp">Con tu hoja JADP saldría <b>${pesos(c.jadp.cotizacion)}</b> (utilidad ${pesos(c.jadp.utilidad)}).</p>` : ''}`;
       return c;
     };
     pintaRenglones(); pintaTotal();
