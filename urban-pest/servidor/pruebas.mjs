@@ -184,6 +184,22 @@ let n = 0; const msj = (texto, chat = '524420000000', extra = {}) => ({ canal: '
     await t3.of.atender(msj('Cuánto?', '524421000002'));
     const dicho = t3.salidas.filter(x => x.chat === '524421000002').at(-1)?.texto || '';
     ok('«¿Cuánto?» sin saber la plaga: se le pregunta qué plaga es (antes: «te contesta el encargado»)', /qué plaga/.test(dicho), dicho); }
+  ok('«{{precio}}» y «${precio}» quedan en el precio, sin llaves', ponerPrecio('Te saldría en {{precio}}.', { desde: 10002.44 }) === 'Te saldría en $10,002.44.' && ponerPrecio('Sale en ${precio}', { desde: 500 }) === 'Sale en $500'
+    && ponerPrecio('Te saldría en {$10,002.44}.', { desde: 10002.44 }) === 'Te saldría en $10,002.44.');
+  { const t4 = hacer({ pensar: (a) => a.cotizacion ? { bien: true, respuesta: a.cotizacion.desde > 300 ? 'Te saldría aproximadamente en $260.' : 'Te saldría en {precio}.', necesita_dueno: false, motivo: '', razon: 'x', datos: {} }
+      : { bien: true, respuesta: 'Va', necesita_dueno: false, motivo: '', razon: 'x', datos: { plaga: 'cucaracha', m2: 80, zona: 'Centro', tipo: 'casa' } } });
+    await t4.of.atender(msj('tengo cucarachas en mi casa del centro, son 80 metros', '524421000003'));
+    const c4 = t4.M.get('conv:whatsapp:524421000003'); c4.precioDicho = 260; c4.datos.m2 = 500; t4.M.set('conv:whatsapp:524421000003', c4);
+    await t4.of.atender(msj('no, son 500 metros', '524421000003'));
+    const dicho = t4.salidas.filter(x => x.chat === '524421000003').map(x => x.texto).filter(x => !/escrito/.test(x)).at(-1);
+    ok('si la IA copia el precio de antes y con el dato nuevo cambió, sale el de ahora (no «te contesta el encargado»)', /\$[\d,]+/.test(dicho) && !/\$260\b/.test(dicho) && !/encargado/.test(dicho), dicho); }
+  { const vio = []; const t5 = hacer({ pensar: (a) => { vio.push(a.cotizacion && { desde: a.cotizacion.desde, yaDicho: !!a.cotizacion.yaDicho }); return a.cotizacion
+      ? { bien: true, respuesta: a.cotizacion.yaDicho ? 'Se mantiene igual.' : 'Te saldría en {precio}.', necesita_dueno: false, motivo: '', razon: 'x', datos: {} }
+      : { bien: true, respuesta: 'Va', necesita_dueno: false, motivo: '', razon: 'x', datos: { plaga: 'cucaracha', m2: 100, zona: 'Centro', tipo: 'casa' } }; } });
+    await t5.of.atender(msj('tengo cucarachas en mi casa del centro, son 100 metros', '524421000004'));
+    const p0 = t5.M.get('conv:whatsapp:524421000004').precioDicho, c5 = t5.M.get('conv:whatsapp:524421000004'); c5.datos.m2 = 103; t5.M.set('conv:whatsapp:524421000004', c5);
+    await t5.of.atender(msj('bueno son como 103 metros', '524421000004'));
+    ok('un dato nuevo que mueve el precio menos de 5 %: se queda el que ya se le dijo', vio.at(-1)?.desde === p0 && vio.at(-1)?.yaDicho, JSON.stringify(vio)); }
   ok('«cucharachas» y «chucharachas» (como lo escribió Carlos) son cucarachas', aPlaga('cucharachas') === 'cucaracha' && aPlaga('Chucharachas chica en ciudad del sol') === 'cucaracha'); }
 { /* el número para avisarle al dueño también se puede guardar en el negocio, sin desplegar */
   const t = hacer(); t.of.env = {}; t.M.set('negocio', { dueno_wa: '524421394023' });

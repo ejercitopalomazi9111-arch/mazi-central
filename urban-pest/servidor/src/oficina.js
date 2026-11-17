@@ -83,6 +83,9 @@ export class Oficina {
        cliente no da un dato nuevo, y a la IA se le dice que ya se lo dijo: que conteste lo que le preguntan. */
     const datoNuevo = traeDatos(m.texto) || /\b(chic|median|grand|recamar|cuart|bano|pati|jardin|sala|comedor|plant|pis|coloni|zona|depa|casa|negocio|industria)/.test(normal(m.texto));
     let cot = cfg.tarifas ? (conv.precioDicho != null && conv.cotizacion && !datoNuevo ? conv.cotizacion : this.cotiza(conv, cfg.tarifas, cfg.medidas)) : null;
+    /* con un dato nuevo que casi no lo mueve («chica» → «2 cuartos 1 baño»: $778.80 → $752.89) se queda el que ya se le dijo:
+       al cliente no se le cambia el precio por centavos de una estimación. Si cambia 5 % o más, sí se le da el nuevo. */
+    if(cot && conv.cotDicha && Math.abs(cot.desde - conv.cotDicha.desde) < conv.cotDicha.desde * .05) cot = conv.cotDicha;
     const paraIA = (c) => c && conv.precioDicho === c.desde ? { ...c, yaDicho: true } : c;
     let p = await this.pensar({ env: this.env, negocio: cfg.negocio, casos: cfg.casos, historial: conv.mensajes, cotizacion: paraIA(cot), sinPrecio: sinPrecioAuto(conv.datos, cfg.tarifas) });
     const antes = { ...conv.datos };
@@ -99,8 +102,11 @@ export class Oficina {
       await this.aviso(conv, 'La IA no pudo contestar: ' + p.error);
       await guarda(); return { hecho: 'respaldo' };
     }
-    /* el precio lo pone el código, nunca la IA (12 nov: escribió «$X» al cliente) */
-    let texto = ponerPrecio(p.respuesta, cot);
+    /* el precio lo pone el código, nunca la IA (12 nov: escribió «$X» al cliente). Si la IA copió de la plática el precio
+       que se dijo ANTES y con el dato nuevo cambió, se pone el de ahora (17 nov: «2 cuartos 1 baño» → la IA repitió $778.80) */
+    let resp = p.respuesta;
+    if(cot && conv.precioDicho != null && conv.precioDicho !== cot.desde) resp = String(resp).split(pesos(conv.precioDicho)).join('{precio}');
+    let texto = ponerPrecio(resp, cot);
     /* Prueba en vivo, 17 nov: con la cotización YA calculada, la IA seguía preguntando el tamaño o la colonia («es como de
        3 cuartos» → «¿cuántas recámaras tiene?» → …) y el cliente nunca veía el precio. Si el sistema ya lo tiene y la IA
        pide lo que ya está, se le da el precio. */
@@ -128,7 +134,7 @@ export class Oficina {
     const dioPrecio = !!(cot && texto.includes(pesos(cot.desde)));
     await this.decir(conv, texto, { via: 'cerebro', razon: p.razon, modelo: p.modelo, cotizacion: dioPrecio ? cot : undefined });
     if(cot) conv.cotizacion = cot;
-    if(dioPrecio) conv.precioDicho = cot.desde;
+    if(dioPrecio){ conv.precioDicho = cot.desde; conv.cotDicha = cot; }
     /* La cotización por escrito (BRIEF §B): cuando el bot DIO un precio que el sistema calculó, manda el link
        a la hoja lista para guardar como PDF. Una por precio: si vuelve a preguntar lo mismo no se repite. */
     /* la hoja por escrito: una, y otra sólo si el precio cambió de verdad (10 % o más), no por centavos */
@@ -271,7 +277,10 @@ export const pideLoQueYaHay = (t) => /chic[ao], median[ao] o grande|cu[aá]ntas 
 
 export function ponerPrecio(texto, cot){
   const precio = cot ? pesos(cot.desde) : null;
-  let t = String(texto).replace(/\{\s*precio\s*\}/gi, () => precio ?? '\u0000');
+  /* «{precio}», «{{precio}}» o «${precio}»: todas quedan en el precio (17 nov: salió «{$10,002.44}») */
+  let t = String(texto).replace(/(\$\s*)?\{+\s*precio\s*\}+/gi, () => precio ?? '\u0000')
+    /* …y si la IA ya puso la cantidad DENTRO de las llaves («{$10,002.44}»), se le quitan las llaves */
+    .replace(/\{+\s*(\$\s*[\d][\d,]*(?:\.\d+)?)\s*\}+/g, '$1');
   if(t.includes('\u0000')) return null;
   if(/\$\s*[xX]\b|\$\s*\{/.test(t)) return null;
   for(const m of t.matchAll(/\$\s*([\d][\d,\.]*)/g)){
