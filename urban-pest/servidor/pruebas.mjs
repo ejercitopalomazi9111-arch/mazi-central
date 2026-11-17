@@ -6,7 +6,7 @@ import { reflejo, llenar, juntarCasos } from './src/reflejo.js';
 import { cotizar, aPlaga } from './src/cotizador.js';
 import { corrida } from './src/corrida.js';
 import { firmaValida, leerAviso } from './src/meta.js';
-import { Oficina, ponerPrecio, sinDatosDelDueno } from './src/oficina.js';
+import { Oficina, ponerPrecio, sinDatosDelDueno, delTexto, elReflejo, sinPrecioAuto } from './src/oficina.js';
 import { leerJSON, pesos } from './src/cerebro.js';
 
 let bien = 0, mal = 0;
@@ -139,6 +139,24 @@ let n = 0; const msj = (texto, chat = '524420000000', extra = {}) => ({ canal: '
   t.M.set('negocio', neg); await t.of.atender(msj('me pasas el cel del dueño?'));
   const enviado = t.salidas.find(x => x.chat === '524420000000')?.texto || '';
   ok('si la IA lo escribe, no sale: sale «ya le aviso al encargado» y al dueño le llega por qué', !/555/.test(enviado) && /encargado/.test(enviado) && [...t.M.keys()].some(k => k.startsWith('aviso:')), enviado); }
+{ /* de la prueba en vivo: lo que el cliente ya dijo con sus palabras cuenta, y no se le vuelve a preguntar */
+  ok('«es como de 3 cuartos» y «tres recámaras» son recámaras; «casa chiquita» es chica', delTexto([{ de: 'cliente', texto: 'no se cuantos metros, es como de 3 cuartos' }]).recamaras === 3
+    && delTexto([{ de: 'cliente', texto: 'son tres recámaras' }]).recamaras === 3 && delTexto([{ de: 'cliente', texto: 'mi casa es chiquita' }]).tamano === 'chica');
+  const t = hacer(), conv = { datos: { plaga: 'cucaracha', zona: 'El Pueblito', tipo: 'casa' }, mensajes: [{ de: 'cliente', texto: 'tengo cucarachas' }, { de: 'cliente', texto: 'no se cuantos metros, es como de 3 cuartos' }] };
+  const c = t.of.cotiza(conv, { formula: { tipo: 'excel', x: 2.5, entre: .6, km: 7 }, tecnico: { costo_hora: 80, m2_hora: 330, minimo_horas: 1, personas: 1 }, plagas: { cucaracha: { litros_m2: .025, precio_litro: 20 } }, km_tipico: 10 });
+  ok('con «3 cuartos» ya cotiza (antes la IA volvía a preguntar las recámaras sin fin)', c?.bien && c.m2Estimado, JSON.stringify(c));
+  ok('«tengo cucarachas» → «¿y cuánto sale?»: no se le contesta «¿qué plaga tienes?», contesta la IA', elReflejo('y cuanto sale?', casos, { plaga: 'cucaracha' }) === null && elReflejo('y cuanto sale?', casos, {})?.caso.id === 'precio'); }
+{ /* con la cotización ya hecha, si la IA vuelve a pedir el tamaño, sale el precio */
+  const t = hacer({ pensar: (a) => ({ bien: true, respuesta: '¿Tu casa la considerarías chica, mediana o grande y cuántas recámaras tiene?', necesita_dueno: false, motivo: '', razon: 'x',
+    datos: { plaga: 'cucaracha', m2: 80, zona: 'Centro', tipo: 'casa' } }) });
+  await t.of.atender(msj('tengo cucarachas en mi casa del centro, son 80 metros'));
+  const dicho = t.salidas.filter(x => x.chat === '524420000000').map(x => x.texto).join(' | ');
+  ok('con la cotización hecha y la IA pidiendo otra vez el tamaño, el cliente recibe el precio', /\$\d/.test(dicho) && !/chica, mediana o grande/.test(dicho), dicho); }
+{ /* ratas, termitas…: sin precio automático, se le dice a la IA que no pida el tamaño y que pase al encargado */
+  ok('una plaga sin precio automático se nota (ratas sí, cucarachas no)', sinPrecioAuto({ plaga: 'ratas' }, { plagas: { cucaracha: {} } }) === 'ratas y ratones' && sinPrecioAuto({ plaga: 'cucarachas' }, { plagas: { cucaracha: {} } }) === null);
+  const vio = []; const t = hacer({ pensar: (a) => { vio.push(a.sinPrecio); return { bien: true, respuesta: 'Sí atendemos ratas; el encargado te da el precio.', necesita_dueno: true, motivo: 'ratas', razon: 'x', datos: { plaga: 'ratas', tipo: 'casa' } }; } });
+  await t.of.atender(msj('me urge, tengo ratas'));
+  ok('al decir «ratas», la IA recibe que no hay precio automático y se avisa al encargado', vio.includes('ratas y ratones') && [...t.M.keys()].some(k => k.startsWith('aviso:')), JSON.stringify(vio)); }
 { /* el número para avisarle al dueño también se puede guardar en el negocio, sin desplegar */
   const t = hacer(); t.of.env = {}; t.M.set('negocio', { dueno_wa: '524421394023' });
   await t.of.aviso({ canal: 'whatsapp', chat: '524420000001', nombre: 'Cliente' }, 'prueba');

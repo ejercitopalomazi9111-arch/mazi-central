@@ -63,8 +63,12 @@ export class Oficina {
       await guarda(); await this.aviso(conv, `Mandó ${m.tipo || 'un archivo'}: revísalo tú.`); return { hecho: 'no-texto' };
     }
 
+    /* la plaga se apunta en cuanto la dice, aunque conteste el reflejo: así nunca se le vuelve a preguntar */
+    const plagaDicha = aPlaga(m.texto);
+    if(plagaDicha && !conv.datos.plaga) conv.datos.plaga = plagaDicha;
+
     /* 5 · REFLEJO */
-    const r = elReflejo(m.texto, cfg.casos);
+    const r = elReflejo(m.texto, cfg.casos, conv.datos);
     if(r){
       const texto = llenar(r.caso.respuesta, conv.datos);
       await this.decir(conv, texto, { via: 'reflejo', caso: r.caso.id, confianza: r.confianza });
@@ -74,12 +78,15 @@ export class Oficina {
 
     /* 6 · CEREBRO */
     let cot = cfg.tarifas ? this.cotiza(conv, cfg.tarifas, cfg.medidas) : null;
-    let p = await this.pensar({ env: this.env, negocio: cfg.negocio, casos: cfg.casos, historial: conv.mensajes, cotizacion: cot });
+    let p = await this.pensar({ env: this.env, negocio: cfg.negocio, casos: cfg.casos, historial: conv.mensajes, cotizacion: cot, sinPrecio: sinPrecioAuto(conv.datos, cfg.tarifas) });
+    const antes = { ...conv.datos };
     if(p.bien){
       conv.datos = mezclar(conv.datos, p.datos);
       const nueva = cfg.tarifas && !cot ? this.cotiza(conv, cfg.tarifas, cfg.medidas) : null;
       /* con lo que acaba de decir ya se puede cotizar: se le pregunta otra vez, ya con el precio */
       if(nueva){ cot = nueva; const p2 = await this.pensar({ env: this.env, negocio: cfg.negocio, casos: cfg.casos, historial: conv.mensajes, cotizacion: cot }); if(p2.bien) p = { ...p2, datos: p.datos }; }
+      /* acaba de decir una plaga que no tiene precio automático (ratas, termitas…): que no siga pidiendo el tamaño */
+      else if(!cot && !sinPrecioAuto(antes, cfg.tarifas) && sinPrecioAuto(conv.datos, cfg.tarifas)){ const p2 = await this.pensar({ env: this.env, negocio: cfg.negocio, casos: cfg.casos, historial: conv.mensajes, cotizacion: null, sinPrecio: sinPrecioAuto(conv.datos, cfg.tarifas) }); if(p2.bien) p = { ...p2, datos: p.datos }; }
     }
     if(!p.bien){
       await this.decir(conv, 'Gracias por escribir. En un momento te contesta el encargado.', { via: 'respaldo', error: p.error });
@@ -87,7 +94,12 @@ export class Oficina {
       await guarda(); return { hecho: 'respaldo' };
     }
     /* el precio lo pone el código, nunca la IA (12 nov: escribió «$X» al cliente) */
-    const texto = ponerPrecio(p.respuesta, cot);
+    let texto = ponerPrecio(p.respuesta, cot);
+    /* Prueba en vivo, 17 nov: con la cotización YA calculada, la IA seguía preguntando el tamaño o la colonia («es como de
+       3 cuartos» → «¿cuántas recámaras tiene?» → …) y el cliente nunca veía el precio. Si el sistema ya lo tiene y la IA
+       pide lo que ya está, se le da el precio. */
+    if(texto && cot && cot.atiende === 'si' && !p.necesita_dueno && !texto.includes(pesos(cot.desde)) && pideLoQueYaHay(texto))
+      texto = ponerPrecio('Te saldría aproximadamente en {precio}. Si los datos que nos diste están bien, ése es el costo; el técnico te lo confirma al ver el lugar.', cot);
     if(!texto){
       await this.decir(conv, 'Gracias por escribir. En un momento te contesta el encargado.', { via: 'respaldo', error: 'La IA escribió un precio que el sistema no calculó: ' + p.respuesta.slice(0, 160) });
       await this.aviso(conv, 'La IA quiso dar un precio que no salió de las tarifas; revisa tú la conversación.');
@@ -123,6 +135,9 @@ export class Oficina {
     }
     /* no sabe los metros: se estiman con lo que contó (sólo casas; negocio e industria se visitan) */
     if(!(m2 > 0) && (d.tipo || 'casa') === 'casa'){
+      const dt = delTexto(conv.mensajes);
+      if(d.recamaras == null && dt.recamaras) d.recamaras = dt.recamaras;
+      if(!d.tamano && dt.tamano) d.tamano = dt.tamano;
       const e = estimarM2(d, medidas || MEDIDAS);
       if(e.bien){ m2 = e.m2; m2Estimado = true; conv.estimacion = e; }
     }
@@ -190,10 +205,42 @@ export function sinDatosDelDueno(texto, negocio = {}, env = {}){
     «cuánto sale un depa de 80 metros en Milenio x cucarachas» recibía «¿qué plaga tienes?»: el cliente siente que no lo
     leyeron. Con datos, contesta la IA (que ve las mismas respuestas aprobadas) y además cotiza. */
 export const traeDatos = (t) => !!aPlaga(t) || /\d+\s*(m2|m²|mts?\b|metros)|\brec[aá]maras?\b|\bcuartos?\b|\bpisos?\b|\bplantas?\b/i.test(String(t || ''));
-export function elReflejo(texto, casos){
+/* …y lo mismo si ya los dio ANTES en la plática: «tengo cucarachas» → «¿y cuánto sale?» no se contesta «¿qué plaga tienes?» */
+const yaDioDatos = (d = {}) => !!(d.plaga || d.m2 || d.recamaras || d.tamano || d.zona);
+export function elReflejo(texto, casos, datos){
   const r = reflejo(texto, casos);
-  return r && r.caso.conDatosALaIA && traeDatos(texto) ? null : r;
+  if(!r) return null;
+  if(r.caso.conDatosALaIA && (traeDatos(texto) || yaDioDatos(datos))) return null;
+  /* un mensaje que nombra una plaga y sólo se PARECE a un caso, contesta la IA: «tengo termitas en los muebles de madera»
+     se parecía a «tengo que mover los muebles» y recibía cómo preparar la casa (prueba en vivo, 17 nov) */
+  if(r.confianza < 1 && aPlaga(texto)) return null;
+  return r;
 }
+
+/* Lo que el cliente dijo con sus palabras y la IA no apuntó (prueba en vivo, 17 nov: «es como de 3 cuartos» y la IA
+   volvía a preguntar las recámaras una y otra vez). «3 cuartos», «tres recámaras», «casa chica»… */
+const NUMEROS = { un: 1, una: 1, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8 };
+export function delTexto(mensajes = []){
+  const d = {};
+  for(const m of [...mensajes].reverse().filter(x => x.de === 'cliente')){
+    const t = normal(m.texto);
+    if(d.recamaras == null){ const r = t.match(/\b(\d{1,2}|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho)\s+(recamaras?|cuartos?|habitaciones?|recamaritas?)\b/); if(r) d.recamaras = NUMEROS[r[1]] ?? +r[1]; }
+    if(d.tamano == null){ const r = t.match(/\b(chica|chiquita|pequena|mediana|grande|grandota)\b/); if(r) d.tamano = { chiquita: 'chica', pequena: 'chica', grandota: 'grande' }[r[1]] || r[1]; }
+  }
+  return d;
+}
+
+/** La plaga que dijo (si dijo) y que NO tiene precio automático en sus tarifas: ratas, termitas, chinches… La cotiza él. */
+export function sinPrecioAuto(d = {}, tarifas){
+  if(!d?.plaga || !tarifas?.plagas) return null;
+  const clave = aPlaga(d.plaga) || normal(d.plaga);
+  return tarifas.plagas[clave] ? null : (COMO_SE_DICE[clave] || String(d.plaga).slice(0, 40));
+}
+/* a la IA se le dice como lo dice la gente, no la clave de las tarifas («roedor») */
+const COMO_SE_DICE = { roedor: 'ratas y ratones', termita: 'termitas', chinche: 'chinches', pulga: 'pulgas', alacran: 'alacranes', arana: 'arañas',
+  mosco: 'mosquitos', mosca: 'moscas', hormiga: 'hormigas', cucaracha: 'cucarachas' };
+
+export const pideLoQueYaHay = (t) => /chic[ao], median[ao] o grande|cu[aá]ntas rec[aá]maras|qu[eé] colonia|cu[aá]ntos metros|el tama[ñn]o/i.test(String(t || ''));
 
 export function ponerPrecio(texto, cot){
   const precio = cot ? pesos(cot.desde) : null;

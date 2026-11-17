@@ -27,7 +27,7 @@ const FORMA = `Contesta SÓLO con un objeto JSON, sin texto alrededor, con esta 
    "comedor": true|false|null, "patio": true|false|null, "pisos": número o null}}
 En "datos" pon SÓLO lo que el cliente ya dijo en la conversación; lo que no, null.`;
 
-export function papel(negocio, casos, cotizacion){
+export function papel(negocio, casos, cotizacion, sinPrecio){
   return `Eres quien contesta los mensajes de ${negocio.nombre || 'una fumigadora'} en Querétaro, en WhatsApp, Instagram y Facebook.
 Escribe como una persona del negocio: español mexicano, amable, corto (2 a 4 renglones), sin emojis y sin «¿en qué más te puedo ayudar?».
 
@@ -37,6 +37,7 @@ ${negocio.descripcion || '(FALTA la descripción del negocio)'}
 Reglas que no se rompen:
 - NUNCA des un precio que no venga en lo que te pasan.
 - Si te pasan una cotización, dilo corto y sin asustar, así: «Te saldría aproximadamente en {precio}. Si los datos que nos diste están bien, ése es el costo; el técnico te lo confirma al ver tu casa.» Escribe {precio} TAL CUAL, con las llaves: el sistema pone la cantidad. NUNCA escribas una cantidad con número tú. NUNCA digas «desde» ni «a partir de»: suena a que va a subir.
+- Si te pasan una cotización, da el precio EN ESA MISMA respuesta: ya no pidas tamaño, recámaras, metros ni colonia (el sistema ya los tiene).
 - Si NO te pasan cotización, no hables de precio ni escribas {precio}: pide el dato que falte.
 - Si la cotización dice fueraDeRadio, explícalo con tacto: queda fuera de la zona donde trabajamos normalmente y por el traslado sale más caro.
   · atiende "si" (industria): ofrece una visita para confirmar la cotización.
@@ -61,7 +62,7 @@ Reglas que no se rompen:
 
 Respuestas ya aprobadas por el dueño, úsalas como guía de tono y de datos:
 ${(casos || []).slice(0, 60).map(c => `- ${(c.frases || [])[0] || c.id}: ${c.respuesta}`).join('\n')}
-${cotizacion ? `\nCotización calculada por el sistema para este cliente: ${JSON.stringify(paraLaIA(cotizacion))}\n` : ''}
+${cotizacion ? `\nCotización calculada por el sistema para este cliente: ${JSON.stringify(paraLaIA(cotizacion))}\n` : ''}${sinPrecio && !cotizacion ? `\nOJO: «${sinPrecio}» NO tiene precio automático: sí la atendemos, pero el precio lo da el encargado después de revisar su caso. Díselo, NO pidas tamaño, recámaras ni metros, y marca necesita_dueno. Puedes pedir la colonia para que el encargado lo ubique.\n` : ''}
 ${FORMA}`;
 }
 
@@ -126,10 +127,10 @@ export function leerJSON(texto){
 const conTope = (promesa, ms) => Promise.race([promesa, new Promise((_, no) => setTimeout(() => no(new Error(`no contestó en ${ms / 1000} s`)), ms))]);
 
 /** Le pregunta a la IA. `historial` = [{de:'cliente'|'negocio', texto}], el último es del cliente. NUNCA lanza. */
-export async function pensar({ env, negocio, casos, historial, cotizacion }){
+export async function pensar({ env, negocio, casos, historial, cotizacion, sinPrecio }){
   const msgs = historial.slice(-12).map(m => ({ role: m.de === 'cliente' ? 'user' : 'assistant', content: m.texto }));
   while(msgs.length && msgs[0].role !== 'user') msgs.shift();
-  const sistema = papel(negocio, casos, cotizacion);
+  const sistema = papel(negocio, casos, cotizacion, sinPrecio);
   const errores = [];
   for(const id of (env.MOTORES_IA || 'groq,gemini').split(',').map(s => s.trim()).filter(Boolean)){
     const M = MOTORES[id], k = M && env[M.llave];

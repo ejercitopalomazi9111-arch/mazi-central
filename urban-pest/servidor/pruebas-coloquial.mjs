@@ -60,7 +60,7 @@ const INTENTOS = {
     /* de la prueba EN VIVO (17 nov): el reflejo les contestaba «¿qué plaga tienes?» o sólo lo de la factura */
     'oiga cuanto sale fumigar un depa de 80 metros en milenio x cucarachas', 'cuanto cuesta fumigar termitas se me esta comiendo un mueble',
     'necesito factura, es para mi empresa, cuanto por fumigar oficinas de 300 m2', 'tengo ratas en la bodega de mi negocio, es una nave de 1500 m2',
-    'tengo pulgas por mi perro, cuanto me cobras'],
+    'tengo pulgas por mi perro, cuanto me cobras', 'hola, tengo termitas en los muebles de madera'],
 };
 
 /* Cómo lo escribe la gente */
