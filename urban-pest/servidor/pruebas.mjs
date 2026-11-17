@@ -141,7 +141,8 @@ let n = 0; const msj = (texto, chat = '524420000000', extra = {}) => ({ canal: '
   ok('si la IA lo escribe, no sale: sale «ya le aviso al encargado» y al dueño le llega por qué', !/555/.test(enviado) && /encargado/.test(enviado) && [...t.M.keys()].some(k => k.startsWith('aviso:')), enviado); }
 { /* de la prueba en vivo: lo que el cliente ya dijo con sus palabras cuenta, y no se le vuelve a preguntar */
   ok('«es como de 3 cuartos» y «tres recámaras» son recámaras; «casa chiquita» es chica', delTexto([{ de: 'cliente', texto: 'no se cuantos metros, es como de 3 cuartos' }]).recamaras === 3
-    && delTexto([{ de: 'cliente', texto: 'son tres recámaras' }]).recamaras === 3 && delTexto([{ de: 'cliente', texto: 'mi casa es chiquita' }]).tamano === 'chica');
+    && delTexto([{ de: 'cliente', texto: 'son tres recámaras' }]).recamaras === 3 && delTexto([{ de: 'cliente', texto: 'mi casa es chiquita' }]).tamano === 'chica' && delTexto([{ de: 'cliente', texto: 'es depa chico x el centro' }]).tamano === 'chica'
+    && delTexto([{ de: 'cliente', texto: 'un depa mediano' }]).tamano === 'mediana' && delTexto([{ de: 'cliente', texto: 'esta grandote' }]).tamano === 'grande');
   const t = hacer(), conv = { datos: { plaga: 'cucaracha', zona: 'El Pueblito', tipo: 'casa' }, mensajes: [{ de: 'cliente', texto: 'tengo cucarachas' }, { de: 'cliente', texto: 'no se cuantos metros, es como de 3 cuartos' }] };
   const c = t.of.cotiza(conv, { formula: { tipo: 'excel', x: 2.5, entre: .6, km: 7 }, tecnico: { costo_hora: 80, m2_hora: 330, minimo_horas: 1, personas: 1 }, plagas: { cucaracha: { litros_m2: .025, precio_litro: 20 } }, km_tipico: 10 });
   ok('con «3 cuartos» ya cotiza (antes la IA volvía a preguntar las recámaras sin fin)', c?.bien && c.m2Estimado, JSON.stringify(c));
