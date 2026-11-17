@@ -226,7 +226,7 @@ export function delTexto(mensajes = []){
     const t = normal(m.texto);
     if(d.recamaras == null){ const r = t.match(/\b(\d{1,2}|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho)\s+(recamaras?|cuartos?|habitaciones?|recamaritas?)\b/); if(r) d.recamaras = NUMEROS[r[1]] ?? +r[1]; }
     /* «depa chico», «casa chiquita», «mediano», «grandote»: en masculino también (prueba en vivo: «es depa chico x el centro») */
-    if(d.tamano == null){ const r = t.match(/\b(chic[ao]|chiquit[ao]|pequen[ao]|median[ao]|grande|grandot[ao])\b/); if(r) d.tamano = /^(chic|chiquit|pequen)/.test(r[1]) ? 'chica' : /^median/.test(r[1]) ? 'mediana' : 'grande'; }
+    if(d.tamano == null){ const r = t.match(/\b(chic[ao]|chiquit[ao]|pequen[ao]|median[ao]|grande|grandot[aeo])\b/); if(r) d.tamano = /^(chic|chiquit|pequen)/.test(r[1]) ? 'chica' : /^median/.test(r[1]) ? 'mediana' : 'grande'; }
   }
   return d;
 }
