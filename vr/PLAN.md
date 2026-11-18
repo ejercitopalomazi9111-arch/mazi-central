@@ -54,6 +54,24 @@ Para eso hacen falta dos cosas, las mismas que para subir CARYMO a la App Store:
      - el puño para agarrar y mover cosas;
      - que la cámara vea el control para usarlo como mano: barra de luz del DualShock 4, o una calcomanía de
        color en el DualSense.
+2-bis. ✅ **El cine con la web** (18 nov). Un teclado en el visor que se maneja con el control, con las manos o con un
+   teclado Bluetooth. Tiene cuatro puertas:
+   - **YouTube:** busca La Sala (`/api/sala/vr/buscar`) y se ve con el reproductor oficial.
+   - **Películas libres:** Internet Archive (dominio público).
+   - **Enlace:** cualquier dirección: YouTube, un video directo o una página.
+   - **Mis videos.**
+
+   Lo de otros sitios no se puede pintar dentro de la escena, así que va **encima**, una copia por ojo. Las esquinas
+   siguen al lente (`alLente` en `vr.js`), y el ojo derecho va callado, siguiendo al izquierdo.
+
+   Pruebas: `node vr/pruebas-cine.mjs` y `node sala/servidor/pruebas-youtube.mjs`.
+
+   **Ojo con el sonido:** el iPhone sólo deja sonar un video si hubo un toque.
+   - Los videos directos se «desbloquean» al tocar Entrar.
+   - YouTube puede arrancar callado. Lo destraba tocar la pantalla una vez o una tecla del control del visor si va en
+     modo teclado.
+   - Las páginas ajenas sólo se ven: no se puede tocar adentro.
+
 3. **Sables en VS Tiles.**
    - Los bloques salen del ritmo de las canciones que ya tiene VS Tiles.
    - Se cortan con las manos o con el control visto por la cámara.

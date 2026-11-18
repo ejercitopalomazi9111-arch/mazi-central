@@ -13,6 +13,7 @@
    ═════════════════════════════════════════════════════════════════════════ */
 export { Sala } from './sala.js';
 import { traer as traerInkwell } from './inkwell.js';
+import { buscarYouTube } from './youtube.js';
 import { esColeccion } from './pinguinos.js';
 export { Coleccion } from './pinguinos.js';
 export { Comunidad } from './comunidad.js';
@@ -114,6 +115,12 @@ export default {
     }
 
     if(url.pathname === '/api/salud') return conCORS(Response.json({ bien:true }), pedido);
+
+    /* MAZI VR: buscar en YouTube desde el visor (youtube.js); sólo regresa la lista, el video lo da el embed oficial */
+    if(url.pathname === '/api/sala/vr/buscar'){
+      if(pedido.method !== 'GET') return conCORS(Response.json({ bien:false, error:'Sólo GET.' }, { status:405 }), pedido);
+      return conCORS(await buscarYouTube(url), pedido);
+    }
 
     /* INKWELL: el recadero de Webtoon (inkwell.js). Va antes de las rutas de
        una sala porque «inkwell» cabe en el molde /api/sala/X/Y y ahí daría

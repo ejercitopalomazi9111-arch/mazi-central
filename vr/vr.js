@@ -201,8 +201,12 @@ function leerControl(){
 /* lo que llega de fuera del control: los gestos (botones) y el puntero de la mano (rayo) */
 export const extra = { botones: [], rayo: null };
 export const alCuadro = [];
+/* después de pintar: lo que va encima de la escena (la pantalla de la web) se acomoda con las cámaras de cada ojo */
+export const trasCuadro = [];
 const teclas = []; const MAPA = { Enter: B.X, Escape: B.O, Backspace: B.O, KeyR: B.CUADRO, KeyM: B.TRIANGULO, KeyH: B.OPTIONS, KeyQ: B.L1, KeyE: B.R1, ArrowUp: B.ARRIBA, ArrowDown: B.ABAJO, ArrowLeft: B.IZQ, ArrowRight: B.DER };
-addEventListener('keydown', (e) => { if(e.code in MAPA){ teclas[MAPA[e.code]] = true; e.preventDefault(); } });
+/* mientras el teclado del visor está abierto, las teclas de un teclado de verdad escriben (no hacen de botones) */
+export const texto = { activo: false };
+addEventListener('keydown', (e) => { if(texto.activo && (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Enter')) return; if(e.code in MAPA){ teclas[MAPA[e.code]] = true; e.preventDefault(); } });
 addEventListener('keyup', (e) => { if(e.code in MAPA) teclas[MAPA[e.code]] = false; });
 let arrastre = null;
 addEventListener('pointerdown', (e) => { if(!ori.hay) arrastre = [e.clientX, e.clientY]; });
@@ -301,6 +305,7 @@ function cuadro(t){
   render.setRenderTarget(rtI); render.render(escena, estereo.cameraL);
   render.setRenderTarget(rtD); render.render(escena, estereo.cameraR);
   render.setRenderTarget(null); render.render(paseEsc, paseCam);
+  for(const f of trasCuadro) f([estereo.cameraL, estereo.cameraR], W / 2, H);
 }
 
 /* ── arrancar ── */
@@ -311,5 +316,15 @@ export function arrancar(){
 }
 export { THREE, escena, cabeza, rig, hub, AJ, FABRICA, guardar, aplicarAjustes, ponerMixta, tarjeta, Panel, redondo, svgImg, C, camTex, video };
 export const hayCamara = () => !!camTex;
+/* dónde cae en la PANTALLA del teléfono un punto de la imagen de un ojo, ya pasado por el lente (el pase de arriba,
+   al revés). Lo usa la pantalla de la web, que va encima sin pasar por el lente, para que sus esquinas caigan justo
+   sobre las de la pantalla 3D. u, v de 0 a 1 (v hacia arriba); der = ojo derecho. */
+export function alLente(u, v, der){
+  const off = pase.uniforms.off.value, asp = pase.uniforms.asp.value, k1 = AJ.k1, k2 = AJ.k2, esc = AJ.escala;
+  const cx = .5 + (der ? -off : off), tx = (u - .5) * asp, ty = v - .5;
+  let ex = tx, ey = ty;                                   // (e - c) con x en unidades de alto
+  for(let i = 0; i < 8; i++){ const r2 = ex * ex + ey * ey, f = (1 + k1 * r2 + k2 * r2 * r2) / esc; ex = tx / f; ey = ty / f; }
+  return [cx + ex / asp, .5 + ey];
+}
 export const focoActual = () => foco?.userData.panel?.titulo || null;
 export const enfrente = (dist, alto = 0) => { const p = new THREE.Vector3(0, alto, -dist); return p; };

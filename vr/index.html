@@ -50,8 +50,12 @@
 <script type="module">
 import * as V from './vr.js';
 import ICONOS from './iconos.js';
+import { montarTeclado } from './teclado.js';
+import { montarCine } from './cine.js';
+import { crearPantallaWeb } from './pantalla.js';
 const { THREE, B } = V;
 V.iconos(ICONOS);
+const web = crearPantallaWeb(V); window.__web = web;
 const $ = (s) => document.querySelector(s);
 
 /* ── la entrada: un toque antes de meter el teléfono al visor (el iPhone exige un toque para giroscopio, cámara y sonido) ── */
@@ -60,6 +64,7 @@ $('#iVideos').addEventListener('change', (e) => { for(const f of e.target.files)
 (function vigilarControl(){ if(!$('#eControl')) return; const p = navigator.getGamepads ? [...navigator.getGamepads()].some(Boolean) : false; $('#eControl').classList.toggle('si', p); $('#eControl').textContent = p ? 'Control listo' : 'Control'; if(!document.body.classList.contains('dentro')) requestAnimationFrame(vigilarControl); })();
 $('#bEntrar').addEventListener('click', async () => {
   $('#bEntrar').disabled = true;
+  web.desbloquear();      /* primero que nada: los videos de la web sólo suenan si ya sonaron una vez con un toque */
   try{ if(typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) await DeviceOrientationEvent.requestPermission(); }catch{}
   await V.despertarAudio();
   await V.abrirCamara();
@@ -108,46 +113,10 @@ async function montar(){
     v.elegibles = () => L; v.atras = () => V.ir('inicio'); V.registrar(nombre, v);
   }
 
-  /* CINE: la pantalla grande y tus videos abajo */
-  const cine = { grupo: new THREE.Group() };
-  const peli = document.createElement('video'); peli.playsInline = true; peli.setAttribute('playsinline', ''); peli.crossOrigin = 'anonymous';
-  const ptex = new THREE.VideoTexture(peli); ptex.colorSpace = THREE.SRGBColorSpace;
-  const pantalla = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0x111018, toneMapped: false }));
-  let dist = 3.2; const ponerPantalla = () => { const ancho = dist * 1.15, asp = peli.videoWidth ? peli.videoWidth / peli.videoHeight : 16 / 9; pantalla.scale.set(ancho, ancho / asp, 1); pantalla.position.set(0, .25, -dist); };
-  ponerPantalla(); cine.grupo.add(pantalla);
-  const marco = new V.Panel(1.6, .5, 400); marco.malla.position.set(0, .25, -3.15); cine.grupo.add(marco.malla);
-  const barra = new V.Panel(1.4, .12, 600); barra.malla.position.set(0, -1.0, -2.6); barra.malla.rotation.x = -.35; cine.grupo.add(barra.malla);
-  const pintarMarco = (txt) => { const { x, cv } = marco; x.clearRect(0, 0, cv.width, cv.height); x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '800 44px system-ui, -apple-system, sans-serif'; x.fillStyle = '#C9B6DA'; x.fillText(txt, cv.width / 2, cv.height / 2); marco.listo(); marco.malla.visible = !!txt; };
-  const pintarBarra = () => { const { x, cv } = barra; x.clearRect(0, 0, cv.width, cv.height); if(!peli.duration){ barra.listo(); return; }
-    V.redondo(x, 0, 30, cv.width, 12, 6); x.fillStyle = 'rgba(255,255,255,.25)'; x.fill(); V.redondo(x, 0, 30, cv.width * (peli.currentTime / peli.duration), 12, 6); x.fillStyle = '#AC27FF'; x.fill();
-    const mm = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
-    x.font = '700 22px system-ui, -apple-system, sans-serif'; x.fillStyle = '#F4EEF2'; x.textAlign = 'left'; x.fillText(mm(peli.currentTime), 0, 70); x.textAlign = 'right'; x.fillText(mm(peli.duration), cv.width, 70); barra.listo(); };
-  const lista = []; let viendoPeli = false;
-  const montarLista = async () => {
-    lista.splice(0).forEach((m) => cine.grupo.remove(m));
-    for(const [i, v] of VIDEOS.entries()){
-      const p = await V.tarjeta({ titulo: v.nombre.slice(0, 14), icono: 'film' }); p.malla.scale.setScalar(.6);
-      const a = (i - (VIDEOS.length - 1) / 2) * 11 * Math.PI / 180; p.malla.position.set(Math.sin(a) * 2.2, -1.0, -Math.cos(a) * 2.2); p.malla.lookAt(0, -.4, 0);
-      p.malla.userData.accion = () => { peli.src = v.url; peli.play().catch(() => {}); viendoPeli = true; pantalla.material.map = ptex; pantalla.material.color.set(0xffffff); pantalla.material.needsUpdate = true; pintarMarco(''); };
-      cine.grupo.add(p.malla); lista.push(p.malla);
-    }
-  };
-  peli.addEventListener('loadedmetadata', ponerPantalla);
-  cine.entrar = async () => { if(!lista.length) await montarLista(); pintarMarco(VIDEOS.length ? '' : 'Sin videos'); };
-  cine.salir = () => { peli.pause(); };
-  cine.elegibles = () => viendoPeli ? [] : lista;
-  cine.control = (c) => {
-    if(!viendoPeli) return {};
-    if(c.oprimido[B.X]){ peli.paused ? peli.play() : peli.pause(); V.hud(peli.paused ? 'Pausa' : 'Sigue', 1); }
-    if(c.oprimido[B.L1]) peli.currentTime = Math.max(0, peli.currentTime - 10);
-    if(c.oprimido[B.R1]) peli.currentTime = Math.min(peli.duration || 0, peli.currentTime + 10);
-    if(c.oprimido[B.ARRIBA]){ dist = Math.max(1.6, dist - .4); ponerPantalla(); }
-    if(c.oprimido[B.ABAJO]){ dist = Math.min(8, dist + .4); ponerPantalla(); }
-    return { x: true, flechas: true };
-  };
-  cine.atras = () => { if(viendoPeli){ viendoPeli = false; peli.pause(); pantalla.material.map = null; pantalla.material.color.set(0x111018); pantalla.material.needsUpdate = true; } else V.ir('inicio'); };
-  let tb = 0; cine.cuadro = (t) => { for(const m of lista) m.visible = !viendoPeli; barra.malla.visible = viendoPeli; if(viendoPeli && t - tb > .25){ tb = t; pintarBarra(); } };
-  V.registrar('cine', cine);
+  /* CINE: YouTube, películas libres, enlaces y tus videos (cine.js); lo de otros sitios va en la pantalla de la web */
+  const pedirTexto = montarTeclado(V);
+  window.__cine = await montarCine(V, { VIDEOS, pedirTexto, web });
+  V.trasCuadro.push(web.colocar);
 
   /* AJUSTES: un panel; flechas arriba/abajo eligen, izquierda/derecha cambian */
   const aj = { grupo: new THREE.Group() };
