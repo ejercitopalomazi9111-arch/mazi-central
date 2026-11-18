@@ -27,6 +27,8 @@ const desde = await p.evaluate(() => { const R = __vr.extra.rayo, P = __manos.pu
 sí(desde < .02, `el rayo sale de la punta del índice, no de entre el índice y el pulgar (a ${(desde * 100).toFixed(1)} cm)`);
 const dirY = await p.evaluate(() => { const d = __vr.extra.rayo.dir.clone().transformDirection(__vr.cabeza.matrixWorldInverse); return d.y; });
 sí(dirY > .5, `el dedo apunta hacia arriba y el rayo también (y = ${dirY.toFixed(2)})`);
-sí(await p.evaluate(() => !!__vr.focoActual()), 'el puntero da foco a una tarjeta (' + await p.evaluate(() => __vr.focoActual()) + ')');
+/* desde el 18 nov apuntar fijo también elige: el puntero da foco a una tarjeta, o ya entró a ella */
+const fo = await p.evaluate(() => __vr.focoActual() || __vr.ahora());
+sí(fo && fo !== 'inicio', 'el puntero da foco a una tarjeta o ya entró a ella (' + fo + ')');
 sí(errores.length === 0, 'sin errores' + (errores.length ? ': ' + errores.slice(0, 2).join(' | ') : ''));
 console.log(`${ok} bien · ${mal} mal`); await b.close(); process.exit(mal ? 1 : 0);

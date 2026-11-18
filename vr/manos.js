@@ -40,12 +40,16 @@ export async function iniciarManos(V){
   /* el puntero (Carlos, 18 nov: «que el punto blanco lance un rayo como cursor»): sale de entre la punta del índice y la
      del pulgar (los dos puntos blancos), en la dirección hombro → mano, como en los visores de verdad; y donde pega se
      pinta un cursor. Al juntar los dos dedos, clic */
-  const rayoGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, 0, -1)]);
-  const rayo = new THREE.Line(rayoGeo, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: .55, depthTest: false, depthWrite: false })); rayo.renderOrder = 997; rayo.visible = false; cabeza.add(rayo);
-  const cursor = new THREE.Mesh(new THREE.RingGeometry(.012, .02, 32), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthTest: false, depthWrite: false }));
-  cursor.renderOrder = 999; cursor.visible = false; cabeza.add(cursor);
-  const punto = new THREE.Mesh(new THREE.CircleGeometry(.006, 20), new THREE.MeshBasicMaterial({ color: new THREE.Color('#C77DFF'), transparent: true, depthTest: false, depthWrite: false }));
-  punto.renderOrder = 999; cursor.add(punto);
+  const rayosVis = [0, 1].map(() => {
+    const linea = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, 0, -1)]), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: .55, depthTest: false, depthWrite: false }));
+    linea.renderOrder = 997; linea.visible = false; cabeza.add(linea);
+    const cursor = new THREE.Mesh(new THREE.RingGeometry(.012, .02, 32), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthTest: false, depthWrite: false }));
+    cursor.renderOrder = 999; cursor.visible = false; cabeza.add(cursor);
+    const punto = new THREE.Mesh(new THREE.CircleGeometry(.006, 20), new THREE.MeshBasicMaterial({ color: new THREE.Color('#C77DFF'), transparent: true, depthTest: false, depthWrite: false }));
+    punto.renderOrder = 999; cursor.add(punto);
+    return { linea, cursor };
+  });
+  let principalAntes = null;
 
   let ultimoT = -1, cuadroN = 0, enfriar = 0;
   const v3 = new THREE.Vector3(), origen = new THREE.Vector3(), dir = new THREE.Vector3();
@@ -56,7 +60,7 @@ export async function iniciarManos(V){
   const d3 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
   estado.cuadro = (t) => {
     const video = V.video, ahora = performance.now();
-    if(!V.hayCamara() || !V.AJ.manos || video.readyState < 2){ manos.forEach((m) => { m.g.visible = false; }); rayo.visible = false; V.extra.rayo = null; V.extra.manos = []; return; }
+    if(!V.hayCamara() || !V.AJ.manos || video.readyState < 2){ manos.forEach((m) => { m.g.visible = false; }); rayosVis.forEach((x) => { x.linea.visible = x.cursor.visible = false; }); V.extra.rayo = null; V.extra.rayos = []; V.extra.manos = []; return; }
     /* un cuadro sí y uno no: en el iPhone el rastreo cuesta y la pantalla va a 60 */
     if(++cuadroN % 2 || video.currentTime === ultimoT) return;
     ultimoT = video.currentTime;
@@ -66,23 +70,31 @@ export async function iniciarManos(V){
     const asp = video.videoWidth / video.videoHeight, tx = Math.tan(V.campoCamara() * Math.PI / 360), ty = tx / asp;
     const voltear = V.AJ.camVoltear;
     estado.manos = r.landmarks.length; estado.gesto = '';
-    let apuntador = null; const botones = []; const visibles = [];
+    const botones = []; const visibles = [];
     /* LAS TUYAS, aunque se cuelen otras (Carlos, 18 nov: «si se cuela otra mano se me quita una de las mías»): se ven
        hasta 4 y se quedan las dos que son tuyas: las más grandes (más cerca de la cámara) y las que entran por abajo
        de la imagen (de tu cuerpo). Cada una sigue en su lugar mientras se mueva poco entre cuadros */
+    const hd = r.handedness || r.handednesses || [];
     const cand = r.landmarks.map((l, i) => { const L = voltear ? l.map((p) => ({ x: 1 - p.x, y: 1 - p.y, z: p.z })) : l;
-      return { L, W: r.worldLandmarks?.[i], s: tamano(L, asp), wx: L[0].x, wy: L[0].y }; });
+      return { L, W: r.worldLandmarks?.[i], s: tamano(L, asp), wx: L[0].x, wy: L[0].y, etiqueta: hd[i]?.[0]?.categoryName || '', seguro: hd[i]?.[0]?.score ?? 0 }; });
     cand.forEach((c) => { c.nota = c.s * 4 + c.wy * .8; });
-    const mias = cand.sort((a, b) => b.nota - a.nota).slice(0, 2), asign = [null, null];
-    manos.forEach((m, k) => { if(!m.ult) return; let mejor = null, md = .3;
-      for(const c of mias){ if(asign.includes(c)) continue; const d = Math.hypot(c.wx - m.ult.x, c.wy - m.ult.y); if(d < md){ md = d; mejor = c; } }
-      asign[k] = mejor; });
-    for(const c of mias) if(!asign.includes(c)){ const libre = asign.findIndex((x, k) => !x && !manos[k].ult) >= 0 ? asign.findIndex((x, k) => !x && !manos[k].ult) : asign.findIndex((x) => !x); if(libre >= 0) asign[libre] = c; }
+    /* CON LAS MANOS JUNTAS (Carlos, 18 nov: «si mis dos manos se acercan mucho, se rompe»): MediaPipe a veces ve la MISMA mano
+       dos veces; si dos detecciones comparten muñeca y palma, se queda la mejor */
+    const unicas = [];
+    for(const c of cand.sort((a, b) => b.nota - a.nota))
+      if(!unicas.some((u) => Math.hypot(u.wx - c.wx, u.wy - c.wy) < .035 && Math.hypot(u.L[9].x - c.L[9].x, u.L[9].y - c.L[9].y) < .035)) unicas.push(c);
+    const mias = unicas.slice(0, 2), asign = [null, null];
+    /* y se reparten por la combinación que menos se movió, contando si es izquierda o derecha: antes cada ranura agarraba la
+       primera mano que tuviera cerca, y juntas, una se robaba la de la otra y se cruzaban */
+    const costo = (c, k) => { const m = manos[k]; if(!m.ult) return .5;
+      return Math.hypot(c.wx - m.ult.x, c.wy - m.ult.y) + (m.etiqueta && c.etiqueta && c.seguro > .7 && m.etiqueta !== c.etiqueta ? .6 : 0); };
+    if(mias.length === 1){ asign[costo(mias[0], 0) <= costo(mias[0], 1) ? 0 : 1] = mias[0]; }
+    else if(mias.length === 2){ const [a, b] = mias; if(costo(a, 0) + costo(b, 1) <= costo(a, 1) + costo(b, 0)){ asign[0] = a; asign[1] = b; } else { asign[0] = b; asign[1] = a; } }
     estado.vistas = cand.length;
     manos.forEach((m, k) => {
       const c = asign[k];
-      if(!c){ m.g.visible = false; m.pellizco = false; m.palmaDesde = 0; m.suave = null; m.ult = null; m.info = null; m.fijo = null; m.hist = null; return; }
-      const L = c.L; m.ult = { x: c.wx, y: c.wy }; m.W = c.W;
+      if(!c){ m.g.visible = false; m.pellizco = false; m.palmaDesde = 0; m.suave = null; m.ult = null; m.info = null; m.fijo = null; m.hist = null; m.etiqueta = ''; m.G = null; return; }
+      const L = c.L; m.ult = { x: c.wx, y: c.wy }; m.W = c.W; if(c.etiqueta && c.seguro > .8) m.etiqueta = c.etiqueta;
       const s = tamano(L, asp), dist = Math.min(1.2, Math.max(.15, .085 / (s * 2 * tx)));
       /* EN tu mano (Carlos, 18 nov): con la mixta, la imagen de la cámara está pintada al fondo (a 20 m) y cada ojo la ve en el
          mismo lugar; los puntos se ponen a esa misma distancia y en la misma dirección, así caen justo encima de tu mano y no
@@ -95,7 +107,7 @@ export async function iniciarManos(V){
       const pos = m.lin.geometry.attributes.position; HUESOS.forEach(([a, b], i) => { pos.setXYZ(i * 2, ...m.suave[a].toArray()); pos.setXYZ(i * 2 + 1, ...m.suave[b].toArray()); }); pos.needsUpdate = true;
       m.g.visible = true;
       /* los gestos */
-      const G = leer(L, asp);
+      const G = leer(L, asp); m.G = G;
       /* el pellizco con la mano EN 3D (metros, de MediaPipe): de frente la punta del pulgar tapa a la del índice y en la
          imagen plana nunca «se tocaban» (por eso no jalaba pellizcar) */
       const W = c.W;
@@ -120,45 +132,52 @@ export async function iniciarManos(V){
       m.info = mano; visibles.push(mano);
       if(G.palma && !m.pellizco){ m.palmaDesde = m.palmaDesde || ahora; if(ahora - m.palmaDesde > 800 && ahora > enfriar){ botones[V.B.O] = true; enfriar = ahora + 1500; m.palmaDesde = 0; estado.gesto = 'palma'; } }
       else m.palmaDesde = 0;
-      if(!apuntador && (G.apunta || m.pellizco)) apuntador = m;
-      if(!apuntador) apuntador = m;
     });
     V.extra.botones = botones; V.extra.manos = visibles;
-    /* el rayo: del «hombro» (un poco abajo y del lado de esa mano) a la mano, y de ahí hacia adelante */
-    if(apuntador?.info){
-      /* DERECHO, hacia donde apunta el dedo (Carlos, 18 nov: «salía en diagonal hacia arriba»): la dirección es la del
-         propio índice (nudillo → punta) en 3D, en metros, como la da MediaPipe; sale de la punta del dedo */
-      const I = apuntador.info, Wm = apuntador.W;
-      /* sale de la PUNTA DEL ÍNDICE (Carlos, 18 nov: «apunta a un punto medio entre el índice y el pulgar»); antes salía
-         del punto entre los dos dedos, que es donde se pellizca, no donde se apunta */
-      origen.copy(I.mundo.dedo);
-      if(Wm){ const sx = voltear ? -1 : 1; dir.set(sx * (Wm[8].x - Wm[5].x), -sx * (Wm[8].y - Wm[5].y), -(Wm[8].z - Wm[5].z)).normalize().transformDirection(cabeza.matrixWorld); }
-      else { const hombro = cabeza.localToWorld(new THREE.Vector3(I.lado * .17, -.3, .05)); dir.copy(I.mundo.indice).sub(hombro).normalize(); }
-      /* AL PELLIZCAR EL RAYO SE CONGELA (Carlos, 18 nov: «cuando apunto y hago el click no sirve»): para juntar los dedos
-         el índice se dobla hacia el pulgar y el rayo se iba para otro lado justo en el clic. Mientras dura el pellizco se
-         usa hacia dónde apuntaba ~200 ms antes de que se notara el pellizco; sólo se traslada con la muñeca (arrastrar). */
-      const H = apuntador.hist || (apuntador.hist = []);
-      H.push({ t: ahora, o: origen.clone(), d: dir.clone(), w: I.mundo.muneca.clone() }); while(H.length > 2 && ahora - H[0].t > 700) H.shift();
-      if(apuntador.pellizco){
-        if(!apuntador.fijo){ const e = H.filter((x) => ahora - x.t >= 200).pop() || H[0]; apuntador.fijo = { o: e.o.clone(), d: e.d.clone(), w: e.w.clone() }; apuntador.dirSuave = e.d.clone(); }
-        origen.copy(apuntador.fijo.o).add(I.mundo.muneca.clone().sub(apuntador.fijo.w)); dir.copy(apuntador.fijo.d);
-      } else apuntador.fijo = null;
-      estado.congelado = !!apuntador.fijo; estado.punta = I.mundo.dedo.toArray();
+    /* UN RAYO POR MANO (Carlos, 18 nov: «solamente aparece un rayo a la vez; haz que sea el derecho o que los dos tengan»).
+       Cada mano lleva el suyo, desde la punta del índice y en su dirección. El principal (el que da el foco y el que llena
+       el anillo de apuntar fijo) es el de la mano que pellizca; si ninguna, el de la que apunta; si no, el que ya lo era;
+       si no, el de la mano derecha de la imagen. */
+    const rayos = [];
+    for(const m of manos){
+      if(!m.info) continue;
+      const I = m.info, Wm = m.W, o = I.mundo.dedo.clone(), d = new THREE.Vector3();
+      if(Wm){ const sx = voltear ? -1 : 1; d.set(sx * (Wm[8].x - Wm[5].x), -sx * (Wm[8].y - Wm[5].y), -(Wm[8].z - Wm[5].z)).normalize().transformDirection(cabeza.matrixWorld); }
+      else { const hombro = cabeza.localToWorld(new THREE.Vector3(I.lado * .17, -.3, .05)); d.copy(I.mundo.indice).sub(hombro).normalize(); }
+      /* AL PELLIZCAR EL RAYO SE CONGELA (Carlos, 18 nov: «cuando apunto y hago el click no sirve»): para juntar los dedos el
+         índice se dobla hacia el pulgar y el rayo se iba para otro lado justo en el clic. Mientras dura el pellizco se usa
+         hacia dónde apuntaba ~200 ms antes de que se notara; sólo se traslada con la muñeca (para arrastrar). */
+      const H = m.hist || (m.hist = []);
+      H.push({ t: ahora, o: o.clone(), d: d.clone(), w: I.mundo.muneca.clone() }); while(H.length > 2 && ahora - H[0].t > 700) H.shift();
+      if(m.pellizco){
+        if(!m.fijo){ const e = H.filter((x) => ahora - x.t >= 200).pop() || H[0]; m.fijo = { o: e.o.clone(), d: e.d.clone(), w: e.w.clone(), desde: ahora }; m.dirSuave = e.d.clone(); }
+        o.copy(m.fijo.o).add(I.mundo.muneca.clone().sub(m.fijo.w)); d.copy(m.fijo.d);
+      } else m.fijo = null;
       /* suavizado aparte: el rayo tiembla más que la mano porque amplifica el giro */
-      if(apuntador.fijo) apuntador.dirSuave.copy(dir); else if(!apuntador.dirSuave) apuntador.dirSuave = dir.clone(); else apuntador.dirSuave.lerp(dir, .45).normalize();
-      V.extra.rayo = { origen: origen.clone(), dir: apuntador.dirSuave.clone() };
-    } else { V.extra.rayo = null; rayo.visible = false; cursor.visible = false; }
+      if(m.fijo) m.dirSuave.copy(d); else if(!m.dirSuave) m.dirSuave = d.clone(); else m.dirSuave.lerp(d, .45).normalize();
+      const R = { origen: o, dir: m.dirSuave.clone(), lado: I.lado, pellizco: m.pellizco, mano: m };
+      m.rayo = R; rayos.push(R);
+    }
+    const conPellizco = rayos.filter((R) => R.mano.fijo).sort((a, b) => b.mano.fijo.desde - a.mano.fijo.desde)[0];
+    const principal = conPellizco || rayos.find((R) => R.mano.G?.apunta) || rayos.find((R) => R.mano === principalAntes) || rayos.find((R) => R.lado > 0) || rayos[0] || null;
+    principalAntes = principal?.mano || null;
+    V.extra.rayos = rayos; V.extra.rayo = principal;
+    estado.rayos = rayos.length; estado.congelado = !!principal?.mano.fijo; estado.punta = principal ? principal.mano.info.mundo.dedo.toArray() : null;
+    if(!principal){ rayosVis.forEach((x) => { x.linea.visible = x.cursor.visible = false; }); }
   };
-  /* el dibujo del rayo y del cursor va cada cuadro (el rastreo, cada dos), con el punto donde pegó (lo pone vr.js) */
+  /* el dibujo de los rayos y sus cursores va cada cuadro (el rastreo, cada dos), con el punto donde pegó (lo pone vr.js) */
   const pA = new THREE.Vector3(), pB = new THREE.Vector3();
   estado.dibujar = () => {
-    const R = V.extra.rayo; if(!R){ rayo.visible = cursor.visible = false; return; }
-    pA.copy(R.origen); pB.copy(R.hit || pB.copy(R.dir).multiplyScalar(4).add(R.origen));
-    cabeza.worldToLocal(pA); cabeza.worldToLocal(pB);
-    rayoGeo.attributes.position.setXYZ(0, pA.x, pA.y, pA.z); rayoGeo.attributes.position.setXYZ(1, pB.x, pB.y, pB.z); rayoGeo.attributes.position.needsUpdate = true;
-    rayo.visible = true;
-    cursor.visible = !!R.hit; if(R.hit){ cursor.position.copy(pB); cursor.scale.setScalar(Math.max(.4, -pB.z)); }
-    const apretado = (V.extra.manos || []).some((m) => m.pellizco); cursor.material.color.set(apretado ? 0xC77DFF : 0xffffff);
+    const L = V.extra.rayos || [];
+    rayosVis.forEach((x, i) => {
+      const R = L[i]; if(!R){ x.linea.visible = x.cursor.visible = false; return; }
+      pA.copy(R.origen); pB.copy(R.hit || pB.copy(R.dir).multiplyScalar(4).add(R.origen));
+      cabeza.worldToLocal(pA); cabeza.worldToLocal(pB);
+      const P = x.linea.geometry.attributes.position; P.setXYZ(0, pA.x, pA.y, pA.z); P.setXYZ(1, pB.x, pB.y, pB.z); P.needsUpdate = true;
+      x.linea.visible = true; x.linea.material.opacity = R === V.extra.rayo ? .6 : .3;
+      x.cursor.visible = !!R.hit; if(R.hit){ x.cursor.position.copy(pB); x.cursor.scale.setScalar(Math.max(.4, -pB.z)); }
+      x.cursor.material.color.set(R.pellizco ? 0xC77DFF : 0xffffff);
+    });
   };
   return estado;
 }

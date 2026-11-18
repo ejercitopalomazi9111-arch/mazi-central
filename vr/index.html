@@ -41,9 +41,9 @@
   <div class="caja">
     <img src="../marca/paloma-2026/logo-icono.svg" alt="">
     <h1>Mazi <em>VR</em></h1>
-    <div class="estado"><span id="eControl">Control</span><span id="eVideos">0 videos</span><span id="eGuardado">Sin internet</span></div>
+    <div class="estado"><span id="eControl">Control</span><span id="eVideos">Archivos</span><span id="eGuardado">Sin internet</span></div>
     <button class="boton" id="bEntrar" type="button">Entrar</button>
-    <label class="boton sec" style="display:inline-grid; place-items:center">Videos<input id="iVideos" type="file" accept="video/*" multiple hidden></label>
+    <label class="boton sec" style="display:inline-grid; place-items:center">Archivos<input id="iVideos" type="file" accept="video/*,audio/*" multiple hidden></label>
   </div>
 </div>
 <div id="gira">Gira el teléfono</div>
@@ -55,15 +55,20 @@ import { montarCine } from './cine.js';
 import { montarLector } from './lector.js';
 import { montarSables } from './sables.js';
 import { montarObjetos } from './objetos.js';
+import { montarMusica } from './musica.js';
 import { crearPantallaWeb } from './pantalla.js';
+import { crearAgarre, crearMoverConControl } from './agarre.js';
 const { THREE, B } = V;
 V.iconos(ICONOS);
 const web = crearPantallaWeb(V); window.__web = web;
 const $ = (s) => document.querySelector(s);
 
 /* ── la entrada: un toque antes de meter el teléfono al visor (el iPhone exige un toque para giroscopio, cámara y sonido) ── */
-const VIDEOS = [];
-$('#iVideos').addEventListener('change', (e) => { for(const f of e.target.files) VIDEOS.push({ nombre: f.name.replace(/\.[^.]+$/, ''), url: URL.createObjectURL(f) }); $('#eVideos').textContent = `${VIDEOS.length} ${VIDEOS.length === 1 ? 'video' : 'videos'}`; $('#eVideos').classList.toggle('si', VIDEOS.length > 0); });
+const VIDEOS = [], CANCIONES = [];
+/* videos para el Cine y canciones para Música, del mismo botón */
+$('#iVideos').addEventListener('change', (e) => { for(const f of e.target.files){ const it = { nombre: f.name.replace(/\.[^.]+$/, ''), url: URL.createObjectURL(f) }; (/^audio\//.test(f.type) || /\.(mp3|m4a|aac|wav|ogg|flac)$/i.test(f.name) ? CANCIONES : VIDEOS).push(it); }
+  $('#eVideos').textContent = [VIDEOS.length && `${VIDEOS.length} ${VIDEOS.length === 1 ? 'video' : 'videos'}`, CANCIONES.length && `${CANCIONES.length} ${CANCIONES.length === 1 ? 'canción' : 'canciones'}`].filter(Boolean).join(' · ') || 'Archivos';
+  $('#eVideos').classList.toggle('si', VIDEOS.length + CANCIONES.length > 0); });
 (function vigilarControl(){ if(!$('#eControl')) return; const p = V.elegirPad(); $('#eControl').classList.toggle('si', !!p); $('#eControl').textContent = p ? V.nombrePad(p) : 'Control: pica un botón'; if(!document.body.classList.contains('dentro')) requestAnimationFrame(vigilarControl); })();
 /* el visor se arma MIENTRAS se ve esta pantalla: al tocar Entrar ya está listo (antes se armaba después del toque) */
 const armado = montar();
@@ -81,7 +86,7 @@ $('#bEntrar').addEventListener('click', async () => {
   /* Android: a pantalla completa y acostado (si no, se queda la barra del navegador y la vista sale como «pantalla
      individual»). En el iPhone no existe para páginas: ahí se usa «Agregar a inicio» */
   try{ const p = document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); p?.then(() => screen.orientation?.lock?.('landscape')).catch(() => {}); }catch{}
-  web.desbloquear();      /* los videos de la web sólo suenan si ya sonaron una vez con un toque */
+  web.desbloquear(); window.__musica?.desbloquear?.();      /* los videos de la web sólo suenan si ya sonaron una vez con un toque */
   V.despertarAudio();
   try{ if(typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) await DeviceOrientationEvent.requestPermission(); }catch{}
   /* la cámara se abre por detrás: el visor no la espera (la realidad mixta y las manos se prenden cuando llega) */
@@ -97,8 +102,44 @@ $('#bEntrar').addEventListener('click', async () => {
 });
 
 /* ── las vistas ── */
+/* EL MENÚ SE AGRANDA, SE ALEJA Y SE MUEVE (Carlos, 18 nov: «permite escalar y alejar los elementos del menú principal»).
+   Igual que las pantallas: con las dos manos pellizcando se lleva a donde quieras y se agranda o achica; con el control,
+   mantén L2: stick derecho lo mueve, stick izquierdo cambia el tamaño, flechas arriba/abajo lo acercan o alejan.
+   El tamaño y la distancia se guardan; Cuadro (recentrar) sólo lo regresa enfrente. */
+function menuAjustable(v, piezas){
+  const tam = () => V.AJ.menuTam || 1, dist = () => V.AJ.menuDist || 1;
+  let puesto = '';
+  /* más grandes, más separadas (si no, se enciman): cada pieza guarda su ángulo y su radio de origen y se abre el arco */
+  const poner = () => { const k = tam() + '|' + dist(); if(k === puesto) return; puesto = k;
+    const abre = Math.max(.75, Math.min(2.2, tam() / dist()));
+    v.grupo.scale.setScalar(dist());
+    for(const p of piezas()){
+      if(!p.userData.base) p.userData.base = { a: Math.atan2(p.position.x, -p.position.z), r: Math.hypot(p.position.x, p.position.z), y: p.position.y };
+      const { a, r, y } = p.userData.base, aa = a * abre;
+      p.position.set(Math.sin(aa) * r, y * Math.max(1, abre * .9), -Math.cos(aa) * r); p.lookAt(v.grupo.localToWorld(new THREE.Vector3(0, p.position.y, 0)));
+      p.scale.setScalar(tam() / dist()); } };
+  let guardarEn = 0; const guardarLuego = () => { clearTimeout(guardarEn); guardarEn = setTimeout(V.guardar, 600); };
+  const setTam = (e) => { V.AJ.menuTam = +e.toFixed(3); poner(); guardarLuego(); };
+  const agarrar = crearAgarre(V, { soporte: v.grupo, getEscala: tam, setEscala: setTam, min: .5, max: 2.2 });
+  const mover = crearMoverConControl(V, { soporte: v.grupo, getEscala: tam, setEscala: setTam, min: .5, max: 2.2 });
+  const cuadroAntes = v.cuadro, controlAntes = v.control;
+  v.cuadro = (t, dt) => { poner(); agarrar(); cuadroAntes?.(t, dt); };
+  v.control = (c, dt) => {
+    if(mover(c, dt)){
+      const d = (c.apretado(V.B.ARRIBA) ? -1 : 0) + (c.apretado(V.B.ABAJO) ? 1 : 0);
+      if(d){ V.AJ.menuDist = Math.max(.6, Math.min(2.2, dist() * Math.exp(d * .9 * (dt || 1 / 60)))); poner(); guardarLuego(); }
+      return { x: true, flechas: true };
+    }
+    return controlAntes?.(c, dt) || {};
+  };
+  Object.defineProperty(v, 'ocupaStick', { get: () => V.control.apretado(V.B.L2), configurable: true });
+  Object.defineProperty(v, 'ocupaGiro', { get: () => V.control.apretado(V.B.L2), configurable: true });
+  v.alRecentrar = () => v.grupo.quaternion.identity();
+  poner();
+}
+
 async function montar(){
-  /* INICIO: seis tarjetas en arco, con «Leer» justo enfrente (la mira nunca cae en un hueco) */
+  /* INICIO: siete tarjetas en arco, con «Leer» justo enfrente (la mira nunca cae en un hueco) */
   const inicio = { grupo: new THREE.Group() };
   const titulo = new V.Panel(1.6, .22, 400); titulo.malla.position.set(0, .6, -1.95); inicio.grupo.add(titulo.malla);
   const pintarTitulo = () => { const { x, cv } = titulo; x.clearRect(0, 0, cv.width, cv.height); x.textAlign = 'center'; x.textBaseline = 'middle';
@@ -106,6 +147,7 @@ async function montar(){
     x.font = '700 30px system-ui, -apple-system, sans-serif'; x.fillStyle = '#C9B6DA'; x.fillText(new Date().toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' }), cv.width / 2, 82); titulo.listo(); };
   pintarTitulo(); setInterval(pintarTitulo, 15000);
   const T = [
+    ['Música', 'music', () => V.ir('musica')],
     ['Juegos', 'gamepad-2', () => V.ir('juegos')],
     ['Cine', 'clapperboard', () => V.ir('cine')],
     ['Leer', 'book-open', () => V.ir('leer')],
@@ -115,12 +157,13 @@ async function montar(){
   ];
   /* lo que todavía no existe sale apagado y dice «Pronto»: ya no mete a una pantalla vacía */
   const tarjetas = await Promise.all(T.map(async ([t, ic, fn, sub], i) => {
-    const p = await V.tarjeta({ titulo: t, icono: ic, sub: sub || '', apagada: !!sub }); const a = (i - 2) * 21 * Math.PI / 180;
+    const p = await V.tarjeta({ titulo: t, icono: ic, sub: sub || '', apagada: !!sub }); const a = (i - 3) * 21 * Math.PI / 180;
     p.malla.position.set(Math.sin(a) * 1.9, 0, -Math.cos(a) * 1.9); p.malla.lookAt(0, 0, 0); p.malla.userData.accion = fn;
     inicio.grupo.add(p.malla); return p.malla;
   }));
   inicio.elegibles = () => tarjetas;
   inicio.atras = () => {};
+  menuAjustable(inicio, () => [titulo.malla, ...tarjetas]);
   V.registrar('inicio', inicio);
 
   /* JUEGOS y LA SALA: lo que viene (fase 2 y 3 en PLAN.md) */
@@ -131,7 +174,7 @@ async function montar(){
       p.malla.position.set(Math.sin(a) * 2.2, 0, -Math.cos(a) * 2.2); p.malla.lookAt(0, 0, 0); p.malla.userData.accion = fn || (() => V.hud('Pronto'));
       v.grupo.add(p.malla); L.push(p.malla);
     }
-    v.elegibles = () => L; v.atras = () => V.ir('inicio'); V.registrar(nombre, v);
+    v.elegibles = () => L; v.atras = () => V.ir('inicio'); menuAjustable(v, () => L); V.registrar(nombre, v);
   }
 
   /* CINE: YouTube, películas libres, enlaces y tus videos (cine.js); lo de otros sitios va en la pantalla de la web */
@@ -147,6 +190,9 @@ async function montar(){
 
   /* OBJETOS: agarrar cajas y figuras, y una pistola que dispara doblando el índice (objetos.js) */
   window.__objetos = montarObjetos(V);
+
+  /* MÚSICA: buscar canciones, radio de México y las del teléfono; sigue sonando en todo el visor (musica.js) */
+  window.__musica = montarMusica(V, { pedirTexto, CANCIONES });
 
   /* AJUSTES: un panel; flechas arriba/abajo eligen, izquierda/derecha cambian */
   const aj = { grupo: new THREE.Group() };

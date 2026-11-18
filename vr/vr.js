@@ -18,7 +18,7 @@
 import * as THREE from 'three';
 
 /* ── ajustes: se guardan en el teléfono (sólo comodidad; si se borran, salen los de fábrica) ── */
-const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true };
+const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true, menuTam: 1, menuDist: 1 };
 const AJ = { ...FABRICA };
 try{ Object.assign(AJ, JSON.parse(localStorage.getItem('mazivr.ajustes') || '{}')); }catch{}
 const guardar = () => { try{ localStorage.setItem('mazivr.ajustes', JSON.stringify(AJ)); }catch{} };
@@ -373,9 +373,13 @@ function cuadro(t){
   const L = elegibles(); let viendo = null;
   if(mirar.activo && L.length){
     const flechasRecientes = performance.now() - focoPorFlechas < 4000 && cabeza.quaternion.angleTo(ultimoGiro) < .12;
-    if(extra.rayo) ray.set(extra.rayo.origen, extra.rayo.dir); else ray.setFromCamera(centro, cabeza);
-    const h = ray.intersectObjects(L, false)[0];
-    if(extra.rayo){ extra.rayo.hit = h ? h.point.clone() : null; extra.sobreBoton = !!h; }
+    /* cada mano con su rayo: cada uno sabe a qué le pega; el foco lo da el principal (o la mira, sin manos) */
+    for(const R of extra.rayos || []){ ray.set(R.origen, R.dir); const hh = ray.intersectObjects(L, false)[0]; R.hit = hh ? hh.point.clone() : null; R.objeto = hh?.object || null; }
+    let h;
+    if(extra.rayo){ h = extra.rayo.objeto !== undefined ? (extra.rayo.objeto ? { object: extra.rayo.objeto } : null) : (ray.set(extra.rayo.origen, extra.rayo.dir), ray.intersectObjects(L, false)[0]);
+      if(h && !extra.rayo.hit && h.point) extra.rayo.hit = h.point.clone(); }
+    else { ray.setFromCamera(centro, cabeza); h = ray.intersectObjects(L, false)[0]; }
+    extra.sobreBoton = !!(extra.rayos || []).some((R) => R.objeto) || !!(extra.rayo && h);
     if(h && (!flechasRecientes || extra.rayo)){ viendo = h.object; darFoco(viendo); }
   }
   if(!extra.rayo) extra.sobreBoton = false;
@@ -383,11 +387,19 @@ function cuadro(t){
      brincaba de la tarjeta (Carlos, 18 nov: «haz que pellizcar sea un click») */
   const ahoraMs = performance.now(); historialMira.push([ahoraMs, viendo]); while(historialMira.length > 30) historialMira.shift();
   const xMano = !!extra.botones?.[B.X], clicMano = xMano && !xManoAntes; xManoAntes = xMano;
-  if(clicMano && !usado.x && extra.rayo){ const antes = historialMira.find(([t, o]) => ahoraMs - t <= 260 && ahoraMs - t >= 90 && o) || historialMira.findLast?.(([, o]) => o); const o = antes?.[1] || foco; if(o){ darFoco(o); activar(o); } usado.x = true; }
-  /* mirar fijo 1.6 s también elige (para cuando no tienes el control a la mano) */
-  /* sólo sin control: con el control se elige con X y mirar fijo estorba */
-  const fijo = !padVisto && !extra.rayo && !mirarBloqueado && viendo && viendo === foco ? Math.max(0, (performance.now() - focoDesde) / 1600) : 0;
+  if(clicMano && !usado.x && extra.rayo){
+    /* el clic va a lo que apunta LA MANO QUE PELLIZCA (su rayo ya está congelado en hacia dónde apuntaba antes de juntar los dedos) */
+    const quien = (extra.rayos || []).find((R) => R.pellizco && R.objeto);
+    const antes = quien ? null : historialMira.find(([t, o]) => ahoraMs - t <= 260 && ahoraMs - t >= 90 && o) || historialMira.findLast?.(([, o]) => o);
+    const o = quien?.objeto || antes?.[1] || foco; if(o){ darFoco(o); activar(o); } usado.x = true; }
+  /* MIRAR O APUNTAR FIJO 1.6 s ELIGE, SIEMPRE (Carlos, 18 nov: «si apunto hacia un elemento unos segundos, que se clique, además
+     del pellizcar; y que se pueda seguir pulsando sólo quedándote viendo»): antes se apagaba con el control conectado o con
+     las manos a la vista. Con las manos cuenta a lo que apunta el rayo principal; sin manos, a lo que ve la mira. */
+  const fijo = !mirarBloqueado && viendo && viendo === foco && !(extra.rayo && extra.rayo.pellizco) ? Math.max(0, (performance.now() - focoDesde) / 1600) : 0;
   anillo.visible = fijo > .05;
+  /* el anillo se llena donde estás apuntando: en el cursor del rayo, o en la mira */
+  if(anillo.visible && extra.rayo?.hit){ const pl = cabeza.worldToLocal(extra.rayo.hit.clone()); const k = Math.max(.3, -pl.z); anillo.position.copy(pl).multiplyScalar(.98); anillo.scale.setScalar(k); }
+  else { anillo.position.set(0, 0, -1); anillo.scale.setScalar(1); }
   if(anillo.visible){ anillo.geometry.dispose(); anillo.geometry = new THREE.RingGeometry(.016, .021, 48, 1, Math.PI / 2, -Math.min(1, fijo) * Math.PI * 2); }
   fijoAhora = fijo;
   if(fijo >= 1) activar(viendo);

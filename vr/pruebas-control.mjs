@@ -25,5 +25,17 @@ await boton(0); await p.waitForTimeout(300);
 sí(await p.evaluate(() => __vr.ahora()) !== 'inicio', `X entra a «${f1}» (${await p.evaluate(() => __vr.ahora())})`);
 await boton(1); await p.waitForTimeout(300);
 sí(await p.evaluate(() => __vr.ahora()) === 'inicio', 'Círculo regresa');
+/* el menú se agranda y se aleja con L2 (stick izquierdo = tamaño, flecha arriba = alejar) */
+const t0 = await p.evaluate(() => [__vr.AJ.menuTam || 1, __vr.AJ.menuDist || 1]);
+await p.evaluate(() => { window.__pad.buttons[6] = { pressed: true, value: 1 }; window.__pad.axes[1] = -1; }); await p.waitForTimeout(1500);
+await p.evaluate(() => { window.__pad.axes[1] = 0; window.__pad.buttons[12] = { pressed: true, value: 1 }; }); await p.waitForTimeout(1200);
+await p.evaluate(() => { window.__pad.buttons[12] = { pressed: false, value: 0 }; window.__pad.buttons[6] = { pressed: false, value: 0 }; }); await p.waitForTimeout(300);
+const t1 = await p.evaluate(() => [__vr.AJ.menuTam, __vr.AJ.menuDist]);
+sí(t1[0] > t0[0] * 1.2 && t1[1] < t0[1], `L2 + stick agranda el menú (×${t1[0]}) y la flecha lo acerca (×${t1[1]})`);
+sí(await p.evaluate(() => __vr.ahora()) === 'inicio', 'y mientras, no entra a nada');
+/* con el control conectado, mirar fijo también elige (antes sólo X) */
+await p.evaluate(() => { __vr.AJ.menuTam = 1; __vr.AJ.menuDist = 1; });
+let entro = null; for(let i = 0; i < 25 && !entro; i++){ await p.waitForTimeout(200); const a = await p.evaluate(() => __vr.ahora()); if(a !== 'inicio') entro = a; }
+sí(!!entro, `mirar fijo elige aunque haya control (entró a «${entro}»)`);
 sí(errores.length === 0, 'sin errores' + (errores.length ? ': ' + errores.slice(0, 3).join(' | ') : ''));
 console.log(`${ok} bien · ${mal} mal`); await b.close(); process.exit(mal ? 1 : 0);
