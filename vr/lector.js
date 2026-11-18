@@ -303,12 +303,13 @@ export async function montarLector(V, { pedirTexto } = {}){
   });
 
   /* ── la ventana de lectura ── */
-  let dist = 1.25; const ANCHO = .9, ALTO = 1.3, ESC = ANCHO / COL, VEN = ALTO / ESC;   // VEN: el alto de la ventana en px de la columna
+  let dist = 1.5; const ANCHO = .9, ALTO = 1.3, ESC = ANCHO / COL, VEN = ALTO / ESC;   // VEN: el alto de la ventana en px de la columna
   /* la ventana cuelga de un soporte con centro en tu cabeza: con las dos manos se gira a donde quieras (arriba de ti
      para leer acostado, de lado, en diagonal) y se agranda o achica (agarre.js) */
   const soporte = new THREE.Group(); lector.grupo.add(soporte);
   const ventana = new THREE.Group(); ventana.visible = false; soporte.add(ventana);
   let tam = 1; const wq = new THREE.Quaternion(), arriba = new THREE.Vector3(), wp2 = new THREE.Vector3();
+  lector.alRecentrar = () => { soporte.quaternion.identity(); tam = 1; ventana.scale.setScalar(1); };
   const agarrar = crearAgarre(V, { soporte, getEscala: () => tam, setEscala: (e) => { tam = e; ventana.scale.setScalar(e); }, min: .4, max: 3 });
   const marco = new THREE.Mesh(new THREE.PlaneGeometry(ANCHO + .03, ALTO + .03), new THREE.MeshBasicMaterial({ color: 0x0b0814, toneMapped: false }));
   marco.position.z = -.004; ventana.add(marco);

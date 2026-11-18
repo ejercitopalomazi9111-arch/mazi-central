@@ -28,7 +28,11 @@ e = await p.evaluate(() => __sables.estado());
 sí(e.aciertos + e.fallas > 0, `el sable corta o se le pasan bloques (${e.aciertos} cortes bien, ${e.fallas} mal o pasados, ${e.puntos} puntos)`);
 sí(e.aciertos > 0, `al menos un corte bueno (${e.aciertos})`);
 await p.screenshot({ path: CAPS + '/vr-sables-2.png' });
-await p.evaluate(() => __vr.ir('juegos')); await p.waitForTimeout(300);
-sí(await p.evaluate(() => __vr.ahora()) === 'juegos', 'Círculo/Atrás regresa a Juegos');
+/* salir con Círculo DE VERDAD (por el control, como Carlos): los sables se tienen que apagar y quedarse apagados */
+sí((await p.evaluate(() => __sables.estado())).prendidos === 2, 'con control se ven los dos sables');
+await p.evaluate(() => { window.__pad.buttons[1] = { pressed: true, value: 1 }; }); await p.waitForTimeout(120);
+await p.evaluate(() => { window.__pad.buttons[1] = { pressed: false, value: 0 }; }); await p.waitForTimeout(400);
+sí(await p.evaluate(() => __vr.ahora()) === 'juegos', 'Círculo regresa a Juegos');
+sí((await p.evaluate(() => __sables.estado())).prendidos === 0, 'y ningún sable se queda flotando en el menú');
 sí(errores.length === 0, 'sin errores' + (errores.length ? ': ' + errores.slice(0, 3).join(' | ') : ''));
 console.log(`${ok} bien · ${mal} mal`); await b.close(); process.exit(mal ? 1 : 0);

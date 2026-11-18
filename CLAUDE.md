@@ -629,6 +629,9 @@ dependemos.
 
    | un tablero que se vuelve a pintar entero en cada toque se ve igual que antes | se ve igual EN LA CAPTURA; en el iPhone cada `<img>` nueva se pinta en blanco un instante antes de cargar, aunque venga de la caché | el ajedrez de CARYMO parpadeaba con cada toque y cada jugada, y las piezas se teletransportaban. Ahora el tablero se crea una vez, cada pieza es el mismo nodo toda la partida y se desliza con `animate()` (`actualizar8` en `carymo/juegos/juegos.js`); regla 13 |
 
+   | si `ir()` llama al `salir()` de la pantalla vieja, esa pantalla ya no corre | el bucle del visor guardaba la vista al empezar el cuadro (`const v`) y le daba su `cuadro()` DESPUÉS de que Círculo la cambiara: Sables volvía a prender su sable justo tras apagarlo | un sable morado gigante flotando en el menú de Mazi VR, en cada captura de Carlos, y él lo leyó como «el rastreo de manos es una cagada». El turno del cuadro se le da a `vistas[vista]` de ese momento; `vr/pruebas-sables.mjs` sale con Círculo de verdad |
+   | el primer control de `navigator.getGamepads()` es el que conectaste | hay Android que reportan como control el lector de huella o los botones de volumen; el primero de la lista puede ser ése | «tengo el control pero no detecta ni pulsaciones ni al control». Se elige el que tenga 10 botones o más, mapa estándar y uso reciente (`elegirPad` en `vr/vr.js`); `vr/pruebas-control.mjs` pone uno falso primero. **No confirmado en su teléfono todavía** |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 13. **CERO PARPADEO. Nunca, jamás, de los jamases** (Carlos, 14 nov, por el ajedrez de CARYMO). Tocar algo o que

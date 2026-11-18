@@ -169,7 +169,7 @@ export function montarSables(V){
   sables.elegibles = () => (estado !== 'jugando' && otra.malla ? [otra.malla] : []);
   Object.defineProperty(sables, 'ocupaStick', { get: () => estado === 'jugando' });
   Object.defineProperty(sables, 'ocupaGiro', { get: () => estado === 'jugando' });
-  sables.estado = () => ({ estado, puntos, combo, aciertos, fallas, bloques: bloques.length });
+  sables.estado = () => ({ prendidos: +hojas['-1'].visible + +hojas['1'].visible, estado, puntos, combo, aciertos, fallas, bloques: bloques.length });
   sables.empezar = empezar;
   V.registrar('sables', sables);
   return sables;
