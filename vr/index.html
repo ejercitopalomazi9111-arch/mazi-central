@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Mazi VR</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mazi VR">
+<meta name="theme-color" content="#0B0513">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="../marca/paloma-2026/icono-512.png">
+<!-- MAZI VR (Carlos, 18 nov): su propio «Quest» con un iPhone 13 dentro de un visor sin pantalla y un control
+     de PlayStation. Fase 1: dos ojos con lente, giroscopio, realidad mixta con la cámara, el inicio, el cine con
+     sus videos y los ajustes, todo con el control. El plan entero y lo que el iPhone no deja: PLAN.md -->
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+<style>
+  :root{ --fondo:#0B0513; --sup:#1E1428; --acento:#AC27FF; --rosa:#C77DFF; --texto:#F4EEF2; --suave:#C9B6DA }
+  *{ box-sizing:border-box; margin:0 }
+  html, body{ height:100%; background:#000; color:var(--texto); font-family:system-ui, -apple-system, sans-serif; overflow:hidden; overscroll-behavior:none; touch-action:none; -webkit-user-select:none; user-select:none }
+  #gl{ position:fixed; inset:0; width:100%; height:100%; display:block }
+  #entrada{ position:fixed; inset:0; z-index:5; display:grid; place-items:center; padding:24px; text-align:center;
+    background:radial-gradient(120% 90% at 50% 30%, #2A1142, #170A26 55%, #0B0513) }
+  #entrada .caja{ display:grid; gap:18px; justify-items:center; max-width:420px; width:100% }
+  #entrada img{ width:96px; height:96px }
+  #entrada h1{ font-size:40px; font-weight:900; letter-spacing:-.03em }
+  #entrada h1 em{ font-style:normal; color:var(--rosa) }
+  .boton{ appearance:none; border:0; border-radius:99px; font:inherit; font-weight:800; font-size:20px; min-height:56px; padding:0 34px; cursor:pointer; color:#fff; background:var(--acento) }
+  .boton.sec{ background:var(--sup); box-shadow:inset 0 0 0 2px #4A2A6E; font-size:17px; min-height:48px }
+  .estado{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center }
+  .estado span{ padding:8px 14px; border-radius:99px; background:var(--sup); box-shadow:inset 0 0 0 2px #3C2652; font-size:15px; font-weight:700; color:var(--suave) }
+  .estado span.si{ color:#fff; box-shadow:inset 0 0 0 2px var(--acento) }
+  #gira{ position:fixed; inset:0; z-index:6; display:none; place-items:center; background:#0B0513; font-size:22px; font-weight:800; text-align:center; padding:30px }
+  @media (orientation: portrait){ body.dentro #gira{ display:grid } }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="entrada">
+  <div class="caja">
+    <img src="../marca/paloma-2026/logo-icono.svg" alt="">
+    <h1>Mazi <em>VR</em></h1>
+    <div class="estado"><span id="eControl">Control</span><span id="eVideos">0 videos</span></div>
+    <button class="boton" id="bEntrar" type="button">Entrar</button>
+    <label class="boton sec" style="display:inline-grid; place-items:center">Videos<input id="iVideos" type="file" accept="video/*" multiple hidden></label>
+  </div>
+</div>
+<div id="gira">Gira el teléfono</div>
+<script type="module">
+import * as V from './vr.js';
+import ICONOS from './iconos.js';
+const { THREE, B } = V;
+V.iconos(ICONOS);
+const $ = (s) => document.querySelector(s);
+
+/* ── la entrada: un toque antes de meter el teléfono al visor (el iPhone exige un toque para giroscopio, cámara y sonido) ── */
+const VIDEOS = [];
+$('#iVideos').addEventListener('change', (e) => { for(const f of e.target.files) VIDEOS.push({ nombre: f.name.replace(/\.[^.]+$/, ''), url: URL.createObjectURL(f) }); $('#eVideos').textContent = `${VIDEOS.length} ${VIDEOS.length === 1 ? 'video' : 'videos'}`; $('#eVideos').classList.toggle('si', VIDEOS.length > 0); });
+(function vigilarControl(){ if(!$('#eControl')) return; const p = navigator.getGamepads ? [...navigator.getGamepads()].some(Boolean) : false; $('#eControl').classList.toggle('si', p); $('#eControl').textContent = p ? 'Control listo' : 'Control'; if(!document.body.classList.contains('dentro')) requestAnimationFrame(vigilarControl); })();
+$('#bEntrar').addEventListener('click', async () => {
+  $('#bEntrar').disabled = true;
+  try{ if(typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) await DeviceOrientationEvent.requestPermission(); }catch{}
+  await V.despertarAudio();
+  await V.abrirCamara();
+  try{ await navigator.wakeLock?.request('screen'); }catch{}
+  document.addEventListener('visibilitychange', async () => { if(document.visibilityState === 'visible') try{ await navigator.wakeLock?.request('screen'); }catch{} });
+  $('#entrada').remove(); document.body.classList.add('dentro');
+  await montar(); V.arrancar(); V.ir('inicio'); V.recentrar(); V.hud('Bienvenido', 2);
+});
+
+/* ── las vistas ── */
+async function montar(){
+  /* INICIO: cinco tarjetas en arco a 2.2 m */
+  const inicio = { grupo: new THREE.Group() };
+  const titulo = new V.Panel(1.6, .22, 400); titulo.malla.position.set(0, .6, -1.95); inicio.grupo.add(titulo.malla);
+  const pintarTitulo = () => { const { x, cv } = titulo; x.clearRect(0, 0, cv.width, cv.height); x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.font = '900 52px system-ui, -apple-system, sans-serif'; x.fillStyle = '#F4EEF2'; x.fillText('Mazi', cv.width / 2 - 60, 44); x.fillStyle = '#C77DFF'; x.fillText('VR', cv.width / 2 + 70, 44);
+    x.font = '700 30px system-ui, -apple-system, sans-serif'; x.fillStyle = '#C9B6DA'; x.fillText(new Date().toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' }), cv.width / 2, 82); titulo.listo(); };
+  pintarTitulo(); setInterval(pintarTitulo, 15000);
+  const T = [
+    ['Juegos', 'gamepad-2', () => V.ir('juegos')],
+    ['Cine', 'clapperboard', () => V.ir('cine')],
+    ['La Sala', 'users', () => V.ir('sala')],
+    ['Mixta', 'scan-eye', () => { if(!V.hayCamara()){ V.hud('Sin cámara'); return; } V.ponerMixta(!V.AJ.mixta); V.hud(V.AJ.mixta ? 'Realidad mixta' : 'Realidad virtual'); }],
+    ['Ajustes', 'settings', () => V.ir('ajustes')],
+  ];
+  const tarjetas = [];
+  for(const [i, [t, ic, fn]] of T.entries()){
+    const p = await V.tarjeta({ titulo: t, icono: ic }); const a = (i - 2) * 22 * Math.PI / 180;
+    p.malla.position.set(Math.sin(a) * 1.9, 0, -Math.cos(a) * 1.9); p.malla.lookAt(0, 0, 0); p.malla.userData.accion = fn;
+    inicio.grupo.add(p.malla); tarjetas.push(p.malla);
+  }
+  inicio.elegibles = () => tarjetas;
+  inicio.atras = () => {};
+  V.registrar('inicio', inicio);
+
+  /* JUEGOS y LA SALA: lo que viene (fase 2 y 3 en PLAN.md) */
+  for(const [nombre, items] of [['juegos', [['Sables', 'swords', 'Pronto'], ['VS Tiles', 'music', 'Pronto']]], ['sala', [['La Sala', 'users', 'Pronto']]]]){
+    const v = { grupo: new THREE.Group() }; const L = [];
+    for(const [i, [t, ic, sub]] of items.entries()){
+      const p = await V.tarjeta({ titulo: t, icono: ic, sub, apagada: true }); const a = (i - (items.length - 1) / 2) * 20 * Math.PI / 180;
+      p.malla.position.set(Math.sin(a) * 2.2, 0, -Math.cos(a) * 2.2); p.malla.lookAt(0, 0, 0); p.malla.userData.accion = () => V.hud('Pronto');
+      v.grupo.add(p.malla); L.push(p.malla);
+    }
+    v.elegibles = () => L; v.atras = () => V.ir('inicio'); V.registrar(nombre, v);
+  }
+
+  /* CINE: la pantalla grande y tus videos abajo */
+  const cine = { grupo: new THREE.Group() };
+  const peli = document.createElement('video'); peli.playsInline = true; peli.setAttribute('playsinline', ''); peli.crossOrigin = 'anonymous';
+  const ptex = new THREE.VideoTexture(peli); ptex.colorSpace = THREE.SRGBColorSpace;
+  const pantalla = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0x111018, toneMapped: false }));
+  let dist = 3.2; const ponerPantalla = () => { const ancho = dist * 1.15, asp = peli.videoWidth ? peli.videoWidth / peli.videoHeight : 16 / 9; pantalla.scale.set(ancho, ancho / asp, 1); pantalla.position.set(0, .25, -dist); };
+  ponerPantalla(); cine.grupo.add(pantalla);
+  const marco = new V.Panel(1.6, .5, 400); marco.malla.position.set(0, .25, -3.15); cine.grupo.add(marco.malla);
+  const barra = new V.Panel(1.4, .12, 600); barra.malla.position.set(0, -1.0, -2.6); barra.malla.rotation.x = -.35; cine.grupo.add(barra.malla);
+  const pintarMarco = (txt) => { const { x, cv } = marco; x.clearRect(0, 0, cv.width, cv.height); x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '800 44px system-ui, -apple-system, sans-serif'; x.fillStyle = '#C9B6DA'; x.fillText(txt, cv.width / 2, cv.height / 2); marco.listo(); marco.malla.visible = !!txt; };
+  const pintarBarra = () => { const { x, cv } = barra; x.clearRect(0, 0, cv.width, cv.height); if(!peli.duration){ barra.listo(); return; }
+    V.redondo(x, 0, 30, cv.width, 12, 6); x.fillStyle = 'rgba(255,255,255,.25)'; x.fill(); V.redondo(x, 0, 30, cv.width * (peli.currentTime / peli.duration), 12, 6); x.fillStyle = '#AC27FF'; x.fill();
+    const mm = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+    x.font = '700 22px system-ui, -apple-system, sans-serif'; x.fillStyle = '#F4EEF2'; x.textAlign = 'left'; x.fillText(mm(peli.currentTime), 0, 70); x.textAlign = 'right'; x.fillText(mm(peli.duration), cv.width, 70); barra.listo(); };
+  const lista = []; let viendoPeli = false;
+  const montarLista = async () => {
+    lista.splice(0).forEach((m) => cine.grupo.remove(m));
+    for(const [i, v] of VIDEOS.entries()){
+      const p = await V.tarjeta({ titulo: v.nombre.slice(0, 14), icono: 'film' }); p.malla.scale.setScalar(.6);
+      const a = (i - (VIDEOS.length - 1) / 2) * 11 * Math.PI / 180; p.malla.position.set(Math.sin(a) * 2.2, -1.0, -Math.cos(a) * 2.2); p.malla.lookAt(0, -.4, 0);
+      p.malla.userData.accion = () => { peli.src = v.url; peli.play().catch(() => {}); viendoPeli = true; pantalla.material.map = ptex; pantalla.material.color.set(0xffffff); pantalla.material.needsUpdate = true; pintarMarco(''); };
+      cine.grupo.add(p.malla); lista.push(p.malla);
+    }
+  };
+  peli.addEventListener('loadedmetadata', ponerPantalla);
+  cine.entrar = async () => { if(!lista.length) await montarLista(); pintarMarco(VIDEOS.length ? '' : 'Sin videos'); };
+  cine.salir = () => { peli.pause(); };
+  cine.elegibles = () => viendoPeli ? [] : lista;
+  cine.control = (c) => {
+    if(!viendoPeli) return {};
+    if(c.oprimido[B.X]){ peli.paused ? peli.play() : peli.pause(); V.hud(peli.paused ? 'Pausa' : 'Sigue', 1); }
+    if(c.oprimido[B.L1]) peli.currentTime = Math.max(0, peli.currentTime - 10);
+    if(c.oprimido[B.R1]) peli.currentTime = Math.min(peli.duration || 0, peli.currentTime + 10);
+    if(c.oprimido[B.ARRIBA]){ dist = Math.max(1.6, dist - .4); ponerPantalla(); }
+    if(c.oprimido[B.ABAJO]){ dist = Math.min(8, dist + .4); ponerPantalla(); }
+    return { x: true, flechas: true };
+  };
+  cine.atras = () => { if(viendoPeli){ viendoPeli = false; peli.pause(); pantalla.material.map = null; pantalla.material.color.set(0x111018); pantalla.material.needsUpdate = true; } else V.ir('inicio'); };
+  let tb = 0; cine.cuadro = (t) => { for(const m of lista) m.visible = !viendoPeli; barra.malla.visible = viendoPeli; if(viendoPeli && t - tb > .25){ tb = t; pintarBarra(); } };
+  V.registrar('cine', cine);
+
+  /* AJUSTES: un panel; flechas arriba/abajo eligen, izquierda/derecha cambian */
+  const aj = { grupo: new THREE.Group() };
+  const FILAS = [
+    ['Lente', 'k1', 0, .6, .02, (v) => v.toFixed(2)],
+    ['Ojos', 'sep', 50, 75, 1, (v) => `${v} mm`],
+    ['Campo', 'campo', 60, 110, 2, (v) => `${v}°`],
+    ['Tamaño', 'escala', .7, 1.3, .02, (v) => v.toFixed(2)],
+    ['Cámara', 'camCampo', 40, 120, 1, () => `${Math.round(V.campoCamara())}°`],
+    ['Voltear cámara', 'camVoltear', 0, 1, 1, (v) => v ? 'Sí' : 'No'],
+    ['De fábrica', null],
+  ];
+  let fila = 0;
+  const hoja = new V.Panel(1.5, 1.2, 420); hoja.malla.position.set(0, .05, -2.0); aj.grupo.add(hoja.malla);
+  const pintarHoja = () => { const { x, cv } = hoja, w = cv.width; x.clearRect(0, 0, w, cv.height); V.redondo(x, 6, 6, w - 12, cv.height - 12, 40); x.fillStyle = '#1E1428'; x.fill(); x.strokeStyle = '#3C2652'; x.lineWidth = 4; x.stroke();
+    x.textBaseline = 'middle'; x.font = '900 46px system-ui, -apple-system, sans-serif'; x.fillStyle = '#F4EEF2'; x.textAlign = 'left'; x.fillText('Ajustes', 50, 64);
+    FILAS.forEach(([t, k, , , , f], i) => { const y = 140 + i * 58, sel = i === fila;
+      if(sel){ V.redondo(x, 30, y - 26, w - 60, 52, 26); x.fillStyle = '#3A1A5C'; x.fill(); x.strokeStyle = '#AC27FF'; x.lineWidth = 3; x.stroke(); }
+      x.font = '700 32px system-ui, -apple-system, sans-serif'; x.fillStyle = sel ? '#fff' : '#C9B6DA'; x.textAlign = 'left'; x.fillText(t, 56, y);
+      if(k){ x.textAlign = 'right'; x.fillStyle = sel ? '#C77DFF' : '#F4EEF2'; x.fillText((sel ? '‹  ' : '') + f(V.AJ[k]) + (sel ? '  ›' : ''), w - 56, y); } });
+    hoja.listo(); };
+  aj.entrar = pintarHoja;
+  aj.control = (c) => {
+    if(c.oprimido[B.ARRIBA]) fila = (fila + FILAS.length - 1) % FILAS.length;
+    if(c.oprimido[B.ABAJO]) fila = (fila + 1) % FILAS.length;
+    const [, k, a, b, paso] = FILAS[fila]; const d = (c.oprimido[B.DER] ? 1 : 0) - (c.oprimido[B.IZQ] ? 1 : 0);
+    if(k && d){ const actual = k === 'camCampo' ? V.campoCamara() : V.AJ[k]; const v = k === 'camVoltear' ? !V.AJ[k] : Math.round(Math.min(b, Math.max(a, actual + d * paso)) * 100) / 100; V.AJ[k] = v; V.guardar(); V.aplicarAjustes(); V.sonar('toque', .15); }
+    if(!k && c.oprimido[B.X]){ Object.assign(V.AJ, V.FABRICA, { mixta: V.AJ.mixta }); V.guardar(); V.aplicarAjustes(); V.hud('De fábrica'); }
+    if(c.oprimido[B.ARRIBA] || c.oprimido[B.ABAJO] || d || c.oprimido[B.X]) pintarHoja();
+    return { flechas: true, x: true };
+  };
+  aj.elegibles = () => [];
+  aj.atras = () => V.ir('inicio');
+  V.registrar('ajustes', aj);
+}
+window.__vr = V;
+</script>
+</body>
+</html>
