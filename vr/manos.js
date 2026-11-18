@@ -37,9 +37,15 @@ export async function iniciarManos(V){
     const lin = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: new THREE.Color('#AC27FF'), depthTest: false, transparent: true, opacity: .8 })); lin.renderOrder = 998; g.add(lin);
     return { g, pts, lin, suave: null, pellizco: false, palmaDesde: 0, vista: 0 };
   });
-  /* el puntero: una línea fina del ojo a la punta del dedo, y más allá */
+  /* el puntero (Carlos, 18 nov: «que el punto blanco lance un rayo como cursor»): sale de entre la punta del índice y la
+     del pulgar (los dos puntos blancos), en la dirección hombro → mano, como en los visores de verdad; y donde pega se
+     pinta un cursor. Al juntar los dos dedos, clic */
   const rayoGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, 0, -1)]);
-  const rayo = new THREE.Line(rayoGeo, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: .35, depthTest: false })); rayo.renderOrder = 997; rayo.visible = false; cabeza.add(rayo);
+  const rayo = new THREE.Line(rayoGeo, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: .55, depthTest: false, depthWrite: false })); rayo.renderOrder = 997; rayo.visible = false; cabeza.add(rayo);
+  const cursor = new THREE.Mesh(new THREE.RingGeometry(.012, .02, 32), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthTest: false, depthWrite: false }));
+  cursor.renderOrder = 999; cursor.visible = false; cabeza.add(cursor);
+  const punto = new THREE.Mesh(new THREE.CircleGeometry(.006, 20), new THREE.MeshBasicMaterial({ color: new THREE.Color('#C77DFF'), transparent: true, depthTest: false, depthWrite: false }));
+  punto.renderOrder = 999; cursor.add(punto);
 
   let ultimoT = -1, cuadroN = 0, enfriar = 0;
   const v3 = new THREE.Vector3(), origen = new THREE.Vector3(), dir = new THREE.Vector3();
@@ -83,23 +89,40 @@ export async function iniciarManos(V){
       const W = r.worldLandmarks?.[k];
       if(W){ const p3 = d3(W[4], W[8]); G.pellizca = p3 < .032; G.suelta = p3 > .05; G.pinza3 = p3; }
       if(!m.pellizco && G.pellizca) m.pellizco = true; else if(m.pellizco && G.suelta) m.pellizco = false;
-      if(m.pellizco){ if(!V.extra.gestosVideo) botones[V.B.X] = true; estado.gesto = 'pellizco'; }
+      /* donde la vista usa el pellizco para otra cosa (el video, leer), sólo es clic si apuntas a un botón */
+      if(m.pellizco){ if(!V.extra.gestosVideo || V.extra.sobreBoton) botones[V.B.X] = true; estado.gesto = 'pellizco'; }
       const muneca = L[0], ix = L[8], tp = L[4];
-      visibles.push({ pellizco: m.pellizco, x: (ix.x + tp.x) / 2, y: (ix.y + tp.y) / 2, palma: G.palma, muneca: { x: muneca.x, y: muneca.y } });
+      /* la mano en el espacio, aproximada (para el rayo y para los sables): palma, punta del medio y muñeca */
+      const est = (q) => cabeza.localToWorld(aEspacio(q, dist, tx, ty, new THREE.Vector3()));
+      const mano = { pellizco: m.pellizco, x: (ix.x + tp.x) / 2, y: (ix.y + tp.y) / 2, palma: G.palma, muneca: { x: muneca.x, y: muneca.y },
+        lado: (L[0].x < .5) ? -1 : 1, mundo: { palma: est(L[9]), punta: est(L[12]), muneca: est(L[0]), indice: est({ x: (ix.x + tp.x) / 2, y: (ix.y + tp.y) / 2, z: (ix.z + tp.z) / 2 }) },
+        dist, tx, ty };
+      m.info = mano; visibles.push(mano);
       if(G.palma && !m.pellizco){ m.palmaDesde = m.palmaDesde || ahora; if(ahora - m.palmaDesde > 800 && ahora > enfriar){ botones[V.B.O] = true; enfriar = ahora + 1500; m.palmaDesde = 0; estado.gesto = 'palma'; } }
       else m.palmaDesde = 0;
       if(!apuntador && (G.apunta || m.pellizco)) apuntador = m;
       if(!apuntador) apuntador = m;
     });
     V.extra.botones = botones; V.extra.manos = visibles;
-    /* el puntero sale del ojo hacia la punta del índice de la primera mano */
-    if(apuntador){
-      cabeza.getWorldPosition(origen); apuntador.pts[8].getWorldPosition(v3); dir.copy(v3).sub(origen).normalize();
-      V.extra.rayo = { origen: origen.clone(), dir: dir.clone() };
-      const tip = apuntador.suave[8], lejos = tip.clone().normalize().multiplyScalar(6);
-      rayoGeo.attributes.position.setXYZ(0, ...tip.toArray()); rayoGeo.attributes.position.setXYZ(1, ...lejos.toArray()); rayoGeo.attributes.position.needsUpdate = true;
-      rayo.visible = !V.AJ.mixta;   // con la mixta la punta del dedo ya está sobre lo que apuntas: la raya sobra
-    } else { V.extra.rayo = null; rayo.visible = false; }
+    /* el rayo: del «hombro» (un poco abajo y del lado de esa mano) a la mano, y de ahí hacia adelante */
+    if(apuntador?.info){
+      const I = apuntador.info, hombro = cabeza.localToWorld(new THREE.Vector3(I.lado * .17, -.3, .05));
+      origen.copy(I.mundo.indice); dir.copy(I.mundo.indice).sub(hombro).normalize();
+      /* suavizado aparte: el rayo tiembla más que la mano porque amplifica el giro */
+      if(!apuntador.dirSuave) apuntador.dirSuave = dir.clone(); else apuntador.dirSuave.lerp(dir, .45).normalize();
+      V.extra.rayo = { origen: origen.clone(), dir: apuntador.dirSuave.clone() };
+    } else { V.extra.rayo = null; rayo.visible = false; cursor.visible = false; }
+  };
+  /* el dibujo del rayo y del cursor va cada cuadro (el rastreo, cada dos), con el punto donde pegó (lo pone vr.js) */
+  const pA = new THREE.Vector3(), pB = new THREE.Vector3();
+  estado.dibujar = () => {
+    const R = V.extra.rayo; if(!R){ rayo.visible = cursor.visible = false; return; }
+    pA.copy(R.origen); pB.copy(R.hit || pB.copy(R.dir).multiplyScalar(4).add(R.origen));
+    cabeza.worldToLocal(pA); cabeza.worldToLocal(pB);
+    rayoGeo.attributes.position.setXYZ(0, pA.x, pA.y, pA.z); rayoGeo.attributes.position.setXYZ(1, pB.x, pB.y, pB.z); rayoGeo.attributes.position.needsUpdate = true;
+    rayo.visible = true;
+    cursor.visible = !!R.hit; if(R.hit){ cursor.position.copy(pB); cursor.scale.setScalar(Math.max(.4, -pB.z)); }
+    const apretado = (V.extra.manos || []).some((m) => m.pellizco); cursor.material.color.set(apretado ? 0xC77DFF : 0xffffff);
   };
   return estado;
 }
