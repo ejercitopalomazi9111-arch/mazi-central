@@ -193,6 +193,8 @@ async function montar(){
 
   /* MÚSICA: buscar canciones, radio de México y las del teléfono; sigue sonando en todo el visor (musica.js) */
   window.__musica = montarMusica(V, { pedirTexto, CANCIONES });
+  /* con todo armado (y los modelos de Objetos cargados), se preparan los gráficos de una vez: así entrar y salir no traba */
+  Promise.all([window.__objetos.armado, window.__musica.armado]).catch(() => {}).then(() => setTimeout(() => V.precalentar(), 300));
 
   /* AJUSTES: un panel; flechas arriba/abajo eligen, izquierda/derecha cambian */
   const aj = { grupo: new THREE.Group() };

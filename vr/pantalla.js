@@ -37,7 +37,8 @@ export function crearPantallaWeb(V){
   }
   function limpiar(){
     for(const o of ojos) o.replaceChildren();
-    for(const p of yts) try{ p.destroy(); }catch{}
+    /* los reproductores de YouTube se desarman DESPUÉS: hacerlo en el mismo cuadro congelaba la salida en el teléfono */
+    const viejos = yts; setTimeout(() => { for(const p of viejos) try{ p.destroy(); }catch{} }, 450);
     yts = []; elems = []; videos.forEach((v) => { v.pause(); v.removeAttribute('src'); v.load(); });
     modo = null; estado.modo = null; capa.style.display = 'none';
   }
@@ -82,7 +83,7 @@ export function crearPantallaWeb(V){
     setTimeout(() => { try{ if(modo === 'youtube' && yts[0].getPlayerState?.() !== 1){ yts[0].mute(); yts[0].playVideo(); V.hud('Sin sonido: toca la pantalla una vez', 3); } }catch{} }, 3000);
   }
   /* un toque o una tecla (el control del visor puede ir como teclado) devuelven el sonido */
-  const devolverSonido = () => { try{ if(modo === 'youtube'){ yts[0].unMute(); yts[0].playVideo(); } if(modo === 'video'){ videos[0].muted = false; videos[0].play(); } }catch{} };
+  const devolverSonido = () => { try{ if(modo === 'youtube'){ yts[0].unMute(); yts[0].playVideo(); yts[1]?.mute(); yts[1]?.playVideo(); } if(modo === 'video'){ videos[0].muted = false; videos[0].play(); } }catch{} };
   addEventListener('touchend', devolverSonido); addEventListener('keydown', devolverSonido);
 
   /* ── una página: dos marcos, sólo para ver ── */
@@ -118,7 +119,15 @@ export function crearPantallaWeb(V){
     if(t - ultSync < .8) return; ultSync = t;
     try{
       if(modo === 'video' && Math.abs(videos[1].currentTime - videos[0].currentTime) > .08) videos[1].currentTime = videos[0].currentTime;
-      if(modo === 'youtube' && yts[1]?.getCurrentTime){ const a = yts[0].getCurrentTime(), b = yts[1].getCurrentTime(); if(Math.abs(a - b) > .3) yts[1].seekTo(a + .15, true); }
+      /* el ojo derecho se quedaba en la portada con su botón de play (Carlos, 18 nov, captura): sólo se le corregía el
+         TIEMPO, nunca si estaba sonando. Ahora también sigue el estado del izquierdo: si el izquierdo corre y él no, se
+         calla y arranca; si el izquierdo se pausa, él también */
+      if(modo === 'youtube' && yts[1]?.getCurrentTime){
+        const ea = yts[0].getPlayerState?.(), eb = yts[1].getPlayerState?.(), corre = (e) => e === 1 || e === 3;
+        if(corre(ea) && !corre(eb)){ yts[1].mute(); yts[1].seekTo(yts[0].getCurrentTime() + .15, true); yts[1].playVideo(); estado.arranques = (estado.arranques || 0) + 1; }
+        else if(ea === 2 && corre(eb)) yts[1].pauseVideo();
+        else { const a = yts[0].getCurrentTime(), b = yts[1].getCurrentTime(); if(Math.abs(a - b) > .3) yts[1].seekTo(a + .15, true); }
+      }
     }catch{}
   }
   /* ── colocar: cada cuadro, las cuatro esquinas de la pantalla 3D vistas por cada ojo ── */

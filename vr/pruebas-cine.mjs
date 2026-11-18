@@ -18,7 +18,7 @@ await ctx.route(/sala\.palomazi9111\.workers\.dev\/api\/sala\/vr\/buscar/, (r) =
 await ctx.route(/i\.ytimg\.com/, (r) => r.fulfill({ body: PNG, contentType: 'image/png', headers: { 'access-control-allow-origin': '*' } }));
 await ctx.route(/youtube\.com\/iframe_api/, (r) => r.fulfill({ contentType: 'text/javascript', body: `
   window.YT = { Player: function(el, o){ const d = document.createElement('div'); d.className = 'yt-falso'; d.dataset.id = o.videoId; d.style.cssText = 'width:1280px;height:720px;background:#a00'; el.replaceWith(d);
-    let t = 0, est = 1; this.getPlayerState = () => est; this.getCurrentTime = () => t; this.playVideo = () => { est = 1; }; this.pauseVideo = () => { est = 2; }; this.seekTo = (s) => { t = s; };
+    let t = 0, est = 1; (window.__yts = window.__yts || []).push(this); this._est = (v) => { est = v; }; this.getPlayerState = () => est; this.getCurrentTime = () => t; this.playVideo = () => { est = 1; }; this.pauseVideo = () => { est = 2; }; this.seekTo = (s) => { t = s; };
     this.mute = () => {}; this.unMute = () => {}; this.destroy = () => d.remove(); setTimeout(() => o.events?.onReady?.({ target: this }), 50); } };
   setTimeout(() => window.onYouTubeIframeAPIReady && window.onYouTubeIframeAPIReady(), 10);` }));
 await ctx.route(/archive\.org\/advancedsearch/, (r) => r.fulfill({ json: { response: { docs: [{ identifier: 'peli_libre', title: 'Película libre de prueba', year: '1922' }] } }, headers: { 'access-control-allow-origin': '*' } }));
@@ -47,6 +47,19 @@ e = await p.evaluate(() => __cine.estado()); sí(e.fase === 'viendo' && e.web ==
 const copias = await p.evaluate(() => [...document.querySelectorAll('.yt-falso')].map((d) => getComputedStyle(d.parentElement).transform));
 sí(copias.length === 2 && copias.every((t) => t.startsWith('matrix3d') || t.startsWith('matrix(')), 'una copia por ojo, acomodada en 3D sobre la pantalla' + ' ' + JSON.stringify(copias).slice(0, 160));
 await p.screenshot({ path: CAPS + '/vr-youtube.png' });
+/* el ojo derecho atorado en la portada (Carlos, 18 nov, captura): se tiene que arrancar solo */
+await p.evaluate(() => { const L = window.__yts.slice(-2); L[1]._est(5); }); await p.waitForTimeout(1600);
+sí(await p.evaluate(() => window.__yts.slice(-2)[1].getPlayerState()) === 1, 'si el ojo derecho se queda en la portada, arranca solo');
+/* de fondo: sigue corriendo fuera del Cine y regresa en grande al volver */
+await p.evaluate(() => __cine.fondo()); await p.waitForTimeout(500);
+let fo = await p.evaluate(() => ({ ahora: __vr.ahora(), c: __cine.estado(), modo: __web.estado.modo, vis: [...document.querySelectorAll('.yt-falso')].map((d) => getComputedStyle(d.parentElement).visibility) }));
+sí(fo.ahora === 'inicio' && fo.c.fondo && fo.modo === 'youtube' && fo.vis.length === 2, `«Fondo» regresa al inicio con el video corriendo (${fo.ahora}, ${fo.modo}, copias ${fo.vis})`);
+await p.screenshot({ path: CAPS + '/vr-fondo.png' });
+await p.evaluate(() => __vr.ir('juegos')); await p.waitForTimeout(300);
+sí(await p.evaluate(() => __web.estado.modo) === 'youtube', 'y sigue en otro apartado');
+await p.evaluate(() => __vr.ir('cine')); await p.waitForTimeout(400);
+fo = await p.evaluate(() => __cine.estado());
+sí(!fo.fondo && fo.fase === 'viendo', 'al volver al Cine regresa en grande');
 /* dos manos pellizcando: la pantalla se va arriba y crece, y las copias de la web la siguen */
 const manosFalsas = (lista) => p.evaluate((lista) => { const V = window.__vr, T = V.THREE;
   if(!window.__falsasPuesto){ window.__falsasPuesto = true; let real = []; Object.defineProperty(V.extra, 'manos', { get: () => window.__falsas ?? real, set: (v) => { real = v; }, configurable: true }); }

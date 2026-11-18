@@ -143,13 +143,32 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
     peli.pause(); pantalla.material.map = null; pantalla.visible = false; fase = 'estante'; decir('');
   }
 
-  cine.entrar = () => { fase = 'estante'; decir(''); };
-  cine.salir = () => { dejarDeVer(); limpiarTarjetas(); V.extra.gestosVideo = false; };
-  cine.elegibles = () => fase === 'estante' ? puertas : fase === 'resultados' ? tarjetas : [];
+  /* ── DE FONDO (Carlos, 18 nov: «un coso para tener el video reproduciendo de fondo mientras haces otras cosas») ──
+     «Fondo» (o R2) deja el video corriendo en una pantalla chica arriba a la izquierda del cuarto y te regresa al inicio.
+     Sigue sonando en cualquier apartado; al volver a entrar al Cine, regresa en grande donde estaba. */
+  const mini = new THREE.Group(); V.hub.add(mini);
+  let fondo = false;
+  const bFondo = (await V.tarjeta({ titulo: 'Fondo', icono: 'tv' })).malla;
+  bFondo.scale.setScalar(.5); bFondo.position.set(.62, -.95, -1.7); bFondo.lookAt(0, -.95 * .3, 0); bFondo.userData.accion = () => aFondo(); cine.grupo.add(bFondo);
+  function aFondo(){
+    if(fase !== 'viendo' || fondo) return;
+    fondo = true; mini.add(pantalla);
+    const a = 40 * Math.PI / 180, d = 2.3, y = .9, asp = pantalla.scale.x / pantalla.scale.y, ancho = Math.min(.95, .55 * asp);
+    pantalla.position.set(-Math.sin(a) * d, y, -Math.cos(a) * d); pantalla.scale.set(ancho, ancho / asp, 1); pantalla.lookAt(V.hub.localToWorld(new THREE.Vector3(0, y * .4, 0)));
+    pantalla.visible = true; V.hud('De fondo', 1.2); V.ir('inicio');
+  }
+  function volverDeFondo(){ fondo = false; pantalla.quaternion.identity(); soporte.add(pantalla); ponerPantalla(); fase = 'viendo'; decir(''); }
+  /* de fondo, el ojo derecho sigue persiguiendo al izquierdo aunque el Cine no esté abierto */
+  V.alCuadro.push((t) => { if(fondo && web.activa) web.sincronizar(t); });
+  cine.fondo = aFondo;
+  cine.entrar = () => { if(fondo) volverDeFondo(); else { fase = 'estante'; decir(''); } };
+  cine.salir = () => { if(!fondo) dejarDeVer(); limpiarTarjetas(); V.extra.gestosVideo = false; };
+  cine.elegibles = () => fase === 'estante' ? puertas : fase === 'resultados' ? tarjetas : fase === 'viendo' ? [bFondo] : [];
   cine.control = (c, dt) => {
     if(fase !== 'viendo') return {};
     if(moverCtl(c, dt)) return { x: true, flechas: true };
     if(c.oprimido[B.X]) pausar();
+    if(c.oprimido[B.R2]) aFondo();
     if(c.oprimido[B.L1]) brincar(-10);
     if(c.oprimido[B.R1]) brincar(10);
     if(c.oprimido[B.ARRIBA]){ dist = Math.max(1.6, dist - .4); ponerPantalla(); }
@@ -185,11 +204,11 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
     else if(!p && gV.activo){ gV.activo = false; if(!gV.arrastre && !gV.cancelado && ahora - gV.t0 < 700) pausar(); }
   }
   cine.cuadro = (t) => {
-    puertas.forEach((m) => { m.visible = fase === 'estante'; }); if(web.activa) web.sincronizar(t);
+    puertas.forEach((m) => { m.visible = fase === 'estante'; }); bFondo.visible = fase === 'viendo'; if(web.activa) web.sincronizar(t);
     V.extra.gestosVideo = fase === 'viendo';
     if(fase === 'viendo') gestosVideo(); else gV.activo = false;
   };
-  cine.estado = () => ({ fase, altoGrados: +(2 * Math.atan(pantalla.scale.y / 2 / dist) * 180 / Math.PI).toFixed(1), anchoGrados: +(2 * Math.atan(pantalla.scale.x / 2 / dist) * 180 / Math.PI).toFixed(1), web: web.estado.modo, tarjetas: tarjetas.length, dist: +dist.toFixed(2), tam: +tam.toFixed(2), giro: +(2 * Math.acos(Math.min(1, Math.abs(soporte.quaternion.w))) * 180 / Math.PI).toFixed(1), pausa: web.activa ? null : peli.paused, t: web.activa ? null : +peli.currentTime.toFixed(1) });
+  cine.estado = () => ({ fondo, fase, altoGrados: +(2 * Math.atan(pantalla.scale.y / 2 / dist) * 180 / Math.PI).toFixed(1), anchoGrados: +(2 * Math.atan(pantalla.scale.x / 2 / dist) * 180 / Math.PI).toFixed(1), web: web.estado.modo, tarjetas: tarjetas.length, dist: +dist.toFixed(2), tam: +tam.toFixed(2), giro: +(2 * Math.acos(Math.min(1, Math.abs(soporte.quaternion.w))) * 180 / Math.PI).toFixed(1), pausa: web.activa ? null : peli.paused, t: web.activa ? null : +peli.currentTime.toFixed(1) });
   V.registrar('cine', cine);
   return cine;
 }

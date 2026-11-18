@@ -169,6 +169,15 @@ function leerCabeza(){
 /* hacia dónde ve la cabeza en el mundo, sólo de lado (para recentrar y caminar) */
 const adelante = new THREE.Vector3();
 const rumbo = () => { cabeza.getWorldDirection(adelante); return Math.atan2(-adelante.x, -adelante.z); };
+/* PREPARAR TODO DE UNA VEZ (Carlos, 18 nov: «se traba muy fuerte al salir de un apartado»): la primera vez que se dibuja
+   algo nuevo el teléfono arma sus sombreadores y sube sus texturas, y eso congela unos cuadros (Objetos: 267 ms en el
+   navegador de pruebas; en el teléfono, más). Se hace al cargar, con todo prendido un instante, en vez de al entrar. */
+export function precalentar(){
+  const antes = Object.values(vistas).map((v) => [v.grupo, v.grupo.visible]);
+  antes.forEach(([g]) => { g.visible = true; });
+  try{ render.compile(escena, cabeza); }catch(e){ console.warn('precalentar', e); }
+  antes.forEach(([g, vis]) => { g.visible = vis; });
+}
 export function recentrar(){
   /* el menú queda enfrente de donde ves ahora */
   const r = rumbo(); hub.rotation.y = r; hub.position.copy(rig.position); hud('Al centro');

@@ -62,7 +62,8 @@ export async function iniciarManos(V){
     const video = V.video, ahora = performance.now();
     if(!V.hayCamara() || !V.AJ.manos || video.readyState < 2){ manos.forEach((m) => { m.g.visible = false; }); rayosVis.forEach((x) => { x.linea.visible = x.cursor.visible = false; }); V.extra.rayo = null; V.extra.rayos = []; V.extra.manos = []; return; }
     /* un cuadro sí y uno no: en el iPhone el rastreo cuesta y la pantalla va a 60 */
-    if(++cuadroN % 2 || video.currentTime === ultimoT) return;
+    /* y si el teléfono va lento (el rastreo tarda más de 28 ms), uno de cada tres: que el visor no se trabe por las manos */
+    if(++cuadroN % (estado.ms > 28 ? 3 : 2) || video.currentTime === ultimoT) return;
     ultimoT = video.currentTime;
     const t0 = performance.now(); let r;
     try{ r = lm.detectForVideo(video, ahora); }catch(e){ estado.error = String(e?.message || e); return; }
