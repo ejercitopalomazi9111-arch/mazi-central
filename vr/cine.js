@@ -94,9 +94,12 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
     decir('Abriendo…');
     try{
       const m = await (await fetch(`${ARCHIVO}/metadata/${encodeURIComponent(it.id)}`)).json();
-      const mp4 = (m.files || []).filter((f) => /\.mp4$/i.test(f.name));
-      /* la mejor calidad que haya; si viene en partes, todas en orden */
-      const buenos = mp4.filter((f) => !/512kb|\.ia\./i.test(f.name)); const usar = (buenos.length ? buenos : mp4).sort((a, b) => a.name.localeCompare(b.name, 'es', { numeric: true }));
+      /* el iPhone sólo reproduce H.264: el «original» de Internet Archive muchas veces es MPEG-4 viejo o un archivo
+         gigante que nunca arranca (por eso «no cargaba nunca»). Se prefieren las copias H.264 que hace el propio Archive */
+      const mp4 = (m.files || []).filter((f) => /\.(mp4|m4v)$/i.test(f.name));
+      const rango = (f) => /^h\.264$/i.test(f.format || '') ? 4 : /h\.264/i.test(f.format || '') ? 3 : /512kb/i.test((f.format || '') + f.name) ? 2 : /\.ia\./i.test(f.name) ? 1 : 0;
+      const mejor = Math.max(-1, ...mp4.map(rango));
+      const usar = mp4.filter((f) => rango(f) === mejor).sort((a, b) => a.name.localeCompare(b.name, 'es', { numeric: true }));
       if(!usar.length){ decir('Esa no trae video'); return; }
       ver(() => web.verVideo(usar.map((f) => `${ARCHIVO}/download/${encodeURIComponent(it.id)}/${encodeURIComponent(f.name)}`), it.titulo));
     }catch(e){ decir('No se pudo abrir'); console.warn(e); }
@@ -126,20 +129,50 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
   }
 
   cine.entrar = () => { fase = 'estante'; decir(''); };
-  cine.salir = () => { dejarDeVer(); limpiarTarjetas(); };
+  cine.salir = () => { dejarDeVer(); limpiarTarjetas(); V.extra.gestosVideo = false; };
   cine.elegibles = () => fase === 'estante' ? puertas : fase === 'resultados' ? tarjetas : [];
   cine.control = (c) => {
     if(fase !== 'viendo') return {};
-    if(c.oprimido[B.X]){ const sigue = web.activa ? web.pausa() : (peli.paused ? (peli.play(), true) : (peli.pause(), false)); V.hud(sigue ? 'Sigue' : 'Pausa', 1); }
-    if(c.oprimido[B.L1]){ if(web.activa) web.brincar(-10); else peli.currentTime = Math.max(0, peli.currentTime - 10); }
-    if(c.oprimido[B.R1]){ if(web.activa) web.brincar(10); else peli.currentTime = Math.min(peli.duration || 0, peli.currentTime + 10); }
+    if(c.oprimido[B.X]) pausar();
+    if(c.oprimido[B.L1]) brincar(-10);
+    if(c.oprimido[B.R1]) brincar(10);
     if(c.oprimido[B.ARRIBA]){ dist = Math.max(1.6, dist - .4); ponerPantalla(); }
     if(c.oprimido[B.ABAJO]){ dist = Math.min(8, dist + .4); ponerPantalla(); }
     return { x: true, flechas: true };
   };
   cine.atras = () => { if(fase === 'viendo' || fase === 'resultados'){ dejarDeVer(); limpiarTarjetas(); fase = 'estante'; } else V.ir('inicio'); };
-  cine.cuadro = (t) => { puertas.forEach((m) => { m.visible = fase === 'estante'; }); if(web.activa) web.sincronizar(t); };
-  cine.estado = () => ({ fase, web: web.estado.modo, tarjetas: tarjetas.length });
+  /* ── gestos de mano mientras ves (Carlos, 18 nov) ──
+       · pellizcar una vez: pausa / sigue
+       · pellizcar, mantener y arrastrar a los lados: adelanta o regresa (todo el ancho de la vista ≈ 4 minutos)
+       · pellizcar con las DOS manos y separarlas o juntarlas: acerca o aleja la pantalla
+       · palma abierta un momento: cierra (eso ya lo hace manos.js, es el Círculo) */
+  const gV = { activo: false, t0: 0, x0: 0, aplicado: 0, arrastre: false, cancelado: false, dos: null };
+  const pausar = () => { const sigue = web.activa ? web.pausa() : (peli.paused ? (peli.play(), true) : (peli.pause(), false)); V.hud(sigue ? 'Sigue' : 'Pausa', 1); };
+  const brincar = (s) => { if(web.activa) web.brincar(s); else peli.currentTime = Math.max(0, Math.min(peli.duration || 0, peli.currentTime + s)); };
+  function gestosVideo(){
+    const pin = (V.extra.manos || []).filter((m) => m.pellizco), ahora = performance.now();
+    if(pin.length >= 2){
+      const abre = Math.hypot(pin[0].x - pin[1].x, pin[0].y - pin[1].y);
+      if(!gV.dos) gV.dos = { abre: Math.max(.02, abre), dist };
+      else { const nd = Math.max(1.2, Math.min(8, gV.dos.dist * gV.dos.abre / Math.max(.02, abre))); if(Math.abs(nd - dist) > .02){ dist = nd; ponerPantalla(); } }
+      gV.cancelado = true; return;
+    }
+    gV.dos = null;
+    const p = pin[0];
+    if(p && !gV.activo) Object.assign(gV, { activo: true, t0: ahora, x0: p.x, aplicado: 0, arrastre: false, cancelado: false });
+    else if(p && gV.activo){
+      const dx = p.x - gV.x0; if(Math.abs(dx) > .05) gV.arrastre = true;
+      if(gV.arrastre && !gV.cancelado){ const meta = Math.round((dx - Math.sign(dx) * .05) * 240), d = meta - gV.aplicado;
+        if(Math.abs(d) >= 2){ brincar(d); gV.aplicado = meta; V.hud(`${meta > 0 ? '+' : ''}${meta} s`, .8); } }
+    }
+    else if(!p && gV.activo){ gV.activo = false; if(!gV.arrastre && !gV.cancelado && ahora - gV.t0 < 700) pausar(); }
+  }
+  cine.cuadro = (t) => {
+    puertas.forEach((m) => { m.visible = fase === 'estante'; }); if(web.activa) web.sincronizar(t);
+    V.extra.gestosVideo = fase === 'viendo';
+    if(fase === 'viendo') gestosVideo(); else { gV.activo = false; gV.dos = null; }
+  };
+  cine.estado = () => ({ fase, web: web.estado.modo, tarjetas: tarjetas.length, dist: +dist.toFixed(2), pausa: web.activa ? null : peli.paused, t: web.activa ? null : +peli.currentTime.toFixed(1) });
   V.registrar('cine', cine);
   return cine;
 }

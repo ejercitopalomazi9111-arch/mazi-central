@@ -24,19 +24,22 @@ export async function iniciarManos(V){
   }catch(e){ estado.error = String(e?.message || e); console.warn('manos', e); return estado; }
 
   /* las dos manos dibujadas: 21 bolitas y sus huesos, pegadas a la cabeza (están en el espacio de la cámara) */
-  const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color('#C77DFF'), depthTest: false, transparent: true, opacity: .95 });
-  const matP = new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false });
-  const bola = new THREE.SphereGeometry(.006, 10, 8);
+  const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color('#C77DFF'), depthTest: false, depthWrite: false, transparent: true, opacity: .95 });
+  /* todo lo de las manos va al ÚLTIMO y encima (transparente + orden alto): el punto blanco era opaco, se pintaba antes que los
+     botones (que son transparentes) y quedaba ATRÁS de ellos (Carlos, 18 nov) */
+  const matP = new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false, depthWrite: false, transparent: true, opacity: 1 });
+  /* bolitas de radio 1: se escalan con la distancia para que se vean siempre del mismo tamaño, chiquitas (Carlos, 18 nov) */
+  const bola = new THREE.SphereGeometry(1, 10, 8);
   const manos = [0, 1].map(() => {
-    const g = new THREE.Group(); g.visible = false; g.renderOrder = 90; cabeza.add(g);
-    const pts = Array.from({ length: 21 }, (_, i) => { const m = new THREE.Mesh(bola, i === 8 || i === 4 ? matP : mat); m.renderOrder = 91; g.add(m); return m; });
+    const g = new THREE.Group(); g.visible = false; g.renderOrder = 998; cabeza.add(g);
+    const pts = Array.from({ length: 21 }, (_, i) => { const m = new THREE.Mesh(bola, i === 8 || i === 4 ? matP : mat); m.renderOrder = 999; g.add(m); return m; });
     const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(HUESOS.length * 6), 3));
-    const lin = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: new THREE.Color('#AC27FF'), depthTest: false, transparent: true, opacity: .8 })); lin.renderOrder = 90; g.add(lin);
+    const lin = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: new THREE.Color('#AC27FF'), depthTest: false, transparent: true, opacity: .8 })); lin.renderOrder = 998; g.add(lin);
     return { g, pts, lin, suave: null, pellizco: false, palmaDesde: 0, vista: 0 };
   });
   /* el puntero: una línea fina del ojo a la punta del dedo, y más allá */
   const rayoGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, 0, -1)]);
-  const rayo = new THREE.Line(rayoGeo, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: .35, depthTest: false })); rayo.renderOrder = 89; rayo.visible = false; cabeza.add(rayo);
+  const rayo = new THREE.Line(rayoGeo, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: .35, depthTest: false })); rayo.renderOrder = 997; rayo.visible = false; cabeza.add(rayo);
 
   let ultimoT = -1, cuadroN = 0, enfriar = 0;
   const v3 = new THREE.Vector3(), origen = new THREE.Vector3(), dir = new THREE.Vector3();
@@ -44,9 +47,10 @@ export async function iniciarManos(V){
   function aEspacio(p, dist, tx, ty, out){
     return out.set((p.x * 2 - 1) * tx * dist, -(p.y * 2 - 1) * ty * dist, -dist + p.z * 2 * tx * dist);
   }
+  const d3 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
   estado.cuadro = (t) => {
     const video = V.video, ahora = performance.now();
-    if(!V.hayCamara() || !V.AJ.manos || video.readyState < 2){ manos.forEach((m) => { m.g.visible = false; }); rayo.visible = false; V.extra.rayo = null; return; }
+    if(!V.hayCamara() || !V.AJ.manos || video.readyState < 2){ manos.forEach((m) => { m.g.visible = false; }); rayo.visible = false; V.extra.rayo = null; V.extra.manos = []; return; }
     /* un cuadro sí y uno no: en el iPhone el rastreo cuesta y la pantalla va a 60 */
     if(++cuadroN % 2 || video.currentTime === ultimoT) return;
     ultimoT = video.currentTime;
@@ -56,34 +60,45 @@ export async function iniciarManos(V){
     const asp = video.videoWidth / video.videoHeight, tx = Math.tan(V.campoCamara() * Math.PI / 360), ty = tx / asp;
     const voltear = V.AJ.camVoltear;
     estado.manos = r.landmarks.length; estado.gesto = '';
-    let apuntador = null; const botones = [];
+    let apuntador = null; const botones = []; const visibles = [];
     manos.forEach((m, k) => {
       const l = r.landmarks[k];
       if(!l){ m.g.visible = false; m.pellizco = false; m.palmaDesde = 0; m.suave = null; return; }
       const L = voltear ? l.map((p) => ({ x: 1 - p.x, y: 1 - p.y, z: p.z })) : l;
       const s = tamano(L, asp), dist = Math.min(1.2, Math.max(.15, .085 / (s * 2 * tx)));
-      /* suavizado: sin esto la mano tiembla */
-      const nuevos = L.map((p) => aEspacio(p, dist, tx, ty, new THREE.Vector3()));
-      if(!m.suave) m.suave = nuevos; else m.suave.forEach((q, i) => q.lerp(nuevos[i], .55));
-      m.suave.forEach((q, i) => m.pts[i].position.copy(q));
+      /* EN tu mano (Carlos, 18 nov): con la mixta, la imagen de la cámara está pintada al fondo (a 20 m) y cada ojo la ve en el
+         mismo lugar; los puntos se ponen a esa misma distancia y en la misma dirección, así caen justo encima de tu mano y no
+         se desdoblan entre ojos. Sin la mixta no se ve tu mano: se dibujan a la distancia que se calcula, como una mano virtual */
+      const mixta = V.AJ.mixta, lejos = 19.5;
+      const nuevos = L.map((p) => mixta ? aEspacio({ x: p.x, y: p.y, z: 0 }, lejos, tx, ty, new THREE.Vector3()) : aEspacio(p, dist, tx, ty, new THREE.Vector3()));
+      if(!m.suave || m.mixta !== mixta) m.suave = nuevos; else m.suave.forEach((q, i) => q.lerp(nuevos[i], .55));
+      m.mixta = mixta;
+      m.suave.forEach((q, i) => { m.pts[i].position.copy(q); m.pts[i].scale.setScalar(q.length() * (i === 8 || i === 4 ? .0062 : .0042)); });
       const pos = m.lin.geometry.attributes.position; HUESOS.forEach(([a, b], i) => { pos.setXYZ(i * 2, ...m.suave[a].toArray()); pos.setXYZ(i * 2 + 1, ...m.suave[b].toArray()); }); pos.needsUpdate = true;
       m.g.visible = true;
       /* los gestos */
       const G = leer(L, asp);
+      /* el pellizco con la mano EN 3D (metros, de MediaPipe): de frente la punta del pulgar tapa a la del índice y en la
+         imagen plana nunca «se tocaban» (por eso no jalaba pellizcar) */
+      const W = r.worldLandmarks?.[k];
+      if(W){ const p3 = d3(W[4], W[8]); G.pellizca = p3 < .032; G.suelta = p3 > .05; G.pinza3 = p3; }
       if(!m.pellizco && G.pellizca) m.pellizco = true; else if(m.pellizco && G.suelta) m.pellizco = false;
-      if(m.pellizco){ botones[V.B.X] = true; estado.gesto = 'pellizco'; }
+      if(m.pellizco){ if(!V.extra.gestosVideo) botones[V.B.X] = true; estado.gesto = 'pellizco'; }
+      const muneca = L[0], ix = L[8], tp = L[4];
+      visibles.push({ pellizco: m.pellizco, x: (ix.x + tp.x) / 2, y: (ix.y + tp.y) / 2, palma: G.palma, muneca: { x: muneca.x, y: muneca.y } });
       if(G.palma && !m.pellizco){ m.palmaDesde = m.palmaDesde || ahora; if(ahora - m.palmaDesde > 800 && ahora > enfriar){ botones[V.B.O] = true; enfriar = ahora + 1500; m.palmaDesde = 0; estado.gesto = 'palma'; } }
       else m.palmaDesde = 0;
       if(!apuntador && (G.apunta || m.pellizco)) apuntador = m;
       if(!apuntador) apuntador = m;
     });
-    V.extra.botones = botones;
+    V.extra.botones = botones; V.extra.manos = visibles;
     /* el puntero sale del ojo hacia la punta del índice de la primera mano */
     if(apuntador){
       cabeza.getWorldPosition(origen); apuntador.pts[8].getWorldPosition(v3); dir.copy(v3).sub(origen).normalize();
       V.extra.rayo = { origen: origen.clone(), dir: dir.clone() };
       const tip = apuntador.suave[8], lejos = tip.clone().normalize().multiplyScalar(6);
-      rayoGeo.attributes.position.setXYZ(0, ...tip.toArray()); rayoGeo.attributes.position.setXYZ(1, ...lejos.toArray()); rayoGeo.attributes.position.needsUpdate = true; rayo.visible = true;
+      rayoGeo.attributes.position.setXYZ(0, ...tip.toArray()); rayoGeo.attributes.position.setXYZ(1, ...lejos.toArray()); rayoGeo.attributes.position.needsUpdate = true;
+      rayo.visible = !V.AJ.mixta;   // con la mixta la punta del dedo ya está sobre lo que apuntas: la raya sobra
     } else { V.extra.rayo = null; rayo.visible = false; }
   };
   return estado;

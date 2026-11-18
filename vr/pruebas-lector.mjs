@@ -14,6 +14,16 @@ const X = 0, O = 1, L1 = 4, R1 = 5, IZQ = 14, DER = 15;
 
 /* ── con cosas bajadas ── */
 const ctx = await b.newContext({ viewport: { width: 844, height: 390 } }); await ctx.addInitScript(PAD);
+const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+const SERIE = 'https://www.webtoons.com/es/romance/mi-serie/list?title_no=123';
+await ctx.route(/\/api\/sala\/inkwell\/traer/, (rt) => { const u = new URL(rt.request().url()).searchParams.get('url'), cors = { 'access-control-allow-origin': '*' };
+  if(/search\?keyword/.test(u)) return rt.fulfill({ headers: cors, contentType: 'text/html', body: `<a href="${SERIE}" class="card"><strong class="title">Mi serie</strong><div class="author">Autora</div><img src="https://webtoon-phinf.pstatic.net/portada.jpg"></a>` });
+  if(/list\?title_no=123/.test(u)) return rt.fulfill({ headers: cors, contentType: 'text/html', body: '<meta property="og:title" content="Mi serie"><meta property="og:image" content="https://webtoon-phinf.pstatic.net/portada.jpg">' });
+  if(/api\/v1\/webtoon\/123\/episodes/.test(u)) return rt.fulfill({ headers: cors, json: { result: { episodeList: [1, 2, 3, 4].map((n) => ({ episodeNo: n, episodeTitle: 'Ep ' + n, viewerLink: `/es/romance/mi-serie/ep-${n}/viewer?title_no=123&episode_no=${n}` })) } } });
+  if(/viewer/.test(u)) return rt.fulfill({ headers: cors, contentType: 'text/html', body: '<img class="_images" data-url="https://webtoon-phinf.pstatic.net/a.jpg"><img class="_images" data-url="https://webtoon-phinf.pstatic.net/b.jpg">' });
+  if(/pstatic/.test(u)) return rt.fulfill({ headers: cors, contentType: 'image/png', body: PNG });
+  return rt.fulfill({ status: 404, headers: cors, body: '' }); });
+await ctx.route(/wattpad\.com\/v4\/search/, (rt) => rt.fulfill({ headers: { 'access-control-allow-origin': '*' }, json: { stories: [{ id: 77, title: 'Una historia', cover: '', user: { name: 'X' }, numParts: 5 }] } }));
 const p = await ctx.newPage(); const errores = []; p.on('pageerror', (e) => errores.push(e.message));
 const boton = async (i) => { await p.evaluate((i) => { window.__pad.buttons[i] = { pressed: true, value: 1 }; }, i); await p.waitForTimeout(80); await p.evaluate((i) => { window.__pad.buttons[i] = { pressed: false, value: 0 }; }, i); await p.waitForTimeout(180); };
 const est = () => p.evaluate(() => __lector.estado());
@@ -39,9 +49,10 @@ sí(await p.evaluate(() => __vr.ahora() === 'inicio'), 'entra al inicio');
 await p.evaluate(() => __vr.ir('leer'));
 const hasta = async (f, ms = 6000) => { const t0 = Date.now(); let e; do { e = await est(); if(f(e)) return e; await p.waitForTimeout(150); } while(Date.now() - t0 < ms); return e; };
 let e = await hasta((e) => e.tarjetas > 0);
-sí(e.fase === 'estante' && e.obras === 3 && e.tarjetas === 3, `el estante trae las 3 que se pueden leer, sin el PDF (${e.obras} obras, ${e.tarjetas} tarjetas)`);
+sí(e.fase === 'estante' && e.obras === 3 && e.tarjetas === 5, `el estante trae Buscar, Populares y las 3 que se pueden leer, sin el PDF (${e.obras} obras, ${e.tarjetas} tarjetas)`);
 await p.waitForTimeout(300); await p.screenshot({ path: CAPS + '/vr-leer-estante.png' });
 for(let i = 0; i < 4; i++) await boton(IZQ);
+await boton(DER); await boton(DER);
 await boton(X); await p.waitForTimeout(1200);
 e = await est(); sí(e.fase === 'leyendo' && e.obra === 'webtoon:1' && e.segs[0] === 1, `la serie con capítulos nuevos va primero y abre en el capítulo 1 (${e.obra} · ${e.segs})`);
 sí(e.texturas >= 2, `las páginas de cerca ya se pintaron (${e.texturas} de ${e.piezas})`);
@@ -79,6 +90,28 @@ const av = await p.evaluate(async () => { const d = await new Promise((ok) => { 
 sí(av && (av.cap > 0 || av.y > 0), `el libro guarda su avance para INKWELL (${JSON.stringify(av)})`);
 await p.evaluate(() => __vr.ir('inicio')); await p.waitForTimeout(300);
 sí(errores.length === 0, 'sin errores' + (errores.length ? ': ' + errores.slice(0, 3).join(' | ') : ''));
+
+/* ── buscar en Webtoon desde el visor, seguir la serie y que se bajen sus capítulos por detrás ── */
+await p.evaluate(() => __vr.ir('leer')); await p.waitForTimeout(900);
+await p.evaluate(() => __vr.ir('inicio')); await p.evaluate(() => __vr.ir('leer'));
+await hasta((e) => e.tarjetas > 0);
+for(let i = 0; i < 4; i++) await boton(IZQ);
+await boton(X); await p.waitForTimeout(400);
+sí(await p.evaluate(() => __vr.ahora()) === 'teclado', '«Buscar» abre el teclado');
+await p.evaluate(() => __teclado.escribir('mi serie')); await p.keyboard.press('Enter');
+e = await hasta((e) => e.fase === 'resultados' && e.tarjetas > 0, 8000);
+sí(e.fase === 'resultados' && e.tarjetas === 2, `salen resultados de Webtoon y Wattpad (${e.tarjetas})`);
+await p.screenshot({ path: CAPS + '/vr-leer-buscar.png' });
+for(let i = 0; i < 4; i++) await boton(IZQ);
+await boton(X);
+e = await hasta((e) => e.fase === 'estante' && e.bajando === 0 && e.obras === 4, 20000); await p.waitForTimeout(800);
+const bajados = await p.evaluate(async () => { const d = await new Promise((ok) => { const q = indexedDB.open('inkwell-tiras', 1); q.onsuccess = () => ok(q.result); });
+  return new Promise((ok) => { const r = d.transaction('caps').objectStore('caps').index('serie').getAllKeys('webtoon:123'); r.onsuccess = () => ok(r.result); }); });
+sí(e.obras === 4 && bajados.length === 3, `seguir la serie la agrega y baja 3 capítulos por detrás (${bajados})`);
+const ab = await p.evaluate(async () => { try{ await __lector.abrir('webtoon:123'); return 'ok'; }catch(e){ return 'error: ' + e.message; } }); console.log('  abrir:', ab); await p.waitForTimeout(900);
+e = await est(); sí(e.fase === 'leyendo' && e.obra === 'webtoon:123' && e.texturas >= 1, `la serie nueva se lee (${e.obra}, cap. ${e.segs})`);
+await boton(O); await p.waitForTimeout(400);
+sí(errores.length === 0, 'sin errores al buscar y bajar' + (errores.length ? ': ' + errores.slice(0, 3).join(' | ') : ''));
 await ctx.close();
 
 /* ── un visor sin nada bajado no le estropea la base a INKWELL ── */

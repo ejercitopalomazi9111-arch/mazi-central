@@ -132,10 +132,10 @@ async function montar(){
   /* CINE: YouTube, películas libres, enlaces y tus videos (cine.js); lo de otros sitios va en la pantalla de la web */
   const pedirTexto = montarTeclado(V);
   window.__cine = await montarCine(V, { VIDEOS, pedirTexto, web });
-  V.trasCuadro.push(web.colocar);
+  V.trasCuadro.push((...a) => { web.colocar(...a); V.encima.activa = web.activa; });
 
   /* LEER: INKWELL (Tiras y Libros) con lo que ya está bajado en este teléfono (lector.js) */
-  window.__lector = await montarLector(V);
+  window.__lector = await montarLector(V, { pedirTexto });
 
   /* AJUSTES: un panel; flechas arriba/abajo eligen, izquierda/derecha cambian */
   const aj = { grupo: new THREE.Group() };
