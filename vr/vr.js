@@ -229,10 +229,22 @@ export { B };
 const antes = [];
 let padVisto = false;
 export const control = { ejes: [0, 0, 0, 0], apretado: () => false, oprimido: [] };
+/* cuál es EL control (Carlos, 18 nov: «tengo el control pero no detecta ni pulsaciones ni al propio control»): varios
+   Android reportan como «control» cosas que no lo son (el lector de huella, los botones de volumen), y el primero de la
+   lista no siempre es el tuyo. Se queda el que parece un control de verdad: conectado, con 10 botones o más y, si hay
+   varios, el de mapa estándar y el que se usó más recientemente. */
+export function elegirPad(){
+  const todos = navigator.getGamepads ? [...navigator.getGamepads()].filter((p) => p && p.connected !== false) : [];
+  const reales = todos.filter((p) => p.buttons.length >= 10 && p.axes.length >= 2);
+  const L = reales.length ? reales : todos.filter((p) => p.buttons.some((b) => b.pressed));
+  return L.sort((a, b) => (b.mapping === 'standard') - (a.mapping === 'standard') || (b.timestamp || 0) - (a.timestamp || 0))[0] || null;
+}
+export const nombrePad = (p) => !p ? '' : /dualsense/i.test(p.id) ? 'DualSense' : /wireless controller|054c|sony|dualshock|playstation/i.test(p.id) ? 'PlayStation' : /xbox|045e/i.test(p.id) ? 'Xbox' : p.id.replace(/\(.*?\)/g, '').trim().slice(0, 24) || 'Control';
+addEventListener('gamepadconnected', (e) => { if(e.gamepad?.buttons?.length >= 10) hud(`Control: ${nombrePad(e.gamepad)}`, 1.6); });
+addEventListener('gamepaddisconnected', () => { if(!elegirPad()){ padVisto = false; hud('Control desconectado', 1.6); } });
 function leerControl(){
-  const pads = navigator.getGamepads ? [...navigator.getGamepads()].filter(Boolean) : [];
-  const p = pads[0]; const ahora = [];
-  if(p){ if(!padVisto){ padVisto = true; hud('Control conectado'); } p.buttons.forEach((b, i) => { ahora[i] = b.pressed || b.value > .5; }); control.ejes = [...p.axes].map((v) => Math.abs(v) < .18 ? 0 : v); }
+  const p = elegirPad(); const ahora = [];
+  if(p){ if(!padVisto){ padVisto = true; hud(`Control: ${nombrePad(p)}`, 1.6); } p.buttons.forEach((b, i) => { ahora[i] = b.pressed || b.value > .5; }); control.ejes = [...p.axes].map((v) => Math.abs(v) < .18 ? 0 : v); }
   else control.ejes = [0, 0, 0, 0];
   teclas.forEach((v, i) => { if(v) ahora[i] = true; });
   (extra.botones || []).forEach((v, i) => { if(v) ahora[i] = true; });   // los gestos de las manos
@@ -379,8 +391,12 @@ function cuadro(t){
   if(anillo.visible){ anillo.geometry.dispose(); anillo.geometry = new THREE.RingGeometry(.016, .021, 48, 1, Math.PI / 2, -Math.min(1, fijo) * Math.PI * 2); }
   fijoAhora = fijo;
   if(fijo >= 1) activar(viendo);
-  v?.cuadro?.(t / 1000, dt);
-  if(v?.atrasEn) ponerAtras();
+  /* la vista de AHORA: si Círculo, la palma o un clic cambiaron de pantalla en este cuadro, la de antes ya salió y no
+     le toca otro turno (Carlos, 18 nov: un sable morado gigante se quedaba flotando en el menú, porque Sables volvía a
+     prenderlo después de su propio salir) */
+  const va = vistas[vista];
+  va?.cuadro?.(t / 1000, dt);
+  if(va?.atrasEn) ponerAtras();
   for(const f of alCuadro) f(t / 1000, dt);
   mira.visible = !extra.rayo;
   if(aviso.malla.visible && performance.now() > avisoHasta) aviso.malla.visible = false;

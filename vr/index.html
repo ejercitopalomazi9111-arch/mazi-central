@@ -64,7 +64,7 @@ const $ = (s) => document.querySelector(s);
 /* ── la entrada: un toque antes de meter el teléfono al visor (el iPhone exige un toque para giroscopio, cámara y sonido) ── */
 const VIDEOS = [];
 $('#iVideos').addEventListener('change', (e) => { for(const f of e.target.files) VIDEOS.push({ nombre: f.name.replace(/\.[^.]+$/, ''), url: URL.createObjectURL(f) }); $('#eVideos').textContent = `${VIDEOS.length} ${VIDEOS.length === 1 ? 'video' : 'videos'}`; $('#eVideos').classList.toggle('si', VIDEOS.length > 0); });
-(function vigilarControl(){ if(!$('#eControl')) return; const p = navigator.getGamepads ? [...navigator.getGamepads()].some(Boolean) : false; $('#eControl').classList.toggle('si', p); $('#eControl').textContent = p ? 'Control listo' : 'Control'; if(!document.body.classList.contains('dentro')) requestAnimationFrame(vigilarControl); })();
+(function vigilarControl(){ if(!$('#eControl')) return; const p = V.elegirPad(); $('#eControl').classList.toggle('si', !!p); $('#eControl').textContent = p ? V.nombrePad(p) : 'Control: pica un botón'; if(!document.body.classList.contains('dentro')) requestAnimationFrame(vigilarControl); })();
 /* el visor se arma MIENTRAS se ve esta pantalla: al tocar Entrar ya está listo (antes se armaba después del toque) */
 const armado = montar();
 /* «Sin internet» se prende cuando todo quedó guardado en el teléfono (sw.js) */
