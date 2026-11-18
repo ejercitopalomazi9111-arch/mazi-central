@@ -81,5 +81,16 @@ for(let i = 0; i < 4; i++) await boton(IZQ); await boton(DER); await boton(DER);
 await p.evaluate(() => __teclado.escribir('youtu.be/ccccccccccc')); await p.keyboard.press('Enter'); await p.waitForTimeout(900);
 sí(await p.evaluate(() => __web.estado.modo === 'youtube' && !!document.querySelector('.yt-falso[data-id="ccccccccccc"]')), 'un enlace de YouTube abre YouTube');
 await boton(O); await p.waitForTimeout(300);
+/* un video VERTICAL (Carlos, 18 nov: «las pantallas se salen por arriba»): la pantalla tiene que caber en la vista */
+const VERT = '/tmp/mazivr-vertical.webm';
+if(!fs.existsSync(VERT)) execSync(`ffmpeg -v error -y -f lavfi -i testsrc=s=180x320:r=15 -t 2 -c:v libvpx-vp9 -b:v 100k ${VERT}`);
+await ctx.route(/\/prueba-vertical\.webm/, (r) => r.fulfill({ body: fs.readFileSync(VERT), contentType: 'video/webm' }));
+await p.evaluate(() => __cine.verArchivo('/prueba-vertical.webm')); await p.waitForTimeout(1500);
+e = await p.evaluate(() => __cine.estado()); sí(e.giro > 20, `se queda donde la pusiste con las manos (${e.giro}°)`);
+await p.evaluate(() => __vr.recentrar()); await p.waitForTimeout(300);
+e = await p.evaluate(() => __cine.estado()); sí(e.giro < 1, `recentrar la regresa enfrente (${e.giro}°)`);
+sí(e.fase === 'viendo' && e.altoGrados <= 54 && e.anchoGrados < e.altoGrados, `un video vertical cabe en la vista (${e.anchoGrados}° × ${e.altoGrados}° de alto; antes medía más de 90°)`);
+await p.screenshot({ path: CAPS + '/vr-vertical.png' });
+await boton(O); await p.waitForTimeout(300);
 sí(errores.length === 0, 'sin errores' + (errores.length ? ': ' + errores.slice(0, 3).join(' | ') : ''));
 console.log(`${ok} bien · ${mal} mal`); await b.close(); process.exit(mal ? 1 : 0);

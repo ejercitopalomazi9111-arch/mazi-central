@@ -172,6 +172,8 @@ const rumbo = () => { cabeza.getWorldDirection(adelante); return Math.atan2(-ade
 export function recentrar(){
   /* el menú queda enfrente de donde ves ahora */
   const r = rumbo(); hub.rotation.y = r; hub.position.copy(rig.position); hud('Al centro');
+  /* y las pantallas que se movieron con las manos regresan enfrente y a su tamaño */
+  for(const v of Object.values(vistas)) v.alRecentrar?.();
 }
 
 /* ── texto y tarjetas en lienzos ── */

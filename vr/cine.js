@@ -19,12 +19,19 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
   const peli = document.createElement('video'); peli.playsInline = true; peli.setAttribute('playsinline', '');
   const ptex = new THREE.VideoTexture(peli); ptex.colorSpace = THREE.SRGBColorSpace;
   const pantalla = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0x0b0814, toneMapped: false }));
-  let tam = 1; const ponerPantalla = () => { const ancho = dist * 1.15 * tam, asp = peli.videoWidth && fase === 'viendo' && !web.activa ? peli.videoWidth / peli.videoHeight : 16 / 9; pantalla.scale.set(ancho, ancho / asp, 1); pantalla.position.set(0, .25, -dist); };
+  /* que quepa en la vista (Carlos, 18 nov: «las pantallas se salen por arriba»): un video vertical con el ancho de uno
+     horizontal medía más de 90° de alto. De fábrica, a lo mucho el 56 % del campo de alto (49° con el de fábrica) y el 80 % de ancho; agrandarla
+     con las dos manos (tam) sí la deja pasar de ahí, porque eso lo pidió quien la agarró */
+  let tam = 1; const ponerPantalla = () => { const asp = peli.videoWidth && fase === 'viendo' && !web.activa ? peli.videoWidth / peli.videoHeight : 16 / 9;
+    const c = (V.AJ.campo || 88) * Math.PI / 180, maxAlto = 2 * dist * Math.tan(c * .28), maxAncho = 2 * dist * Math.tan(c * .4);
+    let ancho = Math.min(dist * 1.15, maxAncho), alto = ancho / asp; if(alto > maxAlto){ alto = maxAlto; ancho = alto * asp; }
+    pantalla.scale.set(ancho * tam, alto * tam, 1); pantalla.position.set(0, alto * tam > maxAlto * .8 ? .05 : .25, -dist); };
   /* la pantalla cuelga de un soporte centrado en tu cabeza: con las dos manos pellizcando se lleva a donde quieras
      (encima de ti para verla acostado, de lado, en diagonal) y se agranda o achica (agarre.js) */
   const soporte = new THREE.Group(); cine.grupo.add(soporte);
   const agarrar = crearAgarre(V, { soporte, getEscala: () => tam, setEscala: (e) => { tam = e; ponerPantalla(); }, min: .35, max: 3 });
   ponerPantalla(); soporte.add(pantalla); pantalla.visible = false;
+  cine.alRecentrar = () => { soporte.quaternion.identity(); tam = 1; ponerPantalla(); };
   web.anclar(pantalla);
   peli.addEventListener('loadedmetadata', ponerPantalla);
 
@@ -120,13 +127,15 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
     limpiarTarjetas(); fase = 'resultados';
     if(!VIDEOS.length){ decir('Sin videos'); return; }
     decir('');
-    mostrar(VIDEOS.map((v) => ({ titulo: v.nombre, url: v.url, mio: true })), (v) => {
-      fase = 'viendo'; limpiarTarjetas(); decir(''); pantalla.visible = true;
-      peli.src = v.url; peli.play().catch(() => {}); pantalla.material.map = ptex; pantalla.material.color.set(0xffffff); pantalla.material.needsUpdate = true;
-    });
+    mostrar(VIDEOS.map((v) => ({ titulo: v.nombre, url: v.url, mio: true })), (v) => verArchivo(v.url));
   }
+  function verArchivo(url){
+    tam = 1; ponerPantalla(); fase = 'viendo'; limpiarTarjetas(); decir(''); pantalla.visible = true;
+    peli.src = url; peli.play().catch(() => {}); pantalla.material.map = ptex; pantalla.material.color.set(0xffffff); pantalla.material.needsUpdate = true;
+  }
+  cine.verArchivo = verArchivo;
 
-  function ver(abrir){ fase = 'viendo'; limpiarTarjetas(); decir(''); pantalla.visible = false;   /* la de la web va encima; el marco 3D sólo da las esquinas */
+  function ver(abrir){ tam = 1; fase = 'viendo'; limpiarTarjetas(); decir(''); pantalla.visible = false;   /* la de la web va encima; el marco 3D sólo da las esquinas */
     pantalla.material.map = null; pantalla.material.color.set(0x0b0814); pantalla.material.needsUpdate = true; ponerPantalla(); abrir(); }
   function dejarDeVer(){
     if(web.activa) web.cerrar();
@@ -175,7 +184,7 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
     V.extra.gestosVideo = fase === 'viendo';
     if(fase === 'viendo') gestosVideo(); else gV.activo = false;
   };
-  cine.estado = () => ({ fase, web: web.estado.modo, tarjetas: tarjetas.length, dist: +dist.toFixed(2), tam: +tam.toFixed(2), giro: +(2 * Math.acos(Math.min(1, Math.abs(soporte.quaternion.w))) * 180 / Math.PI).toFixed(1), pausa: web.activa ? null : peli.paused, t: web.activa ? null : +peli.currentTime.toFixed(1) });
+  cine.estado = () => ({ fase, altoGrados: +(2 * Math.atan(pantalla.scale.y / 2 / dist) * 180 / Math.PI).toFixed(1), anchoGrados: +(2 * Math.atan(pantalla.scale.x / 2 / dist) * 180 / Math.PI).toFixed(1), web: web.estado.modo, tarjetas: tarjetas.length, dist: +dist.toFixed(2), tam: +tam.toFixed(2), giro: +(2 * Math.acos(Math.min(1, Math.abs(soporte.quaternion.w))) * 180 / Math.PI).toFixed(1), pausa: web.activa ? null : peli.paused, t: web.activa ? null : +peli.currentTime.toFixed(1) });
   V.registrar('cine', cine);
   return cine;
 }
