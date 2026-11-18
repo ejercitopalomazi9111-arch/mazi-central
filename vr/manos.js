@@ -58,6 +58,33 @@ export async function iniciarManos(V){
     return out.set((p.x * 2 - 1) * tx * dist, -(p.y * 2 - 1) * ty * dist, -dist + p.z * 2 * tx * dist);
   }
   const d3 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+  /* ── EL RASTREO CON MEMORIA (Carlos, 18 nov: «el tracker no guarda contexto de dónde estaba el dedo antes; si se tapa un
+     pedazo lo marca en otra posición») ──
+     · Filtro «un euro» en cada punto: quieto casi no tiembla; rápido, no se atrasa (Casiez et al., 2012).
+     · Un dedo que BRINCA sin que se mueva la mano (lo que hace MediaPipe cuando adivina un dedo tapado) se toma con
+       desconfianza: se acerca poco a poco al nuevo lugar en vez de saltar.
+     · Si la mano se pierde un instante (≤ 0.35 s), se sostiene donde iba: no se suelta lo que traías ni desaparece el cursor. */
+  const UE = { minCorte: 1.4, beta: 9, dCorte: 1 };
+  const alfa = (corte, dt) => { const r = 2 * Math.PI * corte * dt; return r / (r + 1); };
+  function filtrar(m, L, ahora){
+    const f = m.filtro, dt = f ? Math.max(1 / 120, (ahora - f.t) / 1000) : 1 / 30;
+    if(!f){ m.filtro = { t: ahora, p: L.map((q) => ({ x: q.x, y: q.y, z: q.z, dx: 0, dy: 0, dz: 0 })) }; return L.map((q) => ({ ...q })); }
+    const escala = Math.hypot(L[9].x - L[0].x, L[9].y - L[0].y) || .1, mw = Math.hypot(L[0].x - f.p[0].x, L[0].y - f.p[0].y);
+    const out = L.map((q, i) => {
+      const P = f.p[i]; let x = q.x, y = q.y, z = q.z;
+      /* brinco de un solo dedo: más de un tercio de mano lejos de donde iba, con la muñeca casi quieta */
+      const salto = Math.hypot(x - P.x, y - P.y) - mw; if(i > 4 && salto > escala * .35){ x = P.x + (x - P.x) * .25; y = P.y + (y - P.y) * .25; z = P.z + (z - P.z) * .25; }
+      const ad = alfa(UE.dCorte, dt);
+      P.dx += ad * ((x - P.x) / dt - P.dx); P.dy += ad * ((y - P.y) / dt - P.dy); P.dz += ad * ((z - P.z) / dt - P.dz);
+      const vel = Math.hypot(P.dx, P.dy), a = alfa(UE.minCorte + UE.beta * vel, dt);
+      P.x += a * (x - P.x); P.y += a * (y - P.y); P.z += a * (z - P.z);
+      return { x: P.x, y: P.y, z: P.z };
+    });
+    f.t = ahora; return out;
+  }
+  /* las de MediaPipe en metros (W) sólo se suavizan un poco: con ellas se mide el pellizco y el gatillo */
+  function filtrarW(m, W){ if(!W) return W; if(!m.fW){ m.fW = W.map((q) => ({ x: q.x, y: q.y, z: q.z })); return m.fW.map((q) => ({ ...q })); }
+    m.fW.forEach((P, i) => { P.x += (W[i].x - P.x) * .6; P.y += (W[i].y - P.y) * .6; P.z += (W[i].z - P.z) * .6; }); return m.fW.map((q) => ({ ...q })); }
   estado.cuadro = (t) => {
     const video = V.video, ahora = performance.now();
     if(!V.hayCamara() || !V.AJ.manos || video.readyState < 2){ manos.forEach((m) => { m.g.visible = false; }); rayosVis.forEach((x) => { x.linea.visible = x.cursor.visible = false; }); V.extra.rayo = null; V.extra.rayos = []; V.extra.manos = []; return; }
@@ -94,15 +121,18 @@ export async function iniciarManos(V){
     estado.vistas = cand.length;
     manos.forEach((m, k) => {
       const c = asign[k];
-      if(!c){ m.g.visible = false; m.pellizco = false; m.palmaDesde = 0; m.suave = null; m.ult = null; m.info = null; m.fijo = null; m.hist = null; m.etiqueta = ''; m.G = null; return; }
-      const L = c.L; m.ult = { x: c.wx, y: c.wy }; m.W = c.W; if(c.etiqueta && c.seguro > .8) m.etiqueta = c.etiqueta;
+      /* perdida un instante: se sostiene como iba (no se suelta lo agarrado, el cursor no parpadea) */
+      if(!c && m.info && ahora - (m.vistaEn || 0) < 350){ m.info.estimada = true; visibles.push(m.info); return; }
+      if(!c){ m.g.visible = false; m.pellizco = false; m.palmaDesde = 0; m.suave = null; m.ult = null; m.info = null; m.fijo = null; m.hist = null; m.etiqueta = ''; m.G = null; m.filtro = null; m.fW = null; return; }
+      m.vistaEn = ahora;
+      const L = filtrar(m, c.L, ahora); m.ult = { x: c.wx, y: c.wy }; m.W = filtrarW(m, c.W); if(c.etiqueta && c.seguro > .8) m.etiqueta = c.etiqueta;
       const s = tamano(L, asp), dist = Math.min(1.2, Math.max(.15, .085 / (s * 2 * tx)));
       /* EN tu mano (Carlos, 18 nov): con la mixta, la imagen de la cámara está pintada al fondo (a 20 m) y cada ojo la ve en el
          mismo lugar; los puntos se ponen a esa misma distancia y en la misma dirección, así caen justo encima de tu mano y no
          se desdoblan entre ojos. Sin la mixta no se ve tu mano: se dibujan a la distancia que se calcula, como una mano virtual */
       const mixta = V.AJ.mixta, lejos = 19.5;
       const nuevos = L.map((p) => mixta ? aEspacio({ x: p.x, y: p.y, z: 0 }, lejos, tx, ty, new THREE.Vector3()) : aEspacio(p, dist, tx, ty, new THREE.Vector3()));
-      if(!m.suave || m.mixta !== mixta) m.suave = nuevos; else m.suave.forEach((q, i) => q.lerp(nuevos[i], .55));
+      m.suave = nuevos;   /* ya viene filtrado (un euro): sin otra capa de retraso */
       m.mixta = mixta;
       m.suave.forEach((q, i) => { m.pts[i].position.copy(q); m.pts[i].scale.setScalar(q.length() * (i === 8 || i === 4 ? .0062 : .0042)); });
       const pos = m.lin.geometry.attributes.position; HUESOS.forEach(([a, b], i) => { pos.setXYZ(i * 2, ...m.suave[a].toArray()); pos.setXYZ(i * 2 + 1, ...m.suave[b].toArray()); }); pos.needsUpdate = true;
@@ -111,7 +141,7 @@ export async function iniciarManos(V){
       const G = leer(L, asp); m.G = G;
       /* el pellizco con la mano EN 3D (metros, de MediaPipe): de frente la punta del pulgar tapa a la del índice y en la
          imagen plana nunca «se tocaban» (por eso no jalaba pellizcar) */
-      const W = c.W;
+      const W = m.W;
       /* más fácil de captar (Carlos, 18 nov: «a veces no lo captura»): cuenta si se tocan en 3D o en la imagen */
       if(W){ const p3 = d3(W[4], W[8]); G.pellizca = !G.puno && (p3 < .038 || G.pinza < .3); G.suelta = G.puno || (p3 > .058 && G.pinza > .45); G.pinza3 = p3; }
       /* puño arriba y abajo 4 veces: el menú se vuelve a poner enfrente de donde miras */
@@ -129,7 +159,15 @@ export async function iniciarManos(V){
          meñique → nudillo del índice, índice = nudillo → punta; doblez = cuánto se dobla el índice (0 estirado, ~90 doblado) */
       if(W){ const sx = voltear ? -1 : 1, aM = (a, b) => new THREE.Vector3(sx * (W[b].x - W[a].x), -sx * (W[b].y - W[a].y), -(W[b].z - W[a].z)).normalize().transformDirection(cabeza.matrixWorld);
         const v1 = aM(5, 6), v2 = aM(6, 8);
-        mano.ejes = { adelante: aM(0, 5), lado: aM(17, 5), indice: aM(5, 8), doblez: v1.angleTo(v2) * 180 / Math.PI }; }
+        /* recto: qué tan estirado está el índice (1 recto, ~.5 doblado), medido por lo largo contra la suma de sus huesos;
+           pulgar: qué tan pegado está el pulgar al costado del índice (chico = apretado, como un botón) */
+        const largo = d3(W[5], W[6]) + d3(W[6], W[7]) + d3(W[7], W[8]) || 1, palma = d3(W[0], W[5]) || 1;
+        mano.ejes = { adelante: aM(0, 5), lado: aM(17, 5), indice: aM(5, 8), doblez: v1.angleTo(v2) * 180 / Math.PI,
+          recto: d3(W[5], W[8]) / largo, pulgar: Math.min(d3(W[4], W[6]), d3(W[4], W[5])) / palma }; }
+      /* hacia dónde quedan la punta y el nudillo del índice VISTOS DESDE TU CABEZA (lo que sirve para apuntar aunque el
+         dedo esté de frente y su dirección 3D falle) */
+      { const ojo = cabeza.getWorldPosition(new THREE.Vector3()), dirDe = (i) => cabeza.localToWorld(m.suave[i].clone()).sub(ojo).normalize();
+        mano.vista = { punta: dirDe(8), nudillo: dirDe(5), muneca: dirDe(0) }; }
       m.info = mano; visibles.push(mano);
       if(G.palma && !m.pellizco){ m.palmaDesde = m.palmaDesde || ahora; if(ahora - m.palmaDesde > 800 && ahora > enfriar){ botones[V.B.O] = true; enfriar = ahora + 1500; m.palmaDesde = 0; estado.gesto = 'palma'; } }
       else m.palmaDesde = 0;
@@ -142,9 +180,14 @@ export async function iniciarManos(V){
     const rayos = [];
     for(const m of manos){
       if(!m.info) continue;
-      const I = m.info, Wm = m.W, o = I.mundo.dedo.clone(), d = new THREE.Vector3();
-      if(Wm){ const sx = voltear ? -1 : 1; d.set(sx * (Wm[8].x - Wm[5].x), -sx * (Wm[8].y - Wm[5].y), -(Wm[8].z - Wm[5].z)).normalize().transformDirection(cabeza.matrixWorld); }
-      else { const hombro = cabeza.localToWorld(new THREE.Vector3(I.lado * .17, -.3, .05)); d.copy(I.mundo.indice).sub(hombro).normalize(); }
+      /* A TRAVÉS DEL DEDO (Carlos, 18 nov: «el rayo en el ojo derecho está más a la derecha y en el izquierdo más a la
+         izquierda que el dedo»; «cuando apunto hacia adelante la mano no se traquea bien y el rayo sale hacia cualquier
+         lado»). El rayo sale de tu cabeza y pasa por la punta de tu índice tal como la ve la cámara: el cursor cae justo
+         donde tu dedo tapa algo. Con la mixta tu mano se ve en la imagen de la cámara, igual en los dos ojos; un rayo
+         que sale del dedo en 3D se desdobla, uno por ojo. Y la punta en la imagen se ve aunque el dedo apunte de frente,
+         que es justo cuando su dirección 3D falla. */
+      const I = m.info, o = cabeza.getWorldPosition(new THREE.Vector3()), d = new THREE.Vector3();
+      if(m.suave?.[8]) d.copy(cabeza.localToWorld(m.suave[8].clone())).sub(o).normalize(); else d.copy(I.mundo.dedo).sub(o).normalize();
       /* AL PELLIZCAR EL RAYO SE CONGELA (Carlos, 18 nov: «cuando apunto y hago el click no sirve»): para juntar los dedos el
          índice se dobla hacia el pulgar y el rayo se iba para otro lado justo en el clic. Mientras dura el pellizco se usa
          hacia dónde apuntaba ~200 ms antes de que se notara; sólo se traslada con la muñeca (para arrastrar). */
@@ -152,7 +195,9 @@ export async function iniciarManos(V){
       H.push({ t: ahora, o: o.clone(), d: d.clone(), w: I.mundo.muneca.clone() }); while(H.length > 2 && ahora - H[0].t > 700) H.shift();
       if(m.pellizco){
         if(!m.fijo){ const e = H.filter((x) => ahora - x.t >= 200).pop() || H[0]; m.fijo = { o: e.o.clone(), d: e.d.clone(), w: e.w.clone(), desde: ahora }; m.dirSuave = e.d.clone(); }
-        o.copy(m.fijo.o).add(I.mundo.muneca.clone().sub(m.fijo.w)); d.copy(m.fijo.d);
+        /* congelado: lo que se mueve la MANO (la muñeca vista desde tu cabeza) gira el rayo, para poder arrastrar */
+        const w0 = m.fijo.w.clone().sub(o).normalize(), w1 = I.mundo.muneca.clone().sub(o).normalize();
+        d.copy(m.fijo.d).applyQuaternion(new THREE.Quaternion().setFromUnitVectors(w0, w1));
       } else m.fijo = null;
       /* suavizado aparte: el rayo tiembla más que la mano porque amplifica el giro */
       if(m.fijo) m.dirSuave.copy(d); else if(!m.dirSuave) m.dirSuave = d.clone(); else m.dirSuave.lerp(d, .45).normalize();
@@ -175,7 +220,8 @@ export async function iniciarManos(V){
       pA.copy(R.origen); pB.copy(R.hit || pB.copy(R.dir).multiplyScalar(4).add(R.origen));
       cabeza.worldToLocal(pA); cabeza.worldToLocal(pB);
       const P = x.linea.geometry.attributes.position; P.setXYZ(0, pA.x, pA.y, pA.z); P.setXYZ(1, pB.x, pB.y, pB.z); P.needsUpdate = true;
-      x.linea.visible = true; x.linea.material.opacity = R === V.extra.rayo ? .6 : .3;
+      /* sin línea: el cursor sale sólo sobre un botón (Carlos, 18 nov: «si no estoy mirando a ningún botón, que el cursor desaparezca») */
+      x.linea.visible = false;
       x.cursor.visible = !!R.hit; if(R.hit){ x.cursor.position.copy(pB); x.cursor.scale.setScalar(Math.max(.4, -pB.z)); }
       x.cursor.material.color.set(R.pellizco ? 0xC77DFF : 0xffffff);
     });
