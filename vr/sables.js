@@ -99,14 +99,31 @@ export function montarSables(V){
 
   const wp = new THREE.Vector3(), base = new THREE.Vector3(), punta = new THREE.Vector3(), vel = new THREE.Vector3(), seg = new THREE.Vector3(), cerca = new THREE.Vector3();
   const distSeg = (p, a, b) => { seg.copy(b).sub(a); const t = Math.max(0, Math.min(1, cerca.copy(p).sub(a).dot(seg) / (seg.lengthSq() || 1))); return cerca.copy(a).addScaledVector(seg, t).distanceTo(p); };
+  /* CON EL CONTROL (Carlos, 18 nov: «las manos se salen de la cámara y se pierde el sable»): cada stick es un sable
+     (izquierdo vino, derecho morado). El sable sale de un punto frente a tu hombro y el stick lo inclina: empujarlo
+     rápido de un lado a otro es el corte. Si hay control, mandan los sticks; si no, las manos */
+  const baseCtl = new THREE.Vector3();
+  function fuentes(){
+    if(V.hayControl()){
+      const e = V.control.ejes || [0, 0, 0, 0];
+      return [[-1, e[0], e[1]], [1, e[2], e[3]]].map(([lado, ax, ay]) => {
+        /* en reposo el sable va hacia arriba y al frente (como se sostiene uno): así un barrido de lado alcanza las tres filas */
+        const b = V.cabeza.localToWorld(baseCtl.set(lado * .2, -.5, -.3).clone());
+        const d = new THREE.Vector3(ax * 1.3 + lado * .1, .85 - ay * 1.2, -.75).normalize().transformDirection(V.cabeza.matrixWorld);
+        return { lado, base: b, dir: d };
+      });
+    }
+    return (V.extra.manos || []).map((m) => ({ lado: m.lado, base: m.mundo.palma.clone(), dir: m.mundo.punta.clone().sub(m.mundo.muneca).normalize() }));
+  }
   sables.cuadro = (_, dt = 1 / 60) => {
-    /* los sables siguen a las manos (también fuera de partida: así se ve que jalan) */
+    /* los sables siguen a las manos o al control (también fuera de partida: así se ve que jalan) */
     const vistos = { '-1': false, '1': false };
-    for(const m of V.extra.manos || []){
+    for(const m of fuentes()){
       const k = String(m.lado); if(vistos[k]) continue; vistos[k] = true;
-      base.copy(m.mundo.palma); dirH.copy(m.mundo.punta).sub(m.mundo.muneca).normalize();
+      base.copy(m.base); dirH.copy(m.dir);
       const h = hojas[k]; h.visible = true; h.position.copy(base); q.setFromUnitVectors(arriba, dirH); h.quaternion.copy(q);
-      punta.copy(base).addScaledVector(dirH, .55);
+      const largo = V.hayControl() ? .95 : .55; h.scale.y = largo / .55;
+      punta.copy(base).addScaledVector(dirH, largo);
       const pr = previo[k]; vel.set(0, 0, 0); if(pr) vel.copy(punta).sub(pr.punta).divideScalar(Math.max(dt, 1 / 120));
       /* los cortes */
       if(estado === 'jugando') for(const b of bloques){
@@ -117,7 +134,7 @@ export function montarSables(V){
         const local = vel.clone().applyQuaternion(pista.quaternion.clone().invert()), d = DIRS[b.dir];
         const bien = !d || (local.x * d[0] + local.y * d[1]) > .45 * Math.hypot(local.x, local.y);
         if(!bien){ combo = 1; fallas++; V.hud('Mal', .5); partir(b, local); continue; }
-        const color = (b.lado < 0) === (m.lado < 0);
+        const color = (b.lado < 0) === (m.lado < 0);   // el lado de la mano o del stick
         puntos += (color ? 100 : 50) * combo; combo = Math.min(8, combo + (color ? 1 : 0)); mejorCombo = Math.max(mejorCombo, combo); aciertos++;
         V.sonar('toque', .4); partir(b, local);
       }
@@ -125,7 +142,7 @@ export function montarSables(V){
     }
     for(const k of ['-1', '1']) if(!vistos[k]){ hojas[k].visible = false; previo[k] = null; }
 
-    if(estado !== 'jugando'){ if(estado === 'listo') pintarTablero((V.extra.manos || []).length ? 'Corta al ritmo' : 'Pon las manos frente a la cámara'); return; }
+    if(estado !== 'jugando'){ if(estado === 'listo') pintarTablero(V.hayControl() ? 'Sticks: tus sables' : (V.extra.manos || []).length ? 'Corta al ritmo' : 'Pon las manos frente a la cámara'); return; }
     musica();
     const t = performance.now() / 1000 - t0;
     /* un bloque por tiempo (a veces dos), sin repetir lado seguido, y salen con su tiempo de vuelo por delante */
@@ -151,6 +168,7 @@ export function montarSables(V){
   sables.atras = () => V.ir('juegos');
   sables.elegibles = () => (estado !== 'jugando' && otra.malla ? [otra.malla] : []);
   Object.defineProperty(sables, 'ocupaStick', { get: () => estado === 'jugando' });
+  Object.defineProperty(sables, 'ocupaGiro', { get: () => estado === 'jugando' });
   sables.estado = () => ({ estado, puntos, combo, aciertos, fallas, bloques: bloques.length });
   sables.empezar = empezar;
   V.registrar('sables', sables);

@@ -15,18 +15,9 @@ await p.waitForFunction(() => window.__vr?.ahora() === 'inicio', null, { timeout
 await p.evaluate(() => { __vr.ir('juegos'); }); await p.waitForTimeout(300);
 await p.evaluate(() => { __vr.ir('sables'); }); await p.waitForTimeout(400);
 sí(await p.evaluate(() => __vr.ahora()) === 'sables', 'Juegos → Sables abre');
-/* la mano de mentiras: palma abajo-enfrente, sable hacia arriba, barriendo de lado a lado a ~3 m/s */
-await p.evaluate(() => {
-  const V = __vr, T = V.THREE;
-  V.alCuadro.unshift(() => {});   // (nada: las manos se ponen antes de cada cuadro, abajo)
-  const mover = () => {
-    const t = performance.now() / 1000, x = Math.sin(t * 5) * .6;
-    const enCabeza = (x, y, z) => V.cabeza.localToWorld(new T.Vector3(x, y, z));
-    V.extra.manos = [{ lado: 1, pellizco: false, x: .5, y: .5, mundo: { palma: enCabeza(x, -.45, -.55), muneca: enCabeza(x, -.6, -.5), punta: enCabeza(x, -.25, -.6) } }];
-    requestAnimationFrame(mover);
-  };
-  mover();
-});
+/* con control: los dos sticks barren de lado a lado (como quien corta rápido con los pulgares) */
+await p.evaluate(() => { const mover = () => { const t = performance.now() / 1000, v = Math.sin(t * 7);
+  window.__pad.axes[0] = v; window.__pad.axes[2] = -v; window.__pad.axes[1] = .2; window.__pad.axes[3] = .2; requestAnimationFrame(mover); }; mover(); });
 await p.evaluate(() => __sables.empezar());
 await p.waitForTimeout(1500);
 let e = await p.evaluate(() => __sables.estado());

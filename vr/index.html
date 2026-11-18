@@ -77,6 +77,9 @@ if('serviceWorker' in navigator && !navigator.webdriver || 'serviceWorker' in na
 $('#bEntrar').addEventListener('click', async () => {
   $('#bEntrar').disabled = true;
   /* lo que exige el toque va primero y sin esperar a nada más */
+  /* Android: a pantalla completa y acostado (si no, se queda la barra del navegador y la vista sale como «pantalla
+     individual»). En el iPhone no existe para páginas: ahí se usa «Agregar a inicio» */
+  try{ const p = document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); p?.then(() => screen.orientation?.lock?.('landscape')).catch(() => {}); }catch{}
   web.desbloquear();      /* los videos de la web sólo suenan si ya sonaron una vez con un toque */
   V.despertarAudio();
   try{ if(typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) await DeviceOrientationEvent.requestPermission(); }catch{}

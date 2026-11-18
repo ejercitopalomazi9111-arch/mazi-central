@@ -17,7 +17,7 @@ export async function iniciarManos(V){
   try{
     const { FilesetResolver, HandLandmarker } = await import(MP + 'vision_bundle.mjs');
     const fs = await FilesetResolver.forVisionTasks(MP + 'wasm');
-    const op = (delegate) => ({ baseOptions: { modelAssetPath: new URL('modelos/hand_landmarker.task', location.href).href, delegate }, runningMode: 'VIDEO', numHands: 2,
+    const op = (delegate) => ({ baseOptions: { modelAssetPath: new URL('modelos/hand_landmarker.task', location.href).href, delegate }, runningMode: 'VIDEO', numHands: 4,
       minHandDetectionConfidence: .5, minHandPresenceConfidence: .5, minTrackingConfidence: .5 });
     try{ lm = await HandLandmarker.createFromOptions(fs, op('GPU')); }catch{ lm = await HandLandmarker.createFromOptions(fs, op('CPU')); }
     estado.listo = true;
@@ -67,10 +67,22 @@ export async function iniciarManos(V){
     const voltear = V.AJ.camVoltear;
     estado.manos = r.landmarks.length; estado.gesto = '';
     let apuntador = null; const botones = []; const visibles = [];
+    /* LAS TUYAS, aunque se cuelen otras (Carlos, 18 nov: «si se cuela otra mano se me quita una de las mías»): se ven
+       hasta 4 y se quedan las dos que son tuyas: las más grandes (más cerca de la cámara) y las que entran por abajo
+       de la imagen (de tu cuerpo). Cada una sigue en su lugar mientras se mueva poco entre cuadros */
+    const cand = r.landmarks.map((l, i) => { const L = voltear ? l.map((p) => ({ x: 1 - p.x, y: 1 - p.y, z: p.z })) : l;
+      return { L, W: r.worldLandmarks?.[i], s: tamano(L, asp), wx: L[0].x, wy: L[0].y }; });
+    cand.forEach((c) => { c.nota = c.s * 4 + c.wy * .8; });
+    const mias = cand.sort((a, b) => b.nota - a.nota).slice(0, 2), asign = [null, null];
+    manos.forEach((m, k) => { if(!m.ult) return; let mejor = null, md = .3;
+      for(const c of mias){ if(asign.includes(c)) continue; const d = Math.hypot(c.wx - m.ult.x, c.wy - m.ult.y); if(d < md){ md = d; mejor = c; } }
+      asign[k] = mejor; });
+    for(const c of mias) if(!asign.includes(c)){ const libre = asign.findIndex((x, k) => !x && !manos[k].ult) >= 0 ? asign.findIndex((x, k) => !x && !manos[k].ult) : asign.findIndex((x) => !x); if(libre >= 0) asign[libre] = c; }
+    estado.vistas = cand.length;
     manos.forEach((m, k) => {
-      const l = r.landmarks[k];
-      if(!l){ m.g.visible = false; m.pellizco = false; m.palmaDesde = 0; m.suave = null; return; }
-      const L = voltear ? l.map((p) => ({ x: 1 - p.x, y: 1 - p.y, z: p.z })) : l;
+      const c = asign[k];
+      if(!c){ m.g.visible = false; m.pellizco = false; m.palmaDesde = 0; m.suave = null; m.ult = null; m.info = null; return; }
+      const L = c.L; m.ult = { x: c.wx, y: c.wy }; m.W = c.W;
       const s = tamano(L, asp), dist = Math.min(1.2, Math.max(.15, .085 / (s * 2 * tx)));
       /* EN tu mano (Carlos, 18 nov): con la mixta, la imagen de la cámara está pintada al fondo (a 20 m) y cada ojo la ve en el
          mismo lugar; los puntos se ponen a esa misma distancia y en la misma dirección, así caen justo encima de tu mano y no
@@ -86,8 +98,9 @@ export async function iniciarManos(V){
       const G = leer(L, asp);
       /* el pellizco con la mano EN 3D (metros, de MediaPipe): de frente la punta del pulgar tapa a la del índice y en la
          imagen plana nunca «se tocaban» (por eso no jalaba pellizcar) */
-      const W = r.worldLandmarks?.[k];
-      if(W){ const p3 = d3(W[4], W[8]); G.pellizca = p3 < .032 && !G.puno; G.suelta = p3 > .05 || G.puno; G.pinza3 = p3; }
+      const W = c.W;
+      /* más fácil de captar (Carlos, 18 nov: «a veces no lo captura»): cuenta si se tocan en 3D o en la imagen */
+      if(W){ const p3 = d3(W[4], W[8]); G.pellizca = !G.puno && (p3 < .038 || G.pinza < .3); G.suelta = G.puno || (p3 > .058 && G.pinza > .45); G.pinza3 = p3; }
       /* puño arriba y abajo 4 veces: el menú se vuelve a poner enfrente de donde miras */
       if(m.puno(G.puno, L[0].y, ahora)){ V.recentrar(); V.hud('Centrado', 1.2); V.sonar('ding', .3); }
       if(!m.pellizco && G.pellizca) m.pellizco = true; else if(m.pellizco && G.suelta) m.pellizco = false;
@@ -108,8 +121,12 @@ export async function iniciarManos(V){
     V.extra.botones = botones; V.extra.manos = visibles;
     /* el rayo: del «hombro» (un poco abajo y del lado de esa mano) a la mano, y de ahí hacia adelante */
     if(apuntador?.info){
-      const I = apuntador.info, hombro = cabeza.localToWorld(new THREE.Vector3(I.lado * .17, -.3, .05));
-      origen.copy(I.mundo.indice); dir.copy(I.mundo.indice).sub(hombro).normalize();
+      /* DERECHO, hacia donde apunta el dedo (Carlos, 18 nov: «salía en diagonal hacia arriba»): la dirección es la del
+         propio índice (nudillo → punta) en 3D, en metros, como la da MediaPipe; sale de la punta del dedo */
+      const I = apuntador.info, Wm = apuntador.W;
+      origen.copy(I.mundo.indice);
+      if(Wm){ const sx = voltear ? -1 : 1; dir.set(sx * (Wm[8].x - Wm[5].x), -sx * (Wm[8].y - Wm[5].y), -(Wm[8].z - Wm[5].z)).normalize().transformDirection(cabeza.matrixWorld); }
+      else { const hombro = cabeza.localToWorld(new THREE.Vector3(I.lado * .17, -.3, .05)); dir.copy(I.mundo.indice).sub(hombro).normalize(); }
       /* suavizado aparte: el rayo tiembla más que la mano porque amplifica el giro */
       if(!apuntador.dirSuave) apuntador.dirSuave = dir.clone(); else apuntador.dirSuave.lerp(dir, .45).normalize();
       V.extra.rayo = { origen: origen.clone(), dir: apuntador.dirSuave.clone() };
