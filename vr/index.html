@@ -109,8 +109,15 @@ $('#bEntrar').addEventListener('click', async () => {
 function menuAjustable(v, piezas){
   const tam = () => V.AJ.menuTam || 1, dist = () => V.AJ.menuDist || 1;
   let puesto = '';
+  /* más grandes, más separadas (si no, se enciman): cada pieza guarda su ángulo y su radio de origen y se abre el arco */
   const poner = () => { const k = tam() + '|' + dist(); if(k === puesto) return; puesto = k;
-    v.grupo.scale.setScalar(dist()); for(const p of piezas()) p.scale.setScalar(tam() / dist()); };
+    const abre = Math.max(.75, Math.min(2.2, tam() / dist()));
+    v.grupo.scale.setScalar(dist());
+    for(const p of piezas()){
+      if(!p.userData.base) p.userData.base = { a: Math.atan2(p.position.x, -p.position.z), r: Math.hypot(p.position.x, p.position.z), y: p.position.y };
+      const { a, r, y } = p.userData.base, aa = a * abre;
+      p.position.set(Math.sin(aa) * r, y * Math.max(1, abre * .9), -Math.cos(aa) * r); p.lookAt(v.grupo.localToWorld(new THREE.Vector3(0, p.position.y, 0)));
+      p.scale.setScalar(tam() / dist()); } };
   let guardarEn = 0; const guardarLuego = () => { clearTimeout(guardarEn); guardarEn = setTimeout(V.guardar, 600); };
   const setTam = (e) => { V.AJ.menuTam = +e.toFixed(3); poner(); guardarLuego(); };
   const agarrar = crearAgarre(V, { soporte: v.grupo, getEscala: tam, setEscala: setTam, min: .5, max: 2.2 });

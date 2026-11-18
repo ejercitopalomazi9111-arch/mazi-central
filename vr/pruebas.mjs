@@ -18,7 +18,8 @@ const boton = async (i) => { await p.evaluate((i) => { window.__pad.buttons[i] =
   await p.evaluate((i) => { window.__pad.buttons[i] = { pressed: false, touched: false, value: 0 }; }, i); await p.waitForTimeout(160); };
 await p.goto(BASE + '/vr/', { waitUntil: 'networkidle' });
 sí(await p.locator('#eControl.si').count() === 1, 'la entrada ve el control');
-await p.click('#bEntrar'); await p.waitForTimeout(2500);
+/* poco tiempo: desde el 18 nov mirar fijo elige también con control, y en 2.5 s quieto ya entraría a «Leer» */
+await p.click('#bEntrar'); await p.waitForFunction(() => window.__vr?.ahora() === 'inicio', null, { timeout: 15000 }); await p.waitForTimeout(300);
 sí(await p.evaluate(() => window.__vr.ahora()) === 'inicio', 'entra al inicio');
 await p.screenshot({ path: CAPS + '/vr-inicio.png' });
 /* foco con flechas: la mira empieza en «Cine»… se mueve a la derecha hasta el tope y llega a Ajustes */
@@ -31,11 +32,12 @@ sí((await p.evaluate(() => JSON.parse(localStorage.getItem('mazivr.ajustes')).k
 await p.screenshot({ path: CAPS + '/vr-ajustes.png' });
 await boton(9); await p.waitForTimeout(300);
 sí(await p.evaluate(() => window.__vr.ahora()) === 'inicio', 'Options regresa al inicio');
-await boton(3); await p.waitForTimeout(1200);
+/* una flecha primero: usar las flechas pausa el mirar fijo 4 s (si no, mientras prende la mixta, entraría solo a lo que mira) */
+await boton(14); await boton(3); await p.waitForTimeout(1200);
 sí(await p.evaluate(() => window.__vr.AJ.mixta) === true, 'triángulo prende la realidad mixta');
 await p.screenshot({ path: CAPS + '/vr-mixta.png' });
 await boton(3); await p.waitForTimeout(300);
-await boton(14); await boton(14); await boton(14); await boton(14); await boton(14); await boton(15); await p.waitForTimeout(200); await boton(0); await p.waitForTimeout(600);
+await boton(14); await boton(14); await boton(14); await boton(14); await boton(14); await boton(14); await boton(15); await boton(15); await p.waitForTimeout(200); await boton(0); await p.waitForTimeout(600);
 sí(await p.evaluate(() => window.__vr.ahora()) === 'cine', 'X sobre Cine abre el cine');
 await p.screenshot({ path: CAPS + '/vr-cine.png' });
 await boton(1); await p.waitForTimeout(300);
