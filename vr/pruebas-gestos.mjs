@@ -1,6 +1,6 @@
 /* MAZI VR · los gestos sin cámara: manos armadas a mano (21 puntos) y lo que leer() debe decir de cada una.
      node vr/pruebas-gestos.mjs */
-import { leer } from './gestos.js';
+import { leer, contadorPuno } from './gestos.js';
 let ok = 0, mal = 0; const sí = (c, t) => { c ? ok++ : mal++; console.log(c ? '✓' : '✗', t); };
 /* una mano vertical: muñeca abajo; cada dedo es una columna; estirado = puntas arriba, doblado = puntas cerca del nudillo */
 function mano({ estirados = [1, 1, 1, 1], pulgarAIndice = false }){
@@ -27,4 +27,11 @@ sí(puno.puno && !puno.apunta && !puno.palma, 'puño');
 /* el tamaño no importa: la misma mano a la mitad de tamaño dice lo mismo */
 const chica = mano({ pulgarAIndice: true }).map((p) => ({ x: .5 + (p.x - .5) / 2, y: .5 + (p.y - .5) / 2, z: 0 }));
 sí(leer(chica).pellizca, 'pellizco de una mano lejana (la mitad de tamaño)');
+/* puño arriba y abajo 4 veces = recentrar; 2 veces no; sin puño no; lento (más de 4 s) no */
+const sube = (n, paso, puno = true) => { const c = contadorPuno(); let t = 0, si = false;
+  for(let k = 0; k < n; k++) for(const y of [.6, .45]){ t += paso; si = c(puno, y, t) || si; } return si; };
+sí(sube(4, 180), 'puño arriba y abajo 4 veces recentra');
+sí(!sube(2, 180), 'dos veces no');
+sí(!sube(4, 180, false), 'sin puño no');
+sí(!sube(4, 900), 'muy lento (más de 4 s) no');
 console.log(`${ok} bien · ${mal} mal`); process.exit(mal ? 1 : 0);

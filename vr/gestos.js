@@ -20,3 +20,21 @@ export function leer(l, asp = 1){
     puno: n === 0 && pinza > .25,
   };
 }
+
+/* «puño arriba y abajo 4 veces» = recentrar (Carlos, 18 nov). Se cuentan las vueltas del movimiento vertical de la
+   muñeca mientras la mano está en puño: cada cambio de dirección de más de `umbral` (en fracción de la imagen) es una
+   vuelta; 4 subidas y bajadas son 7 vueltas, y se piden 6 para que no haya que ser exacto. Todo dentro de 4 s. */
+export function contadorPuno({ umbral = .05, vueltas = 6, ventana = 4000 } = {}){
+  let ext = null, dir = 0, marcas = [], sinPuno = 0;
+  return function(puno, y, t){
+    if(!puno){ if(!sinPuno) sinPuno = t; if(t - sinPuno > 500){ ext = null; dir = 0; marcas = []; } return false; }
+    sinPuno = 0;
+    if(ext == null){ ext = y; dir = 0; return false; }
+    if(dir === 0){ if(Math.abs(y - ext) > umbral){ dir = Math.sign(y - ext); ext = y; } return false; }
+    if(dir > 0){ if(y > ext) ext = y; else if(ext - y > umbral){ dir = -1; ext = y; marcas.push(t); } }
+    else { if(y < ext) ext = y; else if(y - ext > umbral){ dir = 1; ext = y; marcas.push(t); } }
+    marcas = marcas.filter((m) => t - m < ventana);
+    if(marcas.length >= vueltas){ ext = null; dir = 0; marcas = []; return true; }
+    return false;
+  };
+}

@@ -6,7 +6,7 @@
      · PALMA ABIERTA quieta un momento = Círculo, regresar.
    La distancia a la mano se calcula por su tamaño en la imagen (una mano mide ~8.5 cm de la muñeca al nudillo
    del medio): no es exacto, pero alcanza para apuntar y tocar cosas cercanas. */
-import { leer, tamano } from './gestos.js';
+import { leer, tamano, contadorPuno } from './gestos.js';
 const MP = '../presentaciones/vendor/mediapipe/';
 const HUESOS = [[0, 1], [1, 2], [2, 3], [3, 4], [0, 5], [5, 6], [6, 7], [7, 8], [5, 9], [9, 10], [10, 11], [11, 12], [9, 13], [13, 14], [14, 15], [15, 16], [13, 17], [17, 18], [18, 19], [19, 20], [0, 17]];
 
@@ -35,7 +35,7 @@ export async function iniciarManos(V){
     const pts = Array.from({ length: 21 }, (_, i) => { const m = new THREE.Mesh(bola, i === 8 || i === 4 ? matP : mat); m.renderOrder = 999; g.add(m); return m; });
     const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(HUESOS.length * 6), 3));
     const lin = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: new THREE.Color('#AC27FF'), depthTest: false, transparent: true, opacity: .8 })); lin.renderOrder = 998; g.add(lin);
-    return { g, pts, lin, suave: null, pellizco: false, palmaDesde: 0, vista: 0 };
+    return { g, pts, lin, suave: null, pellizco: false, palmaDesde: 0, vista: 0, puno: contadorPuno() };
   });
   /* el puntero (Carlos, 18 nov: «que el punto blanco lance un rayo como cursor»): sale de entre la punta del índice y la
      del pulgar (los dos puntos blancos), en la dirección hombro → mano, como en los visores de verdad; y donde pega se
@@ -87,7 +87,9 @@ export async function iniciarManos(V){
       /* el pellizco con la mano EN 3D (metros, de MediaPipe): de frente la punta del pulgar tapa a la del índice y en la
          imagen plana nunca «se tocaban» (por eso no jalaba pellizcar) */
       const W = r.worldLandmarks?.[k];
-      if(W){ const p3 = d3(W[4], W[8]); G.pellizca = p3 < .032; G.suelta = p3 > .05; G.pinza3 = p3; }
+      if(W){ const p3 = d3(W[4], W[8]); G.pellizca = p3 < .032 && !G.puno; G.suelta = p3 > .05 || G.puno; G.pinza3 = p3; }
+      /* puño arriba y abajo 4 veces: el menú se vuelve a poner enfrente de donde miras */
+      if(m.puno(G.puno, L[0].y, ahora)){ V.recentrar(); V.hud('Centrado', 1.2); V.sonar('ding', .3); }
       if(!m.pellizco && G.pellizca) m.pellizco = true; else if(m.pellizco && G.suelta) m.pellizco = false;
       /* donde la vista usa el pellizco para otra cosa (el video, leer), sólo es clic si apuntas a un botón */
       if(m.pellizco){ if(!V.extra.gestosVideo || V.extra.sobreBoton) botones[V.B.X] = true; estado.gesto = 'pellizco'; }
