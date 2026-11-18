@@ -19,7 +19,7 @@ import { sacarJSON } from '../sala/json-ia.js';
 import { sonar, encender as encenderSonidos } from '../sala/sonidos/sonidos.js';
 import { llave, ponerLlave, llamar, SERVIDOR, SALA } from '../presentaciones/ia.js';
 import { CURSOS, MATERIAL, HECHOS, planDeCurso } from './academia.js';
-import { IDIOMAS, planDeIdioma } from './idiomas.js';
+import { IDIOMAS, planDeIdioma, respuestaEstricta } from './idiomas.js';
 import { MODELOS } from './modelos/modelos.js';
 import * as REPASO from './repaso.js';
 import { SISTEMA_DIAGRAMA, normalizarDiagrama, diagramaBasico, svgDiagrama, elegirOcultos } from './diagrama.js';
@@ -1023,10 +1023,14 @@ const EJ = {
   escribir: {
     pintar: (q) => `<div class="habla"><div class="cara">${ico('pencil')}</div><div class="dice">${esc(q.pregunta)}</div></div>
       <label class="escribe"><span>Escribe tu respuesta</span><input id="escribe" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="Aquí, como te salga"></label>
-      <p class="nota-escribe">No importan los acentos ni los errores de dedo.</p>`,
+      <p class="nota-escribe">${plan()?.idioma ? 'En idiomas cuenta cada letra.' : 'No importan los acentos ni los errores de dedo.'}</p>`,
     entrada(e, q){ if(e.target.id !== 'escribe') return false; q._r = e.target.value; return true; },
     listo: (q) => !!(q._r && q._r.trim()),
-    revisar(q){ const r = respuestaParecida(q._r, [q.respuesta, ...(q.aceptadas || [])]); return { bien: r.bien, correcta: q.respuesta, nota: r.bien && !r.exacta ? `Casi perfecto: se escribe «${q.respuesta}».` : '' }; },
+    /* en idiomas, ortografía estricta (idiomas.js); en lo demás, alta tolerancia */
+    revisar(q){ const buenas = [q.respuesta, ...(q.aceptadas || [])];
+      if(plan()?.idioma){ const r = respuestaEstricta(q._r, buenas); const casi = !r.bien && respuestaParecida(q._r, buenas).bien;
+        return { bien: r.bien, correcta: q.respuesta, nota: casi ? `Casi: se escribe «${q.respuesta}».` : '' }; }
+      const r = respuestaParecida(q._r, buenas); return { bien: r.bien, correcta: q.respuesta, nota: r.bien && !r.exacta ? `Casi perfecto: se escribe «${q.respuesta}».` : '' }; },
     marcar(q, r, c){ const i = $('#escribe', c); i.disabled = true; i.classList.add(r.bien ? 'bien' : 'mal'); },
   },
   unir: {

@@ -214,3 +214,14 @@ export function planDeIdioma(curso, armarCamino){
   return { id: 'p-' + curso.id, curso: curso.id, idioma: curso.idioma, titulo: curso.titulo, materia: curso.idioma, color: curso.color, fecha: '', notas: curso.frase,
     creado: Date.now(), unidades, contenido, progreso: {}, forma: 2 };
 }
+
+/* ── ortografía estricta en idiomas (PLAN-13NOV §11: «en idiomas no hay tolerancia a errores de dedo») ──
+   En el resto de CARYMO se perdonan acentos y errores de dedo; en un idioma, «tank you» no es «thank you» y «merci»
+   sin la i no existe. Aquí sólo se perdona lo que no es ortografía: mayúsculas, espacios de más, el punto o el signo
+   final, y el apóstrofo curvo del teclado del iPhone (’) contra el recto ('). Los acentos SÍ cuentan (café ≠ cafe). */
+export const limpiaEstricta = (t) => String(t ?? '').normalize('NFC').toLowerCase().replace(/[’‘`´]/g, "'").replace(/\s+/g, ' ').trim().replace(/^[¿¡]+|[.!?¿¡…]+$/g, '').trim();
+export function respuestaEstricta(dada, buenas){
+  const d = limpiaEstricta(dada); if(!d) return { bien: false };
+  for(const b of buenas) if(limpiaEstricta(b) === d) return { bien: true, exacta: true, de: b };
+  return { bien: false };
+}
