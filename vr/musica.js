@@ -68,7 +68,7 @@ export function montarMusica(V, { pedirTexto, CANCIONES = [] }){
   let fuentes = [], botones = [], tarjetas = [], bPlay = null, bPausa = null;
   const enArco = (m, i, n, r, y, paso = 21) => { const a = (i - (n - 1) / 2) * paso * Math.PI / 180; m.position.set(Math.sin(a) * r, y, -Math.cos(a) * r); m.lookAt(0, y, 0); };
   const armado = (async () => {
-    const F = [['Buscar', 'search', buscar], ['Radio', 'radio', radio], ['Mis canciones', 'list-music', misCanciones]];
+    const F = [['Explorar', 'compass', explorar], ['Buscar', 'search', buscar], ['Radio', 'radio', radio], ['Mis canciones', 'list-music', misCanciones]];
     fuentes = await Promise.all(F.map(async ([t, ic, fn], i) => { const p = await V.tarjeta({ titulo: t, icono: ic }); enArco(p.malla, i, F.length, 1.9, .05); p.malla.userData.accion = fn; musica.grupo.add(p.malla); return p.malla; }));
     const C = [['Anterior', 'skip-back', anterior], ['Pausa', 'pause', pausa], ['Seguir', 'play', pausa], ['Siguiente', 'skip-forward', siguiente], ['Bajar', 'volume-1', () => volumenA(volumen - .15)], ['Subir', 'volume-2', () => volumenA(volumen + .15)]];
     botones = await Promise.all(C.map(async ([t, ic, fn]) => { const p = await V.tarjeta({ titulo: t, icono: ic }); p.malla.scale.setScalar(.55); p.malla.userData.accion = fn; musica.grupo.add(p.malla); return p.malla; }));
@@ -85,10 +85,12 @@ export function montarMusica(V, { pedirTexto, CANCIONES = [] }){
     limpiar(); fase = 'resultados'; fuentes.forEach((m) => { m.visible = false; });
     if(!items.length){ V.hud('Sin resultados', 1.6); volver(); return; }
     const COL = 4, W = .56, H = .3, n = Math.min(12, items.length), filas = Math.ceil(n / COL);
+    ahora.malla.position.y = filas > 2 ? .9 : .62;
     items.slice(0, 12).forEach((it, i) => {
       const p = new V.Panel(W, H, 420); const { x, cv } = p;
       const dib = (f) => { x.clearRect(0, 0, cv.width, cv.height); V.redondo(x, 4, 4, cv.width - 8, cv.height - 8, 22); x.fillStyle = f ? '#3A1A5C' : '#1E1428'; x.fill();
         x.lineWidth = f ? 6 : 2; x.strokeStyle = f ? '#AC27FF' : '#3C2652'; x.stroke();
+        if(it.accion){ x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = '#F4EEF2'; x.font = '900 40px system-ui, -apple-system, sans-serif'; x.fillText(it.titulo, cv.width / 2, cv.height / 2); x.textAlign = 'left'; p.listo(); return; }
         x.fillStyle = '#F4EEF2'; x.font = '700 21px system-ui, -apple-system, sans-serif'; x.textBaseline = 'top';
         const pal = String(it.titulo).split(' '); let ren = '', y = 18, k = 0;
         for(const w of pal){ const t = ren ? ren + ' ' + w : w; if(x.measureText(t).width > cv.width - 30){ x.fillText(ren, 16, y); y += 25; ren = w; if(++k >= 2) { ren = ''; break; } } else ren = t; }
@@ -97,11 +99,26 @@ export function montarMusica(V, { pedirTexto, CANCIONES = [] }){
       dib(false); p.foco = (f) => { if(p._f === f) return; p._f = f; dib(f); };
       const fila = Math.floor(i / COL), enFila = Math.min(COL, n - fila * COL), col = i % COL, a = (col - (enFila - 1) / 2) * 21 * Math.PI / 180, y = .18 + (filas - 1) / 2 * .34 - fila * .34;
       p.malla.position.set(Math.sin(a) * 1.75, y, -Math.cos(a) * 1.75); p.malla.lookAt(0, y, 0);
-      p.malla.userData.accion = () => { cola = items.slice(); tocar(i); };
+      p.malla.userData.accion = () => { if(it.accion) return it.accion(); cola = items.slice(); tocar(i); };
       musica.grupo.add(p.malla); tarjetas.push(p.malla);
     });
   }
-  function volver(){ limpiar(); fase = 'estante'; fuentes.forEach((m) => { m.visible = true; }); }
+  function volver(){ limpiar(); fase = 'estante'; ahora.malla.position.y = .62; fuentes.forEach((m) => { m.visible = true; }); }
+
+  /* EXPLORAR (Carlos, 18 nov: «música para tener algo que elegir sin ser tan específicos»): géneros de un toque; el
+     género se vuelve una lista que empieza a sonar sola */
+  const GENEROS = [['Éxitos', 'éxitos 2026 méxico'], ['Pop', 'pop en español éxitos'], ['Reggaetón', 'reggaeton éxitos'], ['Regional', 'regional mexicano éxitos'],
+    ['Corridos', 'corridos tumbados éxitos'], ['Rock', 'rock en español clásicos'], ['Banda', 'banda éxitos'], ['Cumbias', 'cumbias para bailar'],
+    ['Electrónica', 'electrónica mix'], ['Rap', 'rap en español'], ['Lo-fi', 'lofi para estudiar'], ['Baladas', 'baladas románticas en español']];
+  function explorar(){ mostrar(GENEROS.map(([t, q]) => ({ titulo: t, accion: () => genero(t, q) }))); }
+  async function genero(t, q){
+    V.hud(t + '…', 1.2);
+    try{ const r = await (await fetch(`${SALA}/api/sala/vr/buscar?q=${encodeURIComponent(q)}`)).json(); if(!r.bien) throw new Error(r.error);
+      const L = r.videos.filter((v) => !v.envivo).map((v) => ({ tipo: 'youtube', id: v.id, titulo: v.titulo, sub: [v.canal, v.dura].filter(Boolean).join(' · ') }));
+      if(!L.length){ V.hud('Sin resultados', 1.6); return; }
+      mostrar(L); cola = L; tocar(0); }
+    catch(e){ V.hud('No contestó la búsqueda', 2); console.warn(e); }
+  }
 
   async function buscar(){
     const q = await pedirTexto('Buscar música', { regresarA: 'musica' }); if(!q) return;
@@ -129,7 +146,7 @@ export function montarMusica(V, { pedirTexto, CANCIONES = [] }){
   musica.estado = () => ({ fase, cola: cola.length, pos, sonando, titulo: cola[pos]?.titulo || null, tipo: cola[pos]?.tipo || null, tarjetas: tarjetas.length, volumen,
     audio: { src: audio.currentSrc ? audio.currentSrc.split('/').pop() : '', pausado: audio.paused } });
   musica.elegir = (i) => tarjetas[i]?.userData.accion();
-  musica.armado = armado; musica.tocar = tocar; musica.pausa = pausa; musica.mostrar = mostrar; musica.buscar = buscar; musica.radio = radio;
+  musica.armado = armado; musica.tocar = tocar; musica.pausa = pausa; musica.mostrar = mostrar; musica.buscar = buscar; musica.radio = radio; musica.explorar = explorar;
   V.registrar('musica', musica);
   return musica;
 }

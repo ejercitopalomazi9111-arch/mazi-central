@@ -32,8 +32,13 @@ await p.goto(BASE + '/vr/', { waitUntil: 'networkidle' }); await p.click('#bEntr
 await p.evaluate(() => __vr.ir('cine')); await p.waitForTimeout(400);
 /* la primera puerta (YouTube): flechas a la izquierda hasta el tope y X */
 for(let i = 0; i < 4; i++) await boton(IZQ);
+await boton(X); await p.waitForTimeout(700);
+let ini = await p.evaluate(() => __cine.estado());
+sí(ini.fase === 'resultados' && ini.tarjetas === 4, `YouTube abre en su inicio: Buscar, Otro tema y videos (${ini.tarjetas} tarjetas)`);
+await p.screenshot({ path: CAPS + '/vr-yt-inicio.png' });
+for(let i = 0; i < 4; i++) await boton(IZQ);
 await boton(X); await p.waitForTimeout(300);
-sí(await p.evaluate(() => __vr.ahora()) === 'teclado', 'YouTube abre el teclado');
+sí(await p.evaluate(() => __vr.ahora()) === 'teclado', '«Buscar» abre el teclado');
 await p.evaluate(() => __teclado.escribir('trailer'));
 await p.keyboard.type(' 2026');                         // y un teclado de verdad también escribe
 await p.screenshot({ path: CAPS + '/vr-teclado.png' });
@@ -80,7 +85,10 @@ sí(await p.evaluate(() => __web.estado.modo === 'youtube'), 'X pausa sin cerrar
 await boton(O); await p.waitForTimeout(300);
 e = await p.evaluate(() => ({ ...__cine.estado(), yt: !!document.querySelector('.yt-falso') })); sí(e.fase === 'estante' && !e.web && !e.yt, 'Círculo cierra y regresa al estante');
 /* películas libres (segunda puerta) */
-for(let i = 0; i < 4; i++) await boton(IZQ); await boton(DER); await boton(X); await p.waitForTimeout(300);
+for(let i = 0; i < 4; i++) await boton(IZQ); await boton(DER); await boton(X); await p.waitForTimeout(700);
+ini = await p.evaluate(() => __cine.estado());
+sí(ini.fase === 'resultados' && ini.tarjetas === 3, `Películas abre con las más vistas (${ini.tarjetas} tarjetas)`);
+for(let i = 0; i < 4; i++) await boton(IZQ); await boton(X); await p.waitForTimeout(300);
 await p.evaluate(() => __teclado.escribir('nosferatu')); await p.keyboard.press('Enter'); await p.waitForTimeout(900);
 e = await p.evaluate(() => __cine.estado()); sí(e.fase === 'resultados' && e.tarjetas === 1, 'Internet Archive da resultados');
 await boton(IZQ); await boton(X); await p.waitForTimeout(1500);

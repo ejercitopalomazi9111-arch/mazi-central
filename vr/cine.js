@@ -38,13 +38,13 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
 
   const aviso = new V.Panel(1.8, .3, 400); aviso.malla.position.set(0, .62, -2.2); cine.grupo.add(aviso.malla);
   const decir = (txt) => { const { x, cv } = aviso; x.clearRect(0, 0, cv.width, cv.height); x.textAlign = 'center'; x.textBaseline = 'middle';
-    x.font = '800 40px system-ui, -apple-system, sans-serif'; x.fillStyle = '#C9B6DA'; x.fillText(txt, cv.width / 2, cv.height / 2); aviso.listo(); aviso.malla.visible = !!txt; };
+    x.font = '800 40px system-ui, -apple-system, sans-serif'; x.fillStyle = '#C9B6DA'; x.fillText(txt, cv.width / 2, cv.height / 2); aviso.listo(); aviso.malla.visible = !!txt; aviso.malla.position.y = fase === 'resultados' && tarjetas.length > 8 ? .92 : .62; };
 
   /* ── el estante: las cuatro puertas ── */
   const puertas = [];
   const PUERTAS = [
-    ['YouTube', 'search', () => buscarYouTube()],
-    ['Películas', 'popcorn', () => buscarArchivo()],
+    ['YouTube', 'search', () => inicioYouTube()],
+    ['Películas', 'popcorn', () => inicioPelis()],
     ['Enlace', 'link', () => abrirEnlace()],
     ['Mis videos', 'folder-open', () => verMios()],
   ];
@@ -65,6 +65,11 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
     for(const [i, it] of items.slice(0, 12).entries()){
       const p = new V.Panel(W, H, 420); const { x, cv } = p;
       const dib = (f, img) => { x.clearRect(0, 0, cv.width, cv.height); V.redondo(x, 4, 4, cv.width - 8, cv.height - 8, 22); x.fillStyle = f ? '#3A1A5C' : '#1E1428'; x.fill();
+        if(it.especial){ x.fillStyle = f ? '#7E1735' : '#2A1240'; V.redondo(x, 4, 4, cv.width - 8, cv.height - 8, 22); x.fill();
+          x.lineWidth = f ? 6 : 2; x.strokeStyle = f ? '#AC27FF' : '#5A3A7A'; x.stroke(); x.textAlign = 'center'; x.textBaseline = 'middle';
+          x.fillStyle = '#F4EEF2'; x.font = '900 44px system-ui, -apple-system, sans-serif'; x.fillText(it.titulo, cv.width / 2, cv.height / 2 - (it.sub ? 16 : 0));
+          if(it.sub){ x.fillStyle = '#C9B6DA'; x.font = '700 22px system-ui, -apple-system, sans-serif'; x.fillText(it.sub, cv.width / 2, cv.height / 2 + 34); }
+          x.textAlign = 'left'; p.listo(); return; }
         if(img){ x.save(); V.redondo(x, 14, 14, cv.width - 28, 128, 14); x.clip(); x.drawImage(img, 14, 14 - 16, cv.width - 28, 160); x.restore(); }
         else { x.fillStyle = '#24123A'; V.redondo(x, 14, 14, cv.width - 28, 128, 14); x.fill(); }
         x.lineWidth = f ? 6 : 2; x.strokeStyle = f ? '#AC27FF' : '#3C2652'; V.redondo(x, 4, 4, cv.width - 8, cv.height - 8, 22); x.stroke();
@@ -80,10 +85,39 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
       /* centradas: las de la última fila también */
       const fila = Math.floor(i / COL), enFila = Math.min(COL, n - fila * COL), col = i % COL, a = (col - (enFila - 1) / 2) * 21 * Math.PI / 180, y = (filas - 1) / 2 * .5 - fila * .5;
       p.malla.position.set(Math.sin(a) * 1.7, y, -Math.cos(a) * 1.7); p.malla.lookAt(0, y, 0);
-      p.malla.userData.accion = () => abrirItem(it);
+      p.malla.userData.accion = () => it.accion ? it.accion() : abrirItem(it);
       cine.grupo.add(p.malla); tarjetas.push(p.malla);
     }
   }
+
+  /* ── las páginas de inicio (Carlos, 18 nov: «mete la página de inicio de YouTube y películas… para tener algo que elegir
+     sin ser tan específicos»): al entrar ya hay videos; «Buscar» y «Otro tema» van primero ── */
+  const TEMAS_YT = [['Tendencias', 'tendencias méxico hoy'], ['Música', 'música nueva éxitos'], ['Videojuegos', 'videojuegos noticias'], ['Risa', 'videos graciosos'],
+    ['Tráileres', 'tráiler oficial español'], ['Ciencia', 'ciencia explicada'], ['Deportes', 'resumen futbol'], ['Cocina', 'recetas fáciles'], ['Anime', 'anime'], ['Podcasts', 'podcast méxico']];
+  let temaYT = 0, temaPeli = 0;
+  async function inicioYouTube(n = temaYT){
+    temaYT = (n + TEMAS_YT.length) % TEMAS_YT.length; const [nombre, q] = TEMAS_YT[temaYT];
+    decir(nombre + '…'); fase = 'resultados'; limpiarTarjetas();
+    const extra = [{ especial: true, titulo: 'Buscar', accion: () => buscarYouTube() }, { especial: true, titulo: 'Otro tema', sub: TEMAS_YT[(temaYT + 1) % TEMAS_YT.length][0], accion: () => inicioYouTube(temaYT + 1) }];
+    try{
+      const r = await (await fetch(`${SALA}/api/sala/vr/buscar?q=${encodeURIComponent(q)}`)).json(); if(!r.bien) throw new Error(r.error);
+      await mostrar([...extra, ...r.videos.slice(0, 10)], (v) => ver(() => web.verYouTube(v.id, v.titulo))); decir(nombre);
+    }catch(e){ await mostrar(extra, () => {}); decir('YouTube no contestó'); console.warn(e); }
+  }
+  const GENEROS = [['Más vistas', ''], ['Clásicas', 'subject:(classic OR drama)'], ['Terror', 'subject:(horror)'], ['Comedia', 'subject:(comedy)'],
+    ['Ciencia ficción', 'subject:("science fiction" OR sci-fi)'], ['Animación', 'collection:(animationandcartoons)'], ['Cine negro', 'subject:("film noir")'], ['Mudas', 'subject:(silent)']];
+  async function inicioPelis(n = temaPeli){
+    temaPeli = (n + GENEROS.length) % GENEROS.length; const [nombre, filtro] = GENEROS[temaPeli];
+    decir(nombre + '…'); fase = 'resultados'; limpiarTarjetas();
+    const extra = [{ especial: true, titulo: 'Buscar', accion: () => buscarArchivo() }, { especial: true, titulo: 'Otro género', sub: GENEROS[(temaPeli + 1) % GENEROS.length][0], accion: () => inicioPelis(temaPeli + 1) }];
+    try{
+      const base = filtro.startsWith('collection') ? `mediatype:(movies) AND ${filtro}` : `mediatype:(movies) AND collection:(feature_films)${filtro ? ' AND ' + filtro : ''}`;
+      const u = `${ARCHIVO}/advancedsearch.php?q=${encodeURIComponent(base)}&fl[]=identifier&fl[]=title&fl[]=year&sort[]=downloads+desc&rows=10&output=json`;
+      const r = await (await fetch(u)).json();
+      await mostrar([...extra, ...r.response.docs.map(pelicula)], abrirArchivo); decir(nombre);
+    }catch(e){ await mostrar(extra, () => {}); decir('Internet Archive no contestó'); console.warn(e); }
+  }
+  const pelicula = (d) => ({ id: d.identifier, titulo: d.title, dura: d.year ? String(d.year) : '', mini: `${ARCHIVO}/services/img/${encodeURIComponent(d.identifier)}` });
 
   async function buscarYouTube(){
     const q = await pedirTexto('Buscar en YouTube', { regresarA: 'cine' }); if(!q) return;
@@ -100,7 +134,7 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
     try{
       const u = `${ARCHIVO}/advancedsearch.php?q=${encodeURIComponent(`(${q}) AND mediatype:(movies) AND (collection:(feature_films) OR collection:(classic_tv) OR collection:(moviesandfilms) OR collection:(animationandcartoons) OR collection:(short_films))`)}&fl[]=identifier&fl[]=title&fl[]=year&rows=12&output=json`;
       const r = await (await fetch(u)).json();
-      mostrar(r.response.docs.map((d) => ({ id: d.identifier, titulo: d.title, dura: d.year ? String(d.year) : '' })), abrirArchivo);
+      mostrar(r.response.docs.map(pelicula), abrirArchivo);
     }catch(e){ decir('Internet Archive no contestó'); console.warn(e); }
   }
   async function abrirArchivo(it){
@@ -134,7 +168,7 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
     tam = 1; ponerPantalla(); fase = 'viendo'; limpiarTarjetas(); decir(''); pantalla.visible = true;
     peli.src = url; peli.play().catch(() => {}); pantalla.material.map = ptex; pantalla.material.color.set(0xffffff); pantalla.material.needsUpdate = true;
   }
-  cine.verArchivo = verArchivo;
+  cine.verArchivo = verArchivo; cine.inicioYouTube = inicioYouTube; cine.inicioPelis = inicioPelis;
 
   function ver(abrir){ tam = 1; fase = 'viendo'; limpiarTarjetas(); decir(''); pantalla.visible = false;   /* la de la web va encima; el marco 3D sólo da las esquinas */
     pantalla.material.map = null; pantalla.material.color.set(0x0b0814); pantalla.material.needsUpdate = true; ponerPantalla(); abrir(); }
