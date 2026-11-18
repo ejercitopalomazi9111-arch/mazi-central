@@ -72,6 +72,23 @@ Para eso hacen falta dos cosas, las mismas que para subir CARYMO a la App Store:
      modo teclado.
    - Las páginas ajenas sólo se ven: no se puede tocar adentro.
 
+2-ter. ✅ **Leer: INKWELL adentro** (18 nov). Lee lo que ya está bajado en el teléfono, sin internet:
+   - **Tiras:** Webtoon (imágenes) y Wattpad (texto), sólo los capítulos bajados.
+   - **Libros:** EPUB y TXT. El PDF todavía no.
+   - Abre en el primer capítulo sin leer y sigue solo con el siguiente, como «Leer seguido».
+   - Marca leído igual que INKWELL (la serie, el historial de la Biblioteca y el avance del libro).
+
+   | Botón | Hace |
+   |---|---|
+   | Sticks arriba/abajo | leer (más empuje, más rápido) |
+   | Flechas | una pantalla |
+   | X | lee solo / pausa |
+   | L1 / R1 | capítulo anterior / siguiente |
+   | L2 / R2 | acercar / alejar |
+   | Círculo | a la biblioteca (guarda dónde ibas) |
+
+   Sin control, mirar la orilla de abajo de la ventana avanza; con las manos, igual apuntando.
+   Pruebas: `node vr/pruebas-lector.mjs`.
 3. **Sables en VS Tiles.**
    - Los bloques salen del ritmo de las canciones que ya tiene VS Tiles.
    - Se cortan con las manos o con el control visto por la cámara.

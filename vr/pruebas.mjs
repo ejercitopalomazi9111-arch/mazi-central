@@ -21,8 +21,8 @@ sí(await p.locator('#eControl.si').count() === 1, 'la entrada ve el control');
 await p.click('#bEntrar'); await p.waitForTimeout(2500);
 sí(await p.evaluate(() => window.__vr.ahora()) === 'inicio', 'entra al inicio');
 await p.screenshot({ path: CAPS + '/vr-inicio.png' });
-/* foco con flechas: la mira empieza en «Cine»… se mueve a la derecha dos veces y llega a Ajustes */
-await boton(15); await boton(15); await boton(15); await boton(15);
+/* foco con flechas: la mira empieza en «Cine»… se mueve a la derecha hasta el tope y llega a Ajustes */
+await boton(15); await boton(15); await boton(15); await boton(15); await boton(15);
 await boton(0); await p.waitForTimeout(400);
 sí(await p.evaluate(() => window.__vr.ahora()) === 'ajustes', 'X sobre Ajustes abre los ajustes');
 const k1 = await p.evaluate(() => window.__vr.AJ.k1); await boton(15); await p.waitForTimeout(200);
@@ -35,7 +35,7 @@ await boton(3); await p.waitForTimeout(1200);
 sí(await p.evaluate(() => window.__vr.AJ.mixta) === true, 'triángulo prende la realidad mixta');
 await p.screenshot({ path: CAPS + '/vr-mixta.png' });
 await boton(3); await p.waitForTimeout(300);
-await boton(14); await boton(14); await boton(14); await boton(14); await boton(15); await p.waitForTimeout(200); await boton(0); await p.waitForTimeout(600);
+await boton(14); await boton(14); await boton(14); await boton(14); await boton(14); await boton(15); await p.waitForTimeout(200); await boton(0); await p.waitForTimeout(600);
 sí(await p.evaluate(() => window.__vr.ahora()) === 'cine', 'X sobre Cine abre el cine');
 await p.screenshot({ path: CAPS + '/vr-cine.png' });
 await boton(1); await p.waitForTimeout(300);
