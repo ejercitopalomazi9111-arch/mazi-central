@@ -81,6 +81,14 @@ for(let i = 0; i < 4; i++) await boton(IZQ); await boton(DER); await boton(DER);
 await p.evaluate(() => __teclado.escribir('youtu.be/ccccccccccc')); await p.keyboard.press('Enter'); await p.waitForTimeout(900);
 sí(await p.evaluate(() => __web.estado.modo === 'youtube' && !!document.querySelector('.yt-falso[data-id="ccccccccccc"]')), 'un enlace de YouTube abre YouTube');
 await boton(O); await p.waitForTimeout(300);
+await p.evaluate(() => __cine.verArchivo('/prueba-vertical.webm')); await p.waitForTimeout(800);
+/* con el control: L2 apretado + stick derecho la sube, stick izquierdo la agranda; al soltar no se movió nada más */
+const ctlAntes = await p.evaluate(() => __cine.estado());
+await p.evaluate(() => { window.__pad.buttons[6] = { pressed: true, value: 1 }; window.__pad.axes[3] = -1; }); await p.waitForTimeout(1500);
+await p.evaluate(() => { window.__pad.axes[3] = 0; window.__pad.axes[1] = -1; }); await p.waitForTimeout(1500);
+await p.evaluate(() => { window.__pad.axes[1] = 0; window.__pad.buttons[6] = { pressed: false, value: 0 }; }); await p.waitForTimeout(300);
+let ctlE = await p.evaluate(() => __cine.estado());
+sí(ctlE.giro > 25 && ctlE.tam > 1.3 && ctlE.fase === 'viendo', `L2 + sticks: la pantalla sube (${ctlE.giro}°) y crece (×${ctlE.tam}) sin mover lo demás`);
 /* un video VERTICAL (Carlos, 18 nov: «las pantallas se salen por arriba»): la pantalla tiene que caber en la vista */
 const VERT = '/tmp/mazivr-vertical.webm';
 if(!fs.existsSync(VERT)) execSync(`ffmpeg -v error -y -f lavfi -i testsrc=s=180x320:r=15 -t 2 -c:v libvpx-vp9 -b:v 100k ${VERT}`);

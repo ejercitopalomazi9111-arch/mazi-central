@@ -75,6 +75,14 @@ ag = await est(); sí(Math.abs(ag.scroll - ag0.scroll) < 10 && !ag.auto && ag.gi
 await manosFalsas([[-.3, .4, -.3, true], [.3, .4, -.3, true]]); await p.waitForTimeout(250);
 await manosFalsas([[-.12, 0, -.5, true], [.12, 0, -.5, true]]); await p.waitForTimeout(300); await manosFalsas([]); await p.waitForTimeout(300); await manosFalsas(null);
 ag = await est(); sí(ag.giro < 5 && Math.abs(ag.tam - 1) < .15, `y de regreso: enfrente y de su tamaño (${ag.giro}°, ×${ag.tam})`);
+/* con el control: L2 apretado + stick derecho la sube, stick izquierdo la agranda; al soltar no se movió nada más */
+const ctlAntes = await est();
+await p.evaluate(() => { window.__pad.buttons[6] = { pressed: true, value: 1 }; window.__pad.axes[3] = -1; }); await p.waitForTimeout(1500);
+await p.evaluate(() => { window.__pad.axes[3] = 0; window.__pad.axes[1] = -1; }); await p.waitForTimeout(1500);
+await p.evaluate(() => { window.__pad.axes[1] = 0; window.__pad.buttons[6] = { pressed: false, value: 0 }; }); await p.waitForTimeout(300);
+let ctlE = await est();
+sí(ctlE.giro > 25 && ctlE.tam > 1.3 && Math.abs(ctlE.scroll - ctlAntes.scroll) < 10, `L2 + sticks: la pantalla sube (${ctlE.giro}°) y crece (×${ctlE.tam}) sin mover lo demás`);
+await p.evaluate(() => __vr.recentrar()); await p.waitForTimeout(200);
 /* bajar con el stick hasta pasar el capítulo 1 */
 await p.evaluate(() => { window.__pad.axes[1] = 1; }); e = await hasta((e) => e.scroll > 5000, 15000); await p.evaluate(() => { window.__pad.axes[1] = 0; }); await p.waitForTimeout(800);
 e = await est(); sí(e.scroll > 2000, `el stick baja (${e.scroll} px)`);

@@ -16,7 +16,7 @@ import { apuntar } from '../inkwell/biblioteca.js';
 import { FUENTES, wattpad, limpiarTexto } from '../inkwell/fuentes.js';
 import { pedir as porLaSala, recomendar } from '../inkwell/red.js';
 import { seriesDeGenero } from '../inkwell/compartir.js';
-import { crearAgarre } from './agarre.js';
+import { crearAgarre, crearMoverConControl } from './agarre.js';
 
 const COL = 900;                  // la columna virtual: todo lo de la tira se mide en px de esta columna
 const FIN_H = 150;                // el letrero de fin de capítulo
@@ -310,6 +310,7 @@ export async function montarLector(V, { pedirTexto } = {}){
   const ventana = new THREE.Group(); ventana.visible = false; soporte.add(ventana);
   let tam = 1; const wq = new THREE.Quaternion(), arriba = new THREE.Vector3(), wp2 = new THREE.Vector3();
   lector.alRecentrar = () => { soporte.quaternion.identity(); tam = 1; ventana.scale.setScalar(1); };
+  const moverCtl = crearMoverConControl(V, { soporte, getEscala: () => tam, setEscala: (e) => { tam = e; ventana.scale.setScalar(e); }, min: .4, max: 3 });
   const agarrar = crearAgarre(V, { soporte, getEscala: () => tam, setEscala: (e) => { tam = e; ventana.scale.setScalar(e); }, min: .4, max: 3 });
   const marco = new THREE.Mesh(new THREE.PlaneGeometry(ANCHO + .03, ALTO + .03), new THREE.MeshBasicMaterial({ color: 0x0b0814, toneMapped: false }));
   marco.position.z = -.004; ventana.add(marco);
@@ -505,13 +506,14 @@ export async function montarLector(V, { pedirTexto } = {}){
   };
 
   let velStick = 0;
-  lector.control = (c) => {
+  lector.control = (c, dt) => {
     if(fase === 'estante' || fase === 'resultados'){
       if(c.oprimido[B.R1] && (pagina + 1) * 8 < (fase === 'resultados' ? resultados.length : obras.length + ACCIONES.length)){ pagina++; pintarEstante(); }
       if(c.oprimido[B.L1] && pagina > 0){ pagina--; pintarEstante(); }
       return {};
     }
     if(fase !== 'leyendo'){ velStick = 0; return { x: true, flechas: true }; }
+    if(moverCtl(c, dt)){ velStick = 0; return { x: true, flechas: true }; }
     /* los dos sticks leen; cuánto se empuje es qué tan rápido (al cuadrado: con poquito, despacio) */
     const a = Math.max(-1, Math.min(1, (c.ejes[1] || 0) + (c.ejes[3] || 0)));
     velStick = Math.sign(a) * a * a * 2600; if(a) objetivo = null;
@@ -520,11 +522,12 @@ export async function montarLector(V, { pedirTexto } = {}){
     if(c.oprimido[B.X]){ auto = !auto; objetivo = null; V.hud(auto ? 'Solo' : 'Pausa', 1.2); }
     if(c.oprimido[B.R1]) irCapitulo(1);
     if(c.oprimido[B.L1]) irCapitulo(-1);
-    if(c.oprimido[B.L2]){ dist = Math.max(.9, dist - .15); ponerVentana(); }
-    if(c.oprimido[B.R2]){ dist = Math.min(3, dist + .15); ponerVentana(); }
+    /* R2 cambia la distancia (cerca, normal, lejos); L2 apretado es mover y escalar (arriba) */
+    if(c.oprimido[B.R2]){ dist = dist < 1.4 ? 1.5 : dist < 2 ? 2.2 : 1.2; ponerVentana(); V.hud(dist < 1.4 ? 'Cerca' : dist < 2 ? 'Normal' : 'Lejos', .8); }
     return { x: true, flechas: true };
   };
   Object.defineProperty(lector, 'ocupaStick', { get: () => fase === 'leyendo' });
+  Object.defineProperty(lector, 'ocupaGiro', { get: () => fase === 'leyendo' && V.control.apretado(B.L2) });
   /* leyendo, «Atrás» va a un lado de la ventana: abajo estorbaría al mirar la orilla para avanzar */
   Object.defineProperty(lector, 'atrasEn', { get: () => fase === 'leyendo' || fase === 'cargando' ? wp2.set(-(ANCHO / 2 * tam + .4), -.4, -dist).applyQuaternion(soporte.quaternion).toArray() : null });
   lector.entrar = () => { pagina = 0; cargarEstante(); ponerAlDia().catch(() => {}); };

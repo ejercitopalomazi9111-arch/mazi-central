@@ -26,3 +26,23 @@ export function crearAgarre(V, { soporte, getEscala, setEscala, min = .35, max =
     return true;
   };
 }
+
+/* LO MISMO CON EL CONTROL (Carlos, 18 nov: «por el traqueo no pude probar la escala de las pantallas»): mientras se
+   mantiene L2, el stick derecho lleva la pantalla alrededor de ti (arriba, abajo, a los lados, encima) y el izquierdo
+   la agranda (arriba) o la achica (abajo). Al soltar L2 se queda donde la dejaste; Cuadro la regresa enfrente. */
+export function crearMoverConControl(V, { soporte, getEscala, setEscala, min = .35, max = 3.5 }){
+  const { THREE, B } = V; const eje = new THREE.Vector3(), q = new THREE.Quaternion(); let antes = false;
+  const fn = (c, dt = 1 / 60) => {
+    const activo = !!c?.apretado?.(B.L2);
+    if(activo !== antes){ antes = activo; if(activo) V.hud('Mover · Tamaño', 1.2); }
+    if(!activo) return false;
+    const [lx, ly, rx, ry] = c.ejes || [0, 0, 0, 0];
+    /* de lado: alrededor del «arriba» del cuarto; arriba/abajo: alrededor del «lado» de la pantalla */
+    if(rx){ q.setFromAxisAngle(eje.set(0, 1, 0), -rx * 1.6 * dt); soporte.quaternion.premultiply(q); }
+    if(ry){ eje.set(1, 0, 0).applyQuaternion(soporte.quaternion); q.setFromAxisAngle(eje, -ry * 1.6 * dt); soporte.quaternion.premultiply(q); }
+    if(ly) setEscala(Math.max(min, Math.min(max, getEscala() * Math.exp(-ly * 1.2 * dt))));
+    void lx; return true;
+  };
+  fn.activo = () => antes;
+  return fn;
+}
