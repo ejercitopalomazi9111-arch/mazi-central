@@ -103,6 +103,19 @@ const filasDe = (celdas) => { const filas = new Map(); for(const [r, c] of Objec
 const num = (c) => { if(!c) return null; const v = typeof c.v === 'string' ? (c.v.trim() && !isNaN(+c.v.replace(/,/g, '')) ? +c.v.replace(/,/g, '') : NaN) : c.v; return typeof v === 'number' && isFinite(v) ? v : null; };
 const txt = (c) => (c && typeof c.v === 'string') ? c.v.replace(/\s+/g, ' ').trim() : '';
 
+/* Una celda que es pura cuenta de números (=1000/3000, =11/10000): se calcula aquí con todos los decimales, porque el
+   valor que guarda su Excel viene redondeado. Sólo números, + − × ÷ y paréntesis; cualquier otra cosa → null. */
+export function cuenta(f){
+  const t = String(f || '').replace(/^=/, '').replace(/\s/g, ''); if(!t || !/^[\d.+\-*/()]+$/.test(t)) return null;
+  let i = 0;
+  const prim = () => { if(t[i] === '('){ i++; const v = sum(); if(t[i++] !== ')') throw 0; return v; } if(t[i] === '-'){ i++; return -prim(); }
+    const m = /^\d+(\.\d+)?|^\.\d+/.exec(t.slice(i)); if(!m) throw 0; i += m[0].length; return +m[0]; };
+  const pro = () => { let v = prim(); while(t[i] === '*' || t[i] === '/'){ const o = t[i++], w = prim(); v = o === '*' ? v * w : v / w; } return v; };
+  const sum = () => { let v = pro(); while(t[i] === '+' || t[i] === '-'){ const o = t[i++], w = pro(); v = o === '+' ? v + w : v - w; } return v; };
+  try { const v = sum(); return i === t.length && Number.isFinite(v) ? v : null; } catch { return null; }
+}
+const valorDe = (c) => c?.f ? cuenta(c.f) : num(c);
+
 /** El catálogo empieza en la fila cuyo A dice «Producto» y B «Costo del producto». */
 function catalogo(filas){
   const cab = [...filas.keys()].sort((a, b) => a - b).find(f => /^producto$/i.test(txt(filas.get(f).A)) && /costo/i.test(txt(filas.get(f).B)));
@@ -110,18 +123,16 @@ function catalogo(filas){
   const productos = [];
   for(const f of [...filas.keys()].filter(f => f > cab).sort((a, b) => a - b)){
     const r = filas.get(f), nombre = txt(r.A); if(!nombre) continue;
-    const costo = num(r.B), contenido = num(r.C), dosis = num(r.D), unidad = txt(r.E);
+    const costo = valorDe(r.B), contenido = valorDe(r.C), dosis = valorDe(r.D), unidad = txt(r.E);
     /* su columna F ya es «costo por unidad de aplicación». Si es su fórmula de siempre (B×D÷C) se
        calcula aquí con todos los decimales: el Excel guarda el resultado redondeado a 2 y con eso
        una cotización salía 12 centavos abajo. Si F es otra cosa (un número o una mezcla), vale F. */
     const fF = String(r.F?.f || '').replace(/[\s$()]/g, '');
-    /* sólo si costo, envase y dosis son números escritos a mano: si la dosis es otra fórmula (=11/10000),
-       su valor guardado también viene redondeado y entonces es mejor quedarse con su F */
-    const aMano = !r.B?.f && !r.C?.f && !r.D?.f;
-    const exacta = aMano && /^(B\d+\*D\d+|D\d+\*B\d+)\/C\d+$/.test(fF) && costo > 0 && dosis > 0 && contenido > 0 ? costo * dosis / contenido : null;
+    /* costo, envase y dosis valen con todos sus decimales (si la dosis es una cuenta, =11/10000, se calcula) */
+    const exacta = /^(B\d+\*D\d+|D\d+\*B\d+)\/C\d+$/.test(fF) && costo > 0 && dosis > 0 && contenido > 0 ? costo * dosis / contenido : null;
     const por = exacta ?? num(r.F) ?? (contenido == null && dosis == null ? costo : null);
     if(!(por > 0)) continue;
-    productos.push({ id: 'f' + f, fila: f, nombre, costo, contenido, dosis, unidad, por_unidad: Math.round(por * 1e6) / 1e6 });
+    productos.push({ id: 'f' + f, fila: f, nombre, costo, contenido, dosis, unidad, por_unidad: por });
   }
   /* dos productos con el mismo nombre (dos presentaciones): se distinguen por el envase */
   const veces = productos.reduce((m, p) => m.set(p.nombre, (m.get(p.nombre) || 0) + 1), new Map());
@@ -211,12 +222,12 @@ export function aTarifas(ex, previas = {}){
     const u = p.unidad.toLowerCase().replace(/\s/g, '');
     const litros_m2 = /\/l(t|itro)?$/.test(u) ? CALIBRACION.litros_m2 : /\/m2$/.test(u) ? 1 : null;
     if(litros_m2 == null) continue;
-    plagas[clave] = { material: p.nombre, precio_litro: p.por_unidad, litros_m2, de_excel: true };
+    plagas[clave] = { producto: p.id, columna: col.nombre, material: p.nombre, precio_litro: p.por_unidad, litros_m2, de_excel: true };
   }
   const c = ex.convencional;
   return {
     ...base,
-    formula: { tipo: 'excel', x: c.x, entre: c.entre, km: c.km, traslado_aparte: c.traslado_aparte },
+    formula: { tipo: 'excel', x: c.x, entre: c.entre, km: c.km, traslado_aparte: c.traslado_aparte, costos: c.costos },
     tecnico: { costo_hora: c.mano_hora, m2_hora: base.tecnico?.m2_hora ?? CALIBRACION.m2_hora, minimo_horas: 1, personas: 1 },
     plagas: { ...(base.plagas || {}), ...plagas },
     ...(ex.km_tipico ? { km_tipico: ex.km_tipico } : {}),

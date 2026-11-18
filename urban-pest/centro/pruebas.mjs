@@ -6,8 +6,8 @@ import { fileURLToPath } from 'node:url';
 import * as M from './motor.js';
 import { crearRed, describir, LLAVE } from './sin-red.js';
 import { muestra, EXCEL_MUESTRA } from './muestra.js';
-import { leerXlsx, deExcel, aTarifas } from './excel.js';
-import { corrida, unidadDe, redondear } from './cotizar.js';
+import { leerXlsx, deExcel, aTarifas, cuenta } from './excel.js';
+import { corrida, unidadDe } from './cotizar.js';
 
 let bien = 0, mal = 0;
 const ok = (q, c, d = '') => { if (c) { bien++; console.log('  ✓ ' + q); } else { mal++; console.log('  ✗ ' + q + (d ? '  → ' + d : '')); } };
@@ -206,21 +206,23 @@ const XLSX = zip({
 {
   const ex = deExcel(await leerXlsx(XLSX), 'CorridaCotizacion.xlsx');
   ok('lee su catálogo: costo por aplicación con TODOS los decimales (no el 24.69 redondeado que guarda el Excel)',
-    ex.catalogo.length === 3 && ex.catalogo.find(p => p.nombre === 'Cebo B').por_unidad === Math.round(1460 * 8 / 473 * 1e6) / 1e6, JSON.stringify(ex.catalogo));
+    ex.catalogo.length === 3 && ex.catalogo.find(p => p.nombre === 'Cebo B').por_unidad === 1460 * 8 / 473, JSON.stringify(ex.catalogo));
   ok('un producto sin precio no entra; una trampa con sólo su precio sí', !ex.catalogo.some(p => p.nombre === 'Sin precio') && ex.catalogo.find(p => p.nombre === 'Trampa C').por_unidad === 5);
   ok('su fórmula sale de SUS fórmulas, la de ahora y no la vieja (también de una fórmula compartida)',
     ex.convencional.mano_hora === 80 && ex.convencional.km === 7 && ex.convencional.x === 2.5 && ex.convencional.entre === .6 && ex.convencional.costos === .7 && ex.convencional.traslado_aparte, JSON.stringify(ex.convencional));
   ok('sabe qué producto usa en cada columna de plaga', ex.columnas.find(c => c.nombre === 'Insectos rastreros').producto === ex.catalogo.find(p => p.nombre === 'Insecticida A').id);
   ok('NO se lleva los nombres de sus clientes', !/cliente|Casa de|Planta de|Hotel de/i.test(JSON.stringify(ex)));
   const c = corrida({ horas: 2, km: 10, renglones: [{ producto: ex.catalogo.find(p => p.nombre === 'Insecticida A').id, cantidad: 20 }] }, ex);
-  ok('la corrida da lo mismo que una fila de su Excel: (160 + 160) × 2.5 ÷ 0.6 + 70 = 1,403.33', c.cotizacion === 1403.33 && c.precio === 1410 && c.costos === 982.33, JSON.stringify(c));
+  ok('la corrida da lo mismo que una fila de su Excel: (160 + 160) × 2.5 ÷ 0.6 + 70 = 1,403.33', c.cotizacion === 1403.33 && c.precio === 1403.33 && c.costos === 982.33, JSON.stringify(c));
   ok('la unidad se dice como la mide el técnico', unidadDe({ unidad: 'ml/lt' }) === 'L de mezcla' && unidadDe({ unidad: 'gr/bloque' }) === 'bloques' && unidadDe({ unidad: 'gr/m2' }) === 'm²');
   const t = aTarifas(ex, { zonas: { centro: 6 }, ejemplo: false });
   ok('para el bot: su fórmula, su hora, y las zonas que ya había no se pierden', t.formula.tipo === 'excel' && t.tecnico.costo_hora === 80 && t.zonas.centro === 6 && t.plagas.alacran?.material === 'Insecticida A');
   ok('las tarifas de EJEMPLO no se mezclan con las suyas', !('zonas' in aTarifas(ex, { ejemplo: true, zonas: { x: 1 } })));
   let error = ''; try { await leerXlsx(new TextEncoder().encode('esto no es un excel')); } catch (e) { error = e.message; }
   ok('un archivo que no es Excel se dice en cristiano', /no es un Excel/.test(error));
-  ok('la muestra trae la misma forma y dice que es muestra', EXCEL_MUESTRA.muestra && corrida({ horas: 1, km: 0, renglones: [] }, EXCEL_MUESTRA).precio === redondear(60 * 2.5 / .6));
+  ok('la muestra trae la misma forma y dice que es muestra', EXCEL_MUESTRA.muestra && corrida({ horas: 1, km: 0, renglones: [] }, EXCEL_MUESTRA).precio === 250);
+ok('UNA sola cuenta: centro/cotizar.js es copia EXACTA de servidor/src/corrida.js (el bot)', readFileSync(aqui('./cotizar.js'), 'utf8') === readFileSync(aqui('../servidor/src/corrida.js'), 'utf8'), 'cp urban-pest/centro/cotizar.js urban-pest/servidor/src/corrida.js');
+ok('una dosis que es cuenta (=11/10000) se calcula con todos sus decimales', cuenta('11/10000') === 0.0011 && cuenta('=1000/3000') === 1000 / 3000 && cuenta('B3*2') === null);
 }
 
 console.log(`\n${bien} bien, ${mal} mal`);

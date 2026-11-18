@@ -13,7 +13,7 @@
      7. si hace falta el dueño → aviso (y llamada, cuando se conecte)
    ═══════════════════════════════════════════════════════════════════════════ */
 import { reflejo, llenar } from './reflejo.js';
-import { cotizar } from './cotizador.js';
+import { cotizar, aPlaga } from './cotizador.js';
 import { estimarM2, MEDIDAS } from './medidor.js';
 import { pesos } from './cerebro.js';
 import { cotizacionDelBot } from './cotizacion.js';
@@ -63,8 +63,13 @@ export class Oficina {
       await guarda(); await this.aviso(conv, `Mandó ${m.tipo || 'un archivo'}: revísalo tú.`); return { hecho: 'no-texto' };
     }
 
+    /* la plaga se apunta en cuanto la dice, aunque conteste el reflejo: así nunca se le vuelve a preguntar */
+    /* …y si la corrige («no son chinches, son como cucarachas pequeñas»), vale la última que dijo */
+    const plagaDicha = aPlaga(m.texto);
+    if(plagaDicha) conv.datos.plaga = plagaDicha;
+
     /* 5 · REFLEJO */
-    const r = reflejo(m.texto, cfg.casos);
+    const r = elReflejo(m.texto, cfg.casos, conv.datos);
     if(r){
       const texto = llenar(r.caso.respuesta, conv.datos);
       await this.decir(conv, texto, { via: 'reflejo', caso: r.caso.id, confianza: r.confianza });
@@ -72,32 +77,68 @@ export class Oficina {
       await guarda(); return { hecho: 'reflejo', caso: r.caso.id };
     }
 
-    /* 6 · CEREBRO */
-    let cot = cfg.tarifas ? this.cotiza(conv, cfg.tarifas, cfg.medidas) : null;
-    let p = await this.pensar({ env: this.env, negocio: cfg.negocio, casos: cfg.casos, historial: conv.mensajes, cotizacion: cot });
+    /* 6 · CEREBRO
+       Carlos, 17 nov: en cada mensaje le volvía a dar el precio, cada vez un poco distinto ($778.80, $752.89, $766.36), y una
+       hoja nueva cada vez; a «¿por qué no pediste metros?» le contestó con el precio. Ya dicho el precio, no se mueve si el
+       cliente no da un dato nuevo, y a la IA se le dice que ya se lo dijo: que conteste lo que le preguntan. */
+    const datoNuevo = traeDatos(m.texto) || /\b(chic|median|grand|recamar|cuart|bano|pati|jardin|sala|comedor|plant|pis|coloni|zona|depa|casa|negocio|industria)/.test(normal(m.texto));
+    let cot = cfg.tarifas ? (conv.precioDicho != null && conv.cotizacion && !datoNuevo ? conv.cotizacion : this.cotiza(conv, cfg.tarifas, cfg.medidas)) : null;
+    /* con un dato nuevo que casi no lo mueve («chica» → «2 cuartos 1 baño»: $778.80 → $752.89) se queda el que ya se le dijo:
+       al cliente no se le cambia el precio por centavos de una estimación. Si cambia 5 % o más, sí se le da el nuevo. */
+    if(cot && conv.cotDicha && Math.abs(cot.desde - conv.cotDicha.desde) < conv.cotDicha.desde * .05) cot = conv.cotDicha;
+    const paraIA = (c) => c && conv.precioDicho === c.desde ? { ...c, yaDicho: true } : c;
+    let p = await this.pensar({ env: this.env, negocio: cfg.negocio, casos: cfg.casos, historial: conv.mensajes, cotizacion: paraIA(cot), sinPrecio: sinPrecioAuto(conv.datos, cfg.tarifas) });
+    const antes = { ...conv.datos };
     if(p.bien){
       conv.datos = mezclar(conv.datos, p.datos);
       const nueva = cfg.tarifas && !cot ? this.cotiza(conv, cfg.tarifas, cfg.medidas) : null;
       /* con lo que acaba de decir ya se puede cotizar: se le pregunta otra vez, ya con el precio */
-      if(nueva){ cot = nueva; const p2 = await this.pensar({ env: this.env, negocio: cfg.negocio, casos: cfg.casos, historial: conv.mensajes, cotizacion: cot }); if(p2.bien) p = { ...p2, datos: p.datos }; }
+      if(nueva){ cot = nueva; const p2 = await this.pensar({ env: this.env, negocio: cfg.negocio, casos: cfg.casos, historial: conv.mensajes, cotizacion: paraIA(cot) }); if(p2.bien) p = { ...p2, datos: p.datos }; }
+      /* acaba de decir una plaga que no tiene precio automático (ratas, termitas…): que no siga pidiendo el tamaño */
+      else if(!cot && !sinPrecioAuto(antes, cfg.tarifas) && sinPrecioAuto(conv.datos, cfg.tarifas)){ const p2 = await this.pensar({ env: this.env, negocio: cfg.negocio, casos: cfg.casos, historial: conv.mensajes, cotizacion: null, sinPrecio: sinPrecioAuto(conv.datos, cfg.tarifas) }); if(p2.bien) p = { ...p2, datos: p.datos }; }
     }
     if(!p.bien){
       await this.decir(conv, 'Gracias por escribir. En un momento te contesta el encargado.', { via: 'respaldo', error: p.error });
       await this.aviso(conv, 'La IA no pudo contestar: ' + p.error);
       await guarda(); return { hecho: 'respaldo' };
     }
-    /* el precio lo pone el código, nunca la IA (12 nov: escribió «$X» al cliente) */
-    const texto = ponerPrecio(p.respuesta, cot);
+    /* el precio lo pone el código, nunca la IA (12 nov: escribió «$X» al cliente). Si la IA copió de la plática el precio
+       que se dijo ANTES y con el dato nuevo cambió, se pone el de ahora (17 nov: «2 cuartos 1 baño» → la IA repitió $778.80) */
+    let resp = p.respuesta;
+    if(cot && conv.precioDicho != null && conv.precioDicho !== cot.desde) resp = String(resp).split(pesos(conv.precioDicho)).join('{precio}');
+    let texto = ponerPrecio(resp, cot);
+    /* Prueba en vivo, 17 nov: con la cotización YA calculada, la IA seguía preguntando el tamaño o la colonia («es como de
+       3 cuartos» → «¿cuántas recámaras tiene?» → …) y el cliente nunca veía el precio. Si el sistema ya lo tiene y la IA
+       pide lo que ya está, se le da el precio. */
+    /* Carlos, 17 nov («Toda chafa»): el cliente dijo «No quiero nada, escribes raro» y el bot le volvió a soltar el precio y
+       le mandó OTRA hoja. Si dice que ya no quiere, se despide y ya: sin precio, sin hoja y sin tarjeta de cotización. */
+    const seVa = noQuiere(m.texto);
+    if(texto && seVa && cot && texto.includes(pesos(cot.desde))) texto = 'Sin problema. Aquí estamos para cuando lo necesites.';
+    if(texto && !seVa && cot && cot.atiende === 'si' && !p.necesita_dueno && conv.precioDicho !== cot.desde && !texto.includes(pesos(cot.desde)) && pideLoQueYaHay(texto))
+      texto = ponerPrecio('Te saldría aproximadamente en {precio}. Si los datos que nos diste están bien, ése es el costo; el técnico te lo confirma al ver el lugar.', cot);
+    /* La IA quiso dar un precio sin cotización (Carlos preguntó «¿Cuánto?» sin que se supiera la plaga): en vez de
+       «te contesta el encargado», se le pide lo que falta para cotizar. */
+    if(!texto && !cot && /\{\s*precio\s*\}/i.test(p.respuesta)){
+      const d = conv.datos || {}, sp = sinPrecioAuto(d, cfg.tarifas);
+      texto = !d.plaga ? 'Para darte el precio dime qué plaga es. Si no sabes el nombre, cuéntame cómo es: tamaño, color y dónde la ves.'
+        : sp ? `${sp[0].toUpperCase() + sp.slice(1)} sí las atendemos; el precio te lo da el encargado. Ya le aviso.`
+        : 'Para darte el precio, ¿tu casa la considerarías chica, mediana o grande, y en qué colonia está?';
+      if(sp) p.necesita_dueno = true, p.motivo = p.motivo || `Pide precio de ${sp}`;
+    }
     if(!texto){
       await this.decir(conv, 'Gracias por escribir. En un momento te contesta el encargado.', { via: 'respaldo', error: 'La IA escribió un precio que el sistema no calculó: ' + p.respuesta.slice(0, 160) });
       await this.aviso(conv, 'La IA quiso dar un precio que no salió de las tarifas; revisa tú la conversación.');
       await guarda(); return { hecho: 'respaldo' };
     }
-    await this.decir(conv, texto, { via: 'cerebro', razon: p.razon, modelo: p.modelo, cotizacion: cot || undefined });
+    /* la tarjeta de la cotización va pegada sólo al mensaje que DIO el precio (antes salía hasta en la despedida) */
+    const dioPrecio = !!(cot && texto.includes(pesos(cot.desde)));
+    await this.decir(conv, texto, { via: 'cerebro', razon: p.razon, modelo: p.modelo, cotizacion: dioPrecio ? cot : undefined });
     if(cot) conv.cotizacion = cot;
+    if(dioPrecio){ conv.precioDicho = cot.desde; conv.cotDicha = cot; }
     /* La cotización por escrito (BRIEF §B): cuando el bot DIO un precio que el sistema calculó, manda el link
        a la hoja lista para guardar como PDF. Una por precio: si vuelve a preguntar lo mismo no se repite. */
-    if(cot && cot.atiende === 'si' && texto.includes(pesos(cot.desde)) && conv.cotDoc?.precio !== cot.desde){
+    /* la hoja por escrito: una, y otra sólo si el precio cambió de verdad (10 % o más), no por centavos */
+    if(dioPrecio && !seVa && cot.atiende === 'si' && (!conv.cotDoc || Math.abs(cot.desde - conv.cotDoc.precio) >= conv.cotDoc.precio * .1)){
       const doc = await cotizacionDelBot(this.A, conv, cot, this.reloj());
       conv.cotDoc = { codigo: doc.codigo, precio: cot.desde };
       await this.decir(conv, `Te dejo tu cotización por escrito, por si la quieres guardar: ${this.env.URL_COTIZACION || URL_COTIZACION}${doc.codigo}`, { via: 'cotizacion', cotizacion: doc.codigo });
@@ -123,6 +164,9 @@ export class Oficina {
     }
     /* no sabe los metros: se estiman con lo que contó (sólo casas; negocio e industria se visitan) */
     if(!(m2 > 0) && (d.tipo || 'casa') === 'casa'){
+      const dt = delTexto(conv.mensajes);
+      if(d.recamaras == null && dt.recamaras) d.recamaras = dt.recamaras;
+      if(!d.tamano && dt.tamano) d.tamano = dt.tamano;
       const e = estimarM2(d, medidas || MEDIDAS);
       if(e.bien){ m2 = e.m2; m2Estimado = true; conv.estimacion = e; }
     }
@@ -131,6 +175,14 @@ export class Oficina {
   }
 
   async decir(conv, texto, extra){
+    /* Luis, 17 nov: «el bot no debe dar datos del ing». Lo que contesta el bot (reflejo o IA) pasa por aquí: si trae el
+       teléfono o el nombre del dueño, NO sale; sale el aviso al encargado y al dueño le llega por qué. Lo que escribe
+       el dueño desde su chat central (via «dueno») no se toca: es suyo. */
+    if(extra?.via !== 'dueno' && extra?.via !== 'cotizacion' && !sinDatosDelDueno(texto, (await this.A.get('negocio')) || {}, this.env)){
+      extra = { ...extra, tapado: String(texto).slice(0, 300) };
+      texto = 'Claro, ya le aviso al encargado para que te contacte.';
+      await this.aviso(conv, 'La respuesta del bot traía tus datos (nombre o teléfono) y se cambió por «ya le aviso al encargado».');
+    }
     const r = await this.enviar(this.env, conv.canal, conv.chat, texto);
     conv.mensajes.push({ de: 'negocio', texto, cuando: this.reloj(), ...extra, ...(r.bien ? {} : { noSalio: r.error }) });
   }
@@ -159,14 +211,83 @@ export class Oficina {
 
 /** Cambia {precio} por la cantidad calculada. Regresa null si la respuesta trae un precio que no es el del sistema
     (un «$X» copiado del ejemplo, una cantidad inventada, o {precio} sin cotización). */
+/** true si `texto` NO trae datos del dueño: su teléfono (DUENO_WA o negocio.dueno_wa, con o sin lada, con espacios o
+    guiones) ni su nombre (negocio.dueno_nombre: el nombre completo o el apellido). Los datos viven en su servidor, no aquí. */
+export function sinDatosDelDueno(texto, negocio = {}, env = {}){
+  const tels = [env.DUENO_WA, negocio.dueno_wa].map(x => String(x || '').replace(/\D/g, '').slice(-10)).filter(x => x.length === 10);
+  for(const m of String(texto || '').matchAll(/(?:\d[\s\-.()]*){7,}/g)){
+    const d = m[0].replace(/\D/g, '');
+    /* los 10 dígitos en cualquier número; los últimos 7 sólo en un número corto (el «local»): así una fecha o un folio
+       largo que por azar acabe igual no se bloquea (Paulina y Negro, 17 nov) */
+    if(tels.some(t => d.includes(t) || (d.length <= 8 && d.endsWith(t.slice(-7))))) return false;
+  }
+  const nombre = normal(negocio.dueno_nombre || '').replace(/\b(ing|lic|sr|don)\.?\s+/g, '').trim();
+  if(nombre){
+    const t = ' ' + normal(texto).replace(/[^a-z0-9ñ]+/g, ' ') + ' ', partes = nombre.split(/\s+/), apellido = partes.length > 1 ? partes.at(-1) : null;
+    if(t.includes(' ' + partes.join(' ') + ' ') || (apellido && apellido.length >= 4 && t.includes(' ' + apellido + ' '))) return false;
+  }
+  return true;
+}
+
+/** El reflejo, con una regla (Godines, 17 nov, de la prueba en vivo): un caso marcado `conDatosALaIA` (precio, factura,
+    empresa, mascotas) NO contesta si el mensaje ya trae datos para cotizar —la plaga, los metros, los cuartos—. Antes,
+    «cuánto sale un depa de 80 metros en Milenio x cucarachas» recibía «¿qué plaga tienes?»: el cliente siente que no lo
+    leyeron. Con datos, contesta la IA (que ve las mismas respuestas aprobadas) y además cotiza. */
+export const traeDatos = (t) => !!aPlaga(t) || /\d+\s*(m2|m²|mts?\b|metros)|\brec[aá]maras?\b|\bcuartos?\b|\bpisos?\b|\bplantas?\b/i.test(String(t || ''));
+/* …y lo mismo si ya los dio ANTES en la plática: «tengo cucarachas» → «¿y cuánto sale?» no se contesta «¿qué plaga tienes?» */
+const yaDioDatos = (d = {}) => !!(d.plaga || d.m2 || d.recamaras || d.tamano || d.zona);
+export function elReflejo(texto, casos, datos){
+  const r = reflejo(texto, casos);
+  if(!r) return null;
+  if(r.caso.conDatosALaIA && (traeDatos(texto) || yaDioDatos(datos))) return null;
+  /* un mensaje que nombra una plaga y sólo se PARECE a un caso, contesta la IA: «tengo termitas en los muebles de madera»
+     se parecía a «tengo que mover los muebles» y recibía cómo preparar la casa (prueba en vivo, 17 nov) */
+  if(r.confianza < 1 && aPlaga(texto)) return null;
+  return r;
+}
+
+/* Lo que el cliente dijo con sus palabras y la IA no apuntó (prueba en vivo, 17 nov: «es como de 3 cuartos» y la IA
+   volvía a preguntar las recámaras una y otra vez). «3 cuartos», «tres recámaras», «casa chica»… */
+const NUMEROS = { un: 1, una: 1, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8 };
+export function delTexto(mensajes = []){
+  const d = {};
+  for(const m of [...mensajes].reverse().filter(x => x.de === 'cliente')){
+    const t = normal(m.texto);
+    if(d.recamaras == null){ const r = t.match(/\b(\d{1,2}|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho)\s+(recamaras?|cuartos?|habitaciones?|recamaritas?)\b/); if(r) d.recamaras = NUMEROS[r[1]] ?? +r[1]; }
+    /* «depa chico», «casa chiquita», «mediano», «grandote»: en masculino también (prueba en vivo: «es depa chico x el centro») */
+    if(d.tamano == null){ const r = t.match(/\b(chic[ao]|chiquit[ao]|pequen[ao]|median[ao]|grande|grandot[aeo])\b/); if(r) d.tamano = /^(chic|chiquit|pequen)/.test(r[1]) ? 'chica' : /^median/.test(r[1]) ? 'mediana' : 'grande'; }
+  }
+  return d;
+}
+
+/** La plaga que dijo (si dijo) y que NO tiene precio automático en sus tarifas: ratas, termitas, chinches… La cotiza él. */
+export function sinPrecioAuto(d = {}, tarifas){
+  if(!d?.plaga || !tarifas?.plagas) return null;
+  const clave = aPlaga(d.plaga) || normal(d.plaga);
+  return tarifas.plagas[clave] ? null : (COMO_SE_DICE[clave] || String(d.plaga).slice(0, 40));
+}
+/* a la IA se le dice como lo dice la gente, no la clave de las tarifas («roedor») */
+const COMO_SE_DICE = { roedor: 'ratas y ratones', termita: 'termitas', chinche: 'chinches', pulga: 'pulgas', alacran: 'alacranes', arana: 'arañas',
+  mosco: 'mosquitos', mosca: 'moscas', hormiga: 'hormigas', cucaracha: 'cucarachas' };
+
+/** «no quiero nada», «ya nada», «no gracias», «olvídalo», «ya no»: el cliente se despide o dice que no */
+export const noQuiere = (t) => /\b(no quiero( nada)?(?! (que|q|k|a|al|el|la|los|las|mis?|tus?|sus?|esto|eso|ese|esa)\b)|ya nada|no,? gracias|no me interesa|olvidalo|dejalo( asi)?|ya no( quiero)?(?! (que|q)\b)|mejor no|asi dejalo|no ocupo nada)\b/.test(normal(t));
+
+export const pideLoQueYaHay = (t) => /chic[ao], median[ao] o grande|cu[aá]ntas rec[aá]maras|qu[eé] colonia|cu[aá]ntos metros|el tama[ñn]o/i.test(String(t || ''));
+
 export function ponerPrecio(texto, cot){
   const precio = cot ? pesos(cot.desde) : null;
-  let t = String(texto).replace(/\{\s*precio\s*\}/gi, () => precio ?? '\u0000');
+  /* «{precio}», «{{precio}}» o «${precio}»: todas quedan en el precio (17 nov: salió «{$10,002.44}») */
+  let t = String(texto).replace(/(\$\s*)?\{+\s*precio\s*\}+/gi, () => precio ?? '\u0000')
+    /* …y si la IA ya puso la cantidad DENTRO de las llaves («{$10,002.44}»), se le quitan las llaves */
+    .replace(/\{+\s*(\$\s*[\d][\d,]*(?:\.\d+)?)\s*\}+/g, '$1');
   if(t.includes('\u0000')) return null;
   if(/\$\s*[xX]\b|\$\s*\{/.test(t)) return null;
   for(const m of t.matchAll(/\$\s*([\d][\d,\.]*)/g)){
-    const n = Number(m[1].replace(/,/g, '').replace(/\.(?=\d{3}\b)/g, ''));
-    if(!cot || Math.abs(n - Math.round(cot.desde)) > 1) return null;
+    /* el punto final de la frase no es parte del número («…$1,373.24.»); antes «1373.24.» daba NaN y NaN nunca
+       se rechazaba: cualquier precio con un punto pegado pasaba */
+    const n = Number(m[1].replace(/[.,]+$/, '').replace(/,/g, '').replace(/\.(?=\d{3}\b)/g, ''));
+    if(!cot || !Number.isFinite(n) || Math.abs(n - cot.desde) > 1) return null;
   }
   return t;
 }
