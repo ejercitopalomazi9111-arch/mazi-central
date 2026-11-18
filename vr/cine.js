@@ -5,7 +5,7 @@
      · Mis videos: los que se cargaron en la entrada; ésos sí van DENTRO de la escena (con la corrección del lente).
    Lo de otros sitios va en la pantalla de la web (pantalla.js), encima de la escena, una copia por ojo.
    Netflix, Crunchyroll y similares no: su protección pinta negro y no dejan meterse en otra página (PLAN.md). */
-import { crearAgarre } from './agarre.js';
+import { crearAgarre, crearMoverConControl } from './agarre.js';
 export const SALA = 'https://sala.palomazi9111.workers.dev';
 const ARCHIVO = 'https://archive.org';
 
@@ -30,6 +30,7 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
      (encima de ti para verla acostado, de lado, en diagonal) y se agranda o achica (agarre.js) */
   const soporte = new THREE.Group(); cine.grupo.add(soporte);
   const agarrar = crearAgarre(V, { soporte, getEscala: () => tam, setEscala: (e) => { tam = e; ponerPantalla(); }, min: .35, max: 3 });
+  const moverCtl = crearMoverConControl(V, { soporte, getEscala: () => tam, setEscala: (e) => { tam = e; ponerPantalla(); }, min: .35, max: 3 });
   ponerPantalla(); soporte.add(pantalla); pantalla.visible = false;
   cine.alRecentrar = () => { soporte.quaternion.identity(); tam = 1; ponerPantalla(); };
   web.anclar(pantalla);
@@ -145,8 +146,9 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
   cine.entrar = () => { fase = 'estante'; decir(''); };
   cine.salir = () => { dejarDeVer(); limpiarTarjetas(); V.extra.gestosVideo = false; };
   cine.elegibles = () => fase === 'estante' ? puertas : fase === 'resultados' ? tarjetas : [];
-  cine.control = (c) => {
+  cine.control = (c, dt) => {
     if(fase !== 'viendo') return {};
+    if(moverCtl(c, dt)) return { x: true, flechas: true };
     if(c.oprimido[B.X]) pausar();
     if(c.oprimido[B.L1]) brincar(-10);
     if(c.oprimido[B.R1]) brincar(10);
@@ -154,6 +156,9 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
     if(c.oprimido[B.ABAJO]){ dist = Math.min(8, dist + .4); ponerPantalla(); }
     return { x: true, flechas: true };
   };
+  /* con L2 apretado los sticks son de la pantalla: ni caminas ni giras */
+  Object.defineProperty(cine, 'ocupaStick', { get: () => fase === 'viendo' && V.control.apretado(B.L2) });
+  Object.defineProperty(cine, 'ocupaGiro', { get: () => fase === 'viendo' && V.control.apretado(B.L2) });
   cine.atras = () => { if(fase === 'viendo' || fase === 'resultados'){ dejarDeVer(); limpiarTarjetas(); fase = 'estante'; } else V.ir('inicio'); };
   /* ── gestos de mano mientras ves (Carlos, 18 nov) ──
        · pellizcar una vez: pausa / sigue
