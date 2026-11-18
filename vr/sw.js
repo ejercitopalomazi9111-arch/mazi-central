@@ -9,8 +9,8 @@
      sale de lo guardado marcado como redirigido: el navegador rechaza una navegación «redirigida» (lo que tumbó a
      INKWELL el 11 nov, ver inkwell/sw.js v31).
    Prueba: node vr/pruebas-sinred.mjs (apaga el servidor de a de veras). */
-const V = 'mazivr-v2';
-const APP = ['./', './vr.js', './iconos.js', './teclado.js', './cine.js', './lector.js', './pantalla.js', './manos.js', './gestos.js',
+const V = 'mazivr-v3';
+const APP = ['./', './vr.js', './iconos.js', './teclado.js', './cine.js', './lector.js', './sables.js', './pantalla.js', './manos.js', './gestos.js',
   './manifest.webmanifest', './silencio.mp4', './sonidos/toque.wav', './sonidos/whoosh.wav', './sonidos/ding.wav',
   './vendor/three.module.min.js', './vendor/three.core.min.js', '../marca/paloma-2026/logo-icono.svg', '../marca/paloma-2026/icono-512.png', '../inkwell/biblioteca.js', '../inkwell/fuentes.js', '../inkwell/red.js', '../inkwell/compartir.js'];
 const PESADO = ['./modelos/hand_landmarker.task', '../presentaciones/vendor/mediapipe/vision_bundle.mjs',

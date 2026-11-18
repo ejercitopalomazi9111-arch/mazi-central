@@ -53,6 +53,7 @@ import ICONOS from './iconos.js';
 import { montarTeclado } from './teclado.js';
 import { montarCine } from './cine.js';
 import { montarLector } from './lector.js';
+import { montarSables } from './sables.js';
 import { crearPantallaWeb } from './pantalla.js';
 const { THREE, B } = V;
 V.iconos(ICONOS);
@@ -88,7 +89,7 @@ $('#bEntrar').addEventListener('click', async () => {
   $('#entrada').remove(); document.body.classList.add('dentro');
   V.arrancar(); V.ir('inicio'); V.recentrar(); V.hud('Bienvenido', 2);
   /* las manos cargan después (el modelo pesa ~8 MB): el visor ya se puede usar mientras */
-  camara.then((ok) => { if(ok && V.hayCamara()) import('./manos.js').then(async ({ iniciarManos }) => { const m = await iniciarManos(V); window.__manos = m; if(m.listo){ V.alCuadro.push(m.cuadro); V.hud('Manos listas'); } }); });
+  camara.then((ok) => { if(ok && V.hayCamara()) import('./manos.js').then(async ({ iniciarManos }) => { const m = await iniciarManos(V); window.__manos = m; if(m.listo){ V.alCuadro.push(m.cuadro, m.dibujar); V.hud('Manos listas'); } }); });
 });
 
 /* ── las vistas ── */
@@ -101,7 +102,7 @@ async function montar(){
     x.font = '700 30px system-ui, -apple-system, sans-serif'; x.fillStyle = '#C9B6DA'; x.fillText(new Date().toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' }), cv.width / 2, 82); titulo.listo(); };
   pintarTitulo(); setInterval(pintarTitulo, 15000);
   const T = [
-    ['Juegos', 'gamepad-2', () => V.hud('Pronto'), 'Pronto'],
+    ['Juegos', 'gamepad-2', () => V.ir('juegos')],
     ['Cine', 'clapperboard', () => V.ir('cine')],
     ['Leer', 'book-open', () => V.ir('leer')],
     ['La Sala', 'users', () => V.hud('Pronto'), 'Pronto'],
@@ -119,11 +120,11 @@ async function montar(){
   V.registrar('inicio', inicio);
 
   /* JUEGOS y LA SALA: lo que viene (fase 2 y 3 en PLAN.md) */
-  for(const [nombre, items] of [['juegos', [['Sables', 'swords', 'Pronto'], ['VS Tiles', 'music', 'Pronto']]], ['sala', [['La Sala', 'users', 'Pronto']]]]){
+  for(const [nombre, items] of [['juegos', [['Sables', 'swords', '', () => V.ir('sables')], ['VS Tiles', 'music', 'Pronto']]], ['sala', [['La Sala', 'users', 'Pronto']]]]){
     const v = { grupo: new THREE.Group() }; const L = [];
-    for(const [i, [t, ic, sub]] of items.entries()){
-      const p = await V.tarjeta({ titulo: t, icono: ic, sub, apagada: true }); const a = (i - (items.length - 1) / 2) * 20 * Math.PI / 180;
-      p.malla.position.set(Math.sin(a) * 2.2, 0, -Math.cos(a) * 2.2); p.malla.lookAt(0, 0, 0); p.malla.userData.accion = () => V.hud('Pronto');
+    for(const [i, [t, ic, sub, fn]] of items.entries()){
+      const p = await V.tarjeta({ titulo: t, icono: ic, sub, apagada: !fn }); const a = (i - (items.length - 1) / 2) * 20 * Math.PI / 180;
+      p.malla.position.set(Math.sin(a) * 2.2, 0, -Math.cos(a) * 2.2); p.malla.lookAt(0, 0, 0); p.malla.userData.accion = fn || (() => V.hud('Pronto'));
       v.grupo.add(p.malla); L.push(p.malla);
     }
     v.elegibles = () => L; v.atras = () => V.ir('inicio'); V.registrar(nombre, v);
@@ -136,6 +137,9 @@ async function montar(){
 
   /* LEER: INKWELL (Tiras y Libros) con lo que ya está bajado en este teléfono (lector.js) */
   window.__lector = await montarLector(V, { pedirTexto });
+
+  /* SABLES: la demo de ritmo con las manos (sables.js) */
+  window.__sables = montarSables(V);
 
   /* AJUSTES: un panel; flechas arriba/abajo eligen, izquierda/derecha cambian */
   const aj = { grupo: new THREE.Group() };

@@ -28,6 +28,12 @@ const C = { fondo: '#170A26', sup: '#24123A', borde: '#3C2652', acento: '#AC27FF
 /* ── escena ── */
 const lienzo = document.getElementById('gl');
 const render = new THREE.WebGLRenderer({ canvas: lienzo, antialias: true });
+/* la pantalla negra (foto de Carlos, 18 nov): con las manos, el video y la cámara a la vez, el iPhone puede soltar el
+   dibujo 3D para recuperar memoria y la página se queda en negro para siempre. Se avisa y se recarga sola */
+lienzo.addEventListener('webglcontextlost', (e) => { e.preventDefault();
+  const d = document.createElement('div'); d.textContent = 'Recargando…';
+  d.style.cssText = 'position:fixed; inset:0; z-index:9; display:grid; place-items:center; background:#0B0513; color:#F4EEF2; font:800 22px system-ui,-apple-system,sans-serif';
+  document.body.appendChild(d); setTimeout(() => location.reload(), 1200); });
 render.setPixelRatio(Math.min(devicePixelRatio, 2));
 render.outputColorSpace = THREE.SRGBColorSpace;
 const escena = new THREE.Scene();
@@ -255,6 +261,7 @@ export function despertarAudio(){
   try{ actx = actx || new (window.AudioContext || window.webkitAudioContext)(); return actx.resume().catch(() => {}); }catch{ return Promise.resolve(); }
 }
 export const sonidosListos = () => cargaSonidos;
+export const audio = () => actx;
 export function sonar(n, vol = .5){ if(!actx || !sonidos[n]) return; const s = actx.createBufferSource(), g = actx.createGain(); g.gain.value = vol; s.buffer = sonidos[n]; s.connect(g).connect(actx.destination); s.start(); }
 
 /* ── las vistas: el inicio (hub), el cine, los ajustes y las que vienen ── */
@@ -292,6 +299,7 @@ export const ahora = () => vista;
 const ray = new THREE.Raycaster(); const centro = new THREE.Vector2(0, 0);
 let foco = null, focoDesde = 0, focoPorFlechas = -1e9, ultimoGiro = new THREE.Quaternion();
 function elegibles(){ const L = vistas[vista]?.elegibles?.() || []; return atras.visible ? [...L, atras] : L; }
+const historialMira = []; let xManoAntes = false;
 let mirarBloqueado = true;                                   // al abrir una vista, lo que ya tenías enfrente no se elige solo
 /* …hasta que la cabeza se mueva. Antes sólo se soltaba al pasar de un botón a OTRO: si llegabas a «Atrás» desde el vacío,
    seguía bloqueado y sin control no había salida (Carlos, 18 nov) */
@@ -340,7 +348,7 @@ function cuadro(t){
     if(control.oprimido[B.IZQ]) moverFoco(-1, 0); if(control.oprimido[B.DER]) moverFoco(1, 0);
     if(control.oprimido[B.ARRIBA]) moverFoco(0, 1); if(control.oprimido[B.ABAJO]) moverFoco(0, -1);
   }
-  if(control.oprimido[B.X] && !usado.x) activar(foco);
+  if(control.oprimido[B.X] && !usado.x && !(extra.rayo && extra.botones?.[B.X])) activar(foco);
   if(control.oprimido[B.O] && !usado.o) v?.atras?.();
   /* la mira: lo que ves al centro toma el foco, salvo justo después de usar las flechas sin mover la cabeza */
   if(mirarBloqueado && (cabeza.quaternion.angleTo(giroAlBloquear) > .14 || performance.now() > bloqueadoHasta)){ mirarBloqueado = false; focoDesde = performance.now(); }   /* el reloj de mirar fijo empieza al soltarse, no antes */
@@ -349,8 +357,15 @@ function cuadro(t){
     const flechasRecientes = performance.now() - focoPorFlechas < 4000 && cabeza.quaternion.angleTo(ultimoGiro) < .12;
     if(extra.rayo) ray.set(extra.rayo.origen, extra.rayo.dir); else ray.setFromCamera(centro, cabeza);
     const h = ray.intersectObjects(L, false)[0];
+    if(extra.rayo){ extra.rayo.hit = h ? h.point.clone() : null; extra.sobreBoton = !!h; }
     if(h && (!flechasRecientes || extra.rayo)){ viendo = h.object; darFoco(viendo); }
   }
+  if(!extra.rayo) extra.sobreBoton = false;
+  /* el clic con pellizco elige a lo que apuntabas UN INSTANTE ANTES: al juntar los dedos la mano se mueve y el rayo se
+     brincaba de la tarjeta (Carlos, 18 nov: «haz que pellizcar sea un click») */
+  const ahoraMs = performance.now(); historialMira.push([ahoraMs, viendo]); while(historialMira.length > 30) historialMira.shift();
+  const xMano = !!extra.botones?.[B.X], clicMano = xMano && !xManoAntes; xManoAntes = xMano;
+  if(clicMano && !usado.x && extra.rayo){ const antes = historialMira.find(([t, o]) => ahoraMs - t <= 260 && ahoraMs - t >= 90 && o) || historialMira.findLast?.(([, o]) => o); const o = antes?.[1] || foco; if(o){ darFoco(o); activar(o); } usado.x = true; }
   /* mirar fijo 1.6 s también elige (para cuando no tienes el control a la mano) */
   /* sólo sin control: con el control se elige con X y mirar fijo estorba */
   const fijo = !padVisto && !extra.rayo && !mirarBloqueado && viendo && viendo === foco ? Math.max(0, (performance.now() - focoDesde) / 1600) : 0;

@@ -435,11 +435,29 @@ export async function montarLector(V, { pedirTexto } = {}){
   /* ── cada cuadro: mover, cargar lo cercano, soltar lo lejano, marcar lo leído ── */
   const ray = new THREE.Raycaster(), centro = new THREE.Vector2(0, 0), wp = new THREE.Vector3();
   let velMirada = 0;
+  /* leer con la mano (Carlos, 18 nov): pellizcar y arrastrar arriba/abajo mueve la tira como con el dedo en la pantalla;
+     al soltar sigue un poco por la inercia. Un pellizco corto, sin mover, lee solo o pausa */
+  const gM = { activo: false, y0: 0, s0: 0, t0: 0, ultY: 0, ultT: 0, vel: 0, movio: false };
+  let inercia = 0;
+  function manoLee(dt){
+    const p = (V.extra.manos || []).find((m) => m.pellizco), ahora = performance.now();
+    if(p && !V.extra.sobreBoton && !gM.activo) Object.assign(gM, { activo: true, y0: p.y, s0: scroll, t0: ahora, ultY: p.y, ultT: ahora, vel: 0, movio: false }), inercia = 0, objetivo = null;
+    else if(p && gM.activo){
+      const dy = p.y - gM.y0; if(Math.abs(dy) > .03) gM.movio = true;
+      if(gM.movio){ const nuevo = gM.s0 - dy * VEN * 2.2; const dtm = Math.max(1, ahora - gM.ultT) / 1000; gM.vel = (nuevo - scroll) / dtm * .5 + gM.vel * .5; scroll = nuevo; }
+      gM.ultY = p.y; gM.ultT = ahora;
+    } else if(!p && gM.activo){ gM.activo = false;
+      if(gM.movio) inercia = Math.max(-3000, Math.min(3000, gM.vel));
+      else if(ahora - gM.t0 < 600){ auto = !auto; V.hud(auto ? 'Solo' : 'Pausa', 1); } }
+    if(!gM.activo && inercia){ scroll += inercia * dt; inercia *= Math.pow(.05, dt); if(Math.abs(inercia) < 20) inercia = 0; }
+  }
   lector.cuadro = (t, dt = 1 / 60) => {
+    V.extra.gestosVideo = fase === 'leyendo';
+    if(fase === 'leyendo') manoLee(dt);
     if(fase !== 'leyendo'){ tarjetas.forEach((m) => { m.visible = fase === 'estante' || fase === 'resultados'; }); return; }
     /* sin control: mirar (o apuntar con la mano) la orilla de la ventana avanza */
     velMirada = 0;
-    if(!V.hayControl() || V.extra.rayo){
+    if(!V.hayControl() && !V.extra.rayo){   /* con la mano se lee pellizcando y arrastrando (manoLee) */
       if(V.extra.rayo) ray.set(V.extra.rayo.origen, V.extra.rayo.dir); else ray.setFromCamera(centro, V.cabeza);
       const h = ray.intersectObject(marco, false)[0];
       if(h){ const v = marco.worldToLocal(h.point.clone()).y / ALTO + .5; if(v < .18) velMirada = (.18 - v) / .18 * 520; else if(v > .9) velMirada = -(v - .9) / .1 * 520; }
@@ -497,7 +515,7 @@ export async function montarLector(V, { pedirTexto } = {}){
   /* leyendo, «Atrás» va a un lado de la ventana: abajo estorbaría al mirar la orilla para avanzar */
   Object.defineProperty(lector, 'atrasEn', { get: () => fase === 'leyendo' || fase === 'cargando' ? [-(.45 + .4), -.4, -dist] : null });
   lector.entrar = () => { pagina = 0; cargarEstante(); ponerAlDia().catch(() => {}); };
-  lector.salir = () => { salirDeLeer(); limpiarTarjetas(); decir(''); fase = 'estante'; };
+  lector.salir = () => { V.extra.gestosVideo = false; salirDeLeer(); limpiarTarjetas(); decir(''); fase = 'estante'; };
   lector.atras = () => { if(fase === 'leyendo' || fase === 'cargando' || fase === 'resultados'){ salirDeLeer(); cargarEstante(); } else V.ir('inicio'); };
   lector.elegibles = () => fase === 'estante' || fase === 'resultados' ? tarjetas : [];
   lector.estado = () => ({ bajando: bajada.cola.length + (bajada.corriendo ? 1 : 0), fase, obras: obras.length, tarjetas: tarjetas.length, obra: obra?.id || null, segs: segs.map((s) => obra?.caps[s.k]?.n), scroll: Math.round(scroll), auto, actual: obra && segActual() ? obra.caps[segActual().k].n : null,
