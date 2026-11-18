@@ -237,6 +237,21 @@
    "vecinas": [
     "mirar-fijo-elige-lo-que-ya-tenias-enfrente"
    ]
+  },
+  {
+   "id": "entrar-tarda-por-esperar-lo-que-no-hace-falta",
+   "titulo": "«Toco Entrar y tarda años»: el botón esperaba la cámara abierta dos veces, los sonidos uno por uno y armar todo el visor",
+   "gravedad": "media",
+   "sintoma": "En el iPhone, Mazi VR tardaba mucho entre tocar Entrar y ver el inicio, y sin internet ni abría.",
+   "causa": "El toque hacía en fila: pedir la cámara normal, enumerar, cerrarla y abrir la gran angular; bajar tres sonidos uno tras otro; y hasta el final armar las ~60 tarjetas y paneles del visor. No había trabajador de fondo.",
+   "porque": "En la computadora todo eso dura poco y no se nota; en el teléfono cada apertura de cámara cuesta segundos.",
+   "arreglo": "El visor se arma mientras se ve la portada; los sonidos se bajan a la vez al abrir; la cámara se abre por detrás (la mixta y las manos se prenden cuando llega) y se recuerda cuál es la gran angular para abrirla de un jalón; y vr/sw.js guarda todo, también las manos (vr/index.html, vr/vr.js).",
+   "comoCazarlo": "node vr/pruebas-sinred.mjs apaga el servidor y mide de Entrar al inicio (debe ser menos de 3 s; da ~0.5 s).",
+   "consejo": "Lo que exige el toque va en el toque; todo lo demás, antes o después, nunca en fila detrás de él.",
+   "salioDe": "Carlos, 18 nov: «toco el botón de entrar y tarda años en cargar, hazlo que funcione offline».",
+   "vecinas": [
+    "arco-par-deja-la-mira-en-un-hueco"
+   ]
   }
  ]
 }

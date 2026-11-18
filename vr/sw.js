@@ -1,0 +1,70 @@
+/* MAZI VR · trabajador de fondo: que el visor abra al instante y sin internet (Carlos, 18 nov: «toco entrar y tarda
+   años en cargar, hazlo que funcione offline»).
+
+   · Todo lo del visor sale DE LO GUARDADO primero y se actualiza por detrás para la siguiente vez (como INKWELL).
+   · Lo pesado (three, las manos —7.5 MB de modelo y el motor de MediaPipe—, sonidos) se guarda en la primera visita,
+     sin detener la instalación; si el teléfono se cierra antes, se guarda la primera vez que se use.
+   · Lo de otros sitios (YouTube, Internet Archive, La Sala) no se toca: eso sí necesita internet.
+   · Cloudflare le quita el «index.html» a la dirección (307 → /vr/). La página se guarda con su dirección limpia y nada
+     sale de lo guardado marcado como redirigido: el navegador rechaza una navegación «redirigida» (lo que tumbó a
+     INKWELL el 11 nov, ver inkwell/sw.js v31).
+   Prueba: node vr/pruebas-sinred.mjs (apaga el servidor de a de veras). */
+const V = 'mazivr-v1';
+const APP = ['./', './vr.js', './iconos.js', './teclado.js', './cine.js', './lector.js', './pantalla.js', './manos.js', './gestos.js',
+  './manifest.webmanifest', './silencio.mp4', './sonidos/toque.wav', './sonidos/whoosh.wav', './sonidos/ding.wav',
+  './vendor/three.module.min.js', './vendor/three.core.min.js', '../marca/paloma-2026/logo-icono.svg', '../marca/paloma-2026/icono-512.png', '../inkwell/biblioteca.js'];
+const PESADO = ['./modelos/hand_landmarker.task', '../presentaciones/vendor/mediapipe/vision_bundle.mjs',
+  '../presentaciones/vendor/mediapipe/wasm/vision_wasm_internal.js', '../presentaciones/vendor/mediapipe/wasm/vision_wasm_internal.wasm'];
+
+const clave = (u) => { const url = new URL(u, self.location.href); let p = url.pathname;
+  if(p.endsWith('/index.html')) p = p.slice(0, -10); else if(p.endsWith('.html')) p = p.slice(0, -5);
+  return url.origin + p; };
+const sano = async (r) => r && r.redirected ? new Response(await r.blob(), { status: r.status, statusText: r.statusText, headers: r.headers }) : r;
+const guardar = async (c, u) => { try{ const r = await fetch(u, { cache: 'no-cache' }); if(r.ok) await c.put(/\/$|\.html$/.test(u) ? clave(u) : new URL(u, self.location.href).href, await sano(r)); }catch{} };
+
+self.addEventListener('install', (e) => {
+  e.waitUntil((async () => {
+    const c = await caches.open(V);
+    await Promise.all(APP.map((u) => guardar(c, u)));
+    self.skipWaiting();
+  })());
+});
+self.addEventListener('activate', (e) => {
+  e.waitUntil((async () => {
+    for(const k of await caches.keys()) if(k.startsWith('mazivr-') && k !== V) await caches.delete(k);
+    await self.clients.claim();
+    /* lo pesado, ya con el visor andando */
+    const c = await caches.open(V);
+    for(const u of PESADO) if(!(await c.match(new URL(u, self.location.href).href))) await guardar(c, u);
+  })());
+});
+/* la página pide «¿ya está todo?» para decirlo en la entrada */
+self.addEventListener('message', async (e) => {
+  if(e.data !== 'listo?') return;
+  const c = await caches.open(V), falta = [];
+  for(const u of [...APP, ...PESADO]){ const k = /\/$/.test(u) ? clave(u) : new URL(u, self.location.href).href; if(!(await c.match(k))) falta.push(u); }
+  e.source?.postMessage({ listo: falta.length === 0, falta });
+});
+
+/* lo que no cambia (three, el modelo de manos, sonidos) no se vuelve a pedir: bajar 7.5 MB en cada visita sería peor
+   que no tener trabajador. Si alguno cambia, se sube la versión (V) de arriba. */
+const FIJO = /\/(vendor|modelos|sonidos|mediapipe)\/|\.(wasm|task|mp4|wav|svg)$/;
+self.addEventListener('fetch', (e) => {
+  const req = e.request;
+  if(req.method !== 'GET') return;
+  const url = new URL(req.url);
+  if(url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
+  if(req.headers.has('range')) return;   // lo que se pide por pedazos va directo
+  e.respondWith((async () => {
+    const c = await caches.open(V);
+    const pagina = req.mode === 'navigate' || req.destination === 'document';
+    const llave = pagina ? clave(url) : url.href;
+    const hit = await c.match(llave, { ignoreSearch: pagina });
+    if(hit && FIJO.test(url.pathname)) return sano(hit);
+    const red = fetch(pagina ? new Request(url.href, { credentials: 'same-origin' }) : req)
+      .then(async (res) => { if(res.ok && res.type === 'basic') await c.put(llave, await sano(res.clone())); return res; });
+    if(hit){ e.waitUntil(red.catch(() => {})); return sano(hit); }
+    try{ return await sano(await red); }
+    catch{ return (pagina && await sano(await c.match(clave('./')))) || Response.error(); }
+  })());
+});

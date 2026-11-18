@@ -53,16 +53,24 @@ pared.renderOrder = -10; pared.position.z = -20; pared.visible = false; cabeza.a
 export async function abrirCamara(){
   if(flujo) return true;
   try{
-    flujo = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
-    /* la ultra gran angular llena la vista del visor (la normal abre ~69°, el ojo en el visor ~90°); si el teléfono la ofrece, se cambia a ella */
-    try{
-      const devs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'videoinput');
-      const uw = devs.find((d) => /ultra|gran angular/i.test(d.label));
-      if(uw){ flujo.getTracks().forEach((t) => t.stop()); flujo = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: uw.deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false }); ultra = true; }
-    }catch(e){ console.warn('ultra gran angular', e); }
+    /* la ultra gran angular llena la vista del visor (la normal abre ~69°, el ojo en el visor ~90°). La primera vez hay que
+       abrir la normal para que el teléfono diga los nombres de sus cámaras; luego se recuerda cuál es y se abre de un jalón
+       (abrir la cámara dos veces era lo que más tardaba al tocar Entrar) */
+    const tam = { width: { ideal: 1920 }, height: { ideal: 1080 } };
+    let recordada = null; try{ recordada = localStorage.getItem('mazivr.camara'); }catch{}
+    if(recordada){ try{ flujo = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: recordada }, ...tam }, audio: false }); ultra = true; }catch{ flujo = null; try{ localStorage.removeItem('mazivr.camara'); }catch{} } }
+    if(!flujo){
+      flujo = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', ...tam }, audio: false });
+      try{
+        const devs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'videoinput');
+        const uw = devs.find((d) => /ultra|gran angular/i.test(d.label));
+        if(uw){ flujo.getTracks().forEach((t) => t.stop()); flujo = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: uw.deviceId }, ...tam }, audio: false }); ultra = true; try{ localStorage.setItem('mazivr.camara', uw.deviceId); }catch{} }
+      }catch(e){ console.warn('ultra gran angular', e); }
+    }
     video.srcObject = flujo; await video.play();
     camTex = new THREE.VideoTexture(video); camTex.colorSpace = THREE.SRGBColorSpace;
     pared.material.map = camTex; pared.material.color.set(0xffffff); pared.material.needsUpdate = true;
+    ponerMixta(AJ.mixta);   /* la cámara llega después de entrar: si la mixta ya estaba puesta, ahora sí se ve */
     return true;
   }catch(e){ console.warn('cámara', e); return false; }
 }
@@ -214,12 +222,17 @@ addEventListener('pointermove', (e) => { if(!arrastre) return; sim.yaw += (arras
 addEventListener('pointerup', () => { arrastre = null; });
 
 /* ── sonidos (los de la casa) ── */
+/* se bajan y se preparan al abrir la página (los tres a la vez); el toque de Entrar sólo despierta el audio */
 let actx = null; const sonidos = {};
-export async function despertarAudio(){
-  try{ actx = actx || new (window.AudioContext || window.webkitAudioContext)(); await actx.resume();
-    for(const n of ['toque', 'whoosh', 'ding']) if(!sonidos[n]) sonidos[n] = await actx.decodeAudioData(await (await fetch(`sonidos/${n}.wav`)).arrayBuffer());
+const cargaSonidos = (async () => {
+  try{ actx = new (window.AudioContext || window.webkitAudioContext)();
+    await Promise.all(['toque', 'whoosh', 'ding'].map(async (n) => { sonidos[n] = await actx.decodeAudioData(await (await fetch(`sonidos/${n}.wav`)).arrayBuffer()); }));
   }catch(e){ console.warn('audio', e); }
+})();
+export function despertarAudio(){
+  try{ actx = actx || new (window.AudioContext || window.webkitAudioContext)(); return actx.resume().catch(() => {}); }catch{ return Promise.resolve(); }
 }
+export const sonidosListos = () => cargaSonidos;
 export function sonar(n, vol = .5){ if(!actx || !sonidos[n]) return; const s = actx.createBufferSource(), g = actx.createGain(); g.gain.value = vol; s.buffer = sonidos[n]; s.connect(g).connect(actx.destination); s.start(); }
 
 /* ── las vistas: el inicio (hub), el cine, los ajustes y las que vienen ── */

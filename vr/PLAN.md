@@ -100,6 +100,15 @@ Para eso hacen falta dos cosas, las mismas que para subir CARYMO a la App Store:
    - las manos con Vision;
    - el giroscopio del control.
 
+## Sin internet y rápido (18 nov)
+
+- `vr/sw.js` guarda el visor completo en el teléfono, también las manos (7.5 MB), y lo saca de ahí primero.
+- En la portada, «Sin internet» se prende cuando ya quedó todo guardado.
+- El visor se arma mientras se ve la portada, y la cámara se abre por detrás: Entrar ya no espera nada.
+- Sin internet no hay YouTube, películas ni enlaces; Mis videos, Leer, Ajustes y las manos sí.
+
+Prueba: `node vr/pruebas-sinred.mjs` (apaga el servidor de a de veras).
+
 ## Controles
 
 | Botón | Hace |

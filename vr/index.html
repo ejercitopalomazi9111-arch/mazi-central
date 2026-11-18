@@ -41,7 +41,7 @@
   <div class="caja">
     <img src="../marca/paloma-2026/logo-icono.svg" alt="">
     <h1>Mazi <em>VR</em></h1>
-    <div class="estado"><span id="eControl">Control</span><span id="eVideos">0 videos</span></div>
+    <div class="estado"><span id="eControl">Control</span><span id="eVideos">0 videos</span><span id="eGuardado">Sin internet</span></div>
     <button class="boton" id="bEntrar" type="button">Entrar</button>
     <label class="boton sec" style="display:inline-grid; place-items:center">Videos<input id="iVideos" type="file" accept="video/*" multiple hidden></label>
   </div>
@@ -63,18 +63,32 @@ const $ = (s) => document.querySelector(s);
 const VIDEOS = [];
 $('#iVideos').addEventListener('change', (e) => { for(const f of e.target.files) VIDEOS.push({ nombre: f.name.replace(/\.[^.]+$/, ''), url: URL.createObjectURL(f) }); $('#eVideos').textContent = `${VIDEOS.length} ${VIDEOS.length === 1 ? 'video' : 'videos'}`; $('#eVideos').classList.toggle('si', VIDEOS.length > 0); });
 (function vigilarControl(){ if(!$('#eControl')) return; const p = navigator.getGamepads ? [...navigator.getGamepads()].some(Boolean) : false; $('#eControl').classList.toggle('si', p); $('#eControl').textContent = p ? 'Control listo' : 'Control'; if(!document.body.classList.contains('dentro')) requestAnimationFrame(vigilarControl); })();
+/* el visor se arma MIENTRAS se ve esta pantalla: al tocar Entrar ya está listo (antes se armaba después del toque) */
+const armado = montar();
+/* «Sin internet» se prende cuando todo quedó guardado en el teléfono (sw.js) */
+if('serviceWorker' in navigator && !navigator.webdriver || 'serviceWorker' in navigator && new URLSearchParams(location.search).has('sw')){
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+  const preguntar = () => navigator.serviceWorker.controller?.postMessage('listo?');
+  navigator.serviceWorker.addEventListener('message', (e) => { if(e.data?.listo != null) $('#eGuardado')?.classList.toggle('si', !!e.data.listo); if(e.data && !e.data.listo) setTimeout(preguntar, 3000); });
+  navigator.serviceWorker.ready.then(() => setTimeout(preguntar, 500));
+  navigator.serviceWorker.addEventListener('controllerchange', () => setTimeout(preguntar, 500));
+}
 $('#bEntrar').addEventListener('click', async () => {
   $('#bEntrar').disabled = true;
-  web.desbloquear();      /* primero que nada: los videos de la web sólo suenan si ya sonaron una vez con un toque */
+  /* lo que exige el toque va primero y sin esperar a nada más */
+  web.desbloquear();      /* los videos de la web sólo suenan si ya sonaron una vez con un toque */
+  V.despertarAudio();
   try{ if(typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) await DeviceOrientationEvent.requestPermission(); }catch{}
-  await V.despertarAudio();
-  await V.abrirCamara();
-  try{ await navigator.wakeLock?.request('screen'); }catch{}
-  document.addEventListener('visibilitychange', async () => { if(document.visibilityState === 'visible') try{ await navigator.wakeLock?.request('screen'); }catch{} });
+  /* la cámara se abre por detrás: el visor no la espera (la realidad mixta y las manos se prenden cuando llega) */
+  const camara = V.abrirCamara();
+  try{ navigator.wakeLock?.request('screen').catch(() => {}); }catch{}
+  document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') try{ navigator.wakeLock?.request('screen').catch(() => {}); }catch{} });
+  $('#bEntrar').textContent = 'Un momento…';
+  await armado;
   $('#entrada').remove(); document.body.classList.add('dentro');
-  await montar(); V.arrancar(); V.ir('inicio'); V.recentrar(); V.hud('Bienvenido', 2);
+  V.arrancar(); V.ir('inicio'); V.recentrar(); V.hud('Bienvenido', 2);
   /* las manos cargan después (el modelo pesa ~8 MB): el visor ya se puede usar mientras */
-  if(V.hayCamara()) import('./manos.js').then(async ({ iniciarManos }) => { const m = await iniciarManos(V); window.__manos = m; if(m.listo){ V.alCuadro.push(m.cuadro); V.hud('Manos listas'); } });
+  camara.then((ok) => { if(ok && V.hayCamara()) import('./manos.js').then(async ({ iniciarManos }) => { const m = await iniciarManos(V); window.__manos = m; if(m.listo){ V.alCuadro.push(m.cuadro); V.hud('Manos listas'); } }); });
 });
 
 /* ── las vistas ── */
@@ -94,12 +108,11 @@ async function montar(){
     ['Mixta', 'scan-eye', () => { if(!V.hayCamara()){ V.hud('Sin cámara'); return; } V.ponerMixta(!V.AJ.mixta); V.hud(V.AJ.mixta ? 'Realidad mixta' : 'Realidad virtual'); }],
     ['Ajustes', 'settings', () => V.ir('ajustes')],
   ];
-  const tarjetas = [];
-  for(const [i, [t, ic, fn]] of T.entries()){
+  const tarjetas = await Promise.all(T.map(async ([t, ic, fn], i) => {
     const p = await V.tarjeta({ titulo: t, icono: ic }); const a = (i - 2) * 21 * Math.PI / 180;
     p.malla.position.set(Math.sin(a) * 1.9, 0, -Math.cos(a) * 1.9); p.malla.lookAt(0, 0, 0); p.malla.userData.accion = fn;
-    inicio.grupo.add(p.malla); tarjetas.push(p.malla);
-  }
+    inicio.grupo.add(p.malla); return p.malla;
+  }));
   inicio.elegibles = () => tarjetas;
   inicio.atras = () => {};
   V.registrar('inicio', inicio);
