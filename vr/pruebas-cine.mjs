@@ -22,7 +22,7 @@ await ctx.route(/youtube\.com\/iframe_api/, (r) => r.fulfill({ contentType: 'tex
     this.mute = () => {}; this.unMute = () => {}; this.destroy = () => d.remove(); setTimeout(() => o.events?.onReady?.({ target: this }), 50); } };
   setTimeout(() => window.onYouTubeIframeAPIReady && window.onYouTubeIframeAPIReady(), 10);` }));
 await ctx.route(/archive\.org\/advancedsearch/, (r) => r.fulfill({ json: { response: { docs: [{ identifier: 'peli_libre', title: 'Película libre de prueba', year: '1922' }] } }, headers: { 'access-control-allow-origin': '*' } }));
-await ctx.route(/archive\.org\/metadata/, (r) => r.fulfill({ json: { files: [{ name: 'peli_512kb.mp4' }, { name: 'peli.mp4' }] }, headers: { 'access-control-allow-origin': '*' } }));
+await ctx.route(/archive\.org\/metadata/, (r) => r.fulfill({ json: { files: [{ name: 'peli_512kb.mp4', format: '512Kb MPEG4' }, { name: 'peli.mp4', format: 'h.264' }, { name: 'peli_original.mp4', format: 'MPEG4' }] }, headers: { 'access-control-allow-origin': '*' } }));
 await ctx.route(/archive\.org\/download/, (r) => r.fulfill({ body: fs.readFileSync(MP4), contentType: 'video/webm' }));
 const p = await ctx.newPage(); const errores = []; p.on('pageerror', (e) => errores.push(e.message));
 let ok = 0, mal = 0; const sí = (c, t) => { c ? ok++ : mal++; console.log(c ? '✓' : '✗', t); };
@@ -57,7 +57,7 @@ await p.evaluate(() => __teclado.escribir('nosferatu')); await p.keyboard.press(
 e = await p.evaluate(() => __cine.estado()); sí(e.fase === 'resultados' && e.tarjetas === 1, 'Internet Archive da resultados');
 await boton(IZQ); await boton(X); await p.waitForTimeout(1500);
 const vid = await p.evaluate(() => ({ modo: __web.estado.modo, srcs: [...document.querySelectorAll('video')].map((v) => v.currentSrc).filter((s) => s.includes('archive')), corre: [...document.querySelectorAll('video')].some((v) => v.currentTime > 0) }));
-sí(vid.modo === 'video' && vid.srcs.length === 2 && vid.srcs.every((s) => s.endsWith('peli.mp4')), 'abre la mejor versión (no la de 512kb) en los dos ojos');
+sí(vid.modo === 'video' && vid.srcs.length === 2 && vid.srcs.every((s) => s.endsWith('peli.mp4')), 'abre la copia H.264 (ni la de 512kb ni el original que el iPhone no abre) en los dos ojos');
 sí(vid.corre, 'el video corre');
 await p.screenshot({ path: CAPS + '/vr-archivo.png' });
 await boton(O); await p.waitForTimeout(300);

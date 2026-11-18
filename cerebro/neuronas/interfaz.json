@@ -252,6 +252,19 @@
    "vecinas": [
     "arco-par-deja-la-mira-en-un-hueco"
    ]
+  },
+  {
+   "id": "una-lectura-por-serie-con-el-visor-pintando",
+   "titulo": "Leer la base de IndexedDB serie por serie tardaba segundos mientras el visor pinta",
+   "gravedad": "baja",
+   "sintoma": "En Mazi VR el estante de Leer tardaba de 3 a 6 s en salir y la prueba lo daba por vacío.",
+   "causa": "obrasBajadas hacía una transacción por serie, una tras otra; cada respuesta espera su turno detrás de un cuadro del visor (dos ojos y el lente), y en el navegador de pruebas un cuadro tarda cientos de ms.",
+   "porque": "Una página normal no tiene un bucle pesado ocupando el hilo; en una escena 3D cada await de IndexedDB cuesta un cuadro.",
+   "arreglo": "Todo de un jalón: series, llaves de capítulos y libros en tres lecturas a la vez (vr/lector.js, obrasBajadas).",
+   "comoCazarlo": "vr/pruebas-lector.mjs: el estante tiene que salir en menos de 6 s.",
+   "consejo": "Con un bucle de render corriendo, junta las lecturas en paralelo; no encadenes awaits.",
+   "salioDe": "Mazi VR, 18 nov.",
+   "vecinas": []
   }
  ]
 }

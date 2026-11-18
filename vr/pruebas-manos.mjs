@@ -11,7 +11,10 @@ if(!fs.existsSync(T + '/mano.y4m')){
   execSync(`ffmpeg -v error -y -loop 1 -i ${T}/mano.jpg -t 3 -vf "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,format=yuv420p" -r 15 ${T}/mano.y4m`);
 }
 const b = await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', `--use-file-for-fake-video-capture=${T}/mano.y4m`, '--enable-unsafe-swiftshader'] });
-const p = await (await b.newContext({ viewport: { width: 844, height: 390 } })).newPage();
+const ctxM = await b.newContext({ viewport: { width: 844, height: 390 } });
+/* con control conectado: mirar fijo no elige solo mientras carga el modelo (si no, a los 2.5 s abre lo de enfrente y la prueba ya no está en el inicio) */
+await ctxM.addInitScript(() => { window.__pad = { id: 'Wireless Controller', index: 0, connected: true, mapping: 'standard', buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })), axes: [0, 0, 0, 0] }; navigator.getGamepads = () => [window.__pad]; });
+const p = await ctxM.newPage();
 const errores = []; p.on('pageerror', (e) => errores.push(e.message));
 let ok = 0, mal = 0; const sí = (c, t) => { c ? ok++ : mal++; console.log(c ? '✓' : '✗', t); };
 await p.goto(BASE + '/vr/', { waitUntil: 'networkidle' }); await p.click('#bEntrar');
