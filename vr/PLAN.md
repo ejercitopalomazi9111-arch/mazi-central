@@ -44,10 +44,16 @@ Para eso hacen falta dos cosas, las mismas que para subir CARYMO a la App Store:
    - se maneja con el control, y sin control, mirando fijo un botón.
 
    Pruebas: `node vr/pruebas.mjs`.
-2. **Las manos.** MediaPipe Hand Landmarker (ya vive en el repo, en `presentaciones/vendor/mediapipe`):
-   - **Gestos:** pellizcar elige, palma abierta regresa y el puño agarra.
-   - **El control como mano:** la cámara busca la barra de luz del DualShock 4, como el PSVR. Con el DualSense,
-     que casi no tiene luz, se busca una calcomanía de color.
+2. 🟡 **Las manos** (18 nov, primera parte). MediaPipe Hand Landmarker; el motor ya vivía en el repo, en
+   `presentaciones/vendor/mediapipe`, y el modelo va en `vr/modelos/`.
+   - **Hecho:** la mano se dibuja encima de la tuya y el índice es un puntero (la línea del ojo a la punta del
+     dedo). **Pellizcar** elige y la **palma abierta** quieta un momento regresa. Las manos se apagan en Ajustes.
+   - **Pruebas:** `node vr/pruebas-gestos.mjs` revisa los gestos con manos armadas a mano;
+     `node vr/pruebas-manos.mjs` usa una foto real en la cámara simulada.
+   - **Falta:**
+     - el puño para agarrar y mover cosas;
+     - que la cámara vea el control para usarlo como mano: barra de luz del DualShock 4, o una calcomanía de
+       color en el DualSense.
 3. **Sables en VS Tiles.**
    - Los bloques salen del ritmo de las canciones que ya tiene VS Tiles.
    - Se cortan con las manos o con el control visto por la cámara.

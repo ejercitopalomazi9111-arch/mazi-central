@@ -67,6 +67,8 @@ $('#bEntrar').addEventListener('click', async () => {
   document.addEventListener('visibilitychange', async () => { if(document.visibilityState === 'visible') try{ await navigator.wakeLock?.request('screen'); }catch{} });
   $('#entrada').remove(); document.body.classList.add('dentro');
   await montar(); V.arrancar(); V.ir('inicio'); V.recentrar(); V.hud('Bienvenido', 2);
+  /* las manos cargan después (el modelo pesa ~8 MB): el visor ya se puede usar mientras */
+  if(V.hayCamara()) import('./manos.js').then(async ({ iniciarManos }) => { const m = await iniciarManos(V); window.__manos = m; if(m.listo){ V.alCuadro.push(m.cuadro); V.hud('Manos listas'); } });
 });
 
 /* ── las vistas ── */
@@ -156,10 +158,11 @@ async function montar(){
     ['Tamaño', 'escala', .7, 1.3, .02, (v) => v.toFixed(2)],
     ['Cámara', 'camCampo', 40, 120, 1, () => `${Math.round(V.campoCamara())}°`],
     ['Voltear cámara', 'camVoltear', 0, 1, 1, (v) => v ? 'Sí' : 'No'],
+    ['Manos', 'manos', 0, 1, 1, (v) => v ? 'Sí' : 'No'],
     ['De fábrica', null],
   ];
   let fila = 0;
-  const hoja = new V.Panel(1.5, 1.2, 420); hoja.malla.position.set(0, .05, -2.0); aj.grupo.add(hoja.malla);
+  const hoja = new V.Panel(1.5, 1.36, 420); hoja.malla.position.set(0, .05, -2.0); aj.grupo.add(hoja.malla);
   const pintarHoja = () => { const { x, cv } = hoja, w = cv.width; x.clearRect(0, 0, w, cv.height); V.redondo(x, 6, 6, w - 12, cv.height - 12, 40); x.fillStyle = '#1E1428'; x.fill(); x.strokeStyle = '#3C2652'; x.lineWidth = 4; x.stroke();
     x.textBaseline = 'middle'; x.font = '900 46px system-ui, -apple-system, sans-serif'; x.fillStyle = '#F4EEF2'; x.textAlign = 'left'; x.fillText('Ajustes', 50, 64);
     FILAS.forEach(([t, k, , , , f], i) => { const y = 140 + i * 58, sel = i === fila;
@@ -172,7 +175,7 @@ async function montar(){
     if(c.oprimido[B.ARRIBA]) fila = (fila + FILAS.length - 1) % FILAS.length;
     if(c.oprimido[B.ABAJO]) fila = (fila + 1) % FILAS.length;
     const [, k, a, b, paso] = FILAS[fila]; const d = (c.oprimido[B.DER] ? 1 : 0) - (c.oprimido[B.IZQ] ? 1 : 0);
-    if(k && d){ const actual = k === 'camCampo' ? V.campoCamara() : V.AJ[k]; const v = k === 'camVoltear' ? !V.AJ[k] : Math.round(Math.min(b, Math.max(a, actual + d * paso)) * 100) / 100; V.AJ[k] = v; V.guardar(); V.aplicarAjustes(); V.sonar('toque', .15); }
+    if(k && d){ const actual = k === 'camCampo' ? V.campoCamara() : V.AJ[k]; const v = (k === 'camVoltear' || k === 'manos') ? !V.AJ[k] : Math.round(Math.min(b, Math.max(a, actual + d * paso)) * 100) / 100; V.AJ[k] = v; V.guardar(); V.aplicarAjustes(); if(k === 'manos') V.ponerMixta(V.AJ.mixta); V.sonar('toque', .15); }
     if(!k && c.oprimido[B.X]){ Object.assign(V.AJ, V.FABRICA, { mixta: V.AJ.mixta }); V.guardar(); V.aplicarAjustes(); V.hud('De fábrica'); }
     if(c.oprimido[B.ARRIBA] || c.oprimido[B.ABAJO] || d || c.oprimido[B.X]) pintarHoja();
     return { flechas: true, x: true };

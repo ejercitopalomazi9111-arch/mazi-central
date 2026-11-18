@@ -18,7 +18,7 @@
 import * as THREE from 'three';
 
 /* ── ajustes: se guardan en el teléfono (sólo comodidad; si se borran, salen los de fábrica) ── */
-const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1 };
+const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true };
 const AJ = { ...FABRICA };
 try{ Object.assign(AJ, JSON.parse(localStorage.getItem('mazivr.ajustes') || '{}')); }catch{}
 const guardar = () => { try{ localStorage.setItem('mazivr.ajustes', JSON.stringify(AJ)); }catch{} };
@@ -74,7 +74,8 @@ function medirPared(){
 function ponerMixta(si){
   AJ.mixta = si; guardar();
   cuarto.visible = !si; pared.visible = si && !!camTex;
-  if(flujo) flujo.getVideoTracks().forEach((t) => { t.enabled = si; });
+  /* la cámara sigue prendida si las manos la usan, aunque no se vea */
+  if(flujo) flujo.getVideoTracks().forEach((t) => { t.enabled = si || AJ.manos; });
 }
 
 /* ── ojos a la textura y la deformación del lente ── */
@@ -192,10 +193,14 @@ function leerControl(){
   if(p){ if(!padVisto){ padVisto = true; hud('Control conectado'); } p.buttons.forEach((b, i) => { ahora[i] = b.pressed || b.value > .5; }); control.ejes = [...p.axes].map((v) => Math.abs(v) < .18 ? 0 : v); }
   else control.ejes = [0, 0, 0, 0];
   teclas.forEach((v, i) => { if(v) ahora[i] = true; });
+  (extra.botones || []).forEach((v, i) => { if(v) ahora[i] = true; });   // los gestos de las manos
   control.oprimido = ahora.map((v, i) => v && !antes[i]); ahora.forEach((v, i) => { antes[i] = v; });
   control.apretado = (i) => !!ahora[i];
 }
 /* el teclado hace de control para probar en la computadora */
+/* lo que llega de fuera del control: los gestos (botones) y el puntero de la mano (rayo) */
+export const extra = { botones: [], rayo: null };
+export const alCuadro = [];
 const teclas = []; const MAPA = { Enter: B.X, Escape: B.O, Backspace: B.O, KeyR: B.CUADRO, KeyM: B.TRIANGULO, KeyH: B.OPTIONS, KeyQ: B.L1, KeyE: B.R1, ArrowUp: B.ARRIBA, ArrowDown: B.ABAJO, ArrowLeft: B.IZQ, ArrowRight: B.DER };
 addEventListener('keydown', (e) => { if(e.code in MAPA){ teclas[MAPA[e.code]] = true; e.preventDefault(); } });
 addEventListener('keyup', (e) => { if(e.code in MAPA) teclas[MAPA[e.code]] = false; });
@@ -275,16 +280,19 @@ function cuadro(t){
   const L = elegibles(); let viendo = null;
   if(mirar.activo && L.length){
     const flechasRecientes = performance.now() - focoPorFlechas < 4000 && cabeza.quaternion.angleTo(ultimoGiro) < .12;
-    ray.setFromCamera(centro, cabeza); const h = ray.intersectObjects(L, false)[0];
-    if(h && !flechasRecientes){ viendo = h.object; darFoco(viendo); }
+    if(extra.rayo) ray.set(extra.rayo.origen, extra.rayo.dir); else ray.setFromCamera(centro, cabeza);
+    const h = ray.intersectObjects(L, false)[0];
+    if(h && (!flechasRecientes || extra.rayo)){ viendo = h.object; darFoco(viendo); }
   }
   /* mirar fijo 1.6 s también elige (para cuando no tienes el control a la mano) */
   /* sólo sin control: con el control se elige con X y mirar fijo estorba */
-  const fijo = !padVisto && !mirarBloqueado && viendo && viendo === foco ? Math.max(0, (performance.now() - focoDesde) / 1600) : 0;
+  const fijo = !padVisto && !extra.rayo && !mirarBloqueado && viendo && viendo === foco ? Math.max(0, (performance.now() - focoDesde) / 1600) : 0;
   anillo.visible = fijo > .05;
   if(anillo.visible){ anillo.geometry.dispose(); anillo.geometry = new THREE.RingGeometry(.016, .021, 48, 1, Math.PI / 2, -Math.min(1, fijo) * Math.PI * 2); }
   if(fijo >= 1) activar(viendo);
   v?.cuadro?.(t / 1000, dt);
+  for(const f of alCuadro) f(t / 1000, dt);
+  mira.visible = !extra.rayo;
   if(aviso.malla.visible && performance.now() > avisoHasta) aviso.malla.visible = false;
   if(pared.visible) medirPared();
 
