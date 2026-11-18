@@ -81,7 +81,7 @@ export async function iniciarManos(V){
     estado.vistas = cand.length;
     manos.forEach((m, k) => {
       const c = asign[k];
-      if(!c){ m.g.visible = false; m.pellizco = false; m.palmaDesde = 0; m.suave = null; m.ult = null; m.info = null; return; }
+      if(!c){ m.g.visible = false; m.pellizco = false; m.palmaDesde = 0; m.suave = null; m.ult = null; m.info = null; m.fijo = null; m.hist = null; return; }
       const L = c.L; m.ult = { x: c.wx, y: c.wy }; m.W = c.W;
       const s = tamano(L, asp), dist = Math.min(1.2, Math.max(.15, .085 / (s * 2 * tx)));
       /* EN tu mano (Carlos, 18 nov): con la mixta, la imagen de la cámara está pintada al fondo (a 20 m) y cada ojo la ve en el
@@ -110,7 +110,7 @@ export async function iniciarManos(V){
       /* la mano en el espacio, aproximada (para el rayo y para los sables): palma, punta del medio y muñeca */
       const est = (q) => cabeza.localToWorld(aEspacio(q, dist, tx, ty, new THREE.Vector3()));
       const mano = { pellizco: m.pellizco, x: (ix.x + tp.x) / 2, y: (ix.y + tp.y) / 2, palma: G.palma, muneca: { x: muneca.x, y: muneca.y },
-        lado: (L[0].x < .5) ? -1 : 1, mundo: { palma: est(L[9]), punta: est(L[12]), muneca: est(L[0]), indice: est({ x: (ix.x + tp.x) / 2, y: (ix.y + tp.y) / 2, z: (ix.z + tp.z) / 2 }) },
+        lado: (L[0].x < .5) ? -1 : 1, mundo: { palma: est(L[9]), punta: est(L[12]), muneca: est(L[0]), dedo: est(L[8]), indice: est({ x: (ix.x + tp.x) / 2, y: (ix.y + tp.y) / 2, z: (ix.z + tp.z) / 2 }) },
         dist, tx, ty };
       /* la orientación de la mano y el gatillo (objetos.js): adelante = muñeca → nudillo del índice, lado = nudillo del
          meñique → nudillo del índice, índice = nudillo → punta; doblez = cuánto se dobla el índice (0 estirado, ~90 doblado) */
@@ -129,11 +129,23 @@ export async function iniciarManos(V){
       /* DERECHO, hacia donde apunta el dedo (Carlos, 18 nov: «salía en diagonal hacia arriba»): la dirección es la del
          propio índice (nudillo → punta) en 3D, en metros, como la da MediaPipe; sale de la punta del dedo */
       const I = apuntador.info, Wm = apuntador.W;
-      origen.copy(I.mundo.indice);
+      /* sale de la PUNTA DEL ÍNDICE (Carlos, 18 nov: «apunta a un punto medio entre el índice y el pulgar»); antes salía
+         del punto entre los dos dedos, que es donde se pellizca, no donde se apunta */
+      origen.copy(I.mundo.dedo);
       if(Wm){ const sx = voltear ? -1 : 1; dir.set(sx * (Wm[8].x - Wm[5].x), -sx * (Wm[8].y - Wm[5].y), -(Wm[8].z - Wm[5].z)).normalize().transformDirection(cabeza.matrixWorld); }
       else { const hombro = cabeza.localToWorld(new THREE.Vector3(I.lado * .17, -.3, .05)); dir.copy(I.mundo.indice).sub(hombro).normalize(); }
+      /* AL PELLIZCAR EL RAYO SE CONGELA (Carlos, 18 nov: «cuando apunto y hago el click no sirve»): para juntar los dedos
+         el índice se dobla hacia el pulgar y el rayo se iba para otro lado justo en el clic. Mientras dura el pellizco se
+         usa hacia dónde apuntaba ~200 ms antes de que se notara el pellizco; sólo se traslada con la muñeca (arrastrar). */
+      const H = apuntador.hist || (apuntador.hist = []);
+      H.push({ t: ahora, o: origen.clone(), d: dir.clone(), w: I.mundo.muneca.clone() }); while(H.length > 2 && ahora - H[0].t > 700) H.shift();
+      if(apuntador.pellizco){
+        if(!apuntador.fijo){ const e = H.filter((x) => ahora - x.t >= 200).pop() || H[0]; apuntador.fijo = { o: e.o.clone(), d: e.d.clone(), w: e.w.clone() }; apuntador.dirSuave = e.d.clone(); }
+        origen.copy(apuntador.fijo.o).add(I.mundo.muneca.clone().sub(apuntador.fijo.w)); dir.copy(apuntador.fijo.d);
+      } else apuntador.fijo = null;
+      estado.congelado = !!apuntador.fijo; estado.punta = I.mundo.dedo.toArray();
       /* suavizado aparte: el rayo tiembla más que la mano porque amplifica el giro */
-      if(!apuntador.dirSuave) apuntador.dirSuave = dir.clone(); else apuntador.dirSuave.lerp(dir, .45).normalize();
+      if(apuntador.fijo) apuntador.dirSuave.copy(dir); else if(!apuntador.dirSuave) apuntador.dirSuave = dir.clone(); else apuntador.dirSuave.lerp(dir, .45).normalize();
       V.extra.rayo = { origen: origen.clone(), dir: apuntador.dirSuave.clone() };
     } else { V.extra.rayo = null; rayo.visible = false; cursor.visible = false; }
   };
