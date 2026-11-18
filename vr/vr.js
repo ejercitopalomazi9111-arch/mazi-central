@@ -40,12 +40,30 @@ escena.add(new THREE.AmbientLight(0xffffff, .9)); const sol = new THREE.Directio
 const domo = new THREE.Mesh(new THREE.SphereGeometry(60, 32, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false,
   uniforms: { a: { value: new THREE.Color('#2A1142') }, b: { value: new THREE.Color('#0B0513') }, c: { value: new THREE.Color('#4A0E22') } },
   vertexShader: 'varying vec3 p; void main(){ p = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }',
-  fragmentShader: 'uniform vec3 a, b, c; varying vec3 p; void main(){ float y = p.y; vec3 col = mix(c, a, smoothstep(-.35, .25, y)); col = mix(col, b, smoothstep(.25, .9, y)); gl_FragColor = vec4(col, 1.); }' }));
-const piso = new THREE.GridHelper(40, 40, 0x6E3AA8, 0x3A1F5A); piso.position.y = -1.5; piso.material.transparent = true; piso.material.opacity = .45;
-const cuarto = new THREE.Group(); cuarto.add(domo, piso); escena.add(cuarto);
+  fragmentShader: `uniform vec3 a, b, c; varying vec3 p;
+    float h(vec3 q){ return fract(sin(dot(q, vec3(12.9898, 78.233, 45.164))) * 43758.5453); }
+    void main(){ float y = p.y; vec3 col = mix(c, a, smoothstep(-.35, .15, y)); col = mix(col, b, smoothstep(.15, .85, y));
+      col += vec3(.67, .15, 1.) * .5 * exp(-abs(y) * 16.);                       // el horizonte brilla: se sabe dónde es «enfrente»
+      float e = step(.9965, h(floor(p * 170.))) * smoothstep(.04, .35, y); col += vec3(.95, .9, 1.) * e * .85;   // estrellas
+      gl_FragColor = vec4(col, 1.); }` }));
+/* «¿estoy adentro?» (Carlos, 18 nov: cuando no se ven botones no se nota que estás en el visor): un piso con rejilla que se
+   apaga a lo lejos, un aro bajo tus pies, el horizonte que brilla y estrellas */
+const piso = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), new THREE.ShaderMaterial({ depthWrite: false, transparent: true,
+  vertexShader: 'varying vec3 w; void main(){ vec4 q = modelMatrix * vec4(position, 1.); w = q.xyz; gl_Position = projectionMatrix * viewMatrix * q; }',
+  fragmentShader: `varying vec3 w; void main(){ vec2 g = abs(fract(w.xz - .5) - .5) / fwidth(w.xz); float l = 1. - min(min(g.x, g.y), 1.);
+    float d = length(w.xz); float f = exp(-d * .07);
+    vec3 col = mix(vec3(.05, .02, .09), vec3(.72, .3, 1.), l * .8) * f; gl_FragColor = vec4(col, .92); }` }));
+piso.rotation.x = -Math.PI / 2; piso.position.y = -1.5;
+const aro = new THREE.Mesh(new THREE.RingGeometry(.55, .6, 64), new THREE.MeshBasicMaterial({ color: new THREE.Color('#C77DFF'), transparent: true, opacity: .7, toneMapped: false }));
+aro.rotation.x = -Math.PI / 2; aro.position.y = -1.49;
+const cuarto = new THREE.Group(); cuarto.add(domo, piso); escena.add(cuarto); rig.add(aro);
 
 /* ── la cámara del teléfono (realidad mixta): pegada a la cabeza, al fondo de todo ── */
 const video = document.createElement('video'); video.playsInline = true; video.muted = true; video.setAttribute('playsinline', '');
+/* va DENTRO de la página aunque no se vea: el iPhone deja de darle cuadros a un video suelto, y sin cuadros las manos no
+   jalaban en el cuarto virtual (sin la mixta) */
+video.style.cssText = 'position:fixed; left:0; bottom:0; width:2px; height:2px; opacity:.01; pointer-events:none; z-index:0';
+(document.body ? document.body.appendChild(video) : addEventListener('DOMContentLoaded', () => document.body.appendChild(video)));
 let camTex = null, flujo = null, ultra = false;
 export const campoCamara = () => AJ.camCampo || (ultra ? 104 : 69);
 const pared = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0x000000, depthWrite: false, depthTest: false, toneMapped: false }));
@@ -84,6 +102,8 @@ function ponerMixta(si){
   cuarto.visible = !si; pared.visible = si && !!camTex;
   /* la cámara sigue prendida si las manos la usan, aunque no se vea */
   if(flujo) flujo.getVideoTracks().forEach((t) => { t.enabled = si || AJ.manos; });
+  aro.visible = !si;
+  if(flujo && video.paused) video.play().catch(() => {});
 }
 
 /* ── ojos a la textura y la deformación del lente ── */
@@ -182,7 +202,9 @@ const anillo = new THREE.Mesh(new THREE.RingGeometry(.016, .021, 48, 1, Math.PI 
 anillo.renderOrder = 99; anillo.position.z = -1; cabeza.add(anillo);
 const aviso = new Panel(.9, .12, 600); aviso.malla.position.set(0, -.32, -1.2); aviso.malla.material.depthTest = false; aviso.malla.renderOrder = 98; aviso.malla.visible = false; cabeza.add(aviso.malla);
 let avisoHasta = 0;
+let avisoTexto = '';
 export function hud(txt, seg = 2.2){
+  avisoTexto = txt;
   const { x, cv } = aviso; x.clearRect(0, 0, cv.width, cv.height); x.font = '700 34px system-ui, -apple-system, sans-serif';
   const w = Math.min(cv.width - 8, x.measureText(txt).width + 70); redondo(x, (cv.width - w) / 2, 4, w, cv.height - 8, 30); x.fillStyle = 'rgba(23,10,38,.88)'; x.fill();
   x.strokeStyle = C.acento; x.lineWidth = 3; x.stroke(); x.fillStyle = C.texto; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(txt, cv.width / 2, cv.height / 2 + 2);
@@ -242,15 +264,42 @@ export function registrar(nombre, v){ vistas[nombre] = v; v.grupo = v.grupo || n
 export function ir(nombre){
   if(vista === nombre) return;
   if(vista){ vistas[vista].grupo.visible = false; vistas[vista].salir?.(); }
-  vista = nombre; const v = vistas[nombre]; v.grupo.visible = true; v.entrar?.(); sonar('whoosh', .25); foco?.userData.panel?.foco?.(false); foco = null; mirarBloqueado = true;
+  vista = nombre; const v = vistas[nombre]; v.grupo.visible = true; v.entrar?.(); sonar('whoosh', .25); foco?.userData.panel?.foco?.(false); foco = null; bloquearMirada();
+  ponerAtras();
 }
+
+/* «Atrás» en todas las pantallas menos el inicio (Carlos, 18 nov: miró «La Sala» sin control y se quedó atorado: atrás
+   sólo era el Círculo). Se elige como todo lo demás: mirándolo fijo, con la mano o con el control. Cada vista puede
+   decir dónde va (atrasEn: [x, y, z]); si no, abajo y enfrente, debajo de todo lo que pone el inicio o el cine. */
+const atrasP = new Panel(.46, .15, 500); atrasP.titulo = 'Atrás';
+const atras = atrasP.malla; atras.visible = false; atras.userData.accion = () => { const v = vistas[vista]; (v?.cerrar?.() || v?.atras?.()); };
+const pintarAtras = async (f) => { const { x, cv } = atrasP, w = cv.width, h = cv.height; x.clearRect(0, 0, w, h);
+  redondo(x, 4, 4, w - 8, h - 8, (h - 8) / 2); x.fillStyle = f ? '#3A1A5C' : C.sup; x.fill(); x.lineWidth = f ? 7 : 3; x.strokeStyle = f ? C.acento : C.borde; x.stroke();
+  const ic = await svgImg('arrow-left', f ? '#FFFFFF' : C.rosa); if(ic) x.drawImage(ic, 30, h / 2 - 24, 48, 48);
+  x.fillStyle = C.texto; x.font = '800 38px system-ui, -apple-system, sans-serif'; x.textBaseline = 'middle'; x.textAlign = 'left'; x.fillText('Atrás', 96, h / 2 + 2); atrasP.listo(); };
+atrasP.foco = (f) => { if(atrasP._f === f) return; atrasP._f = f; pintarAtras(f); };
+hub.add(atras);   /* se pinta la primera vez que sale: los iconos se registran después de cargar este módulo */
+function ponerAtras(){
+  const v = vistas[vista]; atras.visible = !!v && vista !== 'inicio' && !!(v.atras || v.cerrar);
+  if(!atras.visible) return;
+  if(atrasP._f === undefined){ atrasP._f = false; pintarAtras(false); }
+  const [x, y, z] = v.atrasEn || [0, -.95, -1.7]; atras.position.set(x, y, z); atras.lookAt(0, y * .3, 0);
+}
+export { ponerAtras };
 export const ahora = () => vista;
 
 /* lo que se puede elegir: cada vista da sus objetos; la mira o las flechas les dan el foco */
 const ray = new THREE.Raycaster(); const centro = new THREE.Vector2(0, 0);
 let foco = null, focoDesde = 0, focoPorFlechas = -1e9, ultimoGiro = new THREE.Quaternion();
-function elegibles(){ return vistas[vista]?.elegibles?.() || []; }
+function elegibles(){ const L = vistas[vista]?.elegibles?.() || []; return atras.visible ? [...L, atras] : L; }
 let mirarBloqueado = true;                                   // al abrir una vista, lo que ya tenías enfrente no se elige solo
+/* …hasta que la cabeza se mueva. Antes sólo se soltaba al pasar de un botón a OTRO: si llegabas a «Atrás» desde el vacío,
+   seguía bloqueado y sin control no había salida (Carlos, 18 nov) */
+const giroAlBloquear = new THREE.Quaternion();
+let bloqueadoHasta = 0;
+/* …o hasta que pase un momento: Carlos (18 nov) se quedaba viendo lo que ya estaba iluminado al entrar y no se abría
+   hasta mirar otro y regresar. Ahora espera 0.9 s y luego cuenta como siempre (2.5 s en total), con el anillo llenándose */
+function bloquearMirada(){ mirarBloqueado = true; giroAlBloquear.copy(cabeza.quaternion); bloqueadoHasta = performance.now() + 900; }
 function darFoco(o){ if(foco === o) return; if(foco || !o) mirarBloqueado = false; foco?.userData.panel?.foco?.(false); foco = o; focoDesde = performance.now(); o?.userData.panel?.foco?.(true); if(o) sonar('toque', .18); }
 function moverFoco(dx, dy){
   const L = elegibles(); if(!L.length) return;
@@ -262,7 +311,7 @@ function moverFoco(dx, dy){
     if(along <= .01) continue; const d = along + Math.abs(dx ? v.y : v.x) * 2; if(d < md){ md = d; mejor = o; } }
   if(mejor) darFoco(mejor);
 }
-function activar(o){ if(!o) return; sonar('ding', .3); mirarBloqueado = true; o.userData.accion?.(); }
+function activar(o){ if(!o) return; sonar('ding', .3); bloquearMirada(); o.userData.accion?.(); }
 
 /* ── el ciclo ── */
 let giroArmado = true, ultimo = performance.now();
@@ -294,6 +343,7 @@ function cuadro(t){
   if(control.oprimido[B.X] && !usado.x) activar(foco);
   if(control.oprimido[B.O] && !usado.o) v?.atras?.();
   /* la mira: lo que ves al centro toma el foco, salvo justo después de usar las flechas sin mover la cabeza */
+  if(mirarBloqueado && (cabeza.quaternion.angleTo(giroAlBloquear) > .14 || performance.now() > bloqueadoHasta)){ mirarBloqueado = false; focoDesde = performance.now(); }   /* el reloj de mirar fijo empieza al soltarse, no antes */
   const L = elegibles(); let viendo = null;
   if(mirar.activo && L.length){
     const flechasRecientes = performance.now() - focoPorFlechas < 4000 && cabeza.quaternion.angleTo(ultimoGiro) < .12;
@@ -306,8 +356,10 @@ function cuadro(t){
   const fijo = !padVisto && !extra.rayo && !mirarBloqueado && viendo && viendo === foco ? Math.max(0, (performance.now() - focoDesde) / 1600) : 0;
   anillo.visible = fijo > .05;
   if(anillo.visible){ anillo.geometry.dispose(); anillo.geometry = new THREE.RingGeometry(.016, .021, 48, 1, Math.PI / 2, -Math.min(1, fijo) * Math.PI * 2); }
+  fijoAhora = fijo;
   if(fijo >= 1) activar(viendo);
   v?.cuadro?.(t / 1000, dt);
+  if(v?.atrasEn) ponerAtras();
   for(const f of alCuadro) f(t / 1000, dt);
   mira.visible = !extra.rayo;
   if(aviso.malla.visible && performance.now() > avisoHasta) aviso.malla.visible = false;
@@ -319,6 +371,36 @@ function cuadro(t){
   render.setRenderTarget(rtD); render.render(escena, estereo.cameraR);
   render.setRenderTarget(null); render.render(paseEsc, paseCam);
   for(const f of trasCuadro) f([estereo.cameraL, estereo.cameraR], W / 2, H);
+  ponerEncima([estereo.cameraL, estereo.cameraR], W / 2, H);
+}
+
+/* ── encima de todo: la mira, su anillo y los avisos, pintados en la página (Carlos, 18 nov: «los cursores se esconden
+   atrás de la pantalla cuando la miras»). La pantalla de la web es de la página, no de la escena, así que tapa lo 3D;
+   mientras está puesta, la mira y el aviso se dibujan también en la página, uno por ojo, con la curva del lente ── */
+let fijoAhora = 0;
+export const encima = { activa: false };
+const capaEncima = document.createElement('div'); capaEncima.style.cssText = 'position:fixed; inset:0; z-index:4; pointer-events:none; display:none';
+const ojosEncima = [0, 1].map((i) => { const o = document.createElement('div'); o.style.cssText = `position:absolute; top:0; ${i ? 'left:50%' : 'left:0'}; width:50%; height:100%; overflow:hidden`;
+  const m = document.createElement('div'); m.style.cssText = 'position:absolute; width:16px; height:16px; margin:-8px 0 0 -8px; border-radius:50%; box-shadow:0 0 0 2px #fff, 0 0 0 4px rgba(0,0,0,.45)';
+  const a = document.createElement('div'); a.style.cssText = 'position:absolute; width:30px; height:30px; margin:-15px 0 0 -15px; border-radius:50%; -webkit-mask:radial-gradient(circle, transparent 10px, #000 11px); mask:radial-gradient(circle, transparent 10px, #000 11px)';
+  const t = document.createElement('div'); t.style.cssText = 'position:absolute; transform:translate(-50%,-50%); padding:6px 14px; border-radius:99px; background:rgba(30,20,40,.92); box-shadow:inset 0 0 0 2px #AC27FF; color:#F4EEF2; font:800 15px system-ui,-apple-system,sans-serif; white-space:nowrap';
+  o.append(m, a, t); capaEncima.appendChild(o); return { m, a, t }; });
+(document.body ? document.body.appendChild(capaEncima) : addEventListener('DOMContentLoaded', () => document.body.appendChild(capaEncima)));
+const pEnc = new THREE.Vector3(), invEnc = new THREE.Matrix4();
+function aPantalla(obj, cam, i, ancho, alto){
+  obj.getWorldPosition(pEnc); invEnc.copy(cam.matrixWorld).invert(); pEnc.applyMatrix4(invEnc); if(pEnc.z > -.01) return null;
+  pEnc.applyMatrix4(cam.projectionMatrix); const [u, v] = alLente((pEnc.x + 1) / 2, (pEnc.y + 1) / 2, i === 1); return [u * ancho, (1 - v) * alto];
+}
+function ponerEncima(camaras, ancho, alto){
+  capaEncima.style.display = encima.activa ? 'block' : 'none'; if(!encima.activa) return;
+  camaras.forEach((cam, i) => {
+    const o = ojosEncima[i], pm = mira.visible ? aPantalla(mira, cam, i, ancho, alto) : null;
+    o.m.style.display = pm ? 'block' : 'none'; if(pm){ o.m.style.left = pm[0] + 'px'; o.m.style.top = pm[1] + 'px'; }
+    const lleno = pm && fijoAhora > .05; o.a.style.display = lleno ? 'block' : 'none';
+    if(lleno){ o.a.style.left = pm[0] + 'px'; o.a.style.top = pm[1] + 'px'; o.a.style.background = `conic-gradient(#AC27FF ${Math.min(1, fijoAhora) * 360}deg, transparent 0)`; }
+    const pa = aviso.malla.visible ? aPantalla(aviso.malla, cam, i, ancho, alto) : null;
+    o.t.style.display = pa ? 'block' : 'none'; if(pa){ o.t.style.left = pa[0] + 'px'; o.t.style.top = pa[1] + 'px'; if(o.t.textContent !== avisoTexto) o.t.textContent = avisoTexto; }
+  });
 }
 
 /* ── arrancar ── */

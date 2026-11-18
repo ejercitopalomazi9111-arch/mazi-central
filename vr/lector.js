@@ -13,6 +13,9 @@
    X automático · L1/R1 capítulo · L2/R2 acercar/alejar · Círculo, a la biblioteca.
    Sin control: mirar la orilla de abajo (o arriba) de la ventana avanza; con las manos, igual apuntando. */
 import { apuntar } from '../inkwell/biblioteca.js';
+import { FUENTES, wattpad, limpiarTexto } from '../inkwell/fuentes.js';
+import { pedir as porLaSala, recomendar } from '../inkwell/red.js';
+import { seriesDeGenero } from '../inkwell/compartir.js';
 
 const COL = 900;                  // la columna virtual: todo lo de la tira se mide en px de esta columna
 const FIN_H = 150;                // el letrero de fin de capítulo
@@ -53,9 +56,9 @@ async function obrasBajadas(){
   for(const s of (await pedir(dt, 'series', (st) => st.getAll())) || []){
     const claves = new Set((await pedir(dt, 'caps', (st) => st.index('serie').getAllKeys(s.id))) || []);
     const caps = (s.caps || []).filter((c) => claves.has(`${s.id}:${c.n}`)).sort((a, b) => a.n - b.n);
-    if(!caps.length) continue;
     const leidos = new Set(s.leidos || []), porLeer = caps.filter((c) => !leidos.has(c.n) && c.n >= (s.desde || 0)).length;
-    obras.push({ id: s.id, tipo: 'tira', titulo: limpio(s.titulo), sub: porLeer ? `${porLeer} por leer` : 'Al día', portada: s.portadaBlob, porLeer, orden: s.orden ?? 0,
+    /* una serie que sigues pero sin nada bajado también sale: se baja desde aquí (Carlos, 18 nov) */
+    obras.push({ id: s.id, tipo: 'tira', titulo: limpio(s.titulo), sub: !caps.length ? 'Sin bajar' : porLeer ? `${porLeer} por leer` : 'Al día', portada: s.portadaBlob, porLeer, orden: s.orden ?? 0,
       caps: caps.map((c) => ({ n: c.n, titulo: limpio(c.titulo) })) });
   }
   const dl = await BASES.libros();
@@ -113,7 +116,84 @@ function tramosDeTexto(m, THREE){
   return tramos;
 }
 
-export async function montarLector(V){
+/* ── la red y la bajada por detrás (Carlos, 18 nov: «muestra series y permite ponerlas a descargar en segundo plano
+   mientras haces otras cosas»). Lo mismo que hace INKWELL (inkwell/tiras.js): Webtoon por el recadero de La Sala,
+   Wattpad directo; y se guarda en la MISMA base, así INKWELL también lo ve (si se abre igual: ver PLAN.md) ── */
+async function directo(u){
+  let r = null;
+  try{ r = await fetch(u); }catch{ r = null; }
+  if(!r || r.type === 'opaque' || !r.ok) r = await porLaSala(u);
+  return r;
+}
+const redDe = (fuente) => fuente === 'webtoon' ? porLaSala : directo;
+async function compactar(b){
+  try{ const bm = await createImageBitmap(b); let w = bm.width, h = bm.height; if(w > 900){ h = Math.round(h * 900 / w); w = 900; }
+    const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); x.drawImage(bm, 0, 0, w, h); bm.close?.();
+    const r = await new Promise((ok) => c.toBlob(ok, 'image/jpeg', .7)); c.width = c.height = 0; return { blob: r && r.size < b.size * .95 ? r : b, dims: [w, h] };
+  }catch{ return { blob: b, dims: null }; }
+}
+async function bajarCap(s, c){
+  const r = await FUENTES[s.fuente].capitulo(c, redDe(s.fuente));
+  const reg = { clave: `${s.id}:${c.n}`, serie: s.id, n: c.n, titulo: c.titulo, tipo: r.tipo, bajado: Date.now(), compacto: true };
+  if(r.tipo === 'imagenes'){
+    reg.imgs = new Array(r.urls.length); reg.dims = new Array(r.urls.length); let sig = 0;
+    const obrero = async () => { while(sig < r.urls.length){ const i = sig++; const { blob, dims } = await compactar(await (await porLaSala(r.urls[i])).blob()); reg.imgs[i] = blob; reg.dims[i] = dims; } };
+    await Promise.all([obrero(), obrero(), obrero(), obrero()]);
+  } else reg.html = limpiarTexto(r.html);
+  await pedir(await BASES.tiras(), 'caps', (st) => st.put(reg), 'readwrite');
+  return reg;
+}
+const ADELANTE = 3;    // capítulos sin leer que se dejan listos por serie
+const bajada = { cola: [], corriendo: false, progreso: {}, alTerminar: [] };
+function encolar(s, caps){
+  const ya = new Set(bajada.cola.map((x) => `${x.s.id}:${x.c.n}`)); let n = 0;
+  for(const c of caps) if(!ya.has(`${s.id}:${c.n}`)){ bajada.cola.push({ s, c }); n++; }
+  if(n){ const p = bajada.progreso[s.id] || (bajada.progreso[s.id] = { hechos: 0, total: 0, titulo: limpio(s.titulo) }); p.total += n; }
+  correrBajada(); return n;
+}
+async function correrBajada(){
+  if(bajada.corriendo) return; bajada.corriendo = true;
+  try{
+    while(bajada.cola.length){
+      if(navigator.onLine === false){ await new Promise((ok) => setTimeout(ok, 5000)); continue; }
+      const { s, c } = bajada.cola.shift(), p = bajada.progreso[s.id];
+      let bien = true, error = null;
+      try{ await bajarCap(s, c); if(p) p.hechos++; }catch(e){ bien = false; error = e; console.warn('bajar', s.id, c.n, e); if(p) p.total--; }
+      /* primero se cierra la cuenta y luego se avisa: si no, el último capítulo nunca decía «Listo» ni refrescaba el estante */
+      if(p && p.hechos >= p.total) delete bajada.progreso[s.id];
+      bajada.alTerminar.forEach((f) => f(s, c, bien, error));
+    }
+  } finally { bajada.corriendo = false; }
+}
+/* tener listos los siguientes ADELANTE capítulos de cada serie; la lista de capítulos se revisa cada 6 h */
+async function ponerAlDia(){
+  if(navigator.onLine === false) return;
+  const dt = await BASES.tiras();
+  for(const s of (await pedir(dt, 'series', (st) => st.getAll())) || []){
+    if(!FUENTES[s.fuente] || !s.ref) continue;
+    if(!s.revisada || Date.now() - s.revisada > 6 * 36e5){
+      try{ const f = await FUENTES[s.fuente].serie(s.ref, redDe(s.fuente)); const fresca = (await pedir(dt, 'series', (st) => st.get(s.id))) || s; fresca.caps = f.caps; fresca.revisada = Date.now();
+        await pedir(dt, 'series', (st) => st.put(fresca), 'readwrite'); Object.assign(s, fresca); }catch{}
+    }
+    const tengo = new Set((await pedir(dt, 'caps', (st) => st.index('serie').getAllKeys(s.id))) || []), leidos = new Set(s.leidos || []);
+    const sinLeer = (s.caps || []).filter((c) => !leidos.has(c.n) && c.n >= (s.desde || 0)).sort((a, b) => a.n - b.n);
+    const listos = sinLeer.filter((c) => tengo.has(`${s.id}:${c.n}`)).length;
+    if(listos < ADELANTE) encolar(s, sinLeer.filter((c) => !tengo.has(`${s.id}:${c.n}`)).slice(0, ADELANTE - listos));
+  }
+}
+async function seguirSerie(ref){
+  const dt = await BASES.tiras(), s = await FUENTES[ref.fuente].serie(ref, redDe(ref.fuente));
+  const ya = await pedir(dt, 'series', (st) => st.get(s.id));
+  if(ya) return { s: ya, nueva: false };
+  const todas = (await pedir(dt, 'series', (st) => st.getAll())) || [];
+  Object.assign(s, { orden: todas.reduce((m, x) => Math.max(m, x.orden || 0), 0) + 1, leidos: [], desde: 0, revisada: Date.now(), agregada: Date.now() });
+  try{ if(s.portada) s.portadaBlob = await (await redDe(s.fuente)(s.portada)).blob(); }catch{}
+  await pedir(dt, 'series', (st) => st.put(s), 'readwrite');
+  return { s, nueva: true };
+}
+export const __bajada = bajada;
+
+export async function montarLector(V, { pedirTexto } = {}){
   const { THREE, B } = V;
   const lector = { grupo: new THREE.Group() };
   V.render.localClippingEnabled = true;
@@ -127,18 +207,26 @@ export async function montarLector(V){
   /* ── el estante: 8 portadas por página, L1/R1 pasan de página ── */
   let tarjetas = [];
   const limpiarTarjetas = () => { tarjetas.forEach((m) => { lector.grupo.remove(m); m.material.map?.dispose(); m.geometry.dispose(); }); tarjetas = []; };
+  /* en el estante, antes de tus series: Buscar y Populares (de Webtoon y Wattpad) */
+  const ACCIONES = [
+    { accion: 'buscar', titulo: 'Buscar', sub: 'Webtoon y Wattpad', icono: 'search' },
+    { accion: 'populares', titulo: 'Populares', sub: 'Webtoon', icono: 'popcorn' },
+  ];
+  let resultados = [];
   function pintarEstante(){
     limpiarTarjetas();
-    if(!obras.length){ decir('Sin capítulos: bájalos en INKWELL'); return; }
-    const POR = 8, paginas = Math.ceil(obras.length / POR); pagina = Math.min(pagina, paginas - 1);
-    decir(paginas > 1 ? `Página ${pagina + 1} de ${paginas} · L1 / R1` : '');
-    const items = obras.slice(pagina * POR, pagina * POR + POR), COLS = 4, n = items.length, filas = Math.ceil(n / COLS);
+    const lista = fase === 'resultados' ? resultados : [...ACCIONES, ...obras];
+    if(fase === 'resultados' && !lista.length){ decir('Sin resultados'); return; }
+    const POR = 8, paginas = Math.ceil(lista.length / POR); pagina = Math.min(pagina, paginas - 1);
+    decir(paginas > 1 ? `Página ${pagina + 1} de ${paginas} · L1 / R1` : (fase === 'resultados' ? 'Elige una para seguirla' : (obras.length ? '' : 'Busca una serie para empezar')));
+    const items = lista.slice(pagina * POR, pagina * POR + POR), COLS = 4, n = items.length, filas = Math.ceil(n / COLS);
     for(const [i, o] of items.entries()){
       const p = new V.Panel(.46, .66, 460); const { x, cv } = p, W = cv.width, H = cv.height;
       let img = null;
       const dib = (f) => { x.clearRect(0, 0, W, H); V.redondo(x, 4, 4, W - 8, H - 8, 20); x.fillStyle = f ? '#3A1A5C' : '#1E1428'; x.fill();
         const ch = H - 92; x.save(); V.redondo(x, 12, 12, W - 24, ch, 14); x.clip();
-        if(img){ const r = Math.max((W - 24) / img.width, ch / img.height), w = img.width * r, h = img.height * r; x.drawImage(img, 12 + (W - 24 - w) / 2, 12 + (ch - h) / 2, w, h); }
+        if(o.accion){ x.fillStyle = f ? '#4A2270' : '#24123A'; x.fillRect(12, 12, W - 24, ch); if(img) x.drawImage(img, W / 2 - 70, 12 + ch / 2 - 70, 140, 140); }
+        else if(img){ const r = Math.max((W - 24) / img.width, ch / img.height), w = img.width * r, h = img.height * r; x.drawImage(img, 12 + (W - 24 - w) / 2, 12 + (ch - h) / 2, w, h); }
         else { const g = x.createLinearGradient(0, 12, 0, ch); g.addColorStop(0, '#3A1A5C'); g.addColorStop(1, '#7E1735'); x.fillStyle = g; x.fillRect(12, 12, W - 24, ch);
           x.fillStyle = 'rgba(244,238,242,.9)'; x.font = '900 120px Georgia, serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText((o.titulo.trim()[0] || '·').toUpperCase(), W / 2, 12 + ch / 2); }
         x.restore();
@@ -146,18 +234,71 @@ export async function montarLector(V){
         x.lineWidth = f ? 6 : 2; x.strokeStyle = f ? '#AC27FF' : '#3C2652'; V.redondo(x, 4, 4, W - 8, H - 8, 20); x.stroke();
         x.textAlign = 'left'; x.textBaseline = 'top'; x.fillStyle = '#F4EEF2'; x.font = '700 21px system-ui, -apple-system, sans-serif';
         let t = o.titulo; while(x.measureText(t).width > W - 28 && t.length > 3) t = t.slice(0, -2) + '…'; x.fillText(t, 14, ch + 22);
-        x.fillStyle = '#C9B6DA'; x.font = '600 17px system-ui, -apple-system, sans-serif'; x.fillText(o.sub, 14, ch + 52); p.listo(); };
+        const pr = !o.accion && bajada.progreso[o.id], sub = pr ? `Bajando ${pr.hechos} de ${pr.total}` : o.sub;
+        x.fillStyle = pr ? '#C77DFF' : '#C9B6DA'; x.font = '600 17px system-ui, -apple-system, sans-serif'; x.fillText(sub, 14, ch + 52); p.listo(); };
+      p.repintar = () => dib(p._f);
       dib(false);
-      if(o.portada){ const u = URL.createObjectURL(o.portada), im = new Image(); im.onload = () => { img = im; dib(p._f); URL.revokeObjectURL(u); }; im.onerror = () => URL.revokeObjectURL(u); im.src = u; }
+      const ponerImg = (b) => { const u = URL.createObjectURL(b), im = new Image(); im.onload = () => { img = im; dib(p._f); URL.revokeObjectURL(u); }; im.onerror = () => URL.revokeObjectURL(u); im.src = u; };
+      if(o.accion) V.svgImg(o.icono, '#C77DFF').then((im) => { if(im){ img = im; dib(p._f); } });
+      else if(o.portada instanceof Blob) ponerImg(o.portada);
+      else if(typeof o.portada === 'string' && o.portada) redDe(o.ref?.fuente)(o.portada).then((r) => r.blob()).then(ponerImg).catch(() => {});
       p.foco = (f) => { if(p._f === f) return; p._f = f; dib(f); };
       const fila = Math.floor(i / COLS), enFila = Math.min(COLS, n - fila * COLS), c = i % COLS;
       const a = (c - (enFila - 1) / 2) * 18.5 * Math.PI / 180, y = (filas - 1) / 2 * .74 - fila * .74;
       p.malla.position.set(Math.sin(a) * 1.6, y - .05, -Math.cos(a) * 1.6); p.malla.lookAt(0, y - .05, 0);
-      p.malla.userData.accion = () => abrirObra(o);
+      p.malla.userData.accion = () => o.accion === 'buscar' ? buscar() : o.accion === 'populares' ? populares() : o.resultado ? seguir(o) : abrirObra(o);
       lector.grupo.add(p.malla); tarjetas.push(p.malla);
     }
   }
-  async function cargarEstante(){ fase = 'estante'; decir('Buscando…'); obras = await obrasBajadas(); if(fase === 'estante') pintarEstante(); }
+  /* si se piden dos a la vez (al seguir una serie y al terminar de bajarla), gana la última: una lectura vieja que
+     terminara después dejaba la serie «sin bajar» con sus capítulos ya guardados */
+  let vuelta = 0;
+  async function cargarEstante(){ const yo = ++vuelta; fase = 'estante'; decir('Un momento…'); const l = await obrasBajadas(); if(yo !== vuelta) return; obras = l; if(fase === 'estante') pintarEstante(); }
+
+  /* buscar y seguir */
+  async function buscar(){
+    if(!pedirTexto) return;
+    const q = await pedirTexto('Buscar series', { regresarA: 'leer' }); if(!q){ cargarEstante(); return; }
+    fase = 'resultados'; limpiarTarjetas(); decir('Buscando…'); pagina = 0;
+    const [wt, wp] = await Promise.all([
+      porLaSala(`https://www.webtoons.com/es/search?keyword=${encodeURIComponent(q)}`).then((r) => r.text()).then((h) => seriesDeGenero(h).slice(0, 12)).catch(() => []),
+      wattpad.buscar(q, directo).catch(() => []),
+    ]);
+    if(fase !== 'resultados') return;
+    resultados = [...wt.map((x) => ({ resultado: true, ref: x.ref, titulo: x.titulo, sub: 'Webtoon', portada: x.portada })),
+      ...wp.slice(0, 12).map((x) => ({ resultado: true, ref: { fuente: 'wattpad', story: String(x.story) }, titulo: x.titulo, sub: `Wattpad · ${x.partes} partes`, portada: x.portada }))];
+    pintarEstante();
+  }
+  async function populares(){
+    fase = 'resultados'; limpiarTarjetas(); decir('Buscando…'); pagina = 0;
+    const sigo = obras.filter((o) => o.tipo === 'tira').map((o) => o.id);
+    const l = await recomendar({ sigo, lang: 'es', cuantas: 24 }).catch(() => []);
+    if(fase !== 'resultados') return;
+    resultados = l.map((x) => ({ resultado: true, ref: x.ref, titulo: x.titulo, sub: 'Webtoon', portada: x.portada }));
+    pintarEstante();
+  }
+  async function seguir(o){
+    V.hud('Agregando…', 10);
+    try{
+      const { s, nueva } = await seguirSerie(o.ref);
+      const n = await ponerAlDiaUna(s);
+      V.hud(nueva ? `Siguiendo · bajando ${n}` : (n ? `Ya la sigues · bajando ${n}` : 'Ya la sigues'), 2.5);
+    }catch(e){ V.hud('No se pudo agregar', 2.5); console.warn(e); }
+    cargarEstante();
+  }
+  async function ponerAlDiaUna(s){
+    const dt = await BASES.tiras(), tengo = new Set((await pedir(dt, 'caps', (st) => st.index('serie').getAllKeys(s.id))) || []), leidos = new Set(s.leidos || []);
+    const sinLeer = (s.caps || []).filter((c) => !leidos.has(c.n) && c.n >= (s.desde || 0)).sort((a, b) => a.n - b.n);
+    const listos = sinLeer.filter((c) => tengo.has(`${s.id}:${c.n}`)).length;
+    return listos < ADELANTE ? encolar(s, sinLeer.filter((c) => !tengo.has(`${s.id}:${c.n}`)).slice(0, ADELANTE - listos)) : 0;
+  }
+  /* lo que se va bajando se ve en las tarjetas, y si estás leyendo esa serie, entra solo al final */
+  let repintarT = 0;
+  bajada.alTerminar.push((s, c, bien) => {
+    if(fase === 'estante' && performance.now() - repintarT > 700){ repintarT = performance.now(); tarjetas.forEach((m) => m.userData.panel?.repintar?.()); }
+    if(bien && obra && obra.id === s.id && !obra.caps.some((x) => x.n === c.n)){ obra.caps.push({ n: c.n, titulo: limpio(c.titulo) }); obra.caps.sort((a, b) => a.n - b.n); sinMas = false; }
+    if(bien && !bajada.progreso[s.id] && !bajada.cola.some((x) => x.s.id === s.id)){ V.hud(`Listo: ${limpio(s.titulo).slice(0, 28)}`, 2); if(fase === 'estante') cargarEstante(); }
+  });
 
   /* ── la ventana de lectura ── */
   let dist = 1.25; const ANCHO = .9, ALTO = 1.3, ESC = ANCHO / COL, VEN = ALTO / ESC;   // VEN: el alto de la ventana en px de la columna
@@ -216,6 +357,10 @@ export async function montarLector(V){
   function quitarSegmento(s){ for(const p of s.piezas){ soltar(p); p.muerta = true; tira.remove(p.malla); p.malla.geometry.dispose(); p.malla.material.dispose(); } }
 
   async function abrirObra(o, k = null, dentro = null){
+    if(!o.caps.length){
+      const s = await pedir(await BASES.tiras(), 'series', (st) => st.get(o.id));
+      const n = s ? await ponerAlDiaUna(s) : 0; V.hud(n ? `Bajando ${n} capítulos` : (bajada.progreso[o.id] ? 'Ya se está bajando' : 'Sin internet'), 2.5); return;
+    }
     obra = o; fase = 'cargando'; limpiarTarjetas(); decir('Abriendo…');
     segs.forEach(quitarSegmento); segs = []; scroll = 0; objetivo = null; auto = false; sinMas = false; actualK = -1;
     if(k == null){
@@ -237,7 +382,11 @@ export async function montarLector(V){
   }
   async function alFinal(){
     if(armando || sinMas) return; const ult = segs[segs.length - 1]; if(!ult) return;
-    if(ult.k + 1 >= obra.caps.length){ sinMas = true; return; }
+    if(ult.k + 1 >= obra.caps.length){
+      sinMas = true;
+      if(obra.tipo === 'tira' && !bajada.progreso[obra.id]){ const s = await pedir(await BASES.tiras(), 'series', (st) => st.get(obra.id)); if(s){ const n = await ponerAlDiaUna(s); if(n) V.hud(`Bajando ${n} más`, 2); } }
+      return;
+    }
     armando = true; const o = obra;
     try{
       const s = await armarSegmento(ult.k + 1); if(obra !== o || fase !== 'leyendo'){ return; }
@@ -286,7 +435,7 @@ export async function montarLector(V){
   const ray = new THREE.Raycaster(), centro = new THREE.Vector2(0, 0), wp = new THREE.Vector3();
   let velMirada = 0;
   lector.cuadro = (t, dt = 1 / 60) => {
-    if(fase !== 'leyendo'){ tarjetas.forEach((m) => { m.visible = fase === 'estante'; }); return; }
+    if(fase !== 'leyendo'){ tarjetas.forEach((m) => { m.visible = fase === 'estante' || fase === 'resultados'; }); return; }
     /* sin control: mirar (o apuntar con la mano) la orilla de la ventana avanza */
     velMirada = 0;
     if(!V.hayControl() || V.extra.rayo){
@@ -325,8 +474,8 @@ export async function montarLector(V){
 
   let velStick = 0;
   lector.control = (c) => {
-    if(fase === 'estante'){
-      if(c.oprimido[B.R1] && (pagina + 1) * 8 < obras.length){ pagina++; pintarEstante(); }
+    if(fase === 'estante' || fase === 'resultados'){
+      if(c.oprimido[B.R1] && (pagina + 1) * 8 < (fase === 'resultados' ? resultados.length : obras.length + ACCIONES.length)){ pagina++; pintarEstante(); }
       if(c.oprimido[B.L1] && pagina > 0){ pagina--; pintarEstante(); }
       return {};
     }
@@ -344,11 +493,13 @@ export async function montarLector(V){
     return { x: true, flechas: true };
   };
   Object.defineProperty(lector, 'ocupaStick', { get: () => fase === 'leyendo' });
-  lector.entrar = () => { pagina = 0; cargarEstante(); };
+  /* leyendo, «Atrás» va a un lado de la ventana: abajo estorbaría al mirar la orilla para avanzar */
+  Object.defineProperty(lector, 'atrasEn', { get: () => fase === 'leyendo' || fase === 'cargando' ? [-(.45 + .4), -.4, -dist] : null });
+  lector.entrar = () => { pagina = 0; cargarEstante(); ponerAlDia().catch(() => {}); };
   lector.salir = () => { salirDeLeer(); limpiarTarjetas(); decir(''); fase = 'estante'; };
-  lector.atras = () => { if(fase === 'leyendo' || fase === 'cargando'){ salirDeLeer(); cargarEstante(); } else V.ir('inicio'); };
-  lector.elegibles = () => fase === 'estante' ? tarjetas : [];
-  lector.estado = () => ({ fase, obras: obras.length, tarjetas: tarjetas.length, obra: obra?.id || null, segs: segs.map((s) => obra?.caps[s.k]?.n), scroll: Math.round(scroll), auto, actual: obra && segActual() ? obra.caps[segActual().k].n : null,
+  lector.atras = () => { if(fase === 'leyendo' || fase === 'cargando' || fase === 'resultados'){ salirDeLeer(); cargarEstante(); } else V.ir('inicio'); };
+  lector.elegibles = () => fase === 'estante' || fase === 'resultados' ? tarjetas : [];
+  lector.estado = () => ({ bajando: bajada.cola.length + (bajada.corriendo ? 1 : 0), fase, obras: obras.length, tarjetas: tarjetas.length, obra: obra?.id || null, segs: segs.map((s) => obra?.caps[s.k]?.n), scroll: Math.round(scroll), auto, actual: obra && segActual() ? obra.caps[segActual().k].n : null,
     texturas: segs.reduce((n, s) => n + s.piezas.filter((p) => p.tex).length, 0), piezas: segs.reduce((n, s) => n + s.piezas.length, 0), dist });
   lector.abrir = (id) => { const o = obras.find((x) => x.id === id); if(o) return abrirObra(o); };
   V.registrar('leer', lector);

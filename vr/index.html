@@ -101,15 +101,16 @@ async function montar(){
     x.font = '700 30px system-ui, -apple-system, sans-serif'; x.fillStyle = '#C9B6DA'; x.fillText(new Date().toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' }), cv.width / 2, 82); titulo.listo(); };
   pintarTitulo(); setInterval(pintarTitulo, 15000);
   const T = [
-    ['Juegos', 'gamepad-2', () => V.ir('juegos')],
+    ['Juegos', 'gamepad-2', () => V.hud('Pronto'), 'Pronto'],
     ['Cine', 'clapperboard', () => V.ir('cine')],
     ['Leer', 'book-open', () => V.ir('leer')],
-    ['La Sala', 'users', () => V.ir('sala')],
+    ['La Sala', 'users', () => V.hud('Pronto'), 'Pronto'],
     ['Mixta', 'scan-eye', () => { if(!V.hayCamara()){ V.hud('Sin cámara'); return; } V.ponerMixta(!V.AJ.mixta); V.hud(V.AJ.mixta ? 'Realidad mixta' : 'Realidad virtual'); }],
     ['Ajustes', 'settings', () => V.ir('ajustes')],
   ];
-  const tarjetas = await Promise.all(T.map(async ([t, ic, fn], i) => {
-    const p = await V.tarjeta({ titulo: t, icono: ic }); const a = (i - 2) * 21 * Math.PI / 180;
+  /* lo que todavía no existe sale apagado y dice «Pronto»: ya no mete a una pantalla vacía */
+  const tarjetas = await Promise.all(T.map(async ([t, ic, fn, sub], i) => {
+    const p = await V.tarjeta({ titulo: t, icono: ic, sub: sub || '', apagada: !!sub }); const a = (i - 2) * 21 * Math.PI / 180;
     p.malla.position.set(Math.sin(a) * 1.9, 0, -Math.cos(a) * 1.9); p.malla.lookAt(0, 0, 0); p.malla.userData.accion = fn;
     inicio.grupo.add(p.malla); return p.malla;
   }));
@@ -131,10 +132,10 @@ async function montar(){
   /* CINE: YouTube, películas libres, enlaces y tus videos (cine.js); lo de otros sitios va en la pantalla de la web */
   const pedirTexto = montarTeclado(V);
   window.__cine = await montarCine(V, { VIDEOS, pedirTexto, web });
-  V.trasCuadro.push(web.colocar);
+  V.trasCuadro.push((...a) => { web.colocar(...a); V.encima.activa = web.activa; });
 
   /* LEER: INKWELL (Tiras y Libros) con lo que ya está bajado en este teléfono (lector.js) */
-  window.__lector = await montarLector(V);
+  window.__lector = await montarLector(V, { pedirTexto });
 
   /* AJUSTES: un panel; flechas arriba/abajo eligen, izquierda/derecha cambian */
   const aj = { grupo: new THREE.Group() };

@@ -49,11 +49,17 @@ export function crearPantallaWeb(V){
     montar(videos[0], videos[1]);
     cargarParte();
   }
+  /* la película «nunca cargaba» (Carlos, 18 nov): si el iPhone no deja sonar, play() se rechaza y el video se quedaba
+     PARADO en negro. Ahora arranca callado y avisa; un toque le regresa el sonido. Y se dice qué pasa mientras carga */
   function cargarParte(){
-    for(const v of videos){ v.src = lista[parte]; v.currentTime = 0; }
-    videos[0].play().catch(() => V.hud('Sin sonido: toca la pantalla una vez'));
+    for(const v of videos){ v.src = lista[parte]; }
+    V.hud('Cargando…', 30);
+    videos[0].play().catch(() => { videos[0].muted = true; videos[0].play().then(() => V.hud('Sin sonido: toca la pantalla', 4)).catch(() => {}); });
     videos[1].play().catch(() => {});
   }
+  videos[0].addEventListener('playing', () => { if(modo === 'video') V.hud(estado.titulo || 'Listo', 1.5); });
+  videos[0].addEventListener('waiting', () => { if(modo === 'video') V.hud('Cargando…', 30); });
+  videos[0].addEventListener('error', () => { if(modo === 'video') V.hud('Ese video no abre en el iPhone', 4); });
   videos[0].addEventListener('ended', () => { if(modo === 'video' && parte < lista.length - 1){ parte++; cargarParte(); } });
 
   /* ── YouTube: el reproductor oficial, dos veces ── */
