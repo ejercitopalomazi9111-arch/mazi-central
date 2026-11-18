@@ -5,6 +5,7 @@
      · Mis videos: los que se cargaron en la entrada; ésos sí van DENTRO de la escena (con la corrección del lente).
    Lo de otros sitios va en la pantalla de la web (pantalla.js), encima de la escena, una copia por ojo.
    Netflix, Crunchyroll y similares no: su protección pinta negro y no dejan meterse en otra página (PLAN.md). */
+import { crearAgarre } from './agarre.js';
 export const SALA = 'https://sala.palomazi9111.workers.dev';
 const ARCHIVO = 'https://archive.org';
 
@@ -18,8 +19,12 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
   const peli = document.createElement('video'); peli.playsInline = true; peli.setAttribute('playsinline', '');
   const ptex = new THREE.VideoTexture(peli); ptex.colorSpace = THREE.SRGBColorSpace;
   const pantalla = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0x0b0814, toneMapped: false }));
-  const ponerPantalla = () => { const ancho = dist * 1.15, asp = peli.videoWidth && fase === 'viendo' && !web.activa ? peli.videoWidth / peli.videoHeight : 16 / 9; pantalla.scale.set(ancho, ancho / asp, 1); pantalla.position.set(0, .25, -dist); };
-  ponerPantalla(); cine.grupo.add(pantalla); pantalla.visible = false;
+  let tam = 1; const ponerPantalla = () => { const ancho = dist * 1.15 * tam, asp = peli.videoWidth && fase === 'viendo' && !web.activa ? peli.videoWidth / peli.videoHeight : 16 / 9; pantalla.scale.set(ancho, ancho / asp, 1); pantalla.position.set(0, .25, -dist); };
+  /* la pantalla cuelga de un soporte centrado en tu cabeza: con las dos manos pellizcando se lleva a donde quieras
+     (encima de ti para verla acostado, de lado, en diagonal) y se agranda o achica (agarre.js) */
+  const soporte = new THREE.Group(); cine.grupo.add(soporte);
+  const agarrar = crearAgarre(V, { soporte, getEscala: () => tam, setEscala: (e) => { tam = e; ponerPantalla(); }, min: .35, max: 3 });
+  ponerPantalla(); soporte.add(pantalla); pantalla.visible = false;
   web.anclar(pantalla);
   peli.addEventListener('loadedmetadata', ponerPantalla);
 
@@ -144,20 +149,18 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
   /* ── gestos de mano mientras ves (Carlos, 18 nov) ──
        · pellizcar una vez: pausa / sigue
        · pellizcar, mantener y arrastrar a los lados: adelanta o regresa (todo el ancho de la vista ≈ 4 minutos)
-       · pellizcar con las DOS manos y separarlas o juntarlas: acerca o aleja la pantalla
+       · pellizcar con las DOS manos: la pantalla se va a donde las lleves (arriba, de lado, encima de ti) y separarlas
+         o juntarlas la agranda o achica
        · palma abierta un momento: cierra (eso ya lo hace manos.js, es el Círculo) */
   const gV = { activo: false, t0: 0, x0: 0, aplicado: 0, arrastre: false, cancelado: false, dos: null };
   const pausar = () => { const sigue = web.activa ? web.pausa() : (peli.paused ? (peli.play(), true) : (peli.pause(), false)); V.hud(sigue ? 'Sigue' : 'Pausa', 1); };
   const brincar = (s) => { if(web.activa) web.brincar(s); else peli.currentTime = Math.max(0, Math.min(peli.duration || 0, peli.currentTime + s)); };
+  let trasAgarre = false;
   function gestosVideo(){
     const pin = (V.extra.manos || []).filter((m) => m.pellizco), ahora = performance.now();
-    if(pin.length >= 2){
-      const abre = Math.hypot(pin[0].x - pin[1].x, pin[0].y - pin[1].y);
-      if(!gV.dos) gV.dos = { abre: Math.max(.02, abre), dist };
-      else { const nd = Math.max(1.2, Math.min(8, gV.dos.dist * gV.dos.abre / Math.max(.02, abre))); if(Math.abs(nd - dist) > .02){ dist = nd; ponerPantalla(); } }
-      gV.cancelado = true; return;
-    }
-    gV.dos = null;
+    if(agarrar()){ gV.cancelado = true; trasAgarre = true; return; }
+    if(!pin.length) trasAgarre = false;
+    if(trasAgarre){ gV.activo = false; return; }   /* la mano que se queda pellizcando al soltar la otra no pausa ni adelanta */
     const p = pin[0];
     if(p && !gV.activo) Object.assign(gV, { activo: true, t0: ahora, x0: p.x, aplicado: 0, arrastre: false, cancelado: false });
     else if(p && gV.activo){
@@ -170,9 +173,9 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
   cine.cuadro = (t) => {
     puertas.forEach((m) => { m.visible = fase === 'estante'; }); if(web.activa) web.sincronizar(t);
     V.extra.gestosVideo = fase === 'viendo';
-    if(fase === 'viendo') gestosVideo(); else { gV.activo = false; gV.dos = null; }
+    if(fase === 'viendo') gestosVideo(); else gV.activo = false;
   };
-  cine.estado = () => ({ fase, web: web.estado.modo, tarjetas: tarjetas.length, dist: +dist.toFixed(2), pausa: web.activa ? null : peli.paused, t: web.activa ? null : +peli.currentTime.toFixed(1) });
+  cine.estado = () => ({ fase, web: web.estado.modo, tarjetas: tarjetas.length, dist: +dist.toFixed(2), tam: +tam.toFixed(2), giro: +(2 * Math.acos(Math.min(1, Math.abs(soporte.quaternion.w))) * 180 / Math.PI).toFixed(1), pausa: web.activa ? null : peli.paused, t: web.activa ? null : +peli.currentTime.toFixed(1) });
   V.registrar('cine', cine);
   return cine;
 }

@@ -16,6 +16,7 @@ import { apuntar } from '../inkwell/biblioteca.js';
 import { FUENTES, wattpad, limpiarTexto } from '../inkwell/fuentes.js';
 import { pedir as porLaSala, recomendar } from '../inkwell/red.js';
 import { seriesDeGenero } from '../inkwell/compartir.js';
+import { crearAgarre } from './agarre.js';
 
 const COL = 900;                  // la columna virtual: todo lo de la tira se mide en px de esta columna
 const FIN_H = 150;                // el letrero de fin de capítulo
@@ -303,7 +304,12 @@ export async function montarLector(V, { pedirTexto } = {}){
 
   /* ── la ventana de lectura ── */
   let dist = 1.25; const ANCHO = .9, ALTO = 1.3, ESC = ANCHO / COL, VEN = ALTO / ESC;   // VEN: el alto de la ventana en px de la columna
-  const ventana = new THREE.Group(); ventana.visible = false; lector.grupo.add(ventana);
+  /* la ventana cuelga de un soporte con centro en tu cabeza: con las dos manos se gira a donde quieras (arriba de ti
+     para leer acostado, de lado, en diagonal) y se agranda o achica (agarre.js) */
+  const soporte = new THREE.Group(); lector.grupo.add(soporte);
+  const ventana = new THREE.Group(); ventana.visible = false; soporte.add(ventana);
+  let tam = 1; const wq = new THREE.Quaternion(), arriba = new THREE.Vector3(), wp2 = new THREE.Vector3();
+  const agarrar = crearAgarre(V, { soporte, getEscala: () => tam, setEscala: (e) => { tam = e; ventana.scale.setScalar(e); }, min: .4, max: 3 });
   const marco = new THREE.Mesh(new THREE.PlaneGeometry(ANCHO + .03, ALTO + .03), new THREE.MeshBasicMaterial({ color: 0x0b0814, toneMapped: false }));
   marco.position.z = -.004; ventana.add(marco);
   const tira = new THREE.Group(); ventana.add(tira);
@@ -439,8 +445,12 @@ export async function montarLector(V, { pedirTexto } = {}){
      al soltar sigue un poco por la inercia. Un pellizco corto, sin mover, lee solo o pausa */
   const gM = { activo: false, y0: 0, s0: 0, t0: 0, ultY: 0, ultT: 0, vel: 0, movio: false };
   let inercia = 0;
+  let trasAgarre = false;   /* después de mover la ventana, nada lee hasta soltar las dos manos */
   function manoLee(dt){
     const p = (V.extra.manos || []).find((m) => m.pellizco), ahora = performance.now();
+    if(agarrar()){ if(gM.activo){ scroll = gM.s0; gM.activo = false; } inercia = 0; trasAgarre = true; return; }
+    if(!p) trasAgarre = false;
+    if(trasAgarre) return;
     if(p && !V.extra.sobreBoton && !gM.activo) Object.assign(gM, { activo: true, y0: p.y, s0: scroll, t0: ahora, ultY: p.y, ultT: ahora, vel: 0, movio: false }), inercia = 0, objetivo = null;
     else if(p && gM.activo){
       const dy = p.y - gM.y0; if(Math.abs(dy) > .03) gM.movio = true;
@@ -469,7 +479,9 @@ export async function montarLector(V, { pedirTexto } = {}){
     if(scroll < 0) scroll = 0;
     if(scroll + VEN * 3 > total()) alFinal();
     tira.position.y = ALTO / 2 + scroll * ESC;
-    ventana.getWorldPosition(wp); planos[0].constant = wp.y + ALTO / 2; planos[1].constant = -(wp.y - ALTO / 2);
+    ventana.updateWorldMatrix(true, false); ventana.getWorldQuaternion(wq); arriba.set(0, 1, 0).applyQuaternion(wq);
+    planos[0].setFromNormalAndCoplanarPoint(arriba.clone().negate(), ventana.localToWorld(wp.set(0, ALTO / 2, 0)));
+    planos[1].setFromNormalAndCoplanarPoint(arriba, ventana.localToWorld(wp.set(0, -ALTO / 2, 0)));
     const tot = total() || 1, barH = Math.max(.04, Math.min(1, VEN / tot)) * ALTO, prog = Math.min(1, scroll / Math.max(1, tot - VEN * .5));
     barra.scale.y = barH; barra.position.y = ALTO / 2 - barH / 2 - prog * (ALTO - barH);
     for(const s of segs){
@@ -513,13 +525,13 @@ export async function montarLector(V, { pedirTexto } = {}){
   };
   Object.defineProperty(lector, 'ocupaStick', { get: () => fase === 'leyendo' });
   /* leyendo, «Atrás» va a un lado de la ventana: abajo estorbaría al mirar la orilla para avanzar */
-  Object.defineProperty(lector, 'atrasEn', { get: () => fase === 'leyendo' || fase === 'cargando' ? [-(.45 + .4), -.4, -dist] : null });
+  Object.defineProperty(lector, 'atrasEn', { get: () => fase === 'leyendo' || fase === 'cargando' ? wp2.set(-(ANCHO / 2 * tam + .4), -.4, -dist).applyQuaternion(soporte.quaternion).toArray() : null });
   lector.entrar = () => { pagina = 0; cargarEstante(); ponerAlDia().catch(() => {}); };
   lector.salir = () => { V.extra.gestosVideo = false; salirDeLeer(); limpiarTarjetas(); decir(''); fase = 'estante'; };
   lector.atras = () => { if(fase === 'leyendo' || fase === 'cargando' || fase === 'resultados'){ salirDeLeer(); cargarEstante(); } else V.ir('inicio'); };
   lector.elegibles = () => fase === 'estante' || fase === 'resultados' ? tarjetas : [];
   lector.estado = () => ({ bajando: bajada.cola.length + (bajada.corriendo ? 1 : 0), fase, obras: obras.length, tarjetas: tarjetas.length, obra: obra?.id || null, segs: segs.map((s) => obra?.caps[s.k]?.n), scroll: Math.round(scroll), auto, actual: obra && segActual() ? obra.caps[segActual().k].n : null,
-    texturas: segs.reduce((n, s) => n + s.piezas.filter((p) => p.tex).length, 0), piezas: segs.reduce((n, s) => n + s.piezas.length, 0), dist });
+    texturas: segs.reduce((n, s) => n + s.piezas.filter((p) => p.tex).length, 0), piezas: segs.reduce((n, s) => n + s.piezas.length, 0), dist, tam: +tam.toFixed(2), giro: +(2 * Math.acos(Math.min(1, Math.abs(soporte.quaternion.w))) * 180 / Math.PI).toFixed(1) });
   lector.abrir = (id) => { const o = obras.find((x) => x.id === id); if(o) return abrirObra(o); };
   V.registrar('leer', lector);
   return lector;

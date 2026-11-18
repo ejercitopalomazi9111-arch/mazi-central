@@ -57,6 +57,24 @@ await boton(X); await p.waitForTimeout(1200);
 e = await est(); sí(e.fase === 'leyendo' && e.obra === 'webtoon:1' && e.segs[0] === 1, `la serie con capítulos nuevos va primero y abre en el capítulo 1 (${e.obra} · ${e.segs})`);
 sí(e.texturas >= 2, `las páginas de cerca ya se pintaron (${e.texturas} de ${e.piezas})`);
 await p.screenshot({ path: CAPS + '/vr-leer-tira.png' });
+/* agarrar la ventana con las dos manos (Carlos, 18 nov): pellizcar con las dos y subirlas la lleva arriba (para leer
+   acostado) y separarlas la agranda; al soltar no recorre ni pone «Solo». De regreso, juntarlas la achica. */
+const manosFalsas = (lista) => p.evaluate((lista) => { const V = window.__vr, T = V.THREE;
+  if(!window.__falsasPuesto){ window.__falsasPuesto = true; let real = []; Object.defineProperty(V.extra, 'manos', { get: () => window.__falsas ?? real, set: (v) => { real = v; }, configurable: true }); }
+  if(!lista){ window.__falsas = null; return; }
+  const c = V.cabeza.getWorldPosition(new T.Vector3());
+  window.__falsas = lista.map(([x, y, z, pel]) => ({ pellizco: pel, x: .5 + x, y: .5 - y, mundo: { indice: c.clone().add(new T.Vector3(x, y, z)) } }));
+}, lista);
+const ag0 = await est();
+await manosFalsas([[-.12, 0, -.5, true], [.12, 0, -.5, true]]); await p.waitForTimeout(250);
+await manosFalsas([[-.3, .4, -.3, true], [.3, .4, -.3, true]]); await p.waitForTimeout(300);
+let ag = await est(); sí(ag.giro > 25 && ag.tam > 1.3, `dos manos: la ventana sube (${ag.giro}°) y crece (×${ag.tam})`);
+await p.screenshot({ path: CAPS + '/vr-leer-agarre.png' });
+await manosFalsas([[.3, .4, -.3, true]]); await p.waitForTimeout(250); await manosFalsas([]); await p.waitForTimeout(400);
+ag = await est(); sí(Math.abs(ag.scroll - ag0.scroll) < 10 && !ag.auto && ag.giro > 25, `al soltar se queda ahí, sin recorrer ni ponerse en «Solo» (${ag0.scroll} → ${ag.scroll}, ${ag.giro}°)`);
+await manosFalsas([[-.3, .4, -.3, true], [.3, .4, -.3, true]]); await p.waitForTimeout(250);
+await manosFalsas([[-.12, 0, -.5, true], [.12, 0, -.5, true]]); await p.waitForTimeout(300); await manosFalsas([]); await p.waitForTimeout(300); await manosFalsas(null);
+ag = await est(); sí(ag.giro < 5 && Math.abs(ag.tam - 1) < .15, `y de regreso: enfrente y de su tamaño (${ag.giro}°, ×${ag.tam})`);
 /* bajar con el stick hasta pasar el capítulo 1 */
 await p.evaluate(() => { window.__pad.axes[1] = 1; }); e = await hasta((e) => e.scroll > 5000, 15000); await p.evaluate(() => { window.__pad.axes[1] = 0; }); await p.waitForTimeout(800);
 e = await est(); sí(e.scroll > 2000, `el stick baja (${e.scroll} px)`);

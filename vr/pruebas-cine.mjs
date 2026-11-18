@@ -47,6 +47,21 @@ e = await p.evaluate(() => __cine.estado()); sí(e.fase === 'viendo' && e.web ==
 const copias = await p.evaluate(() => [...document.querySelectorAll('.yt-falso')].map((d) => getComputedStyle(d.parentElement).transform));
 sí(copias.length === 2 && copias.every((t) => t.startsWith('matrix3d') || t.startsWith('matrix(')), 'una copia por ojo, acomodada en 3D sobre la pantalla' + ' ' + JSON.stringify(copias).slice(0, 160));
 await p.screenshot({ path: CAPS + '/vr-youtube.png' });
+/* dos manos pellizcando: la pantalla se va arriba y crece, y las copias de la web la siguen */
+const manosFalsas = (lista) => p.evaluate((lista) => { const V = window.__vr, T = V.THREE;
+  if(!window.__falsasPuesto){ window.__falsasPuesto = true; let real = []; Object.defineProperty(V.extra, 'manos', { get: () => window.__falsas ?? real, set: (v) => { real = v; }, configurable: true }); }
+  if(!lista){ window.__falsas = null; return; }
+  const c = V.cabeza.getWorldPosition(new T.Vector3());
+  window.__falsas = lista.map(([x, y, z, pel]) => ({ pellizco: pel, x: .5 + x, y: .5 - y, mundo: { indice: c.clone().add(new T.Vector3(x, y, z)) } }));
+}, lista);
+await manosFalsas([[-.12, 0, -.5, true], [.12, 0, -.5, true]]); await p.waitForTimeout(250);
+await manosFalsas([[-.25, .3, -.4, true], [.25, .3, -.4, true]]); await p.waitForTimeout(300);
+e = await p.evaluate(() => __cine.estado());
+const copias2 = await p.evaluate(() => [...document.querySelectorAll('.yt-falso')].map((d) => getComputedStyle(d.parentElement).transform));
+sí(e.giro > 20 && e.tam > 1.3 && copias2.length === 2 && copias2[0] !== copias[0], `dos manos: la pantalla sube (${e.giro}°), crece (×${e.tam}) y la web la sigue`);
+await p.screenshot({ path: CAPS + '/vr-cine-agarre.png' });
+await manosFalsas([[.25, .3, -.4, true]]); await p.waitForTimeout(250); await manosFalsas([]); await p.waitForTimeout(300); await manosFalsas(null);
+sí(await p.evaluate(() => __web.estado.modo === 'youtube'), 'al soltar sigue viéndose');
 await boton(X); await p.waitForTimeout(200);
 sí(await p.evaluate(() => __web.estado.modo === 'youtube'), 'X pausa sin cerrar');
 await boton(O); await p.waitForTimeout(300);
