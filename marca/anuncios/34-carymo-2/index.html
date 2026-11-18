@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>CARYMO · Juegos</title>
+<!-- CARYMO 2 · JUEGOS Y AJEDREZ (paquete del inversionista). La app de verdad: el menú de juegos, la clase de
+     ajedrez con la horquilla y conecta 4. Voz de la casa (Orus).
+     Música: «Hyperfun», Kevin MacLeod (incompetech.com), CC BY 4.0. -->
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+</head><body>
+<script type="module">
+import { montar, fx } from '../32-carymo/serie.js';
+window.listo = montar({
+  dur: 30,
+  musica: { archivo: '/tmp/claude-0/musica/Hyperfun.mp3', desde: 0, vol: .28, entrada: .2, fin: 2.4 },
+  gancho: { a: 0, b: 3.4, html: '¿Y si la clase fuera<br>una <em>partida</em>?' },
+  escenas: [
+    { a: 3.3, b: 8.7, toma: 'juegos', desde: 'menu-0.6', hasta: 'clase-0.3', tit: 'Cinco juegos<br><em>de mesa</em>', chip: 'Ajedrez · damas · <b>dominó</b>' },
+    { a: 8.7, b: 14.7, toma: 'juegos', desde: 'clase-0.3', hasta: 'horquilla+3', tit: 'Cada juego<br><em>trae su clase</em>' },
+    { a: 14.7, b: 19.5, toma: 'juegos', desde: 'c4-0.3', hasta: 'c4+6.5', tit: 'Contra la compu<br>o <em>tus amigos</em>' },
+    { a: 19.5, b: 23.5, toma: 'juegos', desde: 'c4+6.5', hasta: 'fin', tit: 'Aprendes a<br><em>pensar</em>' },
+  ],
+  cierre: { a: 23.5, frase: 'Aprende <em>jugando</em>.' },
+  sonidos: [[fx('golpe'), .4, .3]],
+});
+</script></body></html>

@@ -1,0 +1,12 @@
+{
+ "titulo": "CARYMO 2 · Juegos y ajedrez (paquete del inversionista)",
+ "voces": { "Narrador": "google:Orus" },
+ "lineas": [
+  { "id": "01", "voz": "Narrador", "en": 0.3,  "txt": "¿Y si la clase fuera una partida?" },
+  { "id": "02", "voz": "Narrador", "en": 3.4,  "txt": "En CARYMO hay ajedrez, damas, reversi, conecta cuatro y dominó.", "dice": "En Carimo hay ajedrez, damas, reversi, conecta cuatro y dominó." },
+  { "id": "03", "voz": "Narrador", "en": 8.8,  "txt": "Cada juego trae su clase: te enseña la jugada mientras juegas." },
+  { "id": "04", "voz": "Narrador", "en": 14.8, "txt": "Juegas contra la computadora, o contra tus amigos." },
+  { "id": "05", "voz": "Narrador", "en": 19.6, "txt": "Aprendes a pensar, sin sentir que estudias." },
+  { "id": "06", "voz": "Narrador", "en": 23.6, "txt": "CARYMO. Aprende jugando.", "dice": "Carimo. Aprende jugando." }
+ ]
+}

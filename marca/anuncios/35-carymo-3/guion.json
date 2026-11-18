@@ -1,0 +1,52 @@
+{
+ "titulo": "CARYMO 3 · Mascotas y personaje (paquete del inversionista)",
+ "voces": {
+  "Narrador": "google:Charon"
+ },
+ "lineas": [
+  {
+   "id": "01",
+   "voz": "Narrador",
+   "en": 0.3,
+   "txt": "Estudiar solo da flojera. Por eso en CARYMO nunca estudias solo.",
+   "dice": "Estudiar solo da flojera. Por eso en Carimo nunca estudias solo."
+  },
+  {
+   "id": "02",
+   "voz": "Narrador",
+   "en": 6.6,
+   "txt": "Tienes una mascota que vive en tu cuarto."
+  },
+  {
+   "id": "03",
+   "voz": "Narrador",
+   "en": 9.6,
+   "txt": "La acaricias, juegas con ella a la pelota."
+  },
+  {
+   "id": "04",
+   "voz": "Narrador",
+   "en": 13.4,
+   "txt": "Y crece contigo: mientras más estudias, más crece."
+  },
+  {
+   "id": "05",
+   "voz": "Narrador",
+   "en": 18.2,
+   "txt": "También vistes a tu personaje con lo que ganas estudiando."
+  },
+  {
+   "id": "06",
+   "voz": "Narrador",
+   "en": 22.0,
+   "txt": "Y con tus amigos le ganan juntos al jefe del tema."
+  },
+  {
+   "id": "07",
+   "voz": "Narrador",
+   "en": 26.6,
+   "txt": "CARYMO. Nunca vuelves a estudiar solo.",
+   "dice": "Carimo. Nunca vuelves a estudiar solo."
+  }
+ ]
+}
