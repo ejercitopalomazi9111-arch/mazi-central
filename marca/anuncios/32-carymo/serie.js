@@ -48,6 +48,17 @@ const CSS = `
   #fin img{ width:560px; filter:drop-shadow(0 30px 80px rgba(172,39,255,.45)) }
   #finFrase{ font-weight:900; font-size:80px; letter-spacing:-.04em; text-align:center; line-height:1.05; padding:0 60px }
   #finFrase em{ font-style:normal; color:#C77DFF }
+  .lista{ position:absolute; left:60px; right:60px; top:200px; bottom:150px; z-index:7; visibility:hidden }
+  .lista-dia{ font-weight:900; font-size:150px; letter-spacing:-.05em; line-height:1; color:#fff; transform-origin:left center }
+  .lista-n{ font-size:48px; font-weight:700; color:#C77DFF; margin:14px 0 64px }
+  .lista-cosas{ display:grid; grid-template-columns:1fr 1fr; gap:24px }
+  .cosa{ padding:40px 34px; border-radius:30px; background:rgba(42,22,64,.9); box-shadow:0 0 0 2px rgba(199,125,255,.25); font-size:58px; font-weight:800;
+    line-height:1.1; letter-spacing:-.01em; opacity:0 }
+  .lista-cosas:not(:has(.cosa:nth-child(3))){ grid-template-columns:1fr; gap:34px } .lista-cosas:not(:has(.cosa:nth-child(3))) .cosa{ font-size:84px; padding:70px 56px; letter-spacing:-.03em }
+  .lista-cosas:has(.cosa:nth-child(3)) .cosa{ font-size:40px; padding:28px 26px; min-height:110px; box-sizing:border-box; display:flex; align-items:center }
+  #cuenta{ position:absolute; right:60px; top:150px; z-index:8; text-align:right; visibility:hidden }
+  #cuenta b{ display:block; font-size:120px; font-weight:900; letter-spacing:-.04em; color:#C77DFF; line-height:1; font-variant-numeric:tabular-nums }
+  #cuenta span{ font-size:34px; font-weight:700; color:#D9CBE6 }
   #credito{ position:absolute; left:0; right:0; bottom:120px; text-align:center; font-size:32px; font-weight:600; color:#B3A5C4; letter-spacing:.01em }
 `;
 
@@ -57,6 +68,9 @@ export async function montar(C){
     <div class="luz" id="l1"></div><div class="luz" id="l2"></div><div class="luz" id="l3"></div>
     ${C.gancho ? `<div class="gran" id="gancho"><div>${C.gancho.html}</div></div>` : ''}
     ${(C.extra || []).map((x, i) => `<div class="gran" id="x${i}"><div>${x.html}</div></div>`).join('')}
+    ${(C.listas || []).map((l, i) => `<div class="lista" id="li${i}"><div class="lista-dia">${l.dia}</div><div class="lista-n">${l.items.length} ${l.items.length === 1 ? 'novedad' : 'novedades'}</div>
+      <div class="lista-cosas">${l.items.map((x) => `<div class="cosa">${x}</div>`).join('')}</div></div>`).join('')}
+    ${C.contador ? `<div id="cuenta"><b>0</b><span>novedades</span></div>` : ''}
     ${C.escenas.map((e, i) => `<div class="tit" id="t${i}">${e.tit}</div>${e.chip ? `<div class="chip" id="c${i}">${e.chip}</div>` : ''}`).join('')}
     <div id="tel"><div class="isla"></div><div class="pant"><img id="cuadro"></div></div>
     <div id="logo"><img src="../../../carymo/marca/logo-1024.png"></div>
@@ -83,6 +97,20 @@ export async function montar(C){
       ver(el, dentro ? sale(e) * (1 - s) : 0); el.style.transform = `translateY(${(1 - resorte(e)) * 70 - s * 40}px) scale(${.9 + .1 * resorte(e)})`;
       const sm = el.querySelector('small'); if(sm) sm.style.opacity = sale(tramo(t, a + .5, a + .9)); };
     if(C.gancho) grande($('#gancho'), C.gancho.a, C.gancho.b);
+    /* las listas de la bitácora: el día grande, y cada novedad cae en su lugar, una tras otra */
+    (C.listas || []).forEach((l, i) => {
+      const el = $('#li' + i), dentro = t >= l.a && t < l.b, s = entra(tramo(t, l.b - .4, l.b));
+      ver(el, dentro ? 1 - s : 0); if(!dentro) return;
+      const d = el.querySelector('.lista-dia'), e = resorte(tramo(t, l.a, l.a + .7));
+      d.style.transform = `scale(${.6 + .4 * e})`; d.style.opacity = sale(tramo(t, l.a, l.a + .3));
+      el.querySelector('.lista-n').style.opacity = sale(tramo(t, l.a + .4, l.a + .8));
+      const cs = [...el.querySelectorAll('.cosa')], paso = Math.min(.28, (l.b - l.a - 1.8) / Math.max(1, cs.length));
+      cs.forEach((c, k) => { const u = tramo(t, l.a + .7 + k * paso, l.a + 1.1 + k * paso);
+        c.style.opacity = sale(u); c.style.transform = `translateY(${(1 - resorte(u)) * 60 - s * 80}px) scale(${.85 + .15 * resorte(u)})`; });
+    });
+    if(C.contador){ const c = C.contador, a = t >= c.a && t < c.b ? sale(tramo(t, c.a, c.a + .4)) * (1 - entra(tramo(t, c.b - .3, c.b))) : 0;
+      ver($('#cuenta'), a); let n = 0; for(const [tt, v] of c.pasos) if(t >= tt) n = v;
+      $('#cuenta b').textContent = n; }
     (C.extra || []).forEach((x, i) => grande($('#x' + i), x.a, x.b));
 
     /* el logo de CARYMO, grande, que llega con rebote y respira */

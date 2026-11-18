@@ -1,0 +1,52 @@
+{
+ "titulo": "CARYMO 5 · De la versión 1 a hoy (paquete del inversionista). Con la Bitácora de la app (carymo/devlog.js)",
+ "voces": {
+  "Narrador": "google:Despina"
+ },
+ "lineas": [
+  {
+   "id": "01",
+   "voz": "Narrador",
+   "en": 0.3,
+   "txt": "CARYMO nació el doce de noviembre.",
+   "dice": "Carimo nació el doce de noviembre."
+  },
+  {
+   "id": "02",
+   "voz": "Narrador",
+   "en": 3.6,
+   "txt": "Todo empezó porque una persona quería estudiar, y se aburría."
+  },
+  {
+   "id": "03",
+   "voz": "Narrador",
+   "en": 8.4,
+   "txt": "El primer día: un plan hacia tu examen, y un pizarrón que explica con voz."
+  },
+  {
+   "id": "04",
+   "voz": "Narrador",
+   "en": 14.0,
+   "txt": "Al día siguiente: mascotas, ligas, apuntes, avisos y estudiar con amigos."
+  },
+  {
+   "id": "05",
+   "voz": "Narrador",
+   "en": 21.0,
+   "txt": "Al tercero: juegos de mesa, idiomas, modelos 3D y diagramas."
+  },
+  {
+   "id": "06",
+   "voz": "Narrador",
+   "en": 26.6,
+   "txt": "Treinta novedades en tres días. Y no ha parado."
+  },
+  {
+   "id": "07",
+   "voz": "Narrador",
+   "en": 31.8,
+   "txt": "CARYMO. Y apenas va empezando.",
+   "dice": "Carimo. Y apenas va empezando."
+  }
+ ]
+}
