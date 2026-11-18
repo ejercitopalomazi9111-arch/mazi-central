@@ -280,7 +280,7 @@ persona.
    Facebook, su Instagram y el acceso a su Meta Business. El WhatsApp del negocio es el de su página.
 4. ⏳ **Capturas de lo que le preguntan:** «necesito más tiempo». Sigue pendiente.
 5. ✅ **Número para avisarle:** 442 139 4023 (el mismo de su página). Va en `negocio.dueno_wa` o `DUENO_WA`.
-6. 🟠 **Logo y fotos:** el logo llegó por Carlos (`marca-oficial/`). Fotos de trabajos: no mandó.
+6. 🟠 **Logo y fotos:** el logo llegó por Carlos (`marca-oficial/`), y el 18 nov **en vector** (`logo-vector.pdf` → `logo.svg`; el horizontal de la página, la cotización y la carpeta ya sale de ahí). Fotos de trabajos: no mandó.
 7. ✅ **LinkedIn:** el suyo personal (él mismo dice que no ayuda mucho). No es de la empresa, así que no va en la página.
 
 **El bot NO da datos del dueño (Luis, 17 nov):** ni su nombre ni su teléfono, aunque se los pidan. Avisa al encargado y ya.
