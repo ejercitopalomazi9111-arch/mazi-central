@@ -265,6 +265,19 @@
    "consejo": "Con un bucle de render corriendo, junta las lecturas en paralelo; no encadenes awaits.",
    "salioDe": "Mazi VR, 18 nov.",
    "vecinas": []
+  },
+  {
+   "id": "lo-agarrado-se-pierde-si-la-mano-brinca",
+   "titulo": "Lo que traes en la mano se queda flotando si el rastreo pierde la mano y la encuentra en otro lado",
+   "gravedad": "media",
+   "sintoma": "En Objetos de Mazi VR la pistola seguía «agarrada» pero ya no seguía a la mano ni disparaba al doblar el índice.",
+   "causa": "Cada cuadro se buscaba qué trae cada mano comparando su dirección con la del cuadro anterior (menos de 26°). Si la mano brinca (se pierde un instante, o cambia de golpe a dónde apunta), ninguna mano «trae» la pistola: queda colgada.",
+   "porque": "El rastreo de MediaPipe no da identidad de mano entre cuadros; la continuidad se adivina por cercanía, y un brinco la rompe.",
+   "arreglo": "Lo agarrado se le asigna a la mano más cercana sin repetir, y con una sola mano y una sola cosa agarrada es suya aunque haya brincado (vr/objetos.js, manosCuadro).",
+   "comoCazarlo": "vr/pruebas-objetos.mjs: agarra la pistola apuntándole y en el siguiente paso la mano ya apunta a la diana; tiene que disparar.",
+   "consejo": "Todo lo que una mano «posee» se reasigna cada cuadro con un respaldo para el caso fácil; nunca depende sólo de que la mano no se haya movido mucho.",
+   "salioDe": "Mazi VR, 18 nov.",
+   "vecinas": []
   }
  ]
 }

@@ -112,6 +112,11 @@ export async function iniciarManos(V){
       const mano = { pellizco: m.pellizco, x: (ix.x + tp.x) / 2, y: (ix.y + tp.y) / 2, palma: G.palma, muneca: { x: muneca.x, y: muneca.y },
         lado: (L[0].x < .5) ? -1 : 1, mundo: { palma: est(L[9]), punta: est(L[12]), muneca: est(L[0]), indice: est({ x: (ix.x + tp.x) / 2, y: (ix.y + tp.y) / 2, z: (ix.z + tp.z) / 2 }) },
         dist, tx, ty };
+      /* la orientación de la mano y el gatillo (objetos.js): adelante = muñeca → nudillo del índice, lado = nudillo del
+         meñique → nudillo del índice, índice = nudillo → punta; doblez = cuánto se dobla el índice (0 estirado, ~90 doblado) */
+      if(W){ const sx = voltear ? -1 : 1, aM = (a, b) => new THREE.Vector3(sx * (W[b].x - W[a].x), -sx * (W[b].y - W[a].y), -(W[b].z - W[a].z)).normalize().transformDirection(cabeza.matrixWorld);
+        const v1 = aM(5, 6), v2 = aM(6, 8);
+        mano.ejes = { adelante: aM(0, 5), lado: aM(17, 5), indice: aM(5, 8), doblez: v1.angleTo(v2) * 180 / Math.PI }; }
       m.info = mano; visibles.push(mano);
       if(G.palma && !m.pellizco){ m.palmaDesde = m.palmaDesde || ahora; if(ahora - m.palmaDesde > 800 && ahora > enfriar){ botones[V.B.O] = true; enfriar = ahora + 1500; m.palmaDesde = 0; estado.gesto = 'palma'; } }
       else m.palmaDesde = 0;
