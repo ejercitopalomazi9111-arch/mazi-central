@@ -6,7 +6,7 @@ import { reflejo, llenar, juntarCasos } from './src/reflejo.js';
 import { cotizar, aPlaga } from './src/cotizador.js';
 import { corrida } from './src/corrida.js';
 import { firmaValida, leerAviso } from './src/meta.js';
-import { Oficina, ponerPrecio, sinDatosDelDueno, delTexto, elReflejo, sinPrecioAuto, noQuiere } from './src/oficina.js';
+import { Oficina, ponerPrecio, sinDatosDelDueno, delTexto, elReflejo, sinPrecioAuto, noQuiere, PREGUNTA_TAMANO, hizoCuestionario } from './src/oficina.js';
 import { leerJSON, pesos } from './src/cerebro.js';
 
 let bien = 0, mal = 0;
@@ -143,9 +143,26 @@ let n = 0; const msj = (texto, chat = '524420000000', extra = {}) => ({ canal: '
   ok('«es como de 3 cuartos» y «tres recámaras» son recámaras; «casa chiquita» es chica', delTexto([{ de: 'cliente', texto: 'no se cuantos metros, es como de 3 cuartos' }]).recamaras === 3
     && delTexto([{ de: 'cliente', texto: 'son tres recámaras' }]).recamaras === 3 && delTexto([{ de: 'cliente', texto: 'mi casa es chiquita' }]).tamano === 'chica' && delTexto([{ de: 'cliente', texto: 'es depa chico x el centro' }]).tamano === 'chica'
     && delTexto([{ de: 'cliente', texto: 'un depa mediano' }]).tamano === 'mediana' && delTexto([{ de: 'cliente', texto: 'esta grandote' }]).tamano === 'grande');
-  const t = hacer(), conv = { datos: { plaga: 'cucaracha', zona: 'El Pueblito', tipo: 'casa' }, mensajes: [{ de: 'cliente', texto: 'tengo cucarachas' }, { de: 'cliente', texto: 'no se cuantos metros, es como de 3 cuartos' }] };
-  const c = t.of.cotiza(conv, { formula: { tipo: 'excel', x: 2.5, entre: .6, km: 7 }, tecnico: { costo_hora: 80, m2_hora: 330, minimo_horas: 1, personas: 1 }, plagas: { cucaracha: { litros_m2: .025, precio_litro: 20 } }, km_tipico: 10 });
-  ok('con «3 cuartos» ya cotiza (antes la IA volvía a preguntar las recámaras sin fin)', c?.bien && c.m2Estimado, JSON.stringify(c));
+  const TAR = { formula: { tipo: 'excel', x: 2.5, entre: .6, km: 7 }, tecnico: { costo_hora: 80, m2_hora: 330, minimo_horas: 1, personas: 1 }, plagas: { cucaracha: { litros_m2: .025, precio_litro: 20 } }, km_tipico: 10 };
+  const conv = (txt, extra = {}) => ({ datos: { plaga: 'cucaracha', zona: 'El Pueblito', tipo: 'casa' }, ...extra, mensajes: [{ de: 'cliente', texto: 'tengo cucarachas' }, ...txt.map(texto => ({ de: 'cliente', texto }))] });
+  const t = hacer(), c = t.of.cotiza(conv(['no se cuantos metros, es como de 3 cuartos'], { cuestionario: 1 }), TAR);
+  ok('ya hecho el cuestionario, con «3 cuartos» cotiza (antes la IA volvía a preguntar las recámaras sin fin)', c?.bien && c.m2Estimado, JSON.stringify(c));
+  /* Carlos, 17 nov: «que sí pida metros y si no los sabe que le haga el pequeño cuestionario de cuartos» */
+  ok('con sólo «es chica» y sin cuestionario NO cotiza de golpe: falta preguntarle', t.of.cotiza(conv(['es chica']), TAR) === null);
+  const c2 = t.of.cotiza(conv(['no se, son 3 recamaras y es mediana']), TAR);
+  ok('con recámaras y tamaño cotiza sin preguntar más', c2?.bien && c2.m2Estimado);
+  ok('los metros que dice se usan tal cual', (() => { const x = t.of.cotiza(conv(['son 90 metros']), TAR); return x?.bien && !x.m2Estimado && x.desglose.material.litros === 90 * .025; })());
+  ok('sala y comedor cuentan aunque no los diga', (() => { const a = conv(['3 recamaras, mediana']); t.of.cotiza(a, TAR); return a.estimacion?.como === 'por cuartos' && a.estimacion.m2 > 3 * 12 * 1.15 + 1; })());
+  ok('la pregunta del tamaño pide los metros primero y no pregunta sala ni comedor',
+    /metros/.test(PREGUNTA_TAMANO) && PREGUNTA_TAMANO.indexOf('metros') < PREGUNTA_TAMANO.indexOf('recámaras') && !/sala|comedor/.test(PREGUNTA_TAMANO)
+    && hizoCuestionario(PREGUNTA_TAMANO) && !hizoCuestionario('Te saldría aproximadamente en $500.'));
+  { /* la IA pregunta el tamaño sin pedir metros: sale la pregunta que pide los metros primero, y sólo esa vez */
+    const t2 = hacer({ pensar: () => ({ bien: true, respuesta: '¿Tu casa la considerarías chica, mediana o grande?', necesita_dueno: false, motivo: '', razon: 'x', datos: { plaga: 'cucaracha', tipo: 'casa' } }) });
+    await t2.of.atender(msj('tengo cucarachas cuanto sale', '524421700001'));
+    const a = t2.salidas.filter(x => x.chat === '524421700001').map(x => x.texto);
+    await t2.of.atender(msj('no se cuantos metros', '524421700001'));
+    const b = t2.salidas.filter(x => x.chat === '524421700001').map(x => x.texto);
+    ok('si la IA se brinca los metros, el bot los pide primero; después ya no la corrige', a[0] === PREGUNTA_TAMANO && b[1] === '¿Tu casa la considerarías chica, mediana o grande?', JSON.stringify(b)); }
   ok('«tengo cucarachas» → «¿y cuánto sale?»: no se le contesta «¿qué plaga tienes?», contesta la IA', elReflejo('y cuanto sale?', casos, { plaga: 'cucaracha' }) === null && elReflejo('y cuanto sale?', casos, {})?.caso.id === 'precio'); }
 { /* con la cotización ya hecha, si la IA vuelve a pedir el tamaño, sale el precio */
   const t = hacer({ pensar: (a) => ({ bien: true, respuesta: '¿Tu casa la considerarías chica, mediana o grande y cuántas recámaras tiene?', necesita_dueno: false, motivo: '', razon: 'x',

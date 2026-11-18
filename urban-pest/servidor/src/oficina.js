@@ -122,7 +122,7 @@ export class Oficina {
       const d = conv.datos || {}, sp = sinPrecioAuto(d, cfg.tarifas);
       texto = !d.plaga ? 'Para darte el precio dime qué plaga es. Si no sabes el nombre, cuéntame cómo es: tamaño, color y dónde la ves.'
         : sp ? `${sp[0].toUpperCase() + sp.slice(1)} sí las atendemos; el precio te lo da el encargado. Ya le aviso.`
-        : 'Para darte el precio, ¿tu casa la considerarías chica, mediana o grande, y en qué colonia está?';
+        : PREGUNTA_TAMANO;
       if(sp) p.necesita_dueno = true, p.motivo = p.motivo || `Pide precio de ${sp}`;
     }
     if(!texto){
@@ -131,7 +131,13 @@ export class Oficina {
       await guarda(); return { hecho: 'respaldo' };
     }
     /* la tarjeta de la cotización va pegada sólo al mensaje que DIO el precio (antes salía hasta en la despedida) */
+    /* Carlos, 17 nov: «que sí pida metros». La IA a veces se los brincaba y preguntaba directo «¿chica, mediana o
+       grande?» (prueba en vivo, 18 nov). Si pregunta el tamaño de una casa sin haber pedido nunca los metros, sale la
+       pregunta de la casa: primero los metros y, si no los sabe, el cuestionario. */
+    if(!cot && !conv.pidioMetros && !(conv.datos?.m2 > 0) && (conv.datos?.tipo || 'casa') === 'casa' && hizoCuestionario(texto) && !/metros/i.test(texto)) texto = PREGUNTA_TAMANO;
+    if(!cot && /metros/i.test(texto)) conv.pidioMetros = true;
     const dioPrecio = !!(cot && texto.includes(pesos(cot.desde)));
+    if(!dioPrecio && hizoCuestionario(texto)) conv.cuestionario = (conv.cuestionario || 0) + 1;
     await this.decir(conv, texto, { via: 'cerebro', razon: p.razon, modelo: p.modelo, cotizacion: dioPrecio ? cot : undefined });
     if(cot) conv.cotizacion = cot;
     if(dioPrecio){ conv.precioDicho = cot.desde; conv.cotDicha = cot; }
@@ -162,12 +168,16 @@ export class Oficina {
       const r = String(msj.texto || '').match(/(\d[\d,\.]*)\s*(m2|m²|mts2?|metros(?:\s+cuadrados)?)/i);
       if(r){ const x = Number(r[1].replace(/,/g, '')); if(x > 0){ m2 = d.m2 = x; break; } }
     }
-    /* no sabe los metros: se estiman con lo que contó (sólo casas; negocio e industria se visitan) */
+    /* no sabe los metros: se estiman con lo que contó (sólo casas; negocio e industria se visitan).
+       Carlos, 17 nov: «que sí pida metros y si no los sabe que le haga el pequeño cuestionario de cuartos». Con sólo «es
+       chica» ya no se cotiza de golpe: falta que diga cuántas recámaras (o los metros). Si ya se le hizo el cuestionario y
+       contestó a medias, se cotiza con lo que dio: no se le pregunta dos veces. Sala y comedor los cuenta el medidor solo. */
     if(!(m2 > 0) && (d.tipo || 'casa') === 'casa'){
       const dt = delTexto(conv.mensajes);
       if(d.recamaras == null && dt.recamaras) d.recamaras = dt.recamaras;
       if(!d.tamano && dt.tamano) d.tamano = dt.tamano;
-      const e = estimarM2(d, medidas || MEDIDAS);
+      const completo = d.recamaras > 0 && !!d.tamano;
+      const e = completo || conv.cuestionario ? estimarM2(d, medidas || MEDIDAS) : { bien: false };
       if(e.bien){ m2 = e.m2; m2Estimado = true; conv.estimacion = e; }
     }
     const c = cotizar({ plaga: d.plaga && normal(d.plaga), m2, m2Estimado, km: kmEstimado ? tarifas.km_tipico : d.km, kmEstimado, tipo: d.tipo || 'casa' }, tarifas);
@@ -272,6 +282,11 @@ const COMO_SE_DICE = { roedor: 'ratas y ratones', termita: 'termitas', chinche: 
 
 /** «no quiero nada», «ya nada», «no gracias», «olvídalo», «ya no»: el cliente se despide o dice que no */
 export const noQuiere = (t) => /\b(no quiero( nada)?(?! (que|q|k|a|al|el|la|los|las|mis?|tus?|sus?|esto|eso|ese|esa)\b)|ya nada|no,? gracias|no me interesa|olvidalo|dejalo( asi)?|ya no( quiero)?(?! (que|q)\b)|mejor no|asi dejalo|no ocupo nada)\b/.test(normal(t));
+
+/* la pregunta del tamaño: primero los metros, y si no, el cuestionario corto (sala y comedor no se preguntan: toda casa tiene) */
+export const PREGUNTA_TAMANO = 'Para darte el precio, ¿sabes cuántos metros mide tu casa? Si no, dime cuántas recámaras y baños tiene, si la considerarías chica, mediana o grande, y en qué colonia está.';
+/** el bot ya le preguntó las recámaras o el tamaño (la IA o la pregunta de arriba) */
+export const hizoCuestionario = (t) => /rec[aá]maras|chic[ao],? median[ao] o grande/i.test(String(t || ''));
 
 export const pideLoQueYaHay = (t) => /chic[ao], median[ao] o grande|cu[aá]ntas rec[aá]maras|qu[eé] colonia|cu[aá]ntos metros|el tama[ñn]o/i.test(String(t || ''));
 

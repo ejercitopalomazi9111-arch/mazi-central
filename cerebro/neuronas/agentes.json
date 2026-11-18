@@ -511,6 +511,30 @@
         "puente-que-no-pasa-una-funcion",
         "aprobador-automatico-encima-del-candado"
       ]
+    },
+    {
+      "id": "la-ia-no-sigue-el-orden-de-preguntas",
+      "titulo": "El orden de las preguntas no se le encarga a la IA: se amarra en el código",
+      "gravedad": "media",
+      "sintoma": "El bot de Urban Pest preguntaba «¿chica, mediana o grande?» sin pedir antes los metros, aunque la instrucción decía «PRIMERO pregunta los metros».",
+      "causa": "Una regla de orden dentro del prompt es una sugerencia: el modelo la sigue casi siempre, no siempre.",
+      "porque": "La prueba de mentiras devuelve lo que uno le escribe; sólo la plática con la IA de verdad enseña que se brinca pasos.",
+      "arreglo": "El código revisa lo que la IA va a mandar: si pregunta el tamaño de una casa sin haber pedido nunca los metros, sale la pregunta fija (PREGUNTA_TAMANO) y se marca pidioMetros. Y no se cotiza con sólo «es chica» hasta haber hecho el cuestionario (urban-pest/servidor/src/oficina.js).",
+      "comoCazarlo": "Correr la misma plática varias veces contra la IA de verdad (La Sala /ia-texto) y leer el PRIMER mensaje del bot.",
+      "consejo": "Lo que la IA decide, en el prompt; lo que tiene que pasar siempre, en el código.",
+      "salioDe": "Carlos en La Sala, 17 nov (e1336): «que sí pida metros y si no los sabe que le haga el pequeño cuestionario»",
+      "senales": [
+        "bot",
+        "urban pest",
+        "prompt",
+        "orden",
+        "metros",
+        "cuestionario",
+        "la ia se brinca"
+      ],
+      "vecinas": [
+        "eco-del-bot-leido-como-dueno"
+      ]
     }
   ]
 }
