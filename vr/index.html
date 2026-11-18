@@ -54,6 +54,7 @@ import { montarTeclado } from './teclado.js';
 import { montarCine } from './cine.js';
 import { montarLector } from './lector.js';
 import { montarSables } from './sables.js';
+import { montarObjetos } from './objetos.js';
 import { crearPantallaWeb } from './pantalla.js';
 const { THREE, B } = V;
 V.iconos(ICONOS);
@@ -77,6 +78,9 @@ if('serviceWorker' in navigator && !navigator.webdriver || 'serviceWorker' in na
 $('#bEntrar').addEventListener('click', async () => {
   $('#bEntrar').disabled = true;
   /* lo que exige el toque va primero y sin esperar a nada más */
+  /* Android: a pantalla completa y acostado (si no, se queda la barra del navegador y la vista sale como «pantalla
+     individual»). En el iPhone no existe para páginas: ahí se usa «Agregar a inicio» */
+  try{ const p = document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); p?.then(() => screen.orientation?.lock?.('landscape')).catch(() => {}); }catch{}
   web.desbloquear();      /* los videos de la web sólo suenan si ya sonaron una vez con un toque */
   V.despertarAudio();
   try{ if(typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) await DeviceOrientationEvent.requestPermission(); }catch{}
@@ -120,7 +124,7 @@ async function montar(){
   V.registrar('inicio', inicio);
 
   /* JUEGOS y LA SALA: lo que viene (fase 2 y 3 en PLAN.md) */
-  for(const [nombre, items] of [['juegos', [['Sables', 'swords', '', () => V.ir('sables')], ['VS Tiles', 'music', 'Pronto']]], ['sala', [['La Sala', 'users', 'Pronto']]]]){
+  for(const [nombre, items] of [['juegos', [['Sables', 'swords', '', () => V.ir('sables')], ['Objetos', 'box', '', () => V.ir('objetos')], ['VS Tiles', 'music', 'Pronto']]], ['sala', [['La Sala', 'users', 'Pronto']]]]){
     const v = { grupo: new THREE.Group() }; const L = [];
     for(const [i, [t, ic, sub, fn]] of items.entries()){
       const p = await V.tarjeta({ titulo: t, icono: ic, sub, apagada: !fn }); const a = (i - (items.length - 1) / 2) * 20 * Math.PI / 180;
@@ -140,6 +144,9 @@ async function montar(){
 
   /* SABLES: la demo de ritmo con las manos (sables.js) */
   window.__sables = montarSables(V);
+
+  /* OBJETOS: agarrar cajas y figuras, y una pistola que dispara doblando el índice (objetos.js) */
+  window.__objetos = montarObjetos(V);
 
   /* AJUSTES: un panel; flechas arriba/abajo eligen, izquierda/derecha cambian */
   const aj = { grupo: new THREE.Group() };

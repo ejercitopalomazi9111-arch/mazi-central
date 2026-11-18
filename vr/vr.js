@@ -71,7 +71,11 @@ const video = document.createElement('video'); video.playsInline = true; video.m
 video.style.cssText = 'position:fixed; left:0; bottom:0; width:2px; height:2px; opacity:.01; pointer-events:none; z-index:0';
 (document.body ? document.body.appendChild(video) : addEventListener('DOMContentLoaded', () => document.body.appendChild(video)));
 let camTex = null, flujo = null, ultra = false;
-export const campoCamara = () => AJ.camCampo || (ultra ? 104 : 69);
+/* lo que abre la cámara de lado. En Android casi nunca se reconoce la gran angular por su nombre y la imagen salía como
+   una ventanita en medio de la vista (foto de Carlos, 18 nov): si la cámara abre menos que el ojo, se estira hasta
+   llenarlo. Las manos usan esta misma medida, así que siguen cayendo sobre tu mano */
+const ojoH = () => 2 * Math.atan(Math.tan(AJ.campo * Math.PI / 360) * Math.max(.5, (W / 2) / Math.max(1, H))) * 180 / Math.PI;
+export const campoCamara = () => AJ.camCampo || (ultra ? 104 : Math.max(69, Math.min(110, ojoH())));
 const pared = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0x000000, depthWrite: false, depthTest: false, toneMapped: false }));
 pared.renderOrder = -10; pared.position.z = -20; pared.visible = false; cabeza.add(pared);
 export async function abrirCamara(){
@@ -335,7 +339,7 @@ function cuadro(t){
   if(control.oprimido[B.TRIANGULO]){ if(camTex){ ponerMixta(!AJ.mixta); hud(AJ.mixta ? 'Realidad mixta' : 'Realidad virtual'); } else hud('Sin cámara'); }
   /* girar con el stick derecho, a saltos de 30° (marea menos que girar suave) */
   const rx = control.ejes[2];
-  if(Math.abs(rx) > .7 && giroArmado){ guinada -= Math.sign(rx) * Math.PI / 6; giroArmado = false; sonar('toque', .15); }
+  if(Math.abs(rx) > .7 && giroArmado && !v?.ocupaGiro){ guinada -= Math.sign(rx) * Math.PI / 6; giroArmado = false; sonar('toque', .15); }
   if(Math.abs(rx) < .3) giroArmado = true;
   /* caminar con el izquierdo (sólo en el cuarto virtual: en la realidad mixta caminas tú) */
   if(!AJ.mixta && (control.ejes[0] || control.ejes[1]) && !v?.ocupaStick){

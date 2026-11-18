@@ -9,10 +9,11 @@
      sale de lo guardado marcado como redirigido: el navegador rechaza una navegación «redirigida» (lo que tumbó a
      INKWELL el 11 nov, ver inkwell/sw.js v31).
    Prueba: node vr/pruebas-sinred.mjs (apaga el servidor de a de veras). */
-const V = 'mazivr-v4';
-const APP = ['./', './vr.js', './iconos.js', './teclado.js', './cine.js', './lector.js', './sables.js', './pantalla.js', './manos.js', './gestos.js',
+const V = 'mazivr-v5';
+const APP = ['./', './vr.js', './iconos.js', './teclado.js', './cine.js', './lector.js', './sables.js', './objetos.js', './agarre.js', './pantalla.js', './manos.js', './gestos.js',
   './manifest.webmanifest', './silencio.mp4', './sonidos/toque.wav', './sonidos/whoosh.wav', './sonidos/ding.wav',
-  './vendor/three.module.min.js', './vendor/three.core.min.js', '../marca/paloma-2026/logo-icono.svg', '../marca/paloma-2026/icono-512.png', '../inkwell/biblioteca.js', '../inkwell/fuentes.js', '../inkwell/red.js', '../inkwell/compartir.js'];
+  './vendor/three.module.min.js', './vendor/three.core.min.js', './vendor/loaders/GLTFLoader.js', './vendor/utils/BufferGeometryUtils.js', './vendor/utils/SkeletonUtils.js',
+  './modelos/objetos/desk.glb', './modelos/objetos/crate-small.glb', './modelos/objetos/crate-medium.glb', './modelos/objetos/blaster-a.glb', './modelos/objetos/Textures/colormap.png', '../marca/paloma-2026/logo-icono.svg', '../marca/paloma-2026/icono-512.png', '../inkwell/biblioteca.js', '../inkwell/fuentes.js', '../inkwell/red.js', '../inkwell/compartir.js'];
 const PESADO = ['./modelos/hand_landmarker.task', '../presentaciones/vendor/mediapipe/vision_bundle.mjs',
   '../presentaciones/vendor/mediapipe/wasm/vision_wasm_internal.js', '../presentaciones/vendor/mediapipe/wasm/vision_wasm_internal.wasm'];
 
@@ -48,7 +49,7 @@ self.addEventListener('message', async (e) => {
 
 /* lo que no cambia (three, el modelo de manos, sonidos) no se vuelve a pedir: bajar 7.5 MB en cada visita sería peor
    que no tener trabajador. Si alguno cambia, se sube la versión (V) de arriba. */
-const FIJO = /\/(vendor|modelos|sonidos|mediapipe)\/|\.(wasm|task|mp4|wav|svg)$/;
+const FIJO = /\/(vendor|modelos|sonidos|mediapipe)\/|\.(wasm|task|mp4|wav|svg|glb)$/;
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if(req.method !== 'GET') return;

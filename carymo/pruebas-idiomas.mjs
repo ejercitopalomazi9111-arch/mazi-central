@@ -5,13 +5,19 @@
 import { chromium, devices } from '/opt/node22/lib/node_modules/playwright/index.mjs';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { IDIOMAS } from './idiomas.js';
+import { IDIOMAS, respuestaEstricta } from './idiomas.js';
 
 const raiz = fileURLToPath(new URL('..', import.meta.url));
 const PUERTO = 8600 + Math.floor(Math.random() * 90);
 const srv = spawn('python3', ['-m', 'http.server', String(PUERTO), '--bind', '127.0.0.1'], { cwd: raiz, stdio: 'ignore' });
 let n = 0, f = 0;
 const ok = (c, t) => { n++; if(!c) f++; console.log(`  ${c ? '✓' : '✗'} ${t}`); };
+/* ortografía estricta (§11): lo que no es ortografía se perdona; un error de dedo o un acento faltante, no */
+{ const E = (d, b) => respuestaEstricta(d, b).bien;
+  ok(E('Thank you.', ['thank you']) && E('  MERCI !', ['merci']) && E('they’re', ["they're"]), 'estricta: perdona mayúsculas, espacios, signo final y apóstrofo curvo');
+  ok(!E('tank you', ['thank you']) && !E('merc', ['merci']) && !E('cafe', ['café']), 'estricta: un error de dedo o un acento faltante es error');
+  const todas = IDIOMAS.flatMap((k) => k.unidades.flatMap((u) => u.temas.flatMap((t) => t.preguntas.filter((q) => q.tipo === 'escribir'))));
+  ok(todas.every((q) => E(q.respuesta, [q.respuesta, ...(q.aceptadas || [])]) && (q.aceptadas || []).every((a) => E(a, [q.respuesta, ...q.aceptadas]))), `estricta: las ${todas.length} respuestas escritas de los cursos se aceptan escritas como vienen`); }
 
 console.log('El contenido');
 for(const k of IDIOMAS){

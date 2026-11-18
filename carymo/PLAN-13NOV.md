@@ -234,7 +234,7 @@ suscripción de paga dará cubitos diarios por seguir la racha.
 ## 11 · Idiomas (inglés y otros)
 
 - [ ] Pronunciación: oír la palabra y decirla con el micrófono (reconocimiento de voz del teléfono).
-- [ ] Escritura con **ortografía estricta**: en idiomas no hay tolerancia a errores de dedo.
+- ✅ Escritura con **ortografía estricta** (18 nov): en idiomas cuenta cada letra y cada acento; sólo se perdonan mayúsculas, espacios, el signo final y el apóstrofo curvo del iPhone (`respuestaEstricta` en `carymo/idiomas.js`). Si está cerca, dice «Casi: se escribe…».
 
 ## 12 · Animación de entrada
 
