@@ -10,17 +10,21 @@ const require = createRequire('/opt/node22/lib/node_modules/'); const { chromium
 const BASE = process.env.BASE || 'http://localhost:8765', CAPS = process.env.CAPS || '/tmp';
 const b = await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
 const ctx = await b.newContext({ viewport: { width: 844, height: 390 } });
-await ctx.addInitScript(() => { navigator.getGamepads = () => []; });   // sin control
+await ctx.addInitScript(() => { navigator.getGamepads = () => [];   // sin control
+  /* y sin manos: la cámara de mentiras a veces «parece» una mano y el puntero de la mano le gana a la mirada */
+  try{ localStorage.setItem('mazivr.ajustes', JSON.stringify({ manos: false })); }catch{} });
 const p = await ctx.newPage(); const errores = []; p.on('pageerror', (e) => errores.push(e.message));
 let ok = 0, mal = 0; const sí = (c, t) => { c ? ok++ : mal++; console.log(c ? '✓' : '✗', t); };
 await p.goto(BASE + '/vr/', { waitUntil: 'networkidle' }); await p.click('#bEntrar');
 await p.waitForFunction(() => window.__vr?.ahora() === 'inicio');
-await p.waitForTimeout(800);
+/* sin control, quedarse quieto 2.5 s frente a «Leer» lo abre (así lo pidió Carlos): la prueba gira enseguida */
+await p.waitForTimeout(200);
 /* girar la cabeza: arrastrar el ratón (0.005 rad por pixel) */
 let mx = 422, my = 195;
 const girar = async (dx, dy) => { await p.mouse.move(mx, my); await p.mouse.down(); mx += dx; my += dy; await p.mouse.move(mx, my, { steps: 6 }); await p.mouse.up(); await p.waitForTimeout(250); };
 const grados = (g) => Math.round(g * Math.PI / 180 / .005);
-const foco = () => p.evaluate(() => __vr.focoActual());
+/* el foco se pone en el cuadro siguiente al giro: se espera hasta 1.5 s a que aparezca */
+const foco = async () => { let f = null; for(let i = 0; i < 10 && !f; i++){ f = await p.evaluate(() => __vr.focoActual()); if(!f) await p.waitForTimeout(150); } return f; };
 const fijo = async () => p.waitForTimeout(2300);
 const volverAlCentro = async () => { await girar(422 - mx, 195 - my); mx = 422; my = 195; };
 

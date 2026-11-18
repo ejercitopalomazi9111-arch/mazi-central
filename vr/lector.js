@@ -52,17 +52,18 @@ const escribirGuardado = (o) => { try{ localStorage.setItem(GUARDA, JSON.stringi
 /* ── lo que hay para leer ── */
 async function obrasBajadas(){
   const obras = [];
-  const dt = await BASES.tiras();
-  for(const s of (await pedir(dt, 'series', (st) => st.getAll())) || []){
-    const claves = new Set((await pedir(dt, 'caps', (st) => st.index('serie').getAllKeys(s.id))) || []);
+  /* todo de un jalón: una lectura por serie tardaba segundos con el teléfono ocupado pintando el visor */
+  const [dt, dl] = await Promise.all([BASES.tiras(), BASES.libros()]);
+  const [series, todas, libros] = await Promise.all([pedir(dt, 'series', (st) => st.getAll()), pedir(dt, 'caps', (st) => st.getAllKeys()), pedir(dl, 'libros', (st) => st.getAll())]);
+  const claves = new Set(todas || []);
+  for(const s of series || []){
     const caps = (s.caps || []).filter((c) => claves.has(`${s.id}:${c.n}`)).sort((a, b) => a.n - b.n);
     const leidos = new Set(s.leidos || []), porLeer = caps.filter((c) => !leidos.has(c.n) && c.n >= (s.desde || 0)).length;
     /* una serie que sigues pero sin nada bajado también sale: se baja desde aquí (Carlos, 18 nov) */
     obras.push({ id: s.id, tipo: 'tira', titulo: limpio(s.titulo), sub: !caps.length ? 'Sin bajar' : porLeer ? `${porLeer} por leer` : 'Al día', portada: s.portadaBlob, porLeer, orden: s.orden ?? 0,
       caps: caps.map((c) => ({ n: c.n, titulo: limpio(c.titulo) })) });
   }
-  const dl = await BASES.libros();
-  for(const l of (await pedir(dl, 'libros', (st) => st.getAll())) || []){
+  for(const l of libros || []){
     if(l.tipo === 'pdf' || !l.capitulos?.length) continue;
     obras.push({ id: l.id, tipo: 'libro', titulo: limpio(l.titulo), sub: `Libro · ${Math.round(100 * ((l.avance?.cap || 0) + (l.avance?.y || 0)) / l.capitulos.length)} %`,
       portada: l.portada instanceof Blob ? l.portada : null, porLeer: 0, abierto: l.abierto || l.agregado || 0,
