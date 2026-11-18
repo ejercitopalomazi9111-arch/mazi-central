@@ -26,7 +26,7 @@ const mano = (dir, pellizco, ejes) => p.evaluate(([dir, pellizco, ejes]) => { co
   if(!window.__falsasPuesto){ window.__falsasPuesto = true; let real = []; Object.defineProperty(V.extra, 'manos', { get: () => window.__falsas ?? real, set: (v) => { real = v; }, configurable: true }); }
   if(!dir){ window.__falsas = []; return; }
   const c = V.cabeza.getWorldPosition(new T.Vector3()), d = new T.Vector3(...dir).normalize();
-  const E = ejes && { adelante: new T.Vector3(...ejes.adelante).normalize(), lado: new T.Vector3(...ejes.lado).normalize(), indice: new T.Vector3(...ejes.adelante).normalize(), doblez: ejes.doblez };
+  const E = ejes && { adelante: new T.Vector3(...ejes.adelante).normalize(), lado: new T.Vector3(...ejes.lado).normalize(), indice: new T.Vector3(...ejes.adelante).normalize(), doblez: ejes.doblez, recto: ejes.doblez > 45 ? .6 : 1, pulgar: 1 };
   window.__falsas = [{ pellizco, x: .5, y: .5, dist: .5, mundo: { indice: c.clone().addScaledVector(d, .5) }, ejes: E }];
 }, [dir, pellizco, ejes]);
 const hacia = (w) => p.evaluate((w) => { const c = __vr.cabeza.getWorldPosition(new __vr.THREE.Vector3()); return new __vr.THREE.Vector3(...w).sub(c).normalize().toArray(); }, w);

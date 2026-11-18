@@ -23,10 +23,13 @@ sí(await p.evaluate(() => __manos.listo), 'el modelo de manos carga' + (await p
 let vistas = 0; for(let i = 0; i < 60 && !vistas; i++){ await p.waitForTimeout(250); vistas = await p.evaluate(() => __manos.manos); }
 sí(vistas >= 1, 've la mano de la cámara');
 sí(await p.evaluate(() => !!__vr.extra.rayo), 'el índice hace de puntero');
-const desde = await p.evaluate(() => { const R = __vr.extra.rayo, P = __manos.punta; return R && P ? Math.hypot(R.origen.x - P[0], R.origen.y - P[1], R.origen.z - P[2]) : 99; });
-sí(desde < .02, `el rayo sale de la punta del índice, no de entre el índice y el pulgar (a ${(desde * 100).toFixed(1)} cm)`);
-const dirY = await p.evaluate(() => { const d = __vr.extra.rayo.dir.clone().transformDirection(__vr.cabeza.matrixWorldInverse); return d.y; });
-sí(dirY > .5, `el dedo apunta hacia arriba y el rayo también (y = ${dirY.toFixed(2)})`);
+/* A TRAVÉS DEL DEDO (18 nov): el rayo sale de la cabeza y pasa justo por la punta del índice (así no se desdobla entre
+   ojos y sirve aunque el dedo apunte de frente) */
+const r = await p.evaluate(() => { const R = __vr.extra.rayo, P = __manos.punta, T = __vr.THREE; if(!R || !P) return null;
+  const ojo = __vr.cabeza.getWorldPosition(new T.Vector3()), haciaPunta = new T.Vector3(...P).sub(ojo).normalize();
+  return { desdeCabeza: R.origen.distanceTo(ojo), grados: R.dir.angleTo(haciaPunta) * 180 / Math.PI }; });
+sí(r && r.desdeCabeza < .01, `el rayo sale de tu cabeza (a ${r && (r.desdeCabeza * 100).toFixed(1)} cm)`);
+sí(r && r.grados < 2, `y pasa por la punta del índice (desvío ${r && r.grados.toFixed(2)}°)`);
 /* desde el 18 nov apuntar fijo también elige: el puntero da foco a una tarjeta, o ya entró a ella */
 const fo = await p.evaluate(() => __vr.focoActual() || __vr.ahora());
 sí(fo && fo !== 'inicio', 'el puntero da foco a una tarjeta o ya entró a ella (' + fo + ')');

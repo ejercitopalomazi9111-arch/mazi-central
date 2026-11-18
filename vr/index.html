@@ -69,7 +69,10 @@ const VIDEOS = [], CANCIONES = [];
 $('#iVideos').addEventListener('change', (e) => { for(const f of e.target.files){ const it = { nombre: f.name.replace(/\.[^.]+$/, ''), url: URL.createObjectURL(f) }; (/^audio\//.test(f.type) || /\.(mp3|m4a|aac|wav|ogg|flac)$/i.test(f.name) ? CANCIONES : VIDEOS).push(it); }
   $('#eVideos').textContent = [VIDEOS.length && `${VIDEOS.length} ${VIDEOS.length === 1 ? 'video' : 'videos'}`, CANCIONES.length && `${CANCIONES.length} ${CANCIONES.length === 1 ? 'canción' : 'canciones'}`].filter(Boolean).join(' · ') || 'Archivos';
   $('#eVideos').classList.toggle('si', VIDEOS.length + CANCIONES.length > 0); });
-(function vigilarControl(){ if(!$('#eControl')) return; const p = V.elegirPad(); $('#eControl').classList.toggle('si', !!p); $('#eControl').textContent = p ? V.nombrePad(p) : 'Control: pica un botón'; if(!document.body.classList.contains('dentro')) requestAnimationFrame(vigilarControl); })();
+/* en la entrada, CUALQUIER botón del control es «Entrar»: con el visor puesto no hay cómo tocar la pantalla */
+let botonAntes = true;
+(function vigilarControl(){ if(!$('#eControl')) return; const p = V.elegirPad();
+  const alguno = !!p && p.buttons.some((b) => b.pressed); if(alguno && !botonAntes && $('#bEntrar') && !$('#bEntrar').disabled) $('#bEntrar').click(); botonAntes = alguno; $('#eControl').classList.toggle('si', !!p); $('#eControl').textContent = p ? V.nombrePad(p) : 'Control: pica un botón'; if(!document.body.classList.contains('dentro')) requestAnimationFrame(vigilarControl); })();
 /* el visor se arma MIENTRAS se ve esta pantalla: al tocar Entrar ya está listo (antes se armaba después del toque) */
 const armado = montar();
 /* «Sin internet» se prende cuando todo quedó guardado en el teléfono (sw.js) */
@@ -80,6 +83,11 @@ if('serviceWorker' in navigator && !navigator.webdriver || 'serviceWorker' in na
   navigator.serviceWorker.ready.then(() => setTimeout(preguntar, 500));
   navigator.serviceWorker.addEventListener('controllerchange', () => setTimeout(preguntar, 500));
 }
+/* si la página se recargó sola por falta de memoria (hace menos de 1 minuto), entra sin esperar el toque */
+try{ const v = +sessionStorage.getItem('mazivr.volver'); if(v && Date.now() - v < 60000){ sessionStorage.removeItem('mazivr.volver'); setTimeout(() => $('#bEntrar')?.click(), 600); } }catch{}
+/* ya adentro, un botón del control vuelve a pedir pantalla completa si se perdió (Android) */
+setInterval(() => { if(!document.body.classList.contains('dentro') || document.fullscreenElement) return; const p = V.elegirPad();
+  if(p?.buttons.some((b) => b.pressed)) try{ document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }).catch(() => {}); }catch{} }, 250);
 $('#bEntrar').addEventListener('click', async () => {
   $('#bEntrar').disabled = true;
   /* lo que exige el toque va primero y sin esperar a nada más */
@@ -193,6 +201,8 @@ async function montar(){
 
   /* MÚSICA: buscar canciones, radio de México y las del teléfono; sigue sonando en todo el visor (musica.js) */
   window.__musica = montarMusica(V, { pedirTexto, CANCIONES });
+  /* con todo armado (y los modelos de Objetos cargados), se preparan los gráficos de una vez: así entrar y salir no traba */
+  Promise.all([window.__objetos.armado, window.__musica.armado]).catch(() => {}).then(() => setTimeout(() => V.precalentar(), 300));
 
   /* AJUSTES: un panel; flechas arriba/abajo eligen, izquierda/derecha cambian */
   const aj = { grupo: new THREE.Group() };

@@ -120,7 +120,8 @@ export function montarObjetos(V){
 
   /* ── agarrar ── */
   const cabezaLocal = () => G.worldToLocal(V.cabeza.getWorldPosition(cab).clone());
-  const dirMano = (m) => m.mundo.indice.clone().sub(V.cabeza.getWorldPosition(cab)).normalize();
+  /* hacia dónde está la mano vista desde tu cabeza (a través del dedo, como el cursor) */
+  const dirMano = (m) => m.vista?.punta ? m.vista.punta.clone() : m.mundo.indice.clone().sub(V.cabeza.getWorldPosition(cab)).normalize();
   /* el giro de la mano: −z hacia adelante, x hacia el lado; si no hay datos 3D de la mano, sin giro */
   const giroMano = (m) => { const e = m.ejes; if(!e) return null; const z = e.adelante.clone().negate(), x = e.lado.clone().addScaledVector(z, -e.lado.dot(z)).normalize(), y = new THREE.Vector3().crossVectors(z, x);
     return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z)); };
@@ -130,7 +131,8 @@ export function montarObjetos(V){
     const c = V.cabeza.getWorldPosition(cab); let mejor = null, ma = Infinity;
     for(const o of objetos){ if(o.mano || (sinPistola && o.tipo === 'pistola')) continue;
       const p = o.c.getWorldPosition(tmp), dist = p.distanceTo(c), a = dirW.angleTo(tmp2.copy(p).sub(c).normalize());
-      const lim = Math.atan(o.r / Math.max(.2, dist)) + .12; if(a < lim && a < ma){ ma = a; mejor = o; } }
+      /* lo que va volando se caza más fácil (aventar y cachar) */
+      const lim = Math.atan(o.r / Math.max(.2, dist)) + .12 + (o.vel.length() > 1 ? .18 : 0); if(a < lim && a < ma){ ma = a; mejor = o; } }
     return mejor;
   }
   /* las manos de antes, para saber cuál es cuál entre cuadros y quién acaba de pellizcar */
@@ -157,16 +159,22 @@ export function montarObjetos(V){
   function seguir(o, m, dt){
     const c = V.cabeza.getWorldPosition(cab).clone(), dirW = dirMano(m);
     o.mano.dir.copy(dirW);
-    const cerca = o.tipo === 'pistola' ? 0 : ((m.dist ?? o.mano.dist0) - o.mano.dist0) * 2.5;
-    const d = Math.max(.18, Math.min(3, o.mano.d0 + cerca));
-    const destino = c.addScaledVector(dirW.clone().applyQuaternion(o.mano.offset), d);
+    /* acercar y alejar con la mano (Carlos: «no los puedes acercar tanto ni alejar tanto»): el doble de recorrido que
+       antes y de 15 cm a 5 m; la distancia de la mano se suaviza, que es lo más ruidoso del rastreo */
+    o.mano.distS = o.mano.distS == null ? (m.dist ?? o.mano.dist0) : o.mano.distS + ((m.dist ?? o.mano.dist0) - o.mano.distS) * .25;
+    const cerca = o.tipo === 'pistola' ? 0 : (o.mano.distS - o.mano.dist0) * 5;
+    const d = Math.max(.15, Math.min(5, o.mano.d0 + cerca));
+    const destino = c.addScaledVector(o.tipo === 'pistola' && m.vista?.nudillo ? m.vista.nudillo.clone() : dirW.clone().applyQuaternion(o.mano.offset), d);
     const gm = giroMano(m);
     let qDestino = null;
     if(o.tipo === 'pistola'){
-      /* el cañón hacia donde apunta la mano (muñeca → nudillo del índice; no el índice, que se dobla al disparar) y la
-         cacha hacia abajo: la mano «pistola» pone el nudillo del índice arriba del meñique */
-      if(gm) qDestino = gm.clone().multiply(qT.setFromAxisAngle(tmp2.set(0, 0, 1), -Math.PI / 2));
-      else qDestino = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, -1), dirW);
+      /* EL CAÑÓN APUNTA A TRAVÉS DE TU NUDILLO (Carlos, 18 nov: «cuando apunto hacia adelante, la pistola apunta hacia
+         arriba todo el tiempo»): la dirección muñeca → nudillo en 3D falla justo con la mano de frente. Ahora es la de tu
+         cabeza al nudillo del índice tal como lo ve la cámara (no la punta, que se mueve al jalar el gatillo); la cacha,
+         hacia abajo del cuarto */
+      const aim = (m.vista?.nudillo || dirW).clone();
+      const ojo = V.cabeza.getWorldPosition(tmp).clone();
+      qDestino = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(ojo, ojo.clone().add(aim), new THREE.Vector3(0, 1, 0)));
       if(o.retroceso > 0) qDestino.multiply(qT.setFromAxisAngle(tmp2.set(1, 0, 0), o.retroceso * 2.5));
     } else if(gm && o.mano.rel) qDestino = gm.clone().multiply(o.mano.rel);
     const local = G.worldToLocal(destino);
@@ -191,16 +199,19 @@ export function montarObjetos(V){
       if(a.trae){
         const o = a.trae; seguir(o, a.m, dt);
         if(o.tipo === 'pistola'){
-          /* el gatillo: el índice se dobla de golpe (de menos de 30° a más de 50°) */
-          const dob = a.m.ejes?.doblez;
-          if(dob != null){ if(dob < 30) o.mano.gatilloArmado = true;
-            else if(dob > 50 && o.mano.gatilloArmado && ahora - o.mano.ultimoTiro > 180){ o.mano.gatilloArmado = false; o.mano.ultimoTiro = ahora; disparar(o); } }
-          /* soltar: un pellizco nuevo y largo, lejos de un disparo */
-          if(!a.pellizco) o.mano.suelta = true;
-          if(a.pellizco && o.mano.suelta && !o.mano.pellizcoDesde) o.mano.pellizcoDesde = ahora;
-          if(!a.pellizco) o.mano.pellizcoDesde = 0;
-          if(o.mano.pellizcoDesde && ahora - o.mano.pellizcoDesde > 450 && ahora - o.mano.ultimoTiro > 700){ soltar(o, false); V.hud('Soltada', .8); }
-        } else if(!a.pellizco) soltar(o);
+          /* EL GATILLO (Carlos, 18 nov: «a veces lo detecta, a veces no»): dos formas, con margen para no disparar doble:
+               · el índice se dobla: «recto» baja de .72 (estirado ronda 1); se rearma al pasar de .86
+               · el pulgar se aprieta contra el costado del índice, como botón: baja de .32; se rearma al pasar de .45
+             Si la mano está sostenida un instante (perdida), no dispara. Y ya NO se suelta con un pellizco (por eso se
+             soltaba sola: la mano en pistola junta pulgar e índice): se suelta abriendo la mano (Atrás). */
+          const E = a.m.ejes;
+          if(E && !a.m.estimada){
+            if(E.recto > .86) o.mano.armadoI = true; if(E.pulgar > .45) o.mano.armadoP = true;
+            const tiroI = o.mano.armadoI && E.recto < .72, tiroP = o.mano.armadoP && E.pulgar < .32;
+            if((tiroI || tiroP) && ahora - o.mano.ultimoTiro > 180){ if(tiroI) o.mano.armadoI = false; if(tiroP) o.mano.armadoP = false; o.mano.ultimoTiro = ahora; disparar(o); }
+          }
+        } else if(!a.pellizco){ o.mano.sueltaDesde = o.mano.sueltaDesde || ahora; if(ahora - o.mano.sueltaDesde > 150) soltar(o); }   /* un parpadeo del pellizco no tira lo que traes */
+        else o.mano.sueltaDesde = 0;
         continue;
       }
       if(a.pellizco && a.nueva && listo && !V.extra.sobreBoton){ const o = cercano(a.dir); if(o) tomar(o, a.m, a.dir); }

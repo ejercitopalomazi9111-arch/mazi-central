@@ -33,8 +33,12 @@ const render = new THREE.WebGLRenderer({ canvas: lienzo, antialias: true });
 lienzo.addEventListener('webglcontextlost', (e) => { e.preventDefault();
   const d = document.createElement('div'); d.textContent = 'Recargando…';
   d.style.cssText = 'position:fixed; inset:0; z-index:9; display:grid; place-items:center; background:#0B0513; color:#F4EEF2; font:800 22px system-ui,-apple-system,sans-serif';
-  document.body.appendChild(d); setTimeout(() => location.reload(), 1200); });
-render.setPixelRatio(Math.min(devicePixelRatio, 2));
+  document.body.appendChild(d);
+  /* y al volver, entra solo al visor (Carlos, 18 nov: «recarga sola la página y no vuelvo a VR con ningún botón») */
+  try{ sessionStorage.setItem('mazivr.volver', String(Date.now())); }catch{}
+  setTimeout(() => location.reload(), 1200); });
+/* un poco menos de resolución: la memoria de gráficos es lo que se acaba y provoca esa recarga */
+render.setPixelRatio(Math.min(devicePixelRatio, 1.6));
 render.outputColorSpace = THREE.SRGBColorSpace;
 const escena = new THREE.Scene();
 const rig = new THREE.Group(); escena.add(rig);            // el cuerpo: se mueve con el stick y gira con el otro
@@ -169,6 +173,15 @@ function leerCabeza(){
 /* hacia dónde ve la cabeza en el mundo, sólo de lado (para recentrar y caminar) */
 const adelante = new THREE.Vector3();
 const rumbo = () => { cabeza.getWorldDirection(adelante); return Math.atan2(-adelante.x, -adelante.z); };
+/* PREPARAR TODO DE UNA VEZ (Carlos, 18 nov: «se traba muy fuerte al salir de un apartado»): la primera vez que se dibuja
+   algo nuevo el teléfono arma sus sombreadores y sube sus texturas, y eso congela unos cuadros (Objetos: 267 ms en el
+   navegador de pruebas; en el teléfono, más). Se hace al cargar, con todo prendido un instante, en vez de al entrar. */
+export function precalentar(){
+  const antes = Object.values(vistas).map((v) => [v.grupo, v.grupo.visible]);
+  antes.forEach(([g]) => { g.visible = true; });
+  try{ render.compile(escena, cabeza); }catch(e){ console.warn('precalentar', e); }
+  antes.forEach(([g, vis]) => { g.visible = vis; });
+}
 export function recentrar(){
   /* el menú queda enfrente de donde ves ahora */
   const r = rumbo(); hub.rotation.y = r; hub.position.copy(rig.position); hud('Al centro');
@@ -410,7 +423,8 @@ function cuadro(t){
   va?.cuadro?.(t / 1000, dt);
   if(va?.atrasEn) ponerAtras();
   for(const f of alCuadro) f(t / 1000, dt);
-  mira.visible = !extra.rayo;
+  /* la mira sólo cuando estás viendo un botón (Carlos, 18 nov: «si no estoy mirando a ningún botón, que el cursor desaparezca, es molesto») */
+  mira.visible = !extra.rayo && !!viendo;
   if(aviso.malla.visible && performance.now() > avisoHasta) aviso.malla.visible = false;
   if(pared.visible) medirPared();
 
