@@ -192,6 +192,20 @@ if(TOMA === 'pizarron'){
     }
     await espera(1.2); marca('fin');
   }
+  /* Explora (18 nov, CARYMO 4 del paquete del inversionista): los cursos de idiomas y un modelo 3D que se gira con el dedo */
+  if(TOMA === 'explora'){
+    await pg.waitForSelector('#bIdiomas'); await espera(1.0); marca('inicio');
+    await tocar(pg, '#bIdiomas', K); await pg.waitForSelector('.acad-curso'); await espera(1.6); marca('idiomas');
+    await deslizar(pg, 300, 900); await espera(1.4);
+    await tocar(pg, '[data-cerrar]', K); await pg.waitForSelector('#bModelos'); await espera(0.6);
+    await tocar(pg, '#bModelos', K); await pg.waitForSelector('[data-modelo]'); await espera(1.4); marca('modelos'); await espera(1.6);
+    /* las tarjetas entran animadas: se toca hasta que se quedaron quietas */
+    await tocar(pg, '[data-modelo="cerebro"]', K); await pg.waitForSelector('iframe[title="Modelo 3D"]', { state: 'attached', timeout: 20000 }).catch(async (e) => { await pg.screenshot({ path: '/tmp/claude-0/explora-falla.png' }); console.log(await pg.evaluate(() => [...document.querySelectorAll('[data-modelo]')].map((b) => b.outerHTML.slice(0, 120)).join('\n'))); throw e; }); await espera(4.0); marca('modelo');
+    /* girarlo: el dedo arrastra de lado a lado sobre el modelo */
+    await mover(pg, 120, 430, K); await pg.mouse.down();
+    for(const x of [270, 120, 280]) await mover(pg, x, 440, K, 900);
+    await pg.mouse.up(); marca('gira'); await espera(2.0); marca('fin');
+  }
   if(TOMA === 'ligas'){
     await espera(1.0); marca('camino');
     await tocar(pg, 'nav [data-ir="ranking"]', K); await espera(1.8); marca('tabla');
