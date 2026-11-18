@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>CARYMO · Qué es</title>
+<!-- CARYMO 1 · QUÉ ES (paquete del inversionista). La app de verdad (grabaciones con contenido de ejemplo):
+     el plan tema por tema, el pizarrón que se dibuja solo, practicar como juego y la liga. Voz de la casa (Despina).
+     Música: «Digital Lemonade», Kevin MacLeod (incompetech.com), CC BY 4.0. -->
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+</head><body>
+<script type="module">
+import { montar, fx } from '../32-carymo/serie.js';
+window.listo = montar({
+  dur: 34,
+  musica: { archivo: '/tmp/claude-0/musica/Digital_Lemonade.mp3', desde: 0, vol: .3, entrada: .2, fin: 2.4 },
+  gancho: { a: 0, b: 3.7, html: '¿Examen y no sabes<br>por dónde <em>empezar</em>?' },
+  logo: { a: 3.6, b: 6.1 },
+  escenas: [
+    { a: 6.0, b: 12.4, toma: 'crear', desde: 'materias-0.2', hasta: 'fin', tit: 'Tu plan,<br><em>tema por tema</em>', chip: 'Materia + <b>fecha</b>' },
+    { a: 12.4, b: 17.8, toma: 'pizarron', desde: 'paso1', hasta: 'paso4+1', tit: 'Un pizarrón que<br><em>se dibuja solo</em>', chip: 'Con <b>voz</b>' },
+    { a: 17.8, b: 22.2, toma: 'leccion', desde: 'preguntas-0.3', hasta: 'bien2+0.8', tit: 'Practicas<br><em>como juego</em>' },
+    { a: 22.2, b: 26.8, toma: 'ligas', desde: 'tabla-1', hasta: 'fin', tit: 'Tu liga,<br><em>tus amigos</em>' },
+  ],
+  cierre: { a: 26.8, frase: 'Estudiar se siente<br>como <em>jugar</em>.' },
+  sonidos: [[fx('golpe'), 3.7, .45], [fx('subida'), 3.4, .25]],
+});
+</script></body></html>
