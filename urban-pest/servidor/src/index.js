@@ -192,7 +192,9 @@ export class Despacho {
       case 'GET /api/medidas': return { bien: true, medidas: (await A.get('medidas')) || MEDIDAS };
       case 'POST /api/medidas': await A.put('medidas', b.medidas); return { bien: true };
       case 'POST /api/estimar': return estimarM2(b, (await A.get('medidas')) || MEDIDAS);
-      case 'POST /api/tarifas': await A.put('tarifas', b.tarifas); return { bien: true };
+      /* el centro (pestaña «Cotizar») las lee para cotizar con su Excel; las guarda al cargar el Excel */
+      case 'GET /api/tarifas': return { bien: true, tarifas: (await A.get('tarifas')) || null };
+      case 'POST /api/tarifas': if(!b.tarifas || typeof b.tarifas !== 'object') return { bien: false, error: 'Faltan las tarifas.', estado: 400 }; await A.put('tarifas', b.tarifas); return { bien: true };
       case 'POST /api/negocio': if(!b.negocio || typeof b.negocio !== 'object') return { bien: false, error: 'Falta el negocio.', estado: 400 }; await A.put('negocio', { ...((await A.get('negocio')) || {}), ...b.negocio }); return { bien: true };
       case 'POST /api/personales': await A.put('personales', b.numeros || []); return { bien: true };
       case 'POST /api/probar': {
