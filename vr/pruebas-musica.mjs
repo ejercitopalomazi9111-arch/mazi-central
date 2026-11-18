@@ -15,6 +15,8 @@ await ctx.route(/radio-browser\.info/, (r) => r.fulfill({ headers: cors, json: [
   { name: 'Radio Uno ', url_resolved: 'https://radio.prueba/uno', state: 'Querétaro', tags: 'pop,rock' },
   { name: 'Radio Insegura', url_resolved: 'http://radio.prueba/dos', state: 'CDMX', tags: '' },
   { name: 'Radio Tres', url_resolved: 'https://radio.prueba/tres', state: 'Jalisco', tags: 'banda' }] }));
+await ctx.route(/sala\.palomazi9111\.workers\.dev\/api\/sala\/vr\/buscar/, (r) => r.fulfill({ headers: cors, json: { bien: true, videos: [
+  { id: 'ccccccccccc', titulo: 'Éxito uno', canal: 'Canal', dura: '3:20' }, { id: 'ddddddddddd', titulo: 'En vivo', canal: 'Radio', dura: '', envivo: true }, { id: 'eeeeeeeeeee', titulo: 'Éxito dos', canal: 'Canal', dura: '4:01' }] } }));
 await ctx.route(/radio\.prueba/, (r) => r.fulfill({ headers: cors, body: WAV, contentType: 'audio/wav' }));
 await ctx.route(/youtube\.com\/iframe_api/, (r) => r.fulfill({ contentType: 'text/javascript', body: `
   window.YT = { Player: function(el, o){ const d = document.createElement('div'); d.className = 'yt-musica'; d.dataset.id = o.videoId; el.replaceWith(d);
@@ -57,5 +59,12 @@ await p.evaluate(() => window.__vr.control); /* siguiente con R1 no hay control:
 await p.evaluate(() => __musica.tocar(1)); await p.waitForTimeout(300);
 e = await p.evaluate(() => document.querySelector('.yt-musica')?.dataset.id); sí(e === 'bbbbbbbbbbb', 'Siguiente pone la que sigue');
 await p.screenshot({ path: CAPS + '/vr-musica.png' });
+/* Explorar: géneros de un toque que empiezan a sonar solos */
+await p.evaluate(() => __musica.explorar()); await p.waitForTimeout(400); e = await p.evaluate(() => __musica.estado());
+sí(e.fase === 'resultados' && e.tarjetas === 12, `Explorar enseña los géneros (${e.tarjetas})`);
+await p.screenshot({ path: CAPS + '/vr-musica-explorar.png' });
+await p.evaluate(() => __musica.elegir(0)); await p.waitForTimeout(900);
+e = await p.evaluate(() => ({ ...__musica.estado(), yt: document.querySelector('.yt-musica')?.dataset.id }));
+sí(e.tipo === 'youtube' && e.sonando && e.cola > 0 && e.yt, `un género arma la lista y suena solo (${e.cola} en cola, ${e.titulo})`);
 sí(errores.length === 0, 'sin errores' + (errores.length ? ': ' + errores.slice(0, 3).join(' | ') : ''));
 console.log(`${ok} bien · ${mal} mal`); await b.close(); process.exit(mal ? 1 : 0);
