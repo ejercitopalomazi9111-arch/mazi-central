@@ -65,6 +65,8 @@ export function montarTeclado(V){
     return {};
   };
   v.atras = () => { if(texto){ tecla('Borrar'); } else terminar(null); };
+  v.cerrar = () => { terminar(null); return true; };   /* el botón «Atrás» (mirándolo o con la mano) cancela de un jalón */
+  v.atrasEn = [0, -.62, -1.3];
   v.salir = () => { V.texto.activo = false; if(resolver){ const r = resolver; resolver = null; r(null); } };
   V.registrar('teclado', v); window.__teclado = v;
   return function pedirTexto(t, { inicial = '', regresarA } = {}){

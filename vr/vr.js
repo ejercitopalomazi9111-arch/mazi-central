@@ -242,15 +242,39 @@ export function registrar(nombre, v){ vistas[nombre] = v; v.grupo = v.grupo || n
 export function ir(nombre){
   if(vista === nombre) return;
   if(vista){ vistas[vista].grupo.visible = false; vistas[vista].salir?.(); }
-  vista = nombre; const v = vistas[nombre]; v.grupo.visible = true; v.entrar?.(); sonar('whoosh', .25); foco?.userData.panel?.foco?.(false); foco = null; mirarBloqueado = true;
+  vista = nombre; const v = vistas[nombre]; v.grupo.visible = true; v.entrar?.(); sonar('whoosh', .25); foco?.userData.panel?.foco?.(false); foco = null; bloquearMirada();
+  ponerAtras();
 }
+
+/* «Atrás» en todas las pantallas menos el inicio (Carlos, 18 nov: miró «La Sala» sin control y se quedó atorado: atrás
+   sólo era el Círculo). Se elige como todo lo demás: mirándolo fijo, con la mano o con el control. Cada vista puede
+   decir dónde va (atrasEn: [x, y, z]); si no, abajo y enfrente, debajo de todo lo que pone el inicio o el cine. */
+const atrasP = new Panel(.46, .15, 500); atrasP.titulo = 'Atrás';
+const atras = atrasP.malla; atras.visible = false; atras.userData.accion = () => { const v = vistas[vista]; (v?.cerrar?.() || v?.atras?.()); };
+const pintarAtras = async (f) => { const { x, cv } = atrasP, w = cv.width, h = cv.height; x.clearRect(0, 0, w, h);
+  redondo(x, 4, 4, w - 8, h - 8, (h - 8) / 2); x.fillStyle = f ? '#3A1A5C' : C.sup; x.fill(); x.lineWidth = f ? 7 : 3; x.strokeStyle = f ? C.acento : C.borde; x.stroke();
+  const ic = await svgImg('arrow-left', f ? '#FFFFFF' : C.rosa); if(ic) x.drawImage(ic, 30, h / 2 - 24, 48, 48);
+  x.fillStyle = C.texto; x.font = '800 38px system-ui, -apple-system, sans-serif'; x.textBaseline = 'middle'; x.textAlign = 'left'; x.fillText('Atrás', 96, h / 2 + 2); atrasP.listo(); };
+atrasP.foco = (f) => { if(atrasP._f === f) return; atrasP._f = f; pintarAtras(f); };
+hub.add(atras);   /* se pinta la primera vez que sale: los iconos se registran después de cargar este módulo */
+function ponerAtras(){
+  const v = vistas[vista]; atras.visible = !!v && vista !== 'inicio' && !!(v.atras || v.cerrar);
+  if(!atras.visible) return;
+  if(atrasP._f === undefined){ atrasP._f = false; pintarAtras(false); }
+  const [x, y, z] = v.atrasEn || [0, -.95, -1.7]; atras.position.set(x, y, z); atras.lookAt(0, y * .3, 0);
+}
+export { ponerAtras };
 export const ahora = () => vista;
 
 /* lo que se puede elegir: cada vista da sus objetos; la mira o las flechas les dan el foco */
 const ray = new THREE.Raycaster(); const centro = new THREE.Vector2(0, 0);
 let foco = null, focoDesde = 0, focoPorFlechas = -1e9, ultimoGiro = new THREE.Quaternion();
-function elegibles(){ return vistas[vista]?.elegibles?.() || []; }
+function elegibles(){ const L = vistas[vista]?.elegibles?.() || []; return atras.visible ? [...L, atras] : L; }
 let mirarBloqueado = true;                                   // al abrir una vista, lo que ya tenías enfrente no se elige solo
+/* …hasta que la cabeza se mueva. Antes sólo se soltaba al pasar de un botón a OTRO: si llegabas a «Atrás» desde el vacío,
+   seguía bloqueado y sin control no había salida (Carlos, 18 nov) */
+const giroAlBloquear = new THREE.Quaternion();
+function bloquearMirada(){ mirarBloqueado = true; giroAlBloquear.copy(cabeza.quaternion); }
 function darFoco(o){ if(foco === o) return; if(foco || !o) mirarBloqueado = false; foco?.userData.panel?.foco?.(false); foco = o; focoDesde = performance.now(); o?.userData.panel?.foco?.(true); if(o) sonar('toque', .18); }
 function moverFoco(dx, dy){
   const L = elegibles(); if(!L.length) return;
@@ -262,7 +286,7 @@ function moverFoco(dx, dy){
     if(along <= .01) continue; const d = along + Math.abs(dx ? v.y : v.x) * 2; if(d < md){ md = d; mejor = o; } }
   if(mejor) darFoco(mejor);
 }
-function activar(o){ if(!o) return; sonar('ding', .3); mirarBloqueado = true; o.userData.accion?.(); }
+function activar(o){ if(!o) return; sonar('ding', .3); bloquearMirada(); o.userData.accion?.(); }
 
 /* ── el ciclo ── */
 let giroArmado = true, ultimo = performance.now();
@@ -294,6 +318,7 @@ function cuadro(t){
   if(control.oprimido[B.X] && !usado.x) activar(foco);
   if(control.oprimido[B.O] && !usado.o) v?.atras?.();
   /* la mira: lo que ves al centro toma el foco, salvo justo después de usar las flechas sin mover la cabeza */
+  if(mirarBloqueado && cabeza.quaternion.angleTo(giroAlBloquear) > .14){ mirarBloqueado = false; focoDesde = performance.now(); }   /* el reloj de mirar fijo empieza al soltarse, no antes */
   const L = elegibles(); let viendo = null;
   if(mirar.activo && L.length){
     const flechasRecientes = performance.now() - focoPorFlechas < 4000 && cabeza.quaternion.angleTo(ultimoGiro) < .12;
@@ -308,6 +333,7 @@ function cuadro(t){
   if(anillo.visible){ anillo.geometry.dispose(); anillo.geometry = new THREE.RingGeometry(.016, .021, 48, 1, Math.PI / 2, -Math.min(1, fijo) * Math.PI * 2); }
   if(fijo >= 1) activar(viendo);
   v?.cuadro?.(t / 1000, dt);
+  if(v?.atrasEn) ponerAtras();
   for(const f of alCuadro) f(t / 1000, dt);
   mira.visible = !extra.rayo;
   if(aviso.malla.visible && performance.now() > avisoHasta) aviso.malla.visible = false;

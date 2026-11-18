@@ -344,6 +344,8 @@ export async function montarLector(V){
     return { x: true, flechas: true };
   };
   Object.defineProperty(lector, 'ocupaStick', { get: () => fase === 'leyendo' });
+  /* leyendo, «Atrás» va a un lado de la ventana: abajo estorbaría al mirar la orilla para avanzar */
+  Object.defineProperty(lector, 'atrasEn', { get: () => fase === 'leyendo' || fase === 'cargando' ? [-(.45 + .4), -.4, -dist] : null });
   lector.entrar = () => { pagina = 0; cargarEstante(); };
   lector.salir = () => { salirDeLeer(); limpiarTarjetas(); decir(''); fase = 'estante'; };
   lector.atras = () => { if(fase === 'leyendo' || fase === 'cargando'){ salirDeLeer(); cargarEstante(); } else V.ir('inicio'); };
