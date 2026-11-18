@@ -314,7 +314,8 @@ export function arrancar(){
   ponerMixta(AJ.mixta && !!camTex);
   render.setAnimationLoop(cuadro);
 }
-export { THREE, escena, cabeza, rig, hub, AJ, FABRICA, guardar, aplicarAjustes, ponerMixta, tarjeta, Panel, redondo, svgImg, C, camTex, video };
+export const hayControl = () => padVisto;
+export { render, THREE, escena, cabeza, rig, hub, AJ, FABRICA, guardar, aplicarAjustes, ponerMixta, tarjeta, Panel, redondo, svgImg, C, camTex, video };
 export const hayCamara = () => !!camTex;
 /* dónde cae en la PANTALLA del teléfono un punto de la imagen de un ojo, ya pasado por el lente (el pase de arriba,
    al revés). Lo usa la pantalla de la web, que va encima sin pasar por el lente, para que sus esquinas caigan justo

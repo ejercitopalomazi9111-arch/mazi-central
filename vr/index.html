@@ -52,6 +52,7 @@ import * as V from './vr.js';
 import ICONOS from './iconos.js';
 import { montarTeclado } from './teclado.js';
 import { montarCine } from './cine.js';
+import { montarLector } from './lector.js';
 import { crearPantallaWeb } from './pantalla.js';
 const { THREE, B } = V;
 V.iconos(ICONOS);
@@ -78,7 +79,7 @@ $('#bEntrar').addEventListener('click', async () => {
 
 /* ── las vistas ── */
 async function montar(){
-  /* INICIO: cinco tarjetas en arco a 2.2 m */
+  /* INICIO: seis tarjetas en arco, con «Leer» justo enfrente (la mira nunca cae en un hueco) */
   const inicio = { grupo: new THREE.Group() };
   const titulo = new V.Panel(1.6, .22, 400); titulo.malla.position.set(0, .6, -1.95); inicio.grupo.add(titulo.malla);
   const pintarTitulo = () => { const { x, cv } = titulo; x.clearRect(0, 0, cv.width, cv.height); x.textAlign = 'center'; x.textBaseline = 'middle';
@@ -88,13 +89,14 @@ async function montar(){
   const T = [
     ['Juegos', 'gamepad-2', () => V.ir('juegos')],
     ['Cine', 'clapperboard', () => V.ir('cine')],
+    ['Leer', 'book-open', () => V.ir('leer')],
     ['La Sala', 'users', () => V.ir('sala')],
     ['Mixta', 'scan-eye', () => { if(!V.hayCamara()){ V.hud('Sin cámara'); return; } V.ponerMixta(!V.AJ.mixta); V.hud(V.AJ.mixta ? 'Realidad mixta' : 'Realidad virtual'); }],
     ['Ajustes', 'settings', () => V.ir('ajustes')],
   ];
   const tarjetas = [];
   for(const [i, [t, ic, fn]] of T.entries()){
-    const p = await V.tarjeta({ titulo: t, icono: ic }); const a = (i - 2) * 22 * Math.PI / 180;
+    const p = await V.tarjeta({ titulo: t, icono: ic }); const a = (i - 2) * 21 * Math.PI / 180;
     p.malla.position.set(Math.sin(a) * 1.9, 0, -Math.cos(a) * 1.9); p.malla.lookAt(0, 0, 0); p.malla.userData.accion = fn;
     inicio.grupo.add(p.malla); tarjetas.push(p.malla);
   }
@@ -117,6 +119,9 @@ async function montar(){
   const pedirTexto = montarTeclado(V);
   window.__cine = await montarCine(V, { VIDEOS, pedirTexto, web });
   V.trasCuadro.push(web.colocar);
+
+  /* LEER: INKWELL (Tiras y Libros) con lo que ya está bajado en este teléfono (lector.js) */
+  window.__lector = await montarLector(V);
 
   /* AJUSTES: un panel; flechas arriba/abajo eligen, izquierda/derecha cambian */
   const aj = { grupo: new THREE.Group() };

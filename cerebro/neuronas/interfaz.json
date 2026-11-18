@@ -222,6 +222,21 @@
    "consejo": "Una acción por quedarse quieto necesita que antes haya habido un movimiento.",
    "salioDe": "Fase 1 de Mazi VR, 18 nov.",
    "vecinas": []
+  },
+  {
+   "id": "arco-par-deja-la-mira-en-un-hueco",
+   "titulo": "Un menú en arco con un número PAR de tarjetas centradas deja la mira en el hueco de en medio",
+   "gravedad": "media",
+   "sintoma": "Al pasar el inicio de Mazi VR de 5 a 6 tarjetas, al entrar ninguna tenía foco: las flechas no movían nada y el puntero de la mano apuntaba al vacío.",
+   "causa": "Centrar el arco con (i - (n-1)/2) pone el centro exacto ENTRE dos tarjetas cuando n es par; la mira y la mano empiezan justo ahí.",
+   "porque": "En el visor la mira siempre empieza al centro; en una página el ojo no tiene un punto fijo de arranque.",
+   "arreglo": "El arco se ancla a una tarjeta (i - 2): «Leer» queda enfrente y el arco se carga un poco a la derecha (vr/index.html).",
+   "comoCazarlo": "vr/pruebas.mjs y vr/pruebas-manos.mjs salen rojas: «X sobre Ajustes» y «el puntero da foco a una tarjeta (null)».",
+   "consejo": "Lo que el usuario ve al abrir siempre tiene que tener algo seleccionable justo enfrente.",
+   "salioDe": "Mazi VR, INKWELL dentro del visor, 18 nov.",
+   "vecinas": [
+    "mirar-fijo-elige-lo-que-ya-tenias-enfrente"
+   ]
   }
  ]
 }
