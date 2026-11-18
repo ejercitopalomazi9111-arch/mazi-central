@@ -179,7 +179,7 @@ for ch in glifos:
 # comilla recta y apóstrofo con la ’ de la artista; guion con la barra de en medio de la H… no: no está dibujado
 cmap[ord("'")] = gname('’'); cmap[ord('"')] = gname('”')
 # alias: el guion y las rayas con la barra del menos; las palomitas y taches «de emoji» con los de la artista
-for alias, real in {'-': '−', '–': '−', '—': '−', '`': '´', '✔': '✓', '✘': '✗', '✕': '✗', '⏵': '▶', '·': '.'}.items():
+for alias, real in {'-': '−', '–': '−', '—': '−', '`': '´', '✔': '✓', '✘': '✗', '✕': '✗', '⏵': '▶'}.items():
     cmap[ord(alias)] = gname(real)
 
 # acentos provisionales: la ’ encima de la vocal, centrada; la Ü con dos estrellas del «:»
@@ -194,7 +194,7 @@ def compuesto(base_ch, marcas):
         xs = [x for c in mc for x, _ in c]; ys = [y for c in mc for _, y in c]
         cx, y0 = (min(xs) + max(xs)) / 2, min(ys)
         for pts in mc:
-            q = [(int(round((x - cx) * escala + ancho * dx_rel)), int(round((y - y0) * escala + alto_base + 40))) for x, y in pts]
+            q = [(int(round((x - cx) * escala + ancho * dx_rel)), int(round((y - y0) * escala + alto_base + 95))) for x, y in pts]
             pen.moveTo(q[0]); [pen.lineTo(r) for r in q[1:]]; pen.closePath()
     return pen.glyph(), ancho
 ACENTOS = {'Á': ('A', [('´', .5, 1)]), 'É': ('E', [('´', .5, 1)]), 'Í': ('I', [('´', .5, 1)]), 'Ó': ('O', [('´', .5, 1)]), 'Ú': ('U', [('´', .5, 1)]),
