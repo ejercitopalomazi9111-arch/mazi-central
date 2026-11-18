@@ -1,0 +1,81 @@
+{
+ "titulo": "GM-1 · La historia de Grupo Mazi (paquete del inversionista). Guion en empresa/inversionista/GM1-HISTORIA.md",
+ "voces": {
+  "Narrador": "google:Charon"
+ },
+ "lineas": [
+  {
+   "id": "01",
+   "voz": "Narrador",
+   "en": 2.5,
+   "txt": "Una noche lo perdimos todo."
+  },
+  {
+   "id": "02",
+   "voz": "Narrador",
+   "en": 4.8,
+   "txt": "Y lo volvimos a construir. Mejor."
+  },
+  {
+   "id": "03",
+   "voz": "Narrador",
+   "en": 8.6,
+   "txt": "Todo empezó con una idea. Carlos quería dedicarse a la bioingeniería, por algo que vivió su familia. Quería estar ahí para cualquier persona que pasara por lo mismo."
+  },
+  {
+   "id": "04",
+   "voz": "Narrador",
+   "en": 20.4,
+   "txt": "Con el tiempo descubrió que lo suyo no era fabricar prótesis, sino hacer los sistemas que las controlan. Y que si ayudaba a muchas empresas, esas empresas podían ayudar a mucha más gente."
+  },
+  {
+   "id": "05",
+   "voz": "Narrador",
+   "en": 32.0,
+   "txt": "Lo inspiraron las películas y series de ciencia ficción: robots, inventores, máquinas que ayudan. Supo que a eso se quería dedicar toda la vida."
+  },
+  {
+   "id": "06",
+   "voz": "Narrador",
+   "en": 42.4,
+   "txt": "Hubo tres años en los que no pudo tocar la electrónica y estuvo lejos de la escuela, aprendiendo a trabajar. Ese tiempo también construyó."
+  },
+  {
+   "id": "07",
+   "voz": "Narrador",
+   "en": 51.4,
+   "txt": "En la prepa probó la programación en el hackatón de 2026: una app para una empresa de ambulancias, y después un traductor de lengua de señas. Ahí lo supo: esto era lo suyo.",
+   "dice": "En la prepa probó la programación en el jacatón de dos mil veintiséis: una app para una empresa de ambulancias, y después un traductor de lengua de señas. Ahí lo supo: esto era lo suyo."
+  },
+  {
+   "id": "08",
+   "voz": "Narrador",
+   "en": 64.8,
+   "txt": "Grupo Mazi ya existía, con soluciones pequeñas de marketing y planeación. Ahora cambió de rumbo: soluciones digitales completas."
+  },
+  {
+   "id": "09",
+   "voz": "Narrador",
+   "en": 73.6,
+   "txt": "Hasta que se perdió la computadora. Con ella, una asistente de inteligencia artificial que controlaba la máquina entera, el traductor de lengua de señas, y el sistema de logística para ambulancias y hospitales."
+  },
+  {
+   "id": "10",
+   "voz": "Narrador",
+   "en": 90.6,
+   "txt": "Empezamos de cero. Más de trescientas opciones de logo. Más de cincuenta intentos de tipografía. La letra final la está construyendo nuestra artista."
+  },
+  {
+   "id": "11",
+   "voz": "Narrador",
+   "en": 101.6,
+   "txt": "Hoy hacemos herramientas, apps y páginas. Más rápido, más barato y mejor que la competencia. Y no vendemos y nos vamos: nos quedamos con el cliente."
+  },
+  {
+   "id": "12",
+   "voz": "Narrador",
+   "en": 114.8,
+   "txt": "Si no existe la herramienta, se construye la herramienta. Grupo Mazi."
+  }
+ ]
+}
