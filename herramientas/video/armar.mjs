@@ -36,6 +36,8 @@ const errores = []; pg.on('pageerror', e => errores.push(e.message)); pg.on('con
 /* se abre por el servidor local para que lea los cuadros de las grabaciones y las fotos del repo */
 /* QUERY=corte=corto → la misma composición en otra versión (el anuncio 22 saca así sus cortes para historias) */
 await pg.goto(BASE + '/' + path.relative(RAIZ, html).split(path.sep).join('/') + (process.env.QUERY ? '?' + process.env.QUERY : ''), { waitUntil: 'load' });
+/* el módulo de la composición puede correr DESPUÉS de «load» (su importmap jala three y tarda): se espera a que exista */
+await pg.waitForFunction(() => window.listo && window.VIDEO, null, { timeout: 60000 });
 await pg.evaluate(() => window.listo);
 const V = await pg.evaluate(() => window.VIDEO);
 await pg.setViewportSize({ width: V.w, height: V.h });

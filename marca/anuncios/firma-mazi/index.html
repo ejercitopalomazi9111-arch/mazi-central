@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Firma de Grupo Mazi</title>
+<!-- LA FIRMA DE GRUPO MAZI (Carlos, 15 nov: «que se den nota que está hecho por nosotros»): un cierre de 3.6 s que se le
+     pega al final de los videos de clientes (Smiley's, Urban Pest, la tienda…). El logo completo, grande, con sus plumas
+     levitando (marca/paloma-2026/vivo.js), y «Hecho por Grupo Mazi». Se pega con herramientas/video/firmar.sh.
+     ?w=1920&h=1080 lo saca horizontal. -->
+<style>
+  :root{ --w:1080px; --h:1920px }
+  html,body{ margin:0; background:#0E0618 }
+  #lienzo{ position:relative; width:var(--w); height:var(--h); overflow:hidden;
+    background:radial-gradient(120% 80% at 50% 38%, #2C1145 0%, #170A26 60%, #0E0618 100%); color:#fff;
+    font-family:system-ui, -apple-system, 'Segoe UI', sans-serif }
+  #logo{ position:absolute; left:50%; top:44%; width:min(66vw, 60vh); transform:translate(-50%, -50%) }
+  #txt{ position:absolute; left:0; right:0; top:76%; text-align:center; font-weight:600; font-size:34px; letter-spacing:.2em;
+    text-transform:uppercase; color:#E2B8FF; opacity:0 }
+  #txt b{ display:block; font-weight:800; font-size:62px; letter-spacing:.03em; color:#fff; margin-top:10px; text-transform:none }
+  #lema{ position:absolute; left:0; right:0; top:88%; text-align:center; font-size:26px; color:#C9B6DA; opacity:0 }
+</style></head>
+<body><div id="lienzo"><div id="logo"></div>
+<div id="txt">Hecho por<b>Grupo Mazi</b></div>
+<div id="lema">Si no existe la herramienta, se construye.</div></div>
+<script type="module">
+import { crearPaloma } from '../../paloma-2026/vivo.js';
+const q = new URLSearchParams(location.search), W = +q.get('w') || 1080, H = +q.get('h') || 1920;
+document.documentElement.style.setProperty('--w', W + 'px'); document.documentElement.style.setProperty('--h', H + 'px');
+if(W > H){ document.querySelector('#logo').style.width = '46vh'; document.querySelector('#logo').style.top = '40%'; document.querySelector('#txt').style.top = '72%'; document.querySelector('#lema').style.top = '86%'; }
+const cl = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v)), tramo = (t, a, b) => cl((t - a) / (b - a)), sale = (u) => 1 - Math.pow(1 - u, 3);
+window.listo = (async () => {
+  const P = await crearPaloma(document.querySelector('#logo'), { reloj: 'manual', puntero: false });
+  /* arranca abierta y se cierra en su forma: los cristales llegan y luego levitan */
+  P.abrir(1); P.paso(0); P.paso(1 / 30);
+  window.pintar = (t) => {
+    if(t > .15) P.abrir(0);
+    P.paso(t);
+    const l = sale(tramo(t, 0, .5)); document.querySelector('#logo').style.opacity = l;
+    const e = sale(tramo(t, .9, 1.5)); const x = document.querySelector('#txt'); x.style.opacity = e; x.style.transform = `translateY(${(1 - e) * 30}px)`;
+    document.querySelector('#lema').style.opacity = sale(tramo(t, 1.6, 2.2));
+  };
+  await document.fonts.ready;
+})();
+window.VIDEO = { w: W, h: H, fps: 30, dur: 3.6,
+  sonidos: [['../../../herramientas/video/efectos/whoosh.wav', 0, .35], ['../../../herramientas/video/efectos/golpe.wav', .55, .45], ['../../../herramientas/video/efectos/ding.wav', 1.0, .25]] };
+</script></body></html>

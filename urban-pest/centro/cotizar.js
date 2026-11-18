@@ -1,6 +1,13 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    URBAN PEST · LA CORRIDA DE COTIZACIÓN  (Godines, 17 nov)
    ───────────────────────────────────────────────────────────────────────────
+   ⚠ UN SOLO CÁLCULO PARA TODOS. Este archivo vive en DOS lugares y son copia
+   EXACTA (la prueba del centro lo exige): urban-pest/servidor/src/corrida.js
+   (el bot) y urban-pest/centro/cotizar.js (la pestaña «Cotizar»). Luis, 17 nov:
+   «si hago una cotización en el Excel, que me dé exactamente lo mismo que el
+   bot y la herramienta». Por eso no se redondea: sale con sus centavos, igual
+   que su columna T.
+
    Hace exactamente lo que hace una fila de su Excel «Cotización convencional»:
      Químicos      = Σ cantidad × costo por aplicación (su columna F)
      Mano de obra  = horas × lo que cobra la hora
@@ -26,8 +33,6 @@ export function unidadDe(p){
   return 'aplicaciones';
 }
 
-/* a la decena hacia arriba, como el bot: $1,373.24 → $1,380 */
-export const redondear = (n) => Math.ceil(n / 10) * 10;
 const r2 = (n) => Math.round(n * 100) / 100;
 
 /**
@@ -54,9 +59,9 @@ export function corrida(c, ex){
   if(ex.jadp){
     const j = ex.jadp, mj = horas * j.mano_hora, sj = (km * j.gasolina_litro / j.km_litro) * j.viajes;
     const t = (quimicosExacto * j.quimicos_x + (quimicosExacto + mj + sj)) * j.margen;
-    jadp = { mano: r2(mj), traslado: r2(sj), cotizacion: r2(t), precio: redondear(t), costos: r2(t / j.margen), utilidad: r2(t - t / j.margen) };
+    jadp = { mano: r2(mj), traslado: r2(sj), cotizacion: r2(t), precio: r2(t), costos: r2(t / j.margen), utilidad: r2(t - t / j.margen) };
   }
-  return { lineas, quimicos, horas, km, mano, traslado, directo: r2(quimicos + mano + traslado), cotizacion, precio: redondear(cotizacion),
+  return { lineas, quimicos, horas, km, mano, traslado, directo: r2(quimicos + mano + traslado), cotizacion, precio: cotizacion,
     costos, utilidad: costos != null ? r2(cotizacion - costos) : null, jadp };
 }
 

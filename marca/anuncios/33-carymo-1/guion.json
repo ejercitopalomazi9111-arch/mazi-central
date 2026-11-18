@@ -1,0 +1,13 @@
+{
+ "titulo": "CARYMO 1 · Qué es (paquete del inversionista). Grabaciones de la app de verdad con contenido de ejemplo",
+ "voces": { "Narrador": "google:Despina" },
+ "lineas": [
+  { "id": "01", "voz": "Narrador", "en": 0.3,  "txt": "¿Tienes examen y no sabes por dónde empezar?" },
+  { "id": "02", "voz": "Narrador", "en": 3.8,  "txt": "Esto es CARYMO.", "dice": "Esto es Carimo." },
+  { "id": "03", "voz": "Narrador", "en": 6.2,  "txt": "Le dices qué materia y cuándo es tu examen, y te arma el camino, tema por tema." },
+  { "id": "04", "voz": "Narrador", "en": 12.6, "txt": "Te lo explica en un pizarrón que se dibuja solo, con voz." },
+  { "id": "05", "voz": "Narrador", "en": 18.0, "txt": "Luego practicas, como si fuera un juego." },
+  { "id": "06", "voz": "Narrador", "en": 22.4, "txt": "Y compites con tus amigos en una liga." },
+  { "id": "07", "voz": "Narrador", "en": 27.0, "txt": "CARYMO. Estudiar, por fin, se siente como jugar.", "dice": "Carimo. Estudiar, por fin, se siente como jugar." }
+ ]
+}

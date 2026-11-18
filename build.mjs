@@ -112,6 +112,9 @@ const VA = [
      MP3 y portada, todo en el teléfono. Carlos lo pidió para un podcast de
      la escuela. Trae el codificador LAME (vendor/, LGPL) con su licencia. */
   'podcast',
+  /* Mazi VR (18 nov): el «Quest» propio de Carlos, un iPhone en un visor y un control de PlayStation.
+     Usa la cámara (realidad mixta): su regla va en _headers. */
+  'vr',
   /* La Sociedad de Alumnos del Rembrandt (Carlos, 15 de octubre): buzón,
      votaciones, eventos, chats, muro revisado, material, torneos, el panel de
      la sociedad y el reloj de clases. Habla con el servidor de Fadori y usa

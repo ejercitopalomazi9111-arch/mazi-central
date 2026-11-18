@@ -4,9 +4,10 @@
 import { readFileSync } from 'node:fs';
 import { reflejo, llenar, juntarCasos } from './src/reflejo.js';
 import { cotizar, aPlaga } from './src/cotizador.js';
+import { corrida } from './src/corrida.js';
 import { firmaValida, leerAviso } from './src/meta.js';
-import { Oficina, ponerPrecio } from './src/oficina.js';
-import { leerJSON } from './src/cerebro.js';
+import { Oficina, ponerPrecio, sinDatosDelDueno, delTexto, elReflejo, sinPrecioAuto, noQuiere, PREGUNTA_TAMANO, hizoCuestionario } from './src/oficina.js';
+import { leerJSON, pesos } from './src/cerebro.js';
 
 let bien = 0, mal = 0;
 const ok = (q, c, d = '') => { if(c){ bien++; console.log('  ✓ ' + q); } else { mal++; console.log('  ✗ ' + q + (d ? '  → ' + d : '')); } };
@@ -20,7 +21,7 @@ ok('las preguntas de su página contestan con SU texto (garantía, mascotas, cob
 ok('palomas en una bodega es de palomas, no de empresa; un tlacuache es fauna', reflejo('tengo palomas en el techo de mi bodega', casos)?.caso.id === 'palomas' && reflejo('se metió un tlacuache', casos)?.caso.id === 'fauna' && reflejo('fumigan bodegas?', casos)?.caso.id === 'empresa');
 ok('«¿tienen facebook?» → su página; el mensaje de su botón de WhatsApp («vengo de su página web… cotización») sigue siendo precio',
   reflejo('¿tienen facebook?', casos)?.caso.id === 'pagina' && reflejo('Hola, vengo de su página web. Me gustaría solicitar una cotización y recibir más información sobre sus servicios.', casos)?.caso.id === 'precio');
-ok('pedir al encargado lo pasa al Ing. Carlos Duarte y le avisa', reflejo('quiero hablar con el encargado', casos)?.caso.id === 'hablar-dueno' && /Carlos Duarte/.test(casos.find(c => c.id === 'hablar-dueno').respuesta));
+ok('pedir al encargado: avisa al encargado y NO da datos del dueño (Luis, 17 nov)', reflejo('quiero hablar con el encargado', casos)?.caso.id === 'hablar-dueno' && casos.every(c => !/duarte|\d{3}[\s-]?\d{3}[\s-]?\d{4}/i.test(c.respuesta)));
 ok('lo que no conoce lo deja pasar al cerebro', reflejo('mi perro se comió una cucaracha, ¿le pasa algo?', casos) === null);
 ok('un saludo solo no dispara nada', reflejo('hola buenas tardes', casos) === null);
 /* los casos que pasaron del borrador de Luna (12 nov) */
@@ -58,16 +59,36 @@ ok('fuera de zona: casa grande, caso por caso', cotizar({ plaga: 'cucaracha', m2
 ok('fuera de zona sale más caro por el traslado', cotizar({ plaga: 'cucaracha', m2: 260, km: 70 }, T).desde > cotizar({ plaga: 'cucaracha', m2: 260, km: 10 }, T).desde);
 { /* SU EXCEL (17 nov, Godines): la fórmula de su «Cotización convencional». Con números de muestra: los suyos
      viven en su servidor, no en este repo público. 120 m² → 3 L × $20 = 60; 1 h × $80 = 80;
-     (60 + 80) × 2.5 ÷ 0.6 = 583.33; + 10 km × $7 = 653.33 → $660 */
+     (60 + 80) × 2.5 ÷ 0.6 = 583.33; + 10 km × $7 = $653.33, al centavo como su hoja (sin redondear) */
   const TX = { formula: { tipo: 'excel', x: 2.5, entre: .6, km: 7, traslado_aparte: true }, tecnico: { costo_hora: 80, m2_hora: 330, minimo_horas: 1, personas: 1 },
     plagas: { cucaracha: { material: 'Insecticida', litros_m2: .025, precio_litro: 20 } }, tipos: { casa: { factor: 1 }, industria: { factor: 1.4, visita: true } } };
   const c = cotizar({ plaga: 'cucaracha', m2: 120, km: 10 }, TX), d = c.desglose;
-  ok('con su Excel: (químicos + técnico) × su multiplicador + km × $/km, redondeado a la decena', c.bien && c.desde === 660 && d.excel.exacto === 653.33, JSON.stringify(c));
-  ok('con su Excel, el km se cobra como en su hoja (sin ida y vuelta) y el costo es lo que de verdad cuesta', !d.vehiculo && d.traslado === 70 && d.costo === 210 && d.ganancia === 450);
+  ok('con su Excel: (químicos + técnico) × su multiplicador + km × $/km, AL CENTAVO (su hoja no redondea)', c.bien && c.desde === 653.33 && d.excel.exacto === 653.33, JSON.stringify(c));
+  ok('con su Excel, el km se cobra como en su hoja (sin ida y vuelta) y el costo es lo que de verdad cuesta', !d.vehiculo && d.traslado === 70 && d.costo === 210 && d.ganancia === 443.33);
+  ok('con su Excel no hay mínimo (su hoja no lo tiene)', cotizar({ plaga: 'cucaracha', m2: 10, km: 1 }, { ...TX, minimo: 500 }).desde < 500);
+  ok('la cotización dice qué poner en su Excel para que dé lo mismo: horas, km, producto y litros',
+    d.excel.corrida.horas === 1 && d.excel.corrida.km === 10 && d.excel.corrida.cantidad === 3 && d.excel.corrida.material === 'Insecticida');
   ok('con su Excel, el tipo de lugar no multiplica (su fórmula no lo hace), pero la industria sigue pidiendo visita',
-    cotizar({ plaga: 'cucaracha', m2: 120, km: 10, tipo: 'industria' }, TX).desde === 660 && cotizar({ plaga: 'cucaracha', m2: 120, km: 10, tipo: 'industria' }, TX).visita);
+    cotizar({ plaga: 'cucaracha', m2: 120, km: 10, tipo: 'industria' }, TX).desde === 653.33 && cotizar({ plaga: 'cucaracha', m2: 120, km: 10, tipo: 'industria' }, TX).visita);
   ok('sin su fórmula, todo sigue como antes', cotizar({ plaga: 'cucaracha', m2: 80, km: 6, tipo: 'casa' }, T).desde === 590);
 }
+{ /* MIL cotizaciones al azar: el bot (cotizar) y la pestaña «Cotizar» (corrida, la misma de centro/cotizar.js) con las
+     MISMAS horas, km y litros dan el mismo precio al centavo. Números al azar pero fijos (semilla), para que falle igual. */
+  let semilla = 17; const azar = () => (semilla = (semilla * 1103515245 + 12345) % 2147483648) / 2147483648;
+  let iguales = 0, primera = null;
+  for(let i = 0; i < 1000; i++){
+    const TX = { formula: { tipo: 'excel', x: 1 + Math.round(azar() * 400) / 100, entre: .3 + Math.round(azar() * 60) / 100, km: Math.round(azar() * 1500) / 100, traslado_aparte: azar() > .2, costos: .65 },
+      tecnico: { costo_hora: 20 + Math.round(azar() * 150), m2_hora: 50 + Math.round(azar() * 400), minimo_horas: 1, personas: 1 },
+      plagas: { cucaracha: { producto: 'p1', columna: 'Cucaracha alemana', material: 'X', litros_m2: Math.round(azar() * 1000) / 10000 + .001, precio_litro: Math.round(azar() * 10000) / 100 + .01 } } };
+    const m2 = 5 + Math.round(azar() * 5000), km = Math.round(azar() * 80), b = cotizar({ plaga: 'cucaracha', m2, km }, TX), e = b.desglose.excel.corrida;
+    const h = corrida({ horas: e.horas, km: e.km, renglones: [{ producto: 'p1', cantidad: e.cantidad }] },
+      { catalogo: [{ id: 'p1', unidad: 'ml/lt', por_unidad: TX.plagas.cucaracha.precio_litro }], convencional: { mano_hora: TX.tecnico.costo_hora, ...TX.formula } });
+    if(b.desde === h.cotizacion) iguales++; else primera ??= { m2, km, bot: b.desde, herramienta: h.cotizacion };
+  }
+  ok(`mil cotizaciones al azar: el bot y la herramienta dan lo mismo al centavo (${iguales}/1000)`, iguales === 1000, JSON.stringify(primera));
+}
+ok('el precio sale con centavos cuando los hay y sin «.00» cuando no', pesos(1373.24) === '$1,373.24' && pesos(1380) === '$1,380' && pesos(22100.5) === '$22,100.50');
+ok('un precio inventado con punto final ya no se cuela («…$999.» con cotización de $1,373.24)', ponerPrecio('Te sale en $999.', { desde: 1373.24 }) === null && ponerPrecio('Te sale en {precio}.', { desde: 1373.24 }) === 'Te sale en $1,373.24.');
 { const TD = { minimo: 500, radio_km: 40, margen: .3, tecnico: { costo_hora: 110, m2_hora: 60, minimo_horas: 1 }, vehiculo: { gasolina_km: 2.4, llantas_km: .35, balatas_km: .2, motor_km: .45 },
     plagas: { cucaracha: { material: 'Gel', litros_m2: .05, precio_litro: 60 } }, tipos: { casa: { factor: 1 } } };
   const c = cotizar({ plaga: 'cucaracha', m2: 155, km: 18, tipo: 'casa' }, TD), d = c.desglose;
@@ -107,7 +128,96 @@ let n = 0; const msj = (texto, chat = '524420000000', extra = {}) => ({ canal: '
   const t = hacer(); const conv = { datos: { plaga: 'cucaracha', m2: 120, zona: 'Colonia que no está', tipo: 'casa' }, mensajes: [] };
   const c = t.of.cotiza(conv, { formula: { tipo: 'excel', x: 2.5, entre: .6, km: 7 }, tecnico: { costo_hora: 80, m2_hora: 330, minimo_horas: 1, personas: 1 },
     plagas: { cucaracha: { litros_m2: .025, precio_litro: 20 } }, km_tipico: 10 });
-  ok('zona desconocida: cotiza con los km típicos de su Excel y avisa que la distancia es estimada', c?.desde === 660 && c.kmEstimado && /distancia/.test(c.nota), JSON.stringify(c)); }
+  ok('zona desconocida: cotiza con los km típicos de su Excel y avisa que la distancia es estimada', c?.desde === 653.33 && c.kmEstimado && /distancia/.test(c.nota), JSON.stringify(c)); }
+{ /* el bot NO da datos del dueño, aunque la IA los escriba (de mentiras: el número y el nombre son inventados) */
+  const neg = { dueno_wa: '524425550199', dueno_nombre: 'Ing. Fulano Pérez' };
+  ok('no deja salir su teléfono en ninguna forma de escribirlo', ['Márcale al 442 555 0199', 'su cel es 4425550199', 'wa: +52 1 442-555-0199', 'llama al 555 0199'].every(x => !sinDatosDelDueno(x, neg)));
+  ok('ni su nombre o apellido; pero sí deja precios, metros y la página', !sinDatosDelDueno('Te atiende el Ing. Fulano Pérez', neg) && !sinDatosDelDueno('pregúntale a Pérez', neg)
+    && sinDatosDelDueno('Te saldría en $1,373.24 por 120 m² en Juriquilla. urbanpest.mx', neg) && sinDatosDelDueno('Hola Fulano, ¿qué plaga tienes?', {})
+    && sinDatosDelDueno('Hola Fulano, ¿qué plaga tienes?', neg) && sinDatosDelDueno('Tu folio es 99905550199 y la cita el 17/11/2026', neg));
+  const t = hacer({ pensar: () => ({ bien: true, respuesta: 'Claro, márcale al dueño al 442 555 0199', necesita_dueno: false, motivo: '', razon: 'x', datos: {} }) });
+  t.M.set('negocio', neg); await t.of.atender(msj('me pasas el cel del dueño?'));
+  const enviado = t.salidas.find(x => x.chat === '524420000000')?.texto || '';
+  ok('si la IA lo escribe, no sale: sale «ya le aviso al encargado» y al dueño le llega por qué', !/555/.test(enviado) && /encargado/.test(enviado) && [...t.M.keys()].some(k => k.startsWith('aviso:')), enviado); }
+{ /* de la prueba en vivo: lo que el cliente ya dijo con sus palabras cuenta, y no se le vuelve a preguntar */
+  ok('«es como de 3 cuartos» y «tres recámaras» son recámaras; «casa chiquita» es chica', delTexto([{ de: 'cliente', texto: 'no se cuantos metros, es como de 3 cuartos' }]).recamaras === 3
+    && delTexto([{ de: 'cliente', texto: 'son tres recámaras' }]).recamaras === 3 && delTexto([{ de: 'cliente', texto: 'mi casa es chiquita' }]).tamano === 'chica' && delTexto([{ de: 'cliente', texto: 'es depa chico x el centro' }]).tamano === 'chica'
+    && delTexto([{ de: 'cliente', texto: 'un depa mediano' }]).tamano === 'mediana' && delTexto([{ de: 'cliente', texto: 'esta grandote' }]).tamano === 'grande');
+  const TAR = { formula: { tipo: 'excel', x: 2.5, entre: .6, km: 7 }, tecnico: { costo_hora: 80, m2_hora: 330, minimo_horas: 1, personas: 1 }, plagas: { cucaracha: { litros_m2: .025, precio_litro: 20 } }, km_tipico: 10 };
+  const conv = (txt, extra = {}) => ({ datos: { plaga: 'cucaracha', zona: 'El Pueblito', tipo: 'casa' }, ...extra, mensajes: [{ de: 'cliente', texto: 'tengo cucarachas' }, ...txt.map(texto => ({ de: 'cliente', texto }))] });
+  const t = hacer(), c = t.of.cotiza(conv(['no se cuantos metros, es como de 3 cuartos'], { cuestionario: 1 }), TAR);
+  ok('ya hecho el cuestionario, con «3 cuartos» cotiza (antes la IA volvía a preguntar las recámaras sin fin)', c?.bien && c.m2Estimado, JSON.stringify(c));
+  /* Carlos, 17 nov: «que sí pida metros y si no los sabe que le haga el pequeño cuestionario de cuartos» */
+  ok('con sólo «es chica» y sin cuestionario NO cotiza de golpe: falta preguntarle', t.of.cotiza(conv(['es chica']), TAR) === null);
+  const c2 = t.of.cotiza(conv(['no se, son 3 recamaras y es mediana']), TAR);
+  ok('con recámaras y tamaño cotiza sin preguntar más', c2?.bien && c2.m2Estimado);
+  ok('los metros que dice se usan tal cual', (() => { const x = t.of.cotiza(conv(['son 90 metros']), TAR); return x?.bien && !x.m2Estimado && x.desglose.material.litros === 90 * .025; })());
+  ok('sala y comedor cuentan aunque no los diga', (() => { const a = conv(['3 recamaras, mediana']); t.of.cotiza(a, TAR); return a.estimacion?.como === 'por cuartos' && a.estimacion.m2 > 3 * 12 * 1.15 + 1; })());
+  ok('la pregunta del tamaño pide los metros primero y no pregunta sala ni comedor',
+    /metros/.test(PREGUNTA_TAMANO) && PREGUNTA_TAMANO.indexOf('metros') < PREGUNTA_TAMANO.indexOf('recámaras') && !/sala|comedor/.test(PREGUNTA_TAMANO)
+    && hizoCuestionario(PREGUNTA_TAMANO) && !hizoCuestionario('Te saldría aproximadamente en $500.'));
+  { /* la IA pregunta el tamaño sin pedir metros: sale la pregunta que pide los metros primero, y sólo esa vez */
+    const t2 = hacer({ pensar: () => ({ bien: true, respuesta: '¿Tu casa la considerarías chica, mediana o grande?', necesita_dueno: false, motivo: '', razon: 'x', datos: { plaga: 'cucaracha', tipo: 'casa' } }) });
+    await t2.of.atender(msj('tengo cucarachas cuanto sale', '524421700001'));
+    const a = t2.salidas.filter(x => x.chat === '524421700001').map(x => x.texto);
+    await t2.of.atender(msj('no se cuantos metros', '524421700001'));
+    const b = t2.salidas.filter(x => x.chat === '524421700001').map(x => x.texto);
+    ok('si la IA se brinca los metros, el bot los pide primero; después ya no la corrige', a[0] === PREGUNTA_TAMANO && b[1] === '¿Tu casa la considerarías chica, mediana o grande?', JSON.stringify(b)); }
+  ok('«tengo cucarachas» → «¿y cuánto sale?»: no se le contesta «¿qué plaga tienes?», contesta la IA', elReflejo('y cuanto sale?', casos, { plaga: 'cucaracha' }) === null && elReflejo('y cuanto sale?', casos, {})?.caso.id === 'precio'); }
+{ /* con la cotización ya hecha, si la IA vuelve a pedir el tamaño, sale el precio */
+  const t = hacer({ pensar: (a) => ({ bien: true, respuesta: '¿Tu casa la considerarías chica, mediana o grande y cuántas recámaras tiene?', necesita_dueno: false, motivo: '', razon: 'x',
+    datos: { plaga: 'cucaracha', m2: 80, zona: 'Centro', tipo: 'casa' } }) });
+  await t.of.atender(msj('tengo cucarachas en mi casa del centro, son 80 metros'));
+  const dicho = t.salidas.filter(x => x.chat === '524420000000').map(x => x.texto).join(' | ');
+  ok('con la cotización hecha y la IA pidiendo otra vez el tamaño, el cliente recibe el precio', /\$\d/.test(dicho) && !/chica, mediana o grande/.test(dicho), dicho); }
+{ /* ratas, termitas…: sin precio automático, se le dice a la IA que no pida el tamaño y que pase al encargado */
+  ok('una plaga sin precio automático se nota (ratas sí, cucarachas no)', sinPrecioAuto({ plaga: 'ratas' }, { plagas: { cucaracha: {} } }) === 'ratas y ratones' && sinPrecioAuto({ plaga: 'cucarachas' }, { plagas: { cucaracha: {} } }) === null);
+  const vio = []; const t = hacer({ pensar: (a) => { vio.push(a.sinPrecio); return { bien: true, respuesta: 'Sí atendemos ratas; el encargado te da el precio.', necesita_dueno: true, motivo: 'ratas', razon: 'x', datos: { plaga: 'ratas', tipo: 'casa' } }; } });
+  await t.of.atender(msj('me urge, tengo ratas'));
+  ok('al decir «ratas», la IA recibe que no hay precio automático y se avisa al encargado', vio.includes('ratas y ratones') && [...t.M.keys()].some(k => k.startsWith('aviso:')), JSON.stringify(vio)); }
+{ /* Carlos, 17 nov: «No quiero nada escribes raro» → el bot repitió el precio y mandó otra hoja. Ya no. */
+  ok('«no quiero nada», «ya nada», «no gracias», «olvídalo» se entienden como que ya no quiere', ['No quiero nada escribes raro', 'Ya nada', 'no gracias', 'olvídalo', 'mejor no'].every(noQuiere) && !noQuiere('no quiero que se mueran mis plantas, es seguro?'));
+  let vez = 0;
+  const t = hacer({ pensar: (a) => (++vez, a.cotizacion
+    ? { bien: true, respuesta: vez > 2 ? 'Disculpa la confusión. Tu cotización aproximada es de {precio}.' : 'Te saldría aproximadamente en {precio}.', necesita_dueno: false, motivo: '', razon: 'x', datos: {} }
+    : { bien: true, respuesta: 'Va', necesita_dueno: false, motivo: '', razon: 'x', datos: { plaga: 'cucaracha', m2: 80, zona: 'Centro', tipo: 'casa' } }) });
+  await t.of.atender(msj('tengo cucarachas en mi casa del centro, son 80 metros'));
+  const hojas = () => t.salidas.filter(x => /por escrito/.test(x.texto)).length, antes = hojas();
+  await t.of.atender(msj('No quiero nada escribes raro'));
+  const ultima = t.salidas.filter(x => x.chat === '524420000000').at(-1)?.texto || '';
+  const conv = t.M.get('conv:whatsapp:524420000000'), ult = conv.mensajes.at(-1);
+  ok('si ya no quiere: se despide sin precio, sin otra hoja y sin tarjeta de cotización', !/\$/.test(ultima) && hojas() === antes && !ult.cotizacion, ultima);
+  { /* Carlos, 17 nov: cada mensaje le volvía a dar el precio (cada vez distinto) y una hoja nueva */
+    const vio = []; const t2 = hacer({ pensar: (a) => { vio.push(a.cotizacion?.yaDicho || false); return a.cotizacion
+      ? { bien: true, respuesta: a.cotizacion.yaDicho ? 'Casi nadie sabe los metros; con lo que me contaste el sistema los calcula.' : 'Te saldría aproximadamente en {precio}.', necesita_dueno: false, motivo: '', razon: 'x', datos: {} }
+      : { bien: true, respuesta: 'Va', necesita_dueno: false, motivo: '', razon: 'x', datos: { plaga: 'cucaracha', m2: 80, zona: 'Centro', tipo: 'casa' } }; } });
+    await t2.of.atender(msj('tengo cucarachas en mi casa del centro, son 80 metros', '524421000001'));
+    const p1 = t2.M.get('conv:whatsapp:524421000001').precioDicho;
+    await t2.of.atender(msj('Porque no pediste metros?', '524421000001'));
+    const c2 = t2.M.get('conv:whatsapp:524421000001'), hojas2 = t2.salidas.filter(x => /por escrito/.test(x.texto)).length;
+    ok('ya dicho el precio: no cambia sin datos nuevos, no se repite, y la hoja va UNA vez', p1 > 0 && c2.cotizacion.desde === p1 && vio.at(-1) === true && hojas2 === 1
+      && !/\$/.test(t2.salidas.filter(x => x.chat === '524421000001').at(-1).texto), JSON.stringify({ p1, vio, hojas2 })); }
+  { const t3 = hacer({ pensar: () => ({ bien: true, respuesta: 'Te saldría aproximadamente en {precio}.', necesita_dueno: false, motivo: '', razon: 'x', datos: {} }) });
+    await t3.of.atender(msj('Cuánto?', '524421000002'));
+    const dicho = t3.salidas.filter(x => x.chat === '524421000002').at(-1)?.texto || '';
+    ok('«¿Cuánto?» sin saber la plaga: se le pregunta qué plaga es (antes: «te contesta el encargado»)', /qué plaga/.test(dicho), dicho); }
+  ok('«{{precio}}» y «${precio}» quedan en el precio, sin llaves', ponerPrecio('Te saldría en {{precio}}.', { desde: 10002.44 }) === 'Te saldría en $10,002.44.' && ponerPrecio('Sale en ${precio}', { desde: 500 }) === 'Sale en $500'
+    && ponerPrecio('Te saldría en {$10,002.44}.', { desde: 10002.44 }) === 'Te saldría en $10,002.44.');
+  { const t4 = hacer({ pensar: (a) => a.cotizacion ? { bien: true, respuesta: a.cotizacion.desde > 300 ? 'Te saldría aproximadamente en $260.' : 'Te saldría en {precio}.', necesita_dueno: false, motivo: '', razon: 'x', datos: {} }
+      : { bien: true, respuesta: 'Va', necesita_dueno: false, motivo: '', razon: 'x', datos: { plaga: 'cucaracha', m2: 80, zona: 'Centro', tipo: 'casa' } } });
+    await t4.of.atender(msj('tengo cucarachas en mi casa del centro, son 80 metros', '524421000003'));
+    const c4 = t4.M.get('conv:whatsapp:524421000003'); c4.precioDicho = 260; c4.datos.m2 = 500; t4.M.set('conv:whatsapp:524421000003', c4);
+    await t4.of.atender(msj('no, son 500 metros', '524421000003'));
+    const dicho = t4.salidas.filter(x => x.chat === '524421000003').map(x => x.texto).filter(x => !/escrito/.test(x)).at(-1);
+    ok('si la IA copia el precio de antes y con el dato nuevo cambió, sale el de ahora (no «te contesta el encargado»)', /\$[\d,]+/.test(dicho) && !/\$260\b/.test(dicho) && !/encargado/.test(dicho), dicho); }
+  { const vio = []; const t5 = hacer({ pensar: (a) => { vio.push(a.cotizacion && { desde: a.cotizacion.desde, yaDicho: !!a.cotizacion.yaDicho }); return a.cotizacion
+      ? { bien: true, respuesta: a.cotizacion.yaDicho ? 'Se mantiene igual.' : 'Te saldría en {precio}.', necesita_dueno: false, motivo: '', razon: 'x', datos: {} }
+      : { bien: true, respuesta: 'Va', necesita_dueno: false, motivo: '', razon: 'x', datos: { plaga: 'cucaracha', m2: 100, zona: 'Centro', tipo: 'casa' } }; } });
+    await t5.of.atender(msj('tengo cucarachas en mi casa del centro, son 100 metros', '524421000004'));
+    const p0 = t5.M.get('conv:whatsapp:524421000004').precioDicho, c5 = t5.M.get('conv:whatsapp:524421000004'); c5.datos.m2 = 103; t5.M.set('conv:whatsapp:524421000004', c5);
+    await t5.of.atender(msj('bueno son como 103 metros', '524421000004'));
+    ok('un dato nuevo que mueve el precio menos de 5 %: se queda el que ya se le dijo', vio.at(-1)?.desde === p0 && vio.at(-1)?.yaDicho, JSON.stringify(vio)); }
+  ok('«cucharachas» y «chucharachas» (como lo escribió Carlos) son cucarachas', aPlaga('cucharachas') === 'cucaracha' && aPlaga('Chucharachas chica en ciudad del sol') === 'cucaracha'); }
 { /* el número para avisarle al dueño también se puede guardar en el negocio, sin desplegar */
   const t = hacer(); t.of.env = {}; t.M.set('negocio', { dueno_wa: '524421394023' });
   await t.of.aviso({ canal: 'whatsapp', chat: '524420000001', nombre: 'Cliente' }, 'prueba');

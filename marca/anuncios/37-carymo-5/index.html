@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>CARYMO · De la versión 1 a hoy</title>
+<!-- CARYMO 5 · DE LA VERSIÓN 1 A HOY (paquete del inversionista). Las novedades salen de la Bitácora de la app
+     (carymo/devlog.js), día por día, tal como están escritas; al final, la app de hoy (grabaciones de verdad).
+     Voz de la casa (Despina). Música: «Dreams Become Real», Kevin MacLeod (incompetech.com), CC BY 4.0. -->
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+</head><body>
+<script type="module">
+import { montar, fx } from '../32-carymo/serie.js';
+import { BITACORA } from '../../../carymo/devlog.js';
+const dia = (d) => BITACORA.find((x) => x.dia === d).cosas.map(([t]) => t);
+const D12 = dia('12 nov'), D13 = dia('13 nov'), D14 = dia('14 nov');
+window.listo = montar({
+  dur: 38,
+  musica: { archivo: '/tmp/claude-0/musica/Dreams_Become_Real.mp3', desde: 0, vol: .3, entrada: .3, fin: 2.6 },
+  gancho: { a: 0, b: 3.5, html: 'Nació el<br><em>12 de noviembre</em>' },
+  extra: [{ a: 3.4, b: 8.3, html: 'Alguien quería estudiar<br>y se <em>aburría</em>.' }],
+  listas: [
+    { a: 8.3, b: 13.9, dia: '12 nov', items: D12 },
+    { a: 13.9, b: 20.9, dia: '13 nov', items: D13 },
+    { a: 20.9, b: 26.5, dia: '14 nov', items: D14 },
+  ],
+  contador: { a: 8.3, b: 26.5, pasos: [[8.9, D12.length], [14.6, D12.length + D13.length], [21.6, D12.length + D13.length + D14.length]] },
+  escenas: [
+    { a: 26.5, b: 29.1, toma: 'juegos', desde: 'c4', hasta: 'c4+5', tit: 'Y no ha<br><em>parado</em>' },
+    { a: 29.1, b: 31.7, toma: 'cuarto', desde: 'vestir', hasta: 'fin', tit: 'Y no ha<br><em>parado</em>' },
+  ],
+  cierre: { a: 31.7, frase: 'Apenas va<br><em>empezando</em>.' },
+  sonidos: [[fx('golpe'), .4, .3], [fx('golpe'), 8.4, .35], [fx('golpe'), 14.0, .35], [fx('golpe'), 21.0, .35],
+    ...[...D13, ...D14].map((_, k) => [fx('toque'), k < D13.length ? 14.6 + k * .28 : 21.6 + (k - D13.length) * .28, .1])],
+});
+</script></body></html>

@@ -160,6 +160,23 @@ producto que una aspersión, y las ve él.
 **Orden al publicar:** primero se fusiona y se despliega este servidor, y DESPUÉS se carga el Excel. Con el
 servidor viejo, las tarifas nuevas cotizarían sin su sobreprecio (el código viejo no conoce `formula`).
 
+**Al centavo (Luis, 17 nov).** El bot cotiza con `corrida.js`, la misma cuenta de la pestaña «Cotizar» (copia exacta), sin
+mínimo ni redondeo. Cada cotización trae `desglose.excel.corrida` = horas, km, producto y litros: puestos en su Excel o en
+«Cotizar», dan el mismo precio. En «Números» sale como «Para sacarla igual en tu Excel» con el botón «Abrirla en Cotizar».
+
+**Lo que se aprendió probándolo con la IA de verdad (17 nov).** `pruebas-coloquial.mjs` corre más de mil mensajes como
+escribe la gente contra el reflejo (cero equivocados) y, en privado, el bot entero se probó con la IA real y su Excel:
+
+- con datos para cotizar en el mensaje (o dichos antes), los casos de precio, factura, empresa y mascotas no contestan por
+  reflejo: contesta la IA y cotiza (`elReflejo`). Un mensaje que nombra una plaga y sólo se parece a un caso, también;
+- la plaga se apunta en cuanto la dice, aunque conteste el reflejo;
+- «3 cuartos», «tres recámaras», «casa chiquita» cuentan aunque la IA no los apunte (`delTexto`);
+- con la cotización hecha, si la IA vuelve a pedir el tamaño o la colonia, sale el precio (`pideLoQueYaHay`);
+- una plaga sin precio automático (ratas, termitas, chinches…) se le avisa a la IA: no pide tamaño y pasa al encargado.
+
+**Lo que el bot nunca dice:** el nombre y el teléfono del dueño. `negocio.dueno_nombre` y `negocio.dueno_wa` (en `POST
+/api/negocio`) alimentan la compuerta `sinDatosDelDueno` que revisa cada respuesta antes de mandarla.
+
 **El número para avisarle al dueño:** la variable `DUENO_WA` o, sin desplegar, `POST /api/negocio
 { negocio: { dueno_wa: '524421394023' } }`. Es el 442 139 4023 que dio el cliente (el mismo de su página).
 Sirve hasta que se conecte WhatsApp (falta su acceso a Meta).

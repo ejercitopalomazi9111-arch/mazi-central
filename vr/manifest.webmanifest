@@ -1,0 +1,11 @@
+{
+ "name": "Mazi VR",
+ "short_name": "Mazi VR",
+ "start_url": "./",
+ "scope": "./",
+ "display": "fullscreen",
+ "orientation": "landscape",
+ "background_color": "#0B0513",
+ "theme_color": "#0B0513",
+ "icons": [{ "src": "../marca/paloma-2026/icono-512.png", "sizes": "512x512", "type": "image/png" }]
+}

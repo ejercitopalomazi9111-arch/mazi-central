@@ -1,0 +1,12 @@
+{
+ "titulo": "CARYMO 4 · Idiomas, 3D y diagramas (paquete del inversionista)",
+ "voces": { "Narrador": "google:Fenrir" },
+ "lineas": [
+  { "id": "01", "voz": "Narrador", "en": 0.3,  "txt": "CARYMO no es sólo para el examen.", "dice": "Carimo no es sólo para el examen." },
+  { "id": "02", "voz": "Narrador", "en": 3.4,  "txt": "Aprendes inglés o francés desde cero, un ratito al día." },
+  { "id": "03", "voz": "Narrador", "en": 8.6,  "txt": "Giras un cerebro en 3D, y tocas cada parte para ver qué hace." },
+  { "id": "04", "voz": "Narrador", "en": 14.4, "txt": "Y cada tema se vuelve un diagrama que se dibuja solo." },
+  { "id": "05", "voz": "Narrador", "en": 19.6, "txt": "Lo que no se entiende leyendo, se entiende viéndolo." },
+  { "id": "06", "voz": "Narrador", "en": 24.0, "txt": "CARYMO. Apréndelo viéndolo.", "dice": "Carimo. Apréndelo viéndolo." }
+ ]
+}

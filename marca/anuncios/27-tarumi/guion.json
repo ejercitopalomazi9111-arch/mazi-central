@@ -1,0 +1,13 @@
+{
+ "titulo": "TARUMI Smart Bottle (anuncio para cliente; sólo firma chica de Grupo Mazi al final)",
+ "voces": { "Narradora": "google:Despina" },
+ "lineas": [
+  { "id": "01", "voz": "Narradora", "en": 0.3,  "txt": "¿Sabes qué hay en el agua que tomas?" },
+  { "id": "02", "voz": "Narradora", "en": 3.3,  "txt": "Conoce TARUMI Smart Bottle." },
+  { "id": "03", "voz": "Narradora", "en": 7.2,  "txt": "Analiza tu agua." },
+  { "id": "04", "voz": "Narradora", "en": 9.2,  "txt": "La trata." },
+  { "id": "05", "voz": "Narradora", "en": 11.0, "txt": "Y verifica que esté lista para tomar." },
+  { "id": "06", "voz": "Narradora", "en": 14.6, "txt": "En casa, en la escuela o de viaje." },
+  { "id": "07", "voz": "Narradora", "en": 18.2, "txt": "TARUMI. Tecnología que transforma cada gota." }
+ ]
+}

@@ -1,0 +1,17 @@
+{
+ "titulo": "La tienda en línea de Grupo Mazi (para presentar al inversionista, 15 nov)",
+ "voces": { "Narrador": "google:Orus" },
+ "lento": { "Narrador": 1.03 },
+ "lineas": [
+  { "id": "01", "voz": "Narrador", "en": 0.4,  "txt": "Tu cliente siempre pide lo mismo." },
+  { "id": "02", "voz": "Narrador", "en": 2.9,  "txt": "¿Por qué lo haces buscarlo cada vez?" },
+  { "id": "03", "voz": "Narrador", "en": 6.4,  "txt": "Una tienda en línea como las grandes. Pero *tuya.*" },
+  { "id": "04", "voz": "Narrador", "en": 11.2, "txt": "Lo de siempre, en dos toques." },
+  { "id": "05", "voz": "Narrador", "en": 15.0, "txt": "Toca, agrega, y el carrito hace la cuenta." },
+  { "id": "06", "voz": "Narrador", "en": 20.0, "txt": "En el mostrador, cobras desde el mismo sistema." },
+  { "id": "07", "voz": "Narrador", "en": 24.8, "txt": "Ves a tus repartidores en vivo." },
+  { "id": "08", "voz": "Narrador", "en": 29.0, "txt": "Y te avisa qué surtir antes de que se acabe." },
+  { "id": "09", "voz": "Narrador", "en": 34.2, "txt": "Ventas, inventario y reparto. *Una sola app.*" },
+  { "id": "10", "voz": "Narrador", "en": 39.4, "txt": "Grupo Mazi. Si no existe la herramienta, *se construye.*", "sinSub": true }
+ ]
+}

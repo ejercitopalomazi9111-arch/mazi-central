@@ -209,6 +209,19 @@
     "el botón no hace nada en el editor"
    ],
    "salioDe": "presentaciones/recorte.js · 30 de septiembre de 2026"
+  },
+  {
+   "id": "mirar-fijo-elige-lo-que-ya-tenias-enfrente",
+   "titulo": "En realidad virtual, «mirar fijo para elegir» no puede contar desde que se abre la pantalla",
+   "gravedad": "media",
+   "sintoma": "Mazi VR abría «La Sala» solo, 1.6 s después de entrar al inicio, sin que nadie tocara nada.",
+   "causa": "La tarjeta del centro queda justo bajo la mira al abrir el menú, y el contador de mirar fijo arrancaba en ese momento. Antes no se notaba porque el foco por flechas empezaba en 0 y daba 4 s de gracia por casualidad.",
+   "porque": "En una página normal nada se activa por estar quieto; en el visor la mira SIEMPRE apunta a algo.",
+   "arreglo": "Al abrir una vista el foco se borra y mirar fijo queda bloqueado hasta que la mira se mueva a otra cosa; y con el control conectado mirar fijo no elige: se elige con X (vr/vr.js, mirarBloqueado).",
+   "comoCazarlo": "Entrar y no tocar nada durante 3 s: la vista no puede cambiar sola (vr/pruebas.mjs lo hace sin querer: si cambia, todo lo demás sale rojo).",
+   "consejo": "Una acción por quedarse quieto necesita que antes haya habido un movimiento.",
+   "salioDe": "Fase 1 de Mazi VR, 18 nov.",
+   "vecinas": []
   }
  ]
 }

@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Danos tu problema · Grupo Mazi</title>
+<!-- GM-3 · DANOS TU PROBLEMA (paquete del inversionista). La historia de una herramienta: nos pidieron arreglar
+     presentaciones, eran cientos de láminas, y en vez de hacerlo a mano construimos la herramienta. Las láminas son
+     las de la presentación de ventas de la casa, cambiadas DE VERDAD con la herramienta (capturas.mjs). El cliente
+     que lo pidió no se nombra. Voz de la casa (Orus), cámara quieta, el logo vivo grande al final. -->
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+  html,body{ margin:0; background:#0E0618 }
+  #v{ position:relative; width:1080px; height:1920px; overflow:hidden; color:#fff; font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+    background:radial-gradient(110% 70% at 50% 30%, #2A1142 0%, #170A26 55%, #0B0513 100%) }
+  .luz{ position:absolute; border-radius:50%; filter:blur(100px); opacity:.5 }
+  #l1{ width:760px; height:760px; background:#7E1735; left:-260px; top:1080px }
+  #l2{ width:640px; height:640px; background:#5A1C9E; right:-220px; top:220px }
+  #tit{ position:absolute; left:60px; right:60px; top:140px; height:330px; z-index:8 }
+  .t{ position:absolute; left:0; right:0; top:0; font-weight:800; font-size:82px; line-height:1.04; letter-spacing:-.035em; text-align:center; visibility:hidden }
+  .t .p{ display:inline-block; opacity:0 } .t em{ font-style:normal; color:#C77DFF }
+  #pared{ position:absolute; left:0; top:0; width:1080px; height:1920px; z-index:2 }
+  .lam{ position:absolute; width:300px; height:169px; border-radius:16px; overflow:hidden; box-shadow:0 0 0 2px rgba(226,184,255,.25), 0 20px 50px rgba(0,0,0,.5); visibility:hidden }
+  .lam img{ position:absolute; inset:0; width:100%; height:100%; display:block }
+  #una{ position:absolute; left:90px; top:720px; width:900px; height:506px; border-radius:28px; overflow:hidden; z-index:3;
+    box-shadow:0 0 0 3px rgba(226,184,255,.35), 0 50px 120px rgba(0,0,0,.55); visibility:hidden }
+  #una img{ width:100%; height:100%; display:block }
+  #dias{ position:absolute; left:0; right:0; top:760px; z-index:6; text-align:center; visibility:hidden }
+  #dias b{ display:block; font-size:300px; font-weight:900; letter-spacing:-.05em; line-height:1; font-variant-numeric:tabular-nums }
+  #dias span{ font-size:64px; font-weight:700; color:#C9B6DA }
+  .tel{ position:absolute; width:600px; height:1298px; border-radius:78px; background:#0c0c10; box-shadow:0 0 0 3px #3a2a52, 0 50px 120px rgba(0,0,0,.55); z-index:4 }
+  .tel .pant{ position:absolute; inset:16px; border-radius:64px; overflow:hidden; background:#fff }
+  .tel .pant img{ position:absolute; left:0; top:0; width:100%; height:auto }
+  .tel .isla{ position:absolute; left:50%; top:30px; width:150px; height:42px; margin-left:-75px; border-radius:30px; background:#0c0c10; z-index:2 }
+  .chip{ position:absolute; z-index:9; padding:18px 30px; border-radius:999px; background:#fff; color:#170A26; font-weight:800; font-size:38px;
+    box-shadow:0 14px 40px rgba(0,0,0,.35); white-space:nowrap; visibility:hidden }
+  .chip b{ color:#7E1735 }
+  #cmp{ position:absolute; left:0; right:0; top:620px; z-index:6; text-align:center; visibility:hidden }
+  #sem, #min{ display:block; font-weight:900; letter-spacing:-.045em; line-height:1.05 }
+  #sem{ font-size:150px; color:#8E7AA3; position:relative }
+  #sem i{ position:absolute; left:120px; right:120px; top:52%; height:14px; border-radius:7px; background:#E2B8FF; transform-origin:left center }
+  #min{ font-size:190px; color:#C77DFF; margin-top:40px }
+  #hoy{ position:absolute; left:60px; right:60px; top:1330px; z-index:6; text-align:center; font-size:56px; font-weight:700; color:#E9E4E4; visibility:hidden }
+  #danos{ position:absolute; left:60px; right:60px; top:700px; z-index:6; text-align:center; visibility:hidden }
+  #danos b{ display:block; font-size:132px; font-weight:900; letter-spacing:-.045em; line-height:1 }
+  #danos b em{ font-style:normal; color:#C77DFF }
+  #danos span{ display:block; margin-top:56px; font-size:58px; font-weight:700; color:#E9E4E4; line-height:1.15 }
+  #gm{ position:absolute; inset:0; z-index:20; background:radial-gradient(120% 80% at 50% 38%, #2C1145 0%, #170A26 60%, #0E0618 100%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:44px; visibility:hidden }
+  #gmLogo{ width:760px } #gmTxt{ font-weight:800; font-size:64px; letter-spacing:.02em; color:#fff; text-align:center }
+  #gmLema{ font-size:34px; color:#C9B6DA }
+</style></head>
+<body><div id="v">
+  <div class="luz" id="l1"></div><div class="luz" id="l2"></div>
+  <div id="tit">
+    <div class="t" id="t0"><span class="p">Nos</span> <span class="p">pidieron</span> <span class="p">arreglar</span> <span class="p">sus</span> <span class="p"><em>presentaciones</em></span></div>
+    <div class="t" id="t1"><span class="p"><em>Cientos</em></span> <span class="p">de</span> <span class="p">láminas</span></div>
+    <div class="t" id="t2"><span class="p">A</span> <span class="p">mano:</span> <span class="p"><em>semanas</em></span></div>
+    <div class="t" id="t3"><span class="p">Hicimos</span> <span class="p">la</span> <span class="p"><em>herramienta</em></span></div>
+    <div class="t" id="t4"><span class="p">Todas,</span> <span class="p">de</span> <span class="p">un</span> <span class="p"><em>jalón</em></span></div>
+  </div>
+  <div id="pared"></div>
+  <div id="una"><img src="cap/antes-06.png"></div>
+  <div id="dias"><b id="diasN">1</b><span id="diasT">día</span></div>
+  <div class="tel" id="tel" style="left:240px; top:540px"><div class="isla"></div><div class="pant"><img src="../28-herramientas/cap/pres-0.png"></div></div>
+  <div class="chip" id="c1"><b>Fondo, letra y color</b> a todas</div>
+  <div class="chip" id="c2"><b>12</b> láminas · <b>1</b> toque</div>
+  <div id="cmp"><span id="sem">1 semana<i></i></span><span id="min">1 minuto</span></div>
+  <div id="hoy">Y hoy la usan nuestros clientes.</div>
+  <div id="danos"><b>Danos tu <em>problema</em>.</b><span>Nosotros hacemos la herramienta.</span></div>
+  <div id="gm"><div id="gmLogo"></div><div id="gmTxt">Grupo Mazi</div><div id="gmLema">Si no existe la herramienta, se construye.</div></div>
+</div>
+<script type="module">
+import { guion, sonidosVoz, tramo, sale, entra, resorte, mezcla, azar } from '../motor.js';
+import { crearPaloma } from '../../paloma-2026/vivo.js';
+const $ = (s) => document.querySelector(s);
+const ver = (el, a) => { el.style.visibility = a > .001 ? 'visible' : 'hidden'; el.style.opacity = a; };
+const fx = (n) => `../../../herramientas/video/efectos/${n}.wav`;
+
+/* tramos [entra, sale] de cada título */
+const E = { 0: [0, 4.2], 1: [4.1, 8.5], 2: [8.4, 12.7], 3: [12.6, 18.1], 4: [18.0, 23.7] };
+const FIN_GM = 36.3, FIN = 42.0;
+
+/* la pared: 3 columnas × 12 filas con las 12 láminas repetidas, antes y después */
+const pared = $('#pared'); azar(7);
+const L = [];
+for(let k = 0; k < 36; k++){
+  const col = k % 3, fila = Math.floor(k / 3), n = String((k * 5 + fila) % 12).padStart(2, '0');
+  const d = document.createElement('div'); d.className = 'lam';
+  d.innerHTML = `<img src="cap/antes-${n}.png"><img class="nueva" src="cap/despues-${n}.png">`;
+  pared.append(d);
+  L.push({ el: d, nueva: d.querySelector('.nueva'), x: 60 + col * 330, y: 520 + fila * 199, k, col, fila, r0: azar() * 30 - 15, dx: azar() * 600 - 300 });
+}
+
+function palabras(el, t, a, paso = .1){
+  [...el.querySelectorAll('.p')].forEach((p, i) => { const u = tramo(t, a + i * paso, a + i * paso + .38);
+    p.style.opacity = sale(u); p.style.transform = `translateY(${(1 - resorte(u)) * 56}px) scale(${.86 + .14 * resorte(u)})`; });
+}
+const chip = (el, t, a, b, x, y) => { const e = tramo(t, a, a + .45), s = entra(tramo(t, b - .3, b));
+  ver(el, sale(e) * (1 - s)); el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.transform = `scale(${resorte(e)}) translateY(${Math.sin(t * 1.8) * 6}px)`; };
+
+window.listo = (async () => {
+  window.G = await guion('.');
+  const P = await crearPaloma($('#gmLogo'), { reloj: 'manual', puntero: false });
+  P.abrir(1); P.paso(0);
+  await Promise.all([...document.images].map((i) => i.decode().catch(() => {})));
+  await document.fonts.ready;
+
+  window.pintar = (t) => {
+    $('#l1').style.transform = `translate(${Math.sin(t * .3) * 40}px, ${Math.cos(t * .25) * 30}px)`;
+    $('#l2').style.transform = `translate(${Math.cos(t * .2) * 40}px, ${Math.sin(t * .3) * 30}px)`;
+    for(let k = 0; k <= 4; k++){
+      const el = $('#t' + k), [a, b] = E[k], dentro = t >= a && t < b;
+      ver(el, dentro ? 1 - entra(tramo(t, b - .35, b)) : 0); if(dentro) palabras(el, t, a + .1);
+      el.style.transform = `translateY(${-entra(tramo(t, b - .35, b)) * 40}px)`;
+    }
+
+    /* 0 · una sola lámina cae al centro y se queda flotando */
+    { const en = resorte(tramo(t, .2, 1.1)), sal = entra(tramo(t, 4.0, 4.6));
+      ver($('#una'), t < 4.6 ? 1 : 0);
+      $('#una').style.transform = `translateY(${(1 - en) * -1300 + Math.sin(t * 1.4) * 10}px) rotate(${(1 - en) * -8 + Math.sin(t) * .8}deg) scale(${1 - sal * .67})`;
+      $('#una').style.opacity = 1 - sal; }
+
+    /* 1 a 4 · la pared: llegan de todos lados, suben despacio; en 2 se apaga; en 4 vuelve y cambian todas en ola */
+    const llega = (l) => resorte(tramo(t, 4.2 + l.k * .035, 4.9 + l.k * .035));
+    const sube = (t - 4.2) * 22;
+    const apaga = sale(tramo(t, 8.5, 9.2)) * (1 - sale(tramo(t, 12.2, 12.7)));
+    const fuera3 = entra(tramo(t, 12.4, 12.9)), vuelve4 = resorte(tramo(t, 17.9, 18.8)), fuera4 = entra(tramo(t, 23.2, 23.7));
+    L.forEach((l) => {
+      let a = 0, x = l.x, y = l.y, r = 0, s = 1;
+      if(t >= 4.2 && t < 12.9){
+        const e = llega(l); a = 1 - fuera3; x = l.x + (1 - e) * l.dx; y = l.y - sube + (1 - e) * 1500; r = (1 - e) * l.r0; s = 1 - fuera3 * .2;
+        l.el.style.filter = `brightness(${1 - apaga * .65}) saturate(${1 - apaga * .6})`;
+      } else if(t >= 17.9 && t < 23.7){
+        const e = resorte(tramo(t, 17.9 + l.fila * .04, 18.7 + l.fila * .04)); a = 1 - fuera4;
+        y = l.y - 100 + (1 - e) * 1500 - fuera4 * 400; x = l.x; s = 1 - fuera4 * .15; l.el.style.filter = '';
+      }
+      ver(l.el, a); if(a) l.el.style.transform = `translate(${x}px, ${y}px) rotate(${r}deg) scale(${s})`;
+      /* la ola: cada lámina se voltea a su versión nueva, en diagonal */
+      const f = tramo(t, 19.3 + (l.fila + l.col) * .09, 19.6 + (l.fila + l.col) * .09);
+      l.nueva.style.clipPath = `inset(${(1 - sale(f)) * 100}% 0 0 0)`;
+      l.el.style.boxShadow = f > 0 && f < 1 ? '0 0 0 4px #E2B8FF, 0 0 40px #C77DFF' : '';
+    });
+
+    /* 2 · los días que se van, a mano */
+    { const a = sale(tramo(t, 8.9, 9.4)) * (1 - entra(tramo(t, 12.2, 12.6))); ver($('#dias'), a);
+      const n = Math.max(1, Math.min(21, Math.floor(mezcla(1, 22, sale(tramo(t, 9.2, 12.0)))))); $('#diasN').textContent = n; $('#diasT').textContent = n === 1 ? 'día' : 'días';
+      $('#dias').style.transform = `scale(${.9 + .1 * resorte(tramo(t, 8.9, 9.6))})`; }
+
+    /* 3 · la herramienta: el teléfono sube */
+    { const en = resorte(tramo(t, 12.8, 13.6)), sal = entra(tramo(t, 17.6, 18.1)); ver($('#tel'), t >= 12.8 && t < 18.1 ? 1 : 0);
+      $('#tel').style.transform = `translateY(${(1 - en) * 1400 - sal * 1600 + Math.sin(t * 1.2) * 8}px)`; }
+    chip($('#c1'), t, 14.8, 17.8, 170, 1580);
+    chip($('#c2'), t, 20.8, 23.5, 270, 1700);
+
+    /* 5 · una semana → un minuto */
+    { const a = sale(tramo(t, 23.7, 24.1)) * (1 - entra(tramo(t, 29.6, 30.1))); ver($('#cmp'), a);
+      $('#sem').style.transform = `translateY(${(1 - resorte(tramo(t, 23.7, 24.4))) * 120}px)`;
+      $('#sem i').style.transform = `scaleX(${sale(tramo(t, 25.0, 25.5))})`;
+      $('#sem').style.opacity = 1 - .45 * sale(tramo(t, 25.3, 25.8));
+      const m = tramo(t, 25.6, 26.3); $('#min').style.opacity = sale(m); $('#min').style.transform = `scale(${.6 + .4 * resorte(m)})`;
+      const h = sale(tramo(t, 27.0, 27.5)) * (1 - entra(tramo(t, 29.6, 30.1))); ver($('#hoy'), h); $('#hoy').style.transform = `translateY(${(1 - h) * 40}px)`; }
+
+    /* 6 · danos tu problema */
+    { const a = sale(tramo(t, 30.1, 30.5)) * (1 - entra(tramo(t, 36.0, 36.4))); ver($('#danos'), a);
+      $('#danos b').style.transform = `scale(${.8 + .2 * resorte(tramo(t, 30.1, 30.9))})`;
+      const s = tramo(t, 32.3, 32.9); $('#danos span').style.opacity = sale(s); $('#danos span').style.transform = `translateY(${(1 - resorte(s)) * 50}px)`; }
+
+    /* cierre: el logo completo, grande, que se arma y levita */
+    const g = sale(tramo(t, FIN_GM, FIN_GM + .5)); ver($('#gm'), g);
+    if(t > FIN_GM + .2) P.abrir(0); P.paso(Math.max(0, t - FIN_GM));
+    const tx = sale(tramo(t, FIN_GM + 1.0, FIN_GM + 1.6)), lm = sale(tramo(t, FIN_GM + 1.8, FIN_GM + 2.4));
+    $('#gmTxt').style.opacity = tx; $('#gmTxt').style.transform = `translateY(${(1 - tx) * 30}px)`; $('#gmLema').style.opacity = lm;
+  };
+})();
+window.VIDEO = { w: 1080, h: 1920, fps: 30, dur: FIN,
+  musica: { archivo: '/tmp/claude-0/mus/173.mp3', desde: 30, vol: .38, entrada: .3, fin: 2.2 },
+  get sonidos(){ return [...sonidosVoz(window.G, 1.05),
+    [fx('whoosh'), .2, .35], [fx('golpe'), 1.0, .3], [fx('whoosh'), 4.1, .35], ...[0, 1, 2, 3, 4, 5].map((k) => [fx('toque'), 4.3 + k * .2, .12]),
+    [fx('golpe'), 8.9, .3], [fx('whoosh'), 12.7, .35], [fx('ding'), 15.2, .2], [fx('whoosh'), 17.9, .35], [fx('subida'), 19.3, .3], [fx('ding'), 21.2, .2],
+    [fx('whoosh'), 23.7, .35], [fx('golpe'), 25.0, .3], [fx('ding'), 25.7, .3], [fx('whoosh'), 30.1, .35], [fx('golpe'), 30.3, .3],
+    [fx('whoosh'), FIN_GM, .35], [fx('golpe'), FIN_GM + .55, .5]]; } };
+</script></body></html>

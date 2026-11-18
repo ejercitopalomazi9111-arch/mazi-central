@@ -45,9 +45,14 @@ for(const l of g.lineas){
       j = await r.json().catch(() => null);
     }
     if(!j || !j.bien){ console.error('✗', l.id, (j && j.error) || 'la voz no contestó'); fs.writeFileSync(path.join(vd, 'hechas.json'), JSON.stringify(hechas, null, 1)); process.exit(1); }
-    const wav = mp3.replace(/\.mp3$/, '.wav'); fs.writeFileSync(wav, Buffer.from(j.data, 'base64'));
+    const wav = mp3.replace(/\.mp3$/, '.wav'), crudo = Buffer.from(j.data, 'base64'); fs.writeFileSync(wav, crudo);
     const lento = l.lento ?? g.lento?.[l.voz];
-    execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', wav, '-af', (lento ? `atempo=${(1 / lento).toFixed(3)},` : '') + 'silenceremove=start_periods=1:start_threshold=-45dB,areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,highpass=f=70,acompressor=threshold=0.12:ratio=2.5:attack=8:release=120,aresample=44100', '-ac', '2', '-b:a', '160k', mp3]);
+    /* Gemini a veces manda el audio CRUDO (PCM de 16 bits, sin el encabezado RIFF): ffmpeg dice «Invalid data» y
+       antes había que reintentar a ciegas. Si no empieza con RIFF, se lee como PCM con la frecuencia del mime
+       («audio/L16;rate=24000»; 24 kHz si no la dice). */
+    const sinCabeza = crudo.subarray(0, 4).toString('latin1') !== 'RIFF';
+    const tasa = String((/rate=(\d+)/.exec(j.mime || '') || [])[1] || 24000);
+    execFileSync('ffmpeg', ['-v', 'error', '-y', ...(sinCabeza ? ['-f', 's16le', '-ar', tasa, '-ac', '1'] : []), '-i', wav, '-af', (lento ? `atempo=${(1 / lento).toFixed(3)},` : '') + 'silenceremove=start_periods=1:start_threshold=-45dB,areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,highpass=f=70,acompressor=threshold=0.12:ratio=2.5:attack=8:release=120,aresample=44100', '-ac', '2', '-b:a', '160k', mp3]);
     fs.rmSync(wav); hechas[l.id] = firma; fs.writeFileSync(path.join(vd, 'hechas.json'), JSON.stringify(hechas, null, 1)); console.log('✓', l.id, l.voz, '(' + voz + ')');
   }
   else if(hechas[l.id] !== firma || !fs.existsSync(mp3)){
