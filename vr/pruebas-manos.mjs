@@ -23,6 +23,10 @@ sí(await p.evaluate(() => __manos.listo), 'el modelo de manos carga' + (await p
 let vistas = 0; for(let i = 0; i < 60 && !vistas; i++){ await p.waitForTimeout(250); vistas = await p.evaluate(() => __manos.manos); }
 sí(vistas >= 1, 've la mano de la cámara');
 sí(await p.evaluate(() => !!__vr.extra.rayo), 'el índice hace de puntero');
+const desde = await p.evaluate(() => { const R = __vr.extra.rayo, P = __manos.punta; return R && P ? Math.hypot(R.origen.x - P[0], R.origen.y - P[1], R.origen.z - P[2]) : 99; });
+sí(desde < .02, `el rayo sale de la punta del índice, no de entre el índice y el pulgar (a ${(desde * 100).toFixed(1)} cm)`);
+const dirY = await p.evaluate(() => { const d = __vr.extra.rayo.dir.clone().transformDirection(__vr.cabeza.matrixWorldInverse); return d.y; });
+sí(dirY > .5, `el dedo apunta hacia arriba y el rayo también (y = ${dirY.toFixed(2)})`);
 sí(await p.evaluate(() => !!__vr.focoActual()), 'el puntero da foco a una tarjeta (' + await p.evaluate(() => __vr.focoActual()) + ')');
 sí(errores.length === 0, 'sin errores' + (errores.length ? ': ' + errores.slice(0, 2).join(' | ') : ''));
 console.log(`${ok} bien · ${mal} mal`); await b.close(); process.exit(mal ? 1 : 0);
