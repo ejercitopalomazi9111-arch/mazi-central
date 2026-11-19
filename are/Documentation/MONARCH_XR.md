@@ -45,6 +45,8 @@ docente (Opciones o PS 5 veces, o 5 toques en la esquina); fotos, modelo y mapa 
 QR imprimible: `vr/monarca/qr.html`. Guía del docente: `vr/monarca/DOCENTE.md`.
 Prueba: `node vr/pruebas-monarca.mjs` (recorre todo como alumno y revisa que cada cifra en pantalla esté en la tabla de arriba).
 
-**Falta:** videos con licencia, minijuegos (guiar a la monarca por la ruta, plantar algodoncillo), ciclo de vida
+**Hecho después:** minijuego «Flores en el camino» (plantas 5 flores reales de Poly Haven y la monarca llega a tomar néctar; no es algodoncillo porque no hay modelo libre de asclepia y no se va a fingir).
+
+**Falta:** videos con licencia, más minijuegos (guiar a la monarca por la ruta), ciclo de vida
 (huevo → oruga → crisálida → adulta, cuando se verifiquen sus datos), voz grabada en vez de la del teléfono, y probarla en
 un iPhone y un Android de verdad con el visor.

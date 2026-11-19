@@ -27,7 +27,12 @@ await opciones(); sí(await p.evaluate(() => __vr.ahora()) === 'monarca', 'Opcio
 sí(await tocar('Empezar') && await escena() === 'mariposa', 'Empezar → La monarca'); await cap('2-mariposa');
 const vis = await p.evaluate(() => ({ mariposa: __monarca.grupo.children.some((c) => c.visible && c.children.length && c.children[0].isGroup) }));
 sí(vis.mariposa, 'se ve el ejemplar escaneado de monarca');
-await tocar('Siguiente'); sí(await escena() === 'migracion', 'Siguiente → La migración'); await p.waitForTimeout(6500); await cap('3-migracion');
+await tocar('Siguiente'); sí(await escena() === 'flores', 'Siguiente → Flores en el camino');
+await p.evaluate(() => window.__monarca.armadoFlores); await p.waitForTimeout(300);
+for(let i = 0; i < 5; i++){ sí(await tocar('Plantar'), `planta la flor ${i + 1}`); await p.waitForTimeout(i === 2 ? 1200 : 200); if(i === 2) await cap('2b-flores'); }
+const fl = await p.evaluate(() => ({ flores: window.__monarca.grupo.children.find((g) => g.isGroup && g.children.length === 5 && g.children.every((c) => c.isMesh))?.children.length || 0, lugares: window.__monarca.elegibles().filter((b) => b.userData.panel.titulo === 'Plantar').length }));
+sí(fl.flores === 5 && fl.lugares === 0, `crecen las cinco flores y ya no quedan lugares (${fl.flores} flores)`); await cap('2c-flores');
+await tocar('Siguiente'); sí(await escena() === 'migracion', '«¡Listo!» → La migración'); await p.waitForTimeout(6500); await cap('3-migracion');
 await tocar('Siguiente'); sí(await escena() === 'santuario', '→ El santuario'); await p.waitForTimeout(1500); await cap('4-santuario');
 const cielo = await p.evaluate(() => { const c = __monarca.grupo.children.find((x) => x.geometry?.type === 'SphereGeometry'); return { vis: c.visible, mapa: !!c.material.map }; });
 sí(cielo.vis && cielo.mapa, 'el santuario tiene su foto 360° de fondo');
