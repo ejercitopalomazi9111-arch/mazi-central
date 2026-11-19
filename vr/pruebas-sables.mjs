@@ -35,4 +35,41 @@ await p.evaluate(() => { window.__pad.buttons[1] = { pressed: false, value: 0 };
 sí(await p.evaluate(() => __vr.ahora()) === 'juegos', 'Círculo regresa a Juegos');
 sí((await p.evaluate(() => __sables.estado())).prendidos === 0, 'y ningún sable se queda flotando en el menú');
 sí(errores.length === 0, 'sin errores' + (errores.length ? ': ' + errores.slice(0, 3).join(' | ') : ''));
+/* CON LAS MANOS (sin control): el sable sale del marco de la palma; «Calibrar» guarda cómo lo agarras y se queda guardado */
+{ const c2 = await b.newContext({ viewport: { width: 844, height: 390 } });
+  await c2.addInitScript(() => { navigator.getGamepads = () => []; });
+  const q = await c2.newPage(); const err2 = []; q.on('pageerror', (e) => err2.push(e.message));
+  await q.goto(BASE + '/vr/', { waitUntil: 'networkidle' }); await q.click('#bEntrar');
+  await q.waitForFunction(() => window.__vr?.ahora() === 'inicio', null, { timeout: 15000 });
+  /* una mano derecha de mentiras: la palma frente a ti, en puño, con su «lado» (meñique → índice) hacia donde se diga */
+  const mano = (adelante, lado) => q.evaluate(([a, l]) => { const V = window.__vr, T = V.THREE;
+    window.__mano = a ? [{ lado: 1, mundo: { palma: V.cabeza.localToWorld(new T.Vector3(.15, -.1, -.4)), punta: new T.Vector3(), muneca: new T.Vector3(0, -9, 0) }, ejes: { adelante: new T.Vector3(...a).normalize(), lado: new T.Vector3(...l).normalize() } }] : [];
+    if(!window.__fijo){ window.__fijo = true; Object.defineProperty(V.extra, 'manos', { get: () => window.__mano, set(){}, configurable: true }); } }, [adelante, lado]);
+  const hoja = () => q.evaluate(() => { const h = window.__sables.deMano['1'].st; return { dir: h.dir, local: h.local }; });
+  const grados = (a, b) => Math.acos(Math.max(-1, Math.min(1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2]))) * 180 / Math.PI;
+  await q.evaluate(() => { __vr.ir('juegos'); __vr.ir('sables'); }); await q.waitForTimeout(400);
+  await mano([0, 0, -1], [0, 1, 0]); await q.waitForTimeout(300);
+  let h = await hoja();
+  sí(h.dir && grados(h.dir, [0, 0, -1]) < 2, `sin calibrar, el sable sale hacia adelante de la palma (${h.dir ? grados(h.dir, [0, 0, -1]).toFixed(1) : '—'}°)`);
+  sí((await q.evaluate(() => __sables.elegibles().map((m) => m.userData.panel?.titulo || '').length)) === 2, 'en el menú de Sables están Jugar y Calibrar');
+  await q.evaluate(() => __sables.calibrar()); await q.waitForTimeout(2500);
+  const est = await q.evaluate(() => __sables.estado().estado);
+  h = await hoja();
+  sí(est === 'listo' && grados(h.local, [1, 0, 0]) < 3, `Calibrar con el puño (pulgar arriba) termina solo y guarda ese agarre (${est}, ${grados(h.local, [1, 0, 0]).toFixed(1)}° del lado)`);
+  await mano([0, 0, -1], [1, 0, 0]); await q.waitForTimeout(1200); h = await hoja();
+  sí(grados(h.dir, [1, 0, 0]) < 3, `ya calibrado, girar la mano gira el sable con ella (${grados(h.dir, [1, 0, 0]).toFixed(1)}°)`);
+  /* la mano se pierde un instante: el sable se queda; se pierde más: se apaga */
+  /* se mira en el primer cuadro sin mano (el navegador de pruebas va a ~6 cuadros por segundo) */
+  await q.evaluate(() => { const c = __sables.cuadro; window.__vistos = []; __sables.cuadro = (...x) => { const r = c(...x); window.__vistos.push([__sables.estado().prendidos, performance.now() / 1000 - __sables.deMano['1'].st.visto]); return r; }; });
+  await mano(null); await q.evaluate(() => { window.__vistos = []; });
+  await q.waitForFunction(() => window.__vistos.length > 0); const [sigue, hueco] = await q.evaluate(() => window.__vistos[0]); console.log('   primer cuadro sin mano, a', hueco.toFixed(2), 's de la última lectura');
+  await q.waitForTimeout(600); const apagado = (await q.evaluate(() => __sables.estado())).prendidos;
+  /* este navegador va tan lento (medio segundo entre cuadros) que el «instante» casi nunca cabe: eso lo mide pruebas-sable-mano.mjs */
+  sí((hueco > .3 || sigue === 1) && apagado === 0, `la mano se pierde: el sable se queda si fue un instante (${hueco <= .3 ? sigue : 'no cupo'}) y se apaga si tarda (${apagado})`);
+  await q.reload({ waitUntil: 'networkidle' }); await q.click('#bEntrar');
+  await q.waitForFunction(() => window.__vr?.ahora() === 'inicio', null, { timeout: 15000 });
+  await q.evaluate(() => { __vr.ir('juegos'); __vr.ir('sables'); }); await q.waitForTimeout(300); h = await hoja();
+  sí(grados(h.local, [1, 0, 0]) < 3, 'la calibración se queda guardada al volver a abrir');
+  sí(err2.length === 0, 'sin errores con las manos' + (err2.length ? ': ' + err2.slice(0, 3).join(' | ') : ''));
+  await c2.close(); }
 console.log(`${ok} bien · ${mal} mal`); await b.close(); process.exit(mal ? 1 : 0);
