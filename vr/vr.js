@@ -24,6 +24,33 @@ const AJ = { ...FABRICA };
 try{ Object.assign(AJ, JSON.parse(localStorage.getItem('mazivr.ajustes') || '{}')); }catch{}
 const guardar = () => { try{ localStorage.setItem('mazivr.ajustes', JSON.stringify(AJ)); }catch{} };
 
+/* ── ERRORES QUE DICEN QUÉ, DÓNDE Y CUÁNDO (Carlos, 19 nov: «que el código de error sea tan claro que sepas exactamente
+   dónde falló, cómo y cuándo»). Cada uno lleva:
+     código   E-MOTOR, E-VISTA, E-CUADRO, E-6DOF, E-6DOF-VIO, E-CAMARA, E-PAGINA, E-PROMESA
+     dónde    la pieza y la función (o archivo:línea)
+     cómo     el mensaje del navegador
+     cuándo   la hora, la vista en la que estabas y los segundos desde que abriste
+   Sale en el visor (aviso de 5 s), en la consola y se guarda en el teléfono: la pantalla de entrada enseña el último. ── */
+const T0 = performance.now();
+export const bitacora = [];
+const ultimaVez = {};
+export function fallo(codigo, donde, e){
+  const k = codigo + '|' + donde, ahoraMs = performance.now();
+  if(ultimaVez[k] && ahoraMs - ultimaVez[k] < 5000) return null;   /* el mismo error en cada cuadro no tapa la vista */
+  ultimaVez[k] = ahoraMs;
+  const msg = String(e?.message || e || 'sin mensaje').slice(0, 180);
+  const linea = String(e?.stack || '').split('\n').map((l) => l.trim()).find((l) => /\.js:\d+/.test(l))?.replace(/^at\s+/, '').replace(location.origin, '') || '';
+  let enVista = 'entrada'; try{ enVista = vista || 'entrada'; }catch{}
+  const r = { codigo, donde, msg, linea, hora: new Date().toLocaleTimeString('es-MX'), vista: enVista, seg: Math.round((ahoraMs - T0) / 1000) };
+  bitacora.push(r); if(bitacora.length > 30) bitacora.shift();
+  try{ localStorage.setItem('mazivr.errores', JSON.stringify(bitacora.slice(-10))); }catch{}
+  console.warn(`[${codigo}] ${donde} · ${msg}${linea ? ' · ' + linea : ''} · vista «${r.vista}» · ${r.hora} (${r.seg} s)`);
+  try{ hud(`${codigo} · ${donde} · ${msg}`.slice(0, 60), 5); }catch{}
+  return r;
+}
+addEventListener('error', (e) => fallo('E-PAGINA', `${String(e.filename || '').split('/').pop() || '?'}:${e.lineno || '?'}`, e.error || e.message));
+addEventListener('unhandledrejection', (e) => fallo('E-PROMESA', 'promesa sin atrapar', e.reason));
+
 const C = { fondo: '#170A26', sup: '#24123A', borde: '#3C2652', acento: '#AC27FF', vino: '#7E1735', texto: '#F4EEF2', suave: '#C9B6DA', rosa: '#C77DFF' };
 
 /* ── escena ── */
@@ -104,7 +131,7 @@ export async function abrirCamara(){
       }catch(e){ console.warn('ultra gran angular', e); }
     }
     return await ponerFlujo();
-  }catch(e){ console.warn('cámara', e); return false; }
+  }catch(e){ fallo('E-CAMARA', 'abrirCamara', e); return false; }
 }
 async function ponerFlujo(){
   video.srcObject = flujo; await video.play();
@@ -183,6 +210,7 @@ function leerCabeza(){
     const pose = seis.vio.S.corriendo ? seis.vio.pose(performance.now()) : null;
     const st = seis.filtro.paso(pose, [qCab.w, qCab.x, qCab.y, qCab.z], seis.vio.S, performance.now(), seis.ojo || ojoPorDefecto((((screen.orientation?.angle ?? window.orientation ?? 90) % 360) + 360) % 360));
     cabeza.position.set(st.pos[0], st.pos[1], st.pos[2]);
+    if(seis.vio.S.error && seis.vio.S.error !== seis.errorVisto){ seis.errorVisto = seis.vio.S.error; fallo('E-6DOF-VIO', 'trabajador del rastreo (worker.js)', seis.vio.S.error); }
     const e = seis.vio.S.estado, aviso6 = !seis.vio.S.listo ? '' : e === 'track' ? '6DoF' : e === 'coast' ? 'Muévete despacio' : e === 'wait' ? 'Quédate quieto' : e === 'init' ? 'Mueve el teléfono de lado' : String(e || '').startsWith('reset') ? 'Rastreo perdido' : '';
     if(aviso6 && aviso6 !== seis.aviso && performance.now() - seis.avisoEn > 1500){ seis.aviso = aviso6; seis.avisoEn = performance.now(); hud(aviso6, 1.6); }
   } else if(cabeza.position.lengthSq()) cabeza.position.set(0, 0, 0);
@@ -194,14 +222,17 @@ export async function ponerSeis(si, { demo = null, videoDemo = null } = {}){
   if(seis.vio){ seis.vio.parar(); seis.vio = null; }
   seis.filtro = crearSeis(); seis.aviso = ''; seis.error = '';
   if(!si){ if(!demo && camVIO) await reabrirCamara(); return true; }
+  let paso = 'cargar vio.js';
   try{
     const { crearVIO } = await import('./espacial/vio.js');
+    paso = 'abrir la cámara principal';
     if(!demo){ if(!camVIO || !flujo) await reabrirCamara(); if(!flujo) throw new Error('Sin cámara'); }
+    paso = 'arrancar el rastreo (sensores, WebAssembly, video)';
     const v = crearVIO({ video: demo ? videoDemo : video, demo });
     seis.vio = v; hud('Preparando 6DoF', 2);
     await v.iniciar();
     return true;
-  }catch(e){ seis.error = String(e.message || e); console.warn('6DoF', e); hud('6DoF: ' + seis.error.slice(0, 40), 3); if(seis.vio){ seis.vio.parar(); seis.vio = null; } if(!demo){ AJ.seis = false; guardar(); } return false; }
+  }catch(e){ seis.error = String(e.message || e); fallo('E-6DOF', paso, e); if(seis.vio){ seis.vio.parar(); seis.vio = null; } if(!demo){ AJ.seis = false; guardar(); } return false; }
 }
 /* hacia dónde ve la cabeza en el mundo, sólo de lado (para recentrar y caminar) */
 const adelante = new THREE.Vector3();
@@ -476,9 +507,9 @@ function cuadro(t){
      le toca otro turno (Carlos, 18 nov: un sable morado gigante se quedaba flotando en el menú, porque Sables volvía a
      prenderlo después de su propio salir) */
   const va = vistas[vista];
-  va?.cuadro?.(t / 1000, dt);
+  try{ va?.cuadro?.(t / 1000, dt); }catch(e){ fallo('E-VISTA', `${vista}.cuadro`, e); }
   if(va?.atrasEn) ponerAtras();
-  for(const f of alCuadro) f(t / 1000, dt);
+  for(const f of alCuadro) try{ f(t / 1000, dt); }catch(e){ fallo('E-CUADRO', f.name || 'alCuadro', e); }
   /* la mira sólo cuando estás viendo un botón (Carlos, 18 nov: «si no estoy mirando a ningún botón, que el cursor desaparezca, es molesto») */
   mira.visible = !extra.rayo && !!viendo;
   if(aviso.malla.visible && performance.now() > avisoHasta) aviso.malla.visible = false;
@@ -528,7 +559,7 @@ function ponerEncima(camaras, ancho, alto){
 export function arrancar(){
   medir(); addEventListener('resize', medir); screen.orientation?.addEventListener?.('change', medir);
   ponerMixta(AJ.mixta && !!camTex);
-  render.setAnimationLoop(cuadro);
+  render.setAnimationLoop((t) => { try{ cuadro(t); }catch(e){ fallo('E-MOTOR', 'cuadro', e); } });
 }
 export const hayControl = () => padVisto;
 export { cuarto, domo, piso };

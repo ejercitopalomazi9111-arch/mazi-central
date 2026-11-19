@@ -44,6 +44,7 @@
     <div class="estado"><span id="eControl">Control</span><span id="eVideos">Archivos</span><span id="eGuardado">Sin internet</span></div>
     <button class="boton" id="bEntrar" type="button">Entrar</button>
     <button class="boton sec" id="bPantalla" type="button">Sin visor</button>
+    <p id="ultimoError" hidden style="font-size:13px; color:#C9B6DA; max-width:420px; overflow-wrap:anywhere"></p>
     <label class="boton sec" style="display:inline-grid; place-items:center">Archivos<input id="iVideos" type="file" accept="video/*,audio/*" multiple hidden></label>
   </div>
 </div>
@@ -77,6 +78,9 @@ let botonAntes = true;
   const alguno = !!p && p.buttons.some((b) => b.pressed); if(alguno && !botonAntes && $('#bEntrar') && !$('#bEntrar').disabled) $('#bEntrar').click(); botonAntes = alguno; $('#eControl').classList.toggle('si', !!p); $('#eControl').textContent = p ? V.nombrePad(p) : 'Control: pica un botón'; if(!document.body.classList.contains('dentro')) requestAnimationFrame(vigilarControl); })();
 /* el visor se arma MIENTRAS se ve esta pantalla: al tocar Entrar ya está listo (antes se armaba después del toque) */
 const armado = montar();
+/* el último error de la vez pasada, con su código, dónde y cuándo (vr.js, fallo) */
+try{ const L = JSON.parse(localStorage.getItem('mazivr.errores') || '[]'), u = L[L.length - 1];
+  if(u){ const el = $('#ultimoError'); el.textContent = `Último error: ${u.codigo} · ${u.donde} · ${u.msg}${u.linea ? ' · ' + u.linea : ''} · en «${u.vista}» a las ${u.hora}`; el.hidden = false; } }catch{}
 /* «Sin internet» se prende cuando todo quedó guardado en el teléfono (sw.js) */
 if('serviceWorker' in navigator && !navigator.webdriver || 'serviceWorker' in navigator && new URLSearchParams(location.search).has('sw')){
   navigator.serviceWorker.register('sw.js').catch(() => {});

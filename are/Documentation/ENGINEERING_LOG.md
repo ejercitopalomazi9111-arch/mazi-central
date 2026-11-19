@@ -121,3 +121,9 @@ Niveles de prueba: **documentado** · **implementado** · **probado en navegador
 - **Sin visor:** una sola vista, el teléfono es una ventana que se mueve con el giroscopio y **tocar** un botón lo elige; mirar fijo NO elige (abría «Leer» solo al entrar). Con visor, tocar la pantalla equivale a X (el botón de los visores de cartón toca la pantalla).
 - **Exposición (`kiosco`):** Opciones, PS y Triángulo no sacan de la experiencia; la salida del docente la pone cada experiencia.
 - **Prueba:** `vr/pruebas-seis-motor.mjs` (tocar «Leer» lo abre; nada se abre solo; en exposición Opciones no saca y fuera sí).
+
+## 009 · Errores que dicen qué, dónde y cuándo (19 nov 2026)
+
+- **Pedido de Carlos:** «que el código de error sea tan claro que sepas exactamente dónde falló, cómo y cuándo».
+- **Hecho (`fallo()` en `vr/vr.js`):** código (E-MOTOR, E-VISTA, E-CUADRO, E-6DOF, E-6DOF-VIO, E-CAMARA, E-PAGINA, E-PROMESA) + pieza y función o archivo:línea + mensaje + hora, vista y segundos desde que abriste. Sale 5 s en el visor, en la consola y se guarda: la pantalla de entrada enseña el último. Una vista que truena ya no tumba el motor entero.
+- **Pendiente sabido:** en `pruebas-lector.mjs`, «L2 + sticks» midió 22.9° contra 25° pedidos (prueba de tiempo en un Chromium sin tarjeta gráfica). No se confirmó si ya pasaba antes; Carlos pidió no gastar más tiempo ahí.
