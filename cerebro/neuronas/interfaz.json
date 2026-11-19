@@ -314,6 +314,28 @@
     "se mueve el mundo estando quieto"
    ],
    "salioDe": "vr/seis.js y are/Documentation/ENGINEERING_LOG.md 006, 19 nov 2026."
+  },
+  {
+   "id": "sable-de-la-punta-del-dedo",
+   "clase": "error",
+   "titulo": "El sable que se voltea al cerrar la mano",
+   "gravedad": "media",
+   "sintoma": "En Sables con las manos, al agarrar el sable en puño la hoja da la vuelta o tiembla; y calibrar tarda distinto según el teléfono.",
+   "causa": "La hoja salía de la muñeca hacia la PUNTA del dedo medio, y en un puño la punta se dobla hacia la palma. Y la calibración contaba lecturas (24), no tiempo: en el teléfono a 60 cuadros duraba 0.4 s y en el navegador de pruebas casi 4 s.",
+   "porque": "Una dirección hecha con un punto que se mueve con el gesto cambia con el gesto. Contar cuadros es medir el teléfono, no a la persona.",
+   "arreglo": "Marco rígido de la palma (muñeca → nudillo del índice y nudillo del meñique → nudillo del índice), calibración por tiempo (0.8 s firme) y suavizado por tiempo (vr/sable-mano.js).",
+   "cazar": "node vr/pruebas-sable-mano.mjs y la parte de manos de vr/pruebas-sables.mjs",
+   "senales": [
+    "el sable se voltea",
+    "el sable tiembla",
+    "cerrar la mano mueve el sable",
+    "calibrar no termina",
+    "la calibración tarda"
+   ],
+   "vecinas": [
+    "seis-dof-se-desliza"
+   ],
+   "salioDe": "vr/sable-mano.js, 19 nov 2026."
   }
  ]
 }

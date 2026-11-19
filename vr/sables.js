@@ -3,7 +3,9 @@
    teléfono (bombo, platillo y bajo; nada de música ajena). Cada mano es un sable: la izquierda vino, la derecha morada.
    Corta cada bloque con la mano de su color y en la dirección de su flecha (el punto se corta en cualquier dirección).
      · la mano se ubica en el espacio con lo que da el rastreo (manos.js → V.extra.manos[].mundo): palma, muñeca y punta;
-     · el sable sale de la palma en la dirección muñeca → punta del medio, 55 cm;
+     · el sable sale de la palma con un marco rígido (sable-mano.js: muñeca y nudillos, no las puntas, así cerrar la mano
+       no lo voltea), 55 cm; «Calibrar» guarda cómo lo agarras (apunta arriba un segundo) y si la mano se pierde un
+       instante el sable se queda;
      · un corte cuenta si el sable pasa a menos de 24 cm del bloque cuando éste está a tu alcance, moviéndose a más de
        1.1 m/s. Con la flecha bien y el color bien, 100 × combo; con el color cambiado, 50; contra la flecha, «Mal».
    Un minuto por partida. Atrás o Círculo para salir. */
@@ -11,6 +13,7 @@ const BPM = 112, BEAT = 60 / BPM, DURA = 60, VEL = 6, Z0 = -16, ZG = -.55;
 const C_IZQ = 0x7E1735, C_DER = 0xAC27FF;
 const DIRS = { arriba: [0, 1], abajo: [0, -1], izq: [-1, 0], der: [1, 0], punto: null };
 
+import { crearSable, cargarCal, guardarCal } from './sable-mano.js';
 export function montarSables(V){
   const { THREE } = V;
   const sables = { grupo: new THREE.Group() };
@@ -22,8 +25,16 @@ export function montarSables(V){
   const tablero = new V.Panel(1.3, .22, 500); tablero.malla.position.set(0, .62, -2.2); sables.grupo.add(tablero.malla);
   const pintarTablero = (txt) => { const { x, cv } = tablero; x.clearRect(0, 0, cv.width, cv.height); x.textAlign = 'center'; x.textBaseline = 'middle';
     x.font = '900 52px system-ui, -apple-system, sans-serif'; x.fillStyle = '#F4EEF2'; x.fillText(txt, cv.width / 2, cv.height / 2); tablero.listo(); };
-  const otra = await_tarjeta();
-  function await_tarjeta(){ const p = { malla: null }; V.tarjeta({ titulo: 'Jugar', icono: 'swords' }).then((t) => { p.malla = t.malla; t.malla.position.set(0, -.1, -1.8); t.malla.userData.accion = empezar; sables.grupo.add(t.malla); }); return p; }
+  const otra = await_tarjeta('Jugar', 'swords', -.36, () => empezar());
+  const cal = await_tarjeta('Calibrar', 'move', .36, () => calibrar());
+  function await_tarjeta(titulo, icono, x, accion){ const p = { malla: null }; V.tarjeta({ titulo, icono }).then((t) => { p.malla = t.malla; t.malla.position.set(x, -.1, -1.8); t.malla.userData.accion = accion; sables.grupo.add(t.malla); }); return p; }
+  const mostrarTarjetas = (si) => { if(otra.malla) otra.malla.visible = si; if(cal.malla) cal.malla.visible = si; };
+  /* un sable por mano, con su calibración guardada */
+  const guardada = cargarCal(), deMano = { '-1': crearSable('-1', { cal: guardada }), '1': crearSable('1', { cal: guardada }) };
+  let calHasta = 0;
+  function calibrar(){ estado = 'calibrando'; calHasta = performance.now() / 1000 + 12; deMano['-1'].calibrar(); deMano['1'].calibrar(); mostrarTarjetas(false); pintarTablero('Apunta arriba'); }
+  function finCal(listos){ for(const k of ['-1', '1']) deMano[k].st.cal = null; estado = 'listo'; mostrarTarjetas(true);
+    pintarTablero(listos ? 'Listo' : 'Pon las manos'); V.hud(listos ? 'Calibrado' : 'Sin manos', 1.5); if(listos) V.sonar('ding', .3); }
 
   /* ── los sables ── */
   const hoja = (color) => { const g = new THREE.Group();
@@ -87,14 +98,14 @@ export function montarSables(V){
     /* la pista mira hacia donde ves al empezar */
     const d = new THREE.Vector3(); V.cabeza.getWorldDirection(d); pista.rotation.set(0, Math.atan2(-d.x, -d.z), 0);
     V.cabeza.getWorldPosition(pista.position); pista.visible = true;
-    if(otra.malla) otra.malla.visible = false;
+    mostrarTarjetas(false);
     estado = 'jugando'; t0 = performance.now() / 1000 + 3; siguiente = 0;
     const a = V.audio(); if(a){ a.resume?.(); audioT0 = a.currentTime + 3; sigNota = 0; }
     V.hud('3 · 2 · 1', 2.5);
   }
   function terminar(){
     estado = 'fin'; pintarTablero(`${puntos} puntos · ${aciertos} de ${aciertos + fallas}`);
-    if(otra.malla) otra.malla.visible = true;
+    mostrarTarjetas(true);
   }
 
   const wp = new THREE.Vector3(), base = new THREE.Vector3(), punta = new THREE.Vector3(), vel = new THREE.Vector3(), seg = new THREE.Vector3(), cerca = new THREE.Vector3();
@@ -113,7 +124,18 @@ export function montarSables(V){
         return { lado, base: b, dir: d };
       });
     }
-    return (V.extra.manos || []).map((m) => ({ lado: m.lado, base: m.mundo.palma.clone(), dir: m.mundo.punta.clone().sub(m.mundo.muneca).normalize() }));
+    /* con las manos: cada sable sale del marco de su palma; si una mano se pierde un instante, su sable se queda */
+    const t = performance.now() / 1000, vistas = {}, salen = [];
+    for(const m of V.extra.manos || []){ const k = String(m.lado); if(vistas[k]) continue; vistas[k] = m; }
+    for(const k of ['-1', '1']){
+      const m = vistas[k], e = m?.ejes;
+      if(m && !e){ salen.push({ lado: +k, base: m.mundo.palma.clone(), dir: m.mundo.punta.clone().sub(m.mundo.muneca).normalize() }); continue; }
+      const r = deMano[k].paso(m ? { adelante: e.adelante.toArray(), lado: e.lado.toArray(), palma: m.mundo.palma.toArray() } : null, t);
+      if(!r) continue;
+      if(r.calibrado){ guardada[k] = r.calibrado; guardarCal(guardada); }
+      salen.push({ lado: +k, base: new THREE.Vector3(...r.base), dir: new THREE.Vector3(...r.dir), sostenido: r.sostenido });
+    }
+    return salen;
   }
   sables.cuadro = (_, dt = 1 / 60) => {
     /* los sables siguen a las manos o al control (también fuera de partida: así se ve que jalan) */
@@ -142,6 +164,11 @@ export function montarSables(V){
     }
     for(const k of ['-1', '1']) if(!vistos[k]){ hojas[k].visible = false; previo[k] = null; }
 
+    /* termina cuando las manos que se VEN ya quedaron (si sólo usas una, no espera a la otra); a los 12 s se rinde */
+    if(estado === 'calibrando'){ const t = performance.now() / 1000, faltan = ['-1', '1'].filter((k) => deMano[k].st.cal), hecho = faltan.length < 2;
+      const esperando = faltan.filter((k) => t - deMano[k].st.visto < 1);
+      if(!faltan.length || (hecho && !esperando.length) || t > calHasta) finCal(hecho);
+      return; }
     if(estado !== 'jugando'){ if(estado === 'listo') pintarTablero(V.hayControl() ? 'Sticks: tus sables' : (V.extra.manos || []).length ? 'Corta al ritmo' : 'Pon las manos frente a la cámara'); return; }
     musica();
     const t = performance.now() / 1000 - t0;
@@ -163,14 +190,14 @@ export function montarSables(V){
     pintarTablero(t < 0 ? String(Math.ceil(-t)) : `${puntos}  ·  x${combo}`);
     if(t > DURA + 2.5) terminar();
   };
-  sables.entrar = () => { estado = 'listo'; pintarTablero('Corta al ritmo'); if(otra.malla) otra.malla.visible = true; };
+  sables.entrar = () => { estado = 'listo'; pintarTablero('Corta al ritmo'); mostrarTarjetas(true); };
   sables.salir = () => { estado = 'listo'; pista.visible = false; hojas['-1'].visible = hojas['1'].visible = false; bloques.forEach((b) => b.vivo && pista.remove(b.m)); bloques = []; };
   sables.atras = () => V.ir('juegos');
-  sables.elegibles = () => (estado !== 'jugando' && otra.malla ? [otra.malla] : []);
+  sables.elegibles = () => (estado === 'jugando' || estado === 'calibrando' ? [] : [otra.malla, cal.malla].filter(Boolean));
   Object.defineProperty(sables, 'ocupaStick', { get: () => estado === 'jugando' });
   Object.defineProperty(sables, 'ocupaGiro', { get: () => estado === 'jugando' });
   sables.estado = () => ({ prendidos: +hojas['-1'].visible + +hojas['1'].visible, estado, puntos, combo, aciertos, fallas, bloques: bloques.length });
-  sables.empezar = empezar;
+  sables.empezar = empezar; sables.calibrar = calibrar; sables.deMano = deMano;
   V.registrar('sables', sables);
   return sables;
 }
