@@ -148,3 +148,15 @@ Niveles de prueba: **documentado** · **implementado** · **probado en navegador
 - **Por qué hace falta la hoja:** el giroscopio del iPhone empieza cada sesión con otro rumbo y otro origen; sin un punto fijo del cuarto, «el mismo lugar» no existe para el motor.
 - **Prueba:** `vr/pruebas-ancla-sala.mjs` 4/4. Con el mundo de la segunda sesión girado 69°, −155° o 180° y movido, el menú cae en el mismo lugar del cuarto (error 0).
 - **Nivel:** probado en Node. **Falta:** el cuarto de Carlos.
+
+## 012 · Prueba de Carlos dentro de Mazi VR: mal. Puntitos del rastreo y «teléfono quieto, mundo quieto» (19 nov 2026)
+
+- **Medido por Carlos en su iPhone (6DoF dentro de Mazi VR, cuarto virtual):** «no traquea bien nada; de repente se empieza a mover cuando yo ni siquiera me estaba moviendo». Su captura: «Rastreo perdido» (el VIO reiniciándose).
+- **Lo que pidió:** ver los puntitos del rastreo para saber si su entorno se está viendo bien («si tengo una cama a mi lado, que vayan poniéndose en el contorno de la cama»).
+- **Hecho (`vr/nube.js`):**
+  - **vivos**: los puntos que la cámara sigue en CADA cuadro (`trackXY` del VIO), pintados encima de la imagen de la cámara en la mixta: verdes rastreando, amarillos a ciegas, rojos perdido;
+  - **el mapa del cuarto**: cada punto 3D que el VIO ubica (`landmarks`, cada medio segundo o cuadro clave) se queda puesto en el mundo, uno por cubito de 4 cm, con color por altura; se ve en la mixta y en el cuarto virtual. Ajustes: «Puntos» y «Borrar mapa»;
+  - con 6DoF, la imagen de la cámara va a su campo REAL (67° de la lente principal) para que los puntos y lo 3D caigan sobre las cosas.
+- **«Teléfono quieto, mundo quieto» (`vr/seis.js`):** si el acelerómetro casi no se sacude y el giroscopio casi no gira, no se suma ningún movimiento aunque el VIO se vaya. Mover la cabeza siempre gira algo.
+- **Pruebas:** `pruebas-seis` 12/12 (nuevo: teléfono quieto con el VIO yéndose 21 cm → 0 cm; girando un poco sí cuenta); `pruebas-seis-motor` 10/10 con la caminata real (118 puntos siguiéndose y 2,262 en el mapa).
+- **Honesto:** los puntos no arreglan el rastreo; enseñan DÓNDE falla (pocos puntos = pared lisa o poca luz). Si el VIO web sigue sin dar en el cuarto de Carlos, la ruta firme es ARKit nativo (`are/`) o ARCore en Android.

@@ -38,6 +38,13 @@ async function pagina(url){
   console.log('   tirado por el filtro:', JSON.stringify(z.st.tirado));
   const an = await p.evaluate(() => ({ cargada: !!window.__vr.seis.ancla, fallos: window.__vr.bitacora.filter((f) => f.codigo !== 'E-CAMARA').map((f) => `${f.codigo} ${f.donde}: ${f.msg}`) }));
   sí(an.cargada && !an.fallos.length, `el ancla del cuarto se busca durante el 6DoF sin errores${an.fallos.length ? ': ' + an.fallos.join(' | ') : ''}`);
+  const nb = await p.evaluate(() => ({ ...window.__vr.nube.st, mapaVis: window.__vr.nube.mapa.visible }));
+  sí(nb.vivos > 20 && nb.mapa > 50 && nb.mapaVis, `los puntitos: ${nb.vivos} puntos siguiéndose en la imagen y ${nb.mapa} puestos en el mapa del cuarto (${nb.estado})`);
+  await p.evaluate(() => { const V = window.__vr; V.AJ.puntos = false; }); await p.waitForTimeout(300);
+  const apagado = await p.evaluate(() => !window.__vr.nube.mapa.visible && !window.__vr.nube.vivos.visible);
+  await p.evaluate(() => { const V = window.__vr; V.AJ.puntos = true; V.nube.borrar(); }); await p.waitForTimeout(300);
+  sí(apagado && (await p.evaluate(() => window.__vr.nube.st.mapa)) < nb.mapa, 'Puntos: No los esconde, y Borrar mapa empieza de cero');
+  await p.waitForTimeout(1500);
   await p.screenshot({ path: '/tmp/mazivr-6dof.png' });
   sí(p.errores.length === 0, 'sin errores' + (p.errores.length ? ': ' + p.errores.slice(0, 3).join(' | ') : ''));
 }

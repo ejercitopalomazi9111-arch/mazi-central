@@ -37,7 +37,7 @@ sí(JSON.stringify(aThree([0, 0, 1])) === JSON.stringify([0, 1, -0]) || aThree([
 {
   const quieto = crearSeis(), caminando = crearSeis(); const qc = camVio(0), qG = qY(0);
   for(let i = 0; i <= 30; i++){ const p = [0, i * .02, 0];    /* 0.6 m/s durante 1 s */
-    quieto.paso({ q: qc, p, estado: 'track' }, qG, { agitado: .05 }, i * 33);
+    quieto.paso({ q: qc, p, estado: 'track' }, qG, { agitado: .05, giro: .3 }, i * 33);
     caminando.paso({ q: qc, p, estado: 'track' }, qG, { agitado: .9 }, i * 33); }
   sí(Math.hypot(quieto.st.pos[0], quieto.st.pos[2]) < .05, `parado, el VIO «se va» 0.6 m y te quedas (${Math.hypot(quieto.st.pos[0], quieto.st.pos[2]).toFixed(3)} m)`);
   sí(cerca(-caminando.st.pos[2], .6, .02), `dando pasos, el mismo movimiento sí cuenta (${(-caminando.st.pos[2]).toFixed(3)} m)`);
@@ -45,7 +45,7 @@ sí(JSON.stringify(aThree([0, 0, 1])) === JSON.stringify([0, 1, -0]) || aThree([
 /* 4. mover la cabeza despacio estando parado sí cuenta (paralaje) */
 {
   const f = crearSeis(); const qc = camVio(0), qG = qY(0);
-  for(let i = 0; i <= 30; i++) f.paso({ q: qc, p: [i * .003, 0, 0], estado: 'track' }, qG, { agitado: .05 }, i * 33);
+  for(let i = 0; i <= 30; i++) f.paso({ q: qc, p: [i * .003, 0, 0], estado: 'track' }, qG, { agitado: .05, giro: .3 }, i * 33);
   sí(cerca(f.st.pos[0], .09, .005), `ladear la cabeza 9 cm sin pasos se ve (${f.st.pos[0].toFixed(3)} m)`);
 }
 /* 5. perdido: te quedas; al volver, sigue desde ahí sin brincar */
@@ -69,7 +69,16 @@ sí(JSON.stringify(aThree([0, 0, 1])) === JSON.stringify([0, 1, -0]) || aThree([
   const f = crearSeis(); const ojo = [.05, .02, -.06], qG = qY(0);
   /* la cámara gira alrededor de los ojos: p = ojos − R·ojo */
   for(let i = 0; i <= 30; i++){ const r = i * .03, q = camVio(r); const R = (v) => { const p = qMul(qMul(q, [0, ...v]), [q[0], -q[1], -q[2], -q[3]]); return [p[1], p[2], p[3]]; };
-    const ro = R(ojo); f.paso({ q, p: [-ro[0], -ro[1], -ro[2]], estado: 'track' }, qY(r), { agitado: .05 }, i * 33, ojo); }
+    const ro = R(ojo); f.paso({ q, p: [-ro[0], -ro[1], -ro[2]], estado: 'track' }, qY(r), { agitado: .05, giro: .3 }, i * 33, ojo); }
   sí(Math.hypot(...f.st.pos) < .002, `girar 50° en tu lugar no mueve tus ojos (${(Math.hypot(...f.st.pos) * 100).toFixed(2)} cm)`);
+}
+/* 8. teléfono quieto (acelerómetro y giroscopio tranquilos) y el VIO yéndose despacio: no te mueves (lo que vio Carlos) */
+{
+  const f = crearSeis(); const qc = camVio(0), qG = qY(0);
+  for(let i = 0; i <= 90; i++) f.paso({ q: qc, p: [i * .0017, i * .0017, 0], estado: 'track' }, qG, { agitado: .02, giro: .03 }, i * 33);
+  sí(Math.hypot(...f.st.pos) < .005, `teléfono quieto y el VIO yéndose 21 cm en 3 s: te quedas (${(Math.hypot(...f.st.pos) * 100).toFixed(1)} cm)`);
+  const g = crearSeis();
+  for(let i = 0; i <= 30; i++) g.paso({ q: qc, p: [i * .003, 0, 0], estado: 'track' }, qG, { agitado: .05, giro: .3 }, i * 33);
+  sí(Math.abs(g.st.pos[0] - .09) < .005, `con la cabeza girando un poco, el movimiento sí cuenta (${g.st.pos[0].toFixed(3)} m)`);
 }
 console.log(`${ok} bien · ${mal} mal`); process.exit(mal ? 1 : 0);

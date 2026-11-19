@@ -64,6 +64,7 @@ export function crearVIO({ video, demo = null, ancho = 360 } = {}){
   let worker = null, workerListo = null, calib = null, aparato = null, rig = null;
   let accelSigno = 1, lastAccel = [0, 0, 9.81], orientacion = null;
   const imuHist = []; let imuLote = []; let ultimoMov = null, periodoMov = 0, relojMov = null;
+  let nube = null, nubeN = 0;   /* los puntos 3D que el rastreo tiene ubicados (cada medio segundo, o en cada cuadro clave) */
   let ultimo = null, tCuadro = 0, latenciaVideo = 15, enVuelo = 0, ultimoPostT = -Infinity, rvfc = 0, raf = 0;
   const lienzo = document.createElement('canvas'), ctx = lienzo.getContext('2d', { willReadFrequently: true });
   let fw = 0, fh = 0;
@@ -73,7 +74,7 @@ export function crearVIO({ video, demo = null, ancho = 360 } = {}){
     worker.onmessage = (e) => { const m = e.data;
       if(m.type === 'ready') workerListo = m;
       else if(m.type === 'dropped') enVuelo = Math.max(0, enVuelo - 1);
-      else if(m.type === 'result'){ enVuelo = Math.max(0, enVuelo - 1); ultimo = m; S.estado = m.status; S.puntos = m.connected; S.ms = m.ms; if(String(m.status).startsWith('reset')) S.resets++; }
+      else if(m.type === 'result'){ enVuelo = Math.max(0, enVuelo - 1); ultimo = m; if(m.landmarks){ nube = m.landmarks; nubeN++; } S.estado = m.status; S.puntos = m.connected; S.ms = m.ms; if(String(m.status).startsWith('reset')) S.resets++; }
       else if(m.type === 'error'){ if(m.frameT != null) enVuelo = Math.max(0, enVuelo - 1); S.error = String(m.message || '').slice(0, 120); console.warn('[vio]', m.message); } };
     worker.onerror = (e) => { S.error = e.message || 'el trabajador del VIO no cargó'; };
     /* sin aislamiento entre orígenes (COOP/COEP) no hay hilos: el worker cae solo a uno */
@@ -202,5 +203,9 @@ export function crearVIO({ video, demo = null, ancho = 360 } = {}){
   function reiniciar(){ if(S.listo) empezarSesion(); }
   /* las del lente principal para una imagen de w×h (para leer marcadores con la misma cámara) */
   const intrinsecos = (w, h) => demo && rig ? { fx: rig.fx * w / rig.width, fy: rig.fy * w / rig.width, cx: (w - 1) / 2, cy: (h - 1) / 2 } : intrinsics(w, h, calib?.focal35 ?? 26);
-  return { S, iniciar, parar, reiniciar, pose, intrinsecos, get aparato(){ return aparato; }, get calib(){ return calib; }, guardarCalib: () => aparato && saveCalibration(aparato, calib) };
+  /* LO QUE VE EL RASTREO (Carlos, 19 nov: «que aparezcan los puntitos mientras se hace el mapeo»): los puntos que sigue
+     en la imagen (pixeles del cuadro chico, en CADA cuadro) y la nube 3D de los que ya ubicó */
+  const vistos = () => ultimo && ultimo.trackXY ? { xy: ultimo.trackXY, w: ultimo.width, h: ultimo.height, estado: ultimo.status, conectados: ultimo.connected } : null;
+  const nube3D = () => nube ? { pts: nube, n: nubeN } : null;
+  return { S, iniciar, parar, reiniciar, pose, intrinsecos, vistos, nube3D, get aparato(){ return aparato; }, get calib(){ return calib; }, guardarCalib: () => aparato && saveCalibration(aparato, calib) };
 }
