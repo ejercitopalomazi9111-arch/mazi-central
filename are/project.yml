@@ -8,9 +8,13 @@ targets:
   MaziXR:
     type: application
     platform: iOS
+    # carpeta por carpeta: «MaziXR.swiftpm» entera la toma como un paquete de recursos y la COPIA sin compilar
+    # (así salió la primera .ipa: 14 KB y sin código)
     sources:
-      - path: MaziXR.swiftpm
-        excludes: ["Package.swift"]
+      - MaziXR.swiftpm/App
+      - MaziXR.swiftpm/Core
+      - MaziXR.swiftpm/Hardware
+      - MaziXR.swiftpm/UI
     info:
       path: Generado/Info.plist
       properties:
@@ -23,6 +27,7 @@ targets:
         GCSupportedGameControllers: [{ ProfileName: ExtendedGamepad }]
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         UIRequiredDeviceCapabilities: [arm64]
+        UIRequiresFullScreen: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: mx.grupomazi.are1
