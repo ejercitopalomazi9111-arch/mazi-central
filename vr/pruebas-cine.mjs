@@ -10,7 +10,9 @@ if(!fs.existsSync(MP4)) execSync(`ffmpeg -v error -y -f lavfi -i testsrc=s=320x1
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
 const b = await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required'] });
 const ctx = await b.newContext({ viewport: { width: 844, height: 390 } });
-await ctx.addInitScript(() => { window.__pad = { id: 'Wireless Controller', index: 0, connected: true, mapping: 'standard', buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })), axes: [0, 0, 0, 0] }; navigator.getGamepads = () => [window.__pad]; });
+await ctx.addInitScript(() => {
+  /* fondo simple: sin tarjeta gráfica, el Tem Shop baja tanto los cuadros que los botones de 80 ms se pierden (tiene su propia prueba) */
+  try{ if(!localStorage.getItem('mazivr.ajustes')) localStorage.setItem('mazivr.ajustes', JSON.stringify({ fondo: 1 })); }catch{} window.__pad = { id: 'Wireless Controller', index: 0, connected: true, mapping: 'standard', buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })), axes: [0, 0, 0, 0] }; navigator.getGamepads = () => [window.__pad]; });
 /* lo de fuera, de mentiras */
 await ctx.route(/sala\.palomazi9111\.workers\.dev\/api\/sala\/vr\/buscar/, (r) => r.fulfill({ json: { bien: true, videos: [
   { id: 'aaaaaaaaaaa', titulo: 'Tráiler de prueba uno', canal: 'Canal', dura: '2:10', mini: 'https://i.ytimg.com/vi/aaaaaaaaaaa/hqdefault.jpg' },

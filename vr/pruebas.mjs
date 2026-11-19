@@ -7,6 +7,8 @@ const BASE = process.env.BASE || 'http://localhost:8765', CAPS = process.env.CAP
 const b = await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--use-gl=angle', '--enable-unsafe-swiftshader'] });
 const ctx = await b.newContext({ viewport: { width: 844, height: 390 }, deviceScaleFactor: 1, hasTouch: true, permissions: ['camera'] });
 await ctx.addInitScript(() => {
+  /* fondo simple: sin tarjeta gráfica, el Tem Shop baja tanto los cuadros que los botones de 80 ms se pierden (tiene su propia prueba) */
+  try{ if(!localStorage.getItem('mazivr.ajustes')) localStorage.setItem('mazivr.ajustes', JSON.stringify({ fondo: 1 })); }catch{}
   /* el control: 17 botones y 4 ejes, como el mapeo estándar de un DualSense en Safari */
   window.__pad = { id: 'DualSense Wireless Controller', index: 0, connected: true, mapping: 'standard', timestamp: 0,
     buttons: Array.from({ length: 17 }, () => ({ pressed: false, touched: false, value: 0 })), axes: [0, 0, 0, 0] };

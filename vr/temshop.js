@@ -61,8 +61,9 @@ export function montarTemShop(V){
       ['radio.glb', 21, -46, 2, -.4, 3.4], ['tableCoffee.glb', 11, -50, 2.6, .2], ['lampRoundFloor.glb', 29, -40, 14, 0], ['plantSmall1.glb', 24, -27, 4, 0], ['pillow.glb', 17, -37, 1.6, .7], ['rugRound.glb', 0, -36, .25, 0]];
     hornear(await Promise.all(M.map(([n, x, z, alto, g, y]) => mueble(n, aX(x), aZ(z), alto * K, g, y === undefined ? PISO : PISO + (y + 1.2) * K))), tem);
     temmies = await Promise.all([[-7, -24, .9], [8.5, -23, -.8], [-19, -46, .5], [15, -53, -.4], [4, -56, 0]].map(([x, z, g]) => mueble('temmie.glb', aX(x), aZ(z), .55, g)));
-    /* una luz cálida de lámpara: el cuarto de Temmie es de madera, no de neón */
-    const foco = new THREE.PointLight('#FFC86B', 1.4, 9, 1.6); foco.position.set(aX(29), PISO + 1.6, aZ(-40)); tem.add(foco);
+    /* materiales baratos: las Temmies traían el de física (PBR) y en el visor cada pixel cuenta dos veces (un ojo y otro) */
+    for(const r of temmies) r.traverse((o) => { if(!o.isMesh) return; const v = o.material;
+      o.material = new THREE.MeshLambertMaterial({ map: v.map || null, color: v.color, vertexColors: !!o.geometry.attributes.color, transparent: v.transparent, alphaTest: v.alphaTest }); v.dispose(); });
   })().catch((e) => console.warn('Tem Shop', e));
 
   /* el espacio de antes se apaga mientras se ve el Tem Shop; las Temmies vibran (como en su juego) y de vez en cuando brincan */

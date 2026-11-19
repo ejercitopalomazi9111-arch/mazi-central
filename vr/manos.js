@@ -145,6 +145,11 @@ export async function iniciarManos(V){
       /* más fácil de captar (Carlos, 18 nov: «a veces no lo captura»): cuenta si se tocan en 3D o en la imagen */
       if(W){ const p3 = d3(W[4], W[8]); G.pellizca = !G.puno && (p3 < .038 || G.pinza < .3); G.suelta = G.puno || (p3 > .058 && G.pinza > .45); G.pinza3 = p3; }
       /* puño arriba y abajo 4 veces: el menú se vuelve a poner enfrente de donde miras */
+      /* AGARRAR UN BOTÓN ES CLIC (Carlos, 19 nov: «casi casi trato de agarrar el botón para que salga y aún así no quiere»):
+         cerrar la mano encima de un botón se leía como puño y no hacía nada. Ahora, si la mano apuntaba a un botón hace un
+         momento y se cierra, es clic sobre ESE botón. */
+      const cierra = G.puno && !m.punoAntes; m.punoAntes = G.puno;
+      if(cierra && m.objetoAntes && ahora - (m.objetoEn || 0) < 450 && !V.extra.gestosVideo){ m.agarro = ahora; botones[V.B.X] = true; estado.gesto = 'agarrar'; }
       if(m.puno(G.puno, L[0].y, ahora)){ V.recentrar(); V.hud('Centrado', 1.2); V.sonar('ding', .3); }
       if(!m.pellizco && G.pellizca) m.pellizco = true; else if(m.pellizco && G.suelta) m.pellizco = false;
       /* donde la vista usa el pellizco para otra cosa (el video, leer), sólo es clic si apuntas a un botón */
