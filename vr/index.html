@@ -88,7 +88,7 @@ try{ const L = JSON.parse(localStorage.getItem('mazivr.errores') || '[]'), u = L
 /* LA VERSIÓN (Carlos, 19 nov: «un mensajito que diga la versión en la que estás y que se actualizó»). Va igual que la
    de sw.js (pruebas-sinred.mjs lo revisa). La primera vez que se abre una versión nueva dice «actualizada»; y si el
    trabajador de fondo ya trae una más nueva que esta página, recarga sola (sólo en la entrada, una vez) */
-const VERSION = 34;
+const VERSION = 35;
 { let antes = 0; try{ antes = +localStorage.getItem('mazivr.version') || 0; if(antes !== VERSION) localStorage.setItem('mazivr.version', VERSION); }catch{}
   const el = $('#version'); el.textContent = antes < VERSION ? `v${VERSION} · actualizada` : `v${VERSION}`; el.classList.toggle('nueva', antes < VERSION); }
 const versionSW = (n) => { if(!(n > VERSION) || document.body.classList.contains('dentro')) return;
@@ -127,7 +127,7 @@ $('#bEntrar').addEventListener('click', async () => {
   $('#bEntrar').textContent = 'Un momento…';
   await armado;
   $('#entrada').remove(); document.body.classList.add('dentro');
-  V.arrancar(); V.ir('inicio'); V.recentrar(); V.hud('Bienvenido', 2);
+  V.arrancar(); V.ir('inicio'); V.recentrar(); V.mirarAlEntrar(); V.hud('Bienvenido', 2);
   /* el QR de MONARCH XR trae ?monarca: directo a la experiencia y en modo exposición */
   if(new URLSearchParams(location.search).has('monarca')){ window.__monarca.exposicion(true); V.ir('monarca'); }
   /* las manos cargan después (el modelo pesa ~8 MB): el visor ya se puede usar mientras */
@@ -242,7 +242,10 @@ async function montar(){
   /* con todo armado (y los modelos de Objetos cargados), se preparan los gráficos de una vez: así entrar y salir no traba */
   Promise.all([window.__objetos.armado, window.__musica.armado]).catch(() => {}).then(() => setTimeout(() => V.precalentar(), 300));
 
-  /* AJUSTES: un panel; flechas arriba/abajo eligen, izquierda/derecha cambian */
+  /* AJUSTES: un panel; flechas arriba/abajo eligen, izquierda/derecha cambian.
+     Y SIN CONTROL (Carlos, 19 nov: «que ajustes se pueda configurar solo con mirar y manos, a veces no tenemos manos o
+     control»): cada renglón tiene sus zonas tocables (‹ y › en los números; el renglón entero en Sí/No y en las acciones)
+     que se eligen mirándolas o pellizcándolas. Las flechas se repiten si las sigues viendo (`repetir`), cada 0.9 s. */
   const aj = { grupo: new THREE.Group() };
   const FILAS = [
     ['Lente', 'k1', 0, .6, .02, (v) => v.toFixed(2)],
@@ -252,6 +255,7 @@ async function montar(){
     ['Cámara', 'camCampo', 40, 120, 1, () => `${Math.round(V.campoCamara())}°`],
     ['Voltear cámara', 'camVoltear', 0, 1, 1, (v) => v ? 'Sí' : 'No'],
     ['Manos', 'manos', 0, 1, 1, (v) => v ? 'Sí' : 'No'],
+    ['Mano 3D', 'manoModelo', 0, 1, 1, (v) => v !== false ? 'Sí' : 'No'],
     ['Fondo', 'fondo', 0, 1, 1, (v) => v ? 'Espacio' : 'Tem Shop'],
     ['6DoF', 'seis', 0, 1, 1, (v) => v ? 'Sí' : 'No'],
     ['Puntos', 'puntos', 0, 1, 1, (v) => v ? 'Sí' : 'No'],
@@ -260,28 +264,59 @@ async function montar(){
     ['Borrar mapa', null],
     ['De fábrica', null],
   ];
+  const SIONO = new Set(['camVoltear', 'manos', 'manoModelo', 'fondo', 'seis', 'puntos', 'limites']);
   let fila = 0;
-  const hoja = new V.Panel(1.5, 2.0, 420); hoja.malla.position.set(0, .05, -2.0); aj.grupo.add(hoja.malla);
+  const PX = 420, ALTO = 2.1, hoja = new V.Panel(1.5, ALTO, PX); hoja.malla.position.set(0, .05, -2.0); aj.grupo.add(hoja.malla);
+  const yFila = (i) => 136 + i * 52;
   const pintarHoja = () => { const { x, cv } = hoja, w = cv.width; x.clearRect(0, 0, w, cv.height); V.redondo(x, 6, 6, w - 12, cv.height - 12, 40); x.fillStyle = '#1E1428'; x.fill(); x.strokeStyle = '#3C2652'; x.lineWidth = 4; x.stroke();
     x.textBaseline = 'middle'; x.font = '900 46px system-ui, -apple-system, sans-serif'; x.fillStyle = '#F4EEF2'; x.textAlign = 'left'; x.fillText('Ajustes', 50, 64);
-    FILAS.forEach(([t, k, , , , f], i) => { const y = 136 + i * 52, sel = i === fila;
+    FILAS.forEach(([t, k, , , , f], i) => { const y = yFila(i), sel = i === fila;
       if(sel){ V.redondo(x, 30, y - 24, w - 60, 48, 24); x.fillStyle = '#3A1A5C'; x.fill(); x.strokeStyle = '#AC27FF'; x.lineWidth = 3; x.stroke(); }
       x.font = '700 32px system-ui, -apple-system, sans-serif'; x.fillStyle = sel ? '#fff' : '#C9B6DA'; x.textAlign = 'left'; x.fillText(t, 56, y);
-      if(k){ x.textAlign = 'right'; x.fillStyle = sel ? '#C77DFF' : '#F4EEF2'; x.fillText((sel ? '‹  ' : '') + f(V.AJ[k]) + (sel ? '  ›' : ''), w - 56, y); } });
+      if(!k) return;
+      if(SIONO.has(k)){ x.textAlign = 'right'; x.fillStyle = sel ? '#C77DFF' : '#F4EEF2'; x.fillText(f(V.AJ[k]), w - 56, y); return; }
+      /* número: ‹ valor › en lugares fijos, para que se puedan tocar */
+      x.textAlign = 'center'; x.fillStyle = sel ? '#C77DFF' : '#7E6A96'; x.fillText('‹', w - 300, y); x.fillText('›', w - 56, y);
+      x.fillStyle = sel ? '#fff' : '#F4EEF2'; x.fillText(f(V.AJ[k]), w - 178, y); });
     hoja.listo(); };
+  /* cambiar un renglón: d = −1 / +1 (en Sí/No cualquiera voltea) */
+  function cambiar(i, d){
+    const [, k, a, b, paso] = FILAS[i]; if(!k || !d) return;
+    if(k === 'seis'){ V.ponerSeis(!V.AJ.seis).then(pintarHoja); V.AJ.seis = !V.AJ.seis; pintarHoja(); return; }
+    const actual = k === 'camCampo' ? V.campoCamara() : V.AJ[k];
+    const v = SIONO.has(k) ? (k === 'manoModelo' ? V.AJ[k] === false : !V.AJ[k]) : Math.round(Math.min(b, Math.max(a, actual + d * paso)) * 100) / 100;
+    V.AJ[k] = v; V.guardar(); V.aplicarAjustes(); if(k === 'manos') V.ponerMixta(V.AJ.mixta); if(k === 'zona' && V.limites.st.zona) V.limites.st.zona.radio = v;
+    pintarHoja();
+  }
+  function accion(i){
+    if(FILAS[i][0] === 'Borrar mapa'){ V.nube.borrar(); V.limites.olvidar(); V.hud('Mapa borrado'); }
+    else if(FILAS[i][0] === 'De fábrica'){ Object.assign(V.AJ, V.FABRICA, { mixta: V.AJ.mixta }); V.guardar(); V.aplicarAjustes(); V.hud('De fábrica'); pintarHoja(); }
+  }
+  /* las zonas tocables: planos transparentes encima de la hoja (px de la hoja → metros) */
+  const zonas = [], w = hoja.cv.width;
+  const zona = (i, x0, x1, hacer, repetir) => {
+    const ancho = (x1 - x0) / PX, alto = 48 / PX, m = new THREE.Mesh(new THREE.PlaneGeometry(ancho, alto), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
+    m.position.set(((x0 + x1) / 2 - w / 2) / PX, ALTO / 2 - yFila(i) / PX, .004); hoja.malla.add(m);
+    m.userData.accion = hacer; m.userData.repetir = !!repetir;
+    m.userData.panel = { titulo: FILAS[i][0], foco: (f) => { if(f && fila !== i){ fila = i; pintarHoja(); } } };
+    zonas.push(m); };
+  FILAS.forEach(([, k], i) => {
+    if(!k) zona(i, 30, w - 30, () => accion(i));
+    else if(SIONO.has(k)) zona(i, 30, w - 30, () => cambiar(i, 1));
+    else { zona(i, w - 350, w - 250, () => cambiar(i, -1), true); zona(i, w - 106, w - 6, () => cambiar(i, 1), true); }
+  });
   aj.entrar = pintarHoja;
   aj.control = (c) => {
     if(c.oprimido[B.ARRIBA]) fila = (fila + FILAS.length - 1) % FILAS.length;
     if(c.oprimido[B.ABAJO]) fila = (fila + 1) % FILAS.length;
-    const [, k, a, b, paso] = FILAS[fila]; const d = (c.oprimido[B.DER] ? 1 : 0) - (c.oprimido[B.IZQ] ? 1 : 0);
-    if(k === 'seis' && d){ V.sonar('toque', .15); V.ponerSeis(!V.AJ.seis).then(pintarHoja); V.AJ.seis = !V.AJ.seis; pintarHoja(); return { flechas: true, x: true }; }
-    if(k && d){ const actual = k === 'camCampo' ? V.campoCamara() : V.AJ[k]; const v = (k === 'camVoltear' || k === 'manos' || k === 'fondo' || k === 'puntos' || k === 'limites') ? !V.AJ[k] : Math.round(Math.min(b, Math.max(a, actual + d * paso)) * 100) / 100; V.AJ[k] = v; V.guardar(); V.aplicarAjustes(); if(k === 'manos') V.ponerMixta(V.AJ.mixta); if(k === 'zona' && V.limites.st.zona) V.limites.st.zona.radio = v; V.sonar('toque', .15); }
-    if(!k && c.oprimido[B.X] && FILAS[fila][0] === 'Borrar mapa'){ V.nube.borrar(); V.limites.olvidar(); V.hud('Mapa borrado'); }
-    else if(!k && c.oprimido[B.X]){ Object.assign(V.AJ, V.FABRICA, { mixta: V.AJ.mixta }); V.guardar(); V.aplicarAjustes(); V.hud('De fábrica'); }
-    if(c.oprimido[B.ARRIBA] || c.oprimido[B.ABAJO] || d || c.oprimido[B.X]) pintarHoja();
+    const d = (c.oprimido[B.DER] ? 1 : 0) - (c.oprimido[B.IZQ] ? 1 : 0);
+    if(d) cambiar(fila, d);
+    if(c.oprimido[B.X]) accion(fila);
+    if(c.oprimido[B.ARRIBA] || c.oprimido[B.ABAJO]) pintarHoja();
     return { flechas: true, x: true };
   };
-  aj.elegibles = () => [];
+  aj.elegibles = () => zonas;
+  window.__ajustes = aj;
   aj.atras = () => V.ir('inicio');
   V.registrar('ajustes', aj);
 }

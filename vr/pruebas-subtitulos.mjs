@@ -54,5 +54,17 @@ await p.evaluate(async () => { const V = __vr, sig = __monarca.elegibles().find(
   V.extra.botones = []; V.extra.rayo = null; });
 await p.waitForTimeout(300);
 sí(await p.evaluate(() => __monarca.estado.escena) === antes, 'pellizcar el aire (sin apuntar a nada) no se salta la diapositiva');
+/* AJUSTES SIN CONTROL: cada renglón se elige mirando o pellizcando; las flechas se repiten mirándolas */
+await p.evaluate(() => __vr.ir('ajustes')); await p.waitForTimeout(300);
+const r = await p.evaluate(async () => { const V = __vr;
+  const zonas = __ajustes.elegibles();
+  const de = (t) => zonas.filter((z) => z.userData.panel.titulo === t);
+  const k1 = V.AJ.k1, lente = de('Lente'); lente[1]?.userData.accion();
+  const mano = V.AJ.manoModelo; de('Mano 3D')[0]?.userData.accion();
+  return { zonas: zonas.length, lente: lente.length, sube: V.AJ.k1 > k1, repite: !!lente[1]?.userData.repetir, mano3d: mano !== false && V.AJ.manoModelo === false }; });
+sí(r.zonas >= 15 && r.lente === 2, `Ajustes tiene zonas para mirar o pellizcar en cada renglón (${r.zonas}; Lente con ‹ y ›)`);
+sí(r.sube && r.repite, '«›» de Lente sube el valor y se repite si lo sigues viendo');
+sí(r.mano3d, '«Mano 3D» se apaga desde Ajustes sin control');
+await p.evaluate(() => { __vr.AJ.manoModelo = true; __vr.guardar(); });
 sí(!errores.length, 'sin errores' + (errores.length ? ': ' + errores.slice(0, 2).join(' | ') : ''));
 console.log(`${ok} bien · ${mal} mal`); await nav.close(); process.exit(mal ? 1 : 0);

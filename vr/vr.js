@@ -538,8 +538,11 @@ let bloqueadoHasta = 0;
 /* y lo PRIMERO que quede bajo la mira después de cambiar de pantalla o de elegir algo tampoco se elige mirándolo: hay que
    quitarle la vista y volver (el botón «Siguiente» de la diapositiva nueva sale en el mismo lugar que el de antes y,
    como es otro objeto, se elegía solo) */
-let primerFoco = null;
-function bloquearMirada(ms = Infinity){ mirarBloqueado = true; giroAlBloquear.copy(cabeza.quaternion); bloqueadoHasta = performance.now() + ms; primerFoco = 'pendiente'; }
+/* Si MOVISTE la cabeza desde entonces, ya cuenta (fuiste tú a verlo); sólo al entrar al visor (`estricto`) hay que
+   quitarle la vista sí o sí: al ponerse el visor la cabeza se mueve mucho y «Leer» queda enfrente */
+let primerFoco = null, primerEstricto = false;
+function bloquearMirada(ms = Infinity, estricto = false){ mirarBloqueado = true; giroAlBloquear.copy(cabeza.quaternion); bloqueadoHasta = performance.now() + ms; primerFoco = 'pendiente'; primerEstricto = estricto; }
+export function mirarAlEntrar(){ bloquearMirada(Infinity, true); }
 export const MIRAR_MS = 2500;
 function darFoco(o){ if(foco === o) return; if(o && primerFoco === 'pendiente') primerFoco = o; else if(primerFoco !== 'pendiente') primerFoco = null; if(foco || !o) mirarBloqueado = false; foco?.userData.panel?.foco?.(false); foco = o; focoDesde = performance.now(); o?.userData.panel?.foco?.(true); }   /* sin «tiuk» al ver algo (Carlos, 19 nov) */
 function moverFoco(dx, dy){
@@ -552,7 +555,10 @@ function moverFoco(dx, dy){
     if(along <= .01) continue; const d = along + Math.abs(dx ? v.y : v.x) * 2; if(d < md){ md = d; mejor = o; } }
   if(mejor) darFoco(mejor);
 }
-function activar(o){ if(!o) return; bloquearMirada(3000); o.userData.accion?.(); }   /* sin campanita al tocar (Carlos, 19 nov: «súper castroso») */
+function activar(o){ if(!o) return;
+  /* lo que se repite mirándolo (las flechas de Ajustes): sin bloqueo, la siguiente vez a los 0.9 s */
+  if(o.userData.repetir){ focoDesde = performance.now() - MIRAR_MS + 900; o.userData.accion?.(); return; }
+  bloquearMirada(3000); o.userData.accion?.(); }   /* sin campanita al tocar (Carlos, 19 nov: «súper castroso») */
 
 /* ── el ciclo ── */
 let giroArmado = true, ultimo = performance.now();
@@ -621,6 +627,7 @@ function cuadro(t){
   /* con L2 apretado estás moviendo o agrandando algo: mirar fijo no elige (si no, al acomodar el menú se metía a lo que veías) */
   if(control.apretado(B.L2)) focoDesde = performance.now();
   if(!viendo && primerFoco && primerFoco !== 'pendiente') primerFoco = null;   /* le quitaste la vista: ya cuenta */
+  if(primerFoco && !primerEstricto && cabeza.quaternion.angleTo(giroAlBloquear) > .14) primerFoco = null;   /* giraste la cabeza: ya cuenta */
   const fijo = !mirarBloqueado && viendo && viendo === foco && viendo !== primerFoco && !(extra.rayo && extra.rayo.pellizco) ? Math.max(0, (performance.now() - focoDesde) / MIRAR_MS) : 0;
   anillo.visible = fijo > .05;
   /* el anillo se llena donde estás apuntando: en el cursor del rayo, o en la mira */

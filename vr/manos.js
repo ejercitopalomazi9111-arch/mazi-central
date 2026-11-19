@@ -8,6 +8,7 @@
    del medio): no es exacto, pero alcanza para apuntar y tocar cosas cercanas. */
 import { leer, tamano, contadorPuno } from './gestos.js';
 import { crearEstable } from './manos-estables.js';
+import { crearManos3D } from './mano3d.js';
 const MP = '../presentaciones/vendor/mediapipe/';
 const HUESOS = [[0, 1], [1, 2], [2, 3], [3, 4], [0, 5], [5, 6], [6, 7], [7, 8], [5, 9], [9, 10], [10, 11], [11, 12], [9, 13], [13, 14], [14, 15], [15, 16], [13, 17], [17, 18], [18, 19], [19, 20], [0, 17]];
 
@@ -51,6 +52,9 @@ export async function iniciarManos(V){
     return { linea, cursor };
   });
   let principalAntes = null;
+  /* LA MANO 3D (mano3d.js): se carga aparte y, mientras no llega, se ve el esqueleto. Ajustes → «Mano 3D» la apaga */
+  let manos3d = null; crearManos3D(V, cabeza).then((x) => { manos3d = x; }).catch((e) => console.warn('mano 3d', e));
+  const conModelo = () => !!manos3d && V.AJ.manoModelo !== false;
 
   let ultimoT = -1, cuadroN = 0, enfriar = 0;
   /* donde la palma NO es «Atrás»: las manos están jugando (ver abajo, «PALMA ARRIBA») */
@@ -98,7 +102,7 @@ export async function iniciarManos(V){
     m.fW.forEach((P, i) => { P.x += (W[i].x - P.x) * .6; P.y += (W[i].y - P.y) * .6; P.z += (W[i].z - P.z) * .6; }); return m.fW.map((q) => ({ ...q })); }
   estado.cuadro = (t) => {
     const video = V.video, ahora = performance.now();
-    if(!V.hayCamara() || !V.AJ.manos || video.readyState < 2){ manos.forEach((m) => { m.g.visible = false; }); rayosVis.forEach((x) => { x.linea.visible = x.cursor.visible = false; }); V.extra.rayo = null; V.extra.rayos = []; V.extra.manos = []; V.extra.camSinc = false; return; }
+    if(!V.hayCamara() || !V.AJ.manos || video.readyState < 2){ manos.forEach((m) => { m.g.visible = false; }); rayosVis.forEach((x) => { x.linea.visible = x.cursor.visible = false; }); V.extra.rayo = null; V.extra.rayos = []; V.extra.manos = []; V.extra.camSinc = false; manos3d?.esconder(0); manos3d?.esconder(1); return; }
     /* un cuadro sí y uno no: en el iPhone el rastreo cuesta y la pantalla va a 60 */
     /* y si el teléfono va lento (el rastreo tarda más de 28 ms), uno de cada tres: que el visor no se trabe por las manos */
     /* MÁS SEGUIDO SI SE PUEDE (guía de Carlos: «aumentar la frecuencia del tracking»): si el rastreo tarda menos de 14 ms,
@@ -141,7 +145,7 @@ export async function iniciarManos(V){
       const c = asign[k];
       /* perdida un instante: se sostiene como iba (no se suelta lo agarrado, el cursor no parpadea) */
       if(!c && m.info && ahora - (m.vistaEn || 0) < 350){ m.info.estimada = true; visibles.push(m.info); return; }
-      if(!c){ m.g.visible = false; m.pellizco = false; m.palmaDesde = 0; m.suave = null; m.ult = null; m.info = null; m.fijo = null; m.hist = null; m.etiqueta = ''; m.G = null; m.filtro = null; m.filtroDibujo = null; m.fW = null; m.estable = crearEstable(); return; }
+      if(!c){ manos3d?.esconder(k); m.g.visible = false; m.pellizco = false; m.palmaDesde = 0; m.suave = null; m.ult = null; m.info = null; m.fijo = null; m.hist = null; m.etiqueta = ''; m.G = null; m.filtro = null; m.filtroDibujo = null; m.fW = null; m.estable = crearEstable(); return; }
       m.vistaEn = ahora;
       /* antes de suavizar: dedos inventados, palma volteada de golpe y lado que brinca (manos-estables.js) */
       const E = m.estable.paso(c.L, c.W, c.etiqueta, c.seguro); m.dudosos = E.dudosos; m.sostenida = E.sostenida;
@@ -158,6 +162,14 @@ export async function iniciarManos(V){
       m.suave.forEach((q, i) => { m.pts[i].position.copy(q); m.pts[i].scale.setScalar(q.length() * (i === 8 || i === 4 ? .0062 : .0042)); });
       const pos = m.lin.geometry.attributes.position; HUESOS.forEach(([a, b], i) => { pos.setXYZ(i * 2, ...m.suave[a].toArray()); pos.setXYZ(i * 2 + 1, ...m.suave[b].toArray()); }); pos.needsUpdate = true;
       m.g.visible = true;
+      /* con la mano 3D, del esqueleto sólo quedan las dos puntas blancas (índice y pulgar: de ahí sale el rayo).
+         Los puntos 3D salen con su profundidad; en la mixta, todo se lleva al fondo con la misma proporción (se ve en el
+         mismo lugar y no se desdobla entre ojos). MediaPipe da la mano como si la imagen fuera de selfie (en espejo):
+         con la cámara de atrás, su «Left» es tu mano derecha. */
+      const modelo = conModelo(); m.lin.visible = !modelo; m.pts.forEach((b, i) => { b.visible = !modelo || i === 4 || i === 8; });
+      if(modelo){ const k3 = mixta ? lejos / dist : 1, P3 = Ld.map((p) => aEspacio(p, dist, tx, ty, new THREE.Vector3()).multiplyScalar(k3));
+        manos3d.poner(k, P3, (m.etiqueta || c.etiqueta) === 'Right' ? 'izq' : 'der', mixta); }
+      else manos3d?.esconder(k);
       /* los gestos */
       const G = leer(L, asp); m.G = G;
       /* el pellizco con la mano EN 3D (metros, de MediaPipe): de frente la punta del pulgar tapa a la del índice y en la

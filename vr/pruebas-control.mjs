@@ -35,6 +35,9 @@ sí(t1[0] > t0[0] * 1.2 && t1[1] < t0[1], `L2 + stick agranda el menú (×${t1[0
 sí(await p.evaluate(() => __vr.ahora()) === 'inicio', 'y mientras, no entra a nada');
 /* con el control conectado, mirar fijo también elige (antes sólo X) */
 await p.evaluate(() => { __vr.AJ.menuTam = 1; __vr.AJ.menuDist = 1; });
+/* al entrar al visor, lo que queda enfrente no se elige hasta quitarle la vista (Carlos, 19 nov): se mira arriba y se regresa */
+const arrastrar = async (dy) => { await p.mouse.move(422, 195); await p.mouse.down(); await p.mouse.move(422, 195 + dy, { steps: 6 }); await p.mouse.up(); await p.waitForTimeout(400); };
+await arrastrar(-90); await arrastrar(90);
 let entro = null; for(let i = 0; i < 25 && !entro; i++){ await p.waitForTimeout(200); const a = await p.evaluate(() => __vr.ahora()); if(a !== 'inicio') entro = a; }
 sí(!!entro, `mirar fijo elige aunque haya control (entró a «${entro}»)`);
 sí(errores.length === 0, 'sin errores' + (errores.length ? ': ' + errores.slice(0, 3).join(' | ') : ''));
