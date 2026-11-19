@@ -45,6 +45,7 @@ import { configurarPersonaje, personajeVivo, reaccion } from './personaje-vivo.j
 import { LIGAS, ligaDe, trofeoSVG } from './ligas.js';
 import { personajeDeArranque, normalizarPersonaje } from './ropa.js';
 import { BITACORA } from './devlog.js';
+import { iniciarMazos } from './mazos.js';
 import { leerClase, guardarClase, hayClase } from '../sala/clases-guardadas.js';
 
 const $ = (s, d = document) => d.querySelector(s);
@@ -2132,6 +2133,8 @@ document.addEventListener('visibilitychange', () => { if(!document.hidden) sincr
 /* amigos, estudiar juntos y «¿cómo te fue?» (amigos.js) */
 /* juegos de mesa (juegos/juegos.js): clases jugando, contra la máquina y en línea */
 juegos = iniciarJuegos({ capa, cerrarCapa, hoja, cerrarHoja, ico, esc, sala, tono, SON, brindis, mascotaEn, confeti, sumarXP, conAcceso, amigos: () => amigos?.estado });
+/* Mis tarjetas: mazos que arma el alumno (mazos.js) */
+const mazos = iniciarMazos({ capa, cerrarCapa, hoja, cerrarHoja, ico, esc, brindis, tono, SON, sumarXP });
 amigos = iniciarAmigos({ sala, brindis, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, mascotaEn, $, guardarPlan, colorDe: colorMateria, alPerfil: ponerPerfil, alJuego: (m) => juegos?.avisoDeJuego(m),
   perfil: () => perfil, planes: () => planes, actual: () => actualId, vista: () => vista, cuenta: () => perfil.cuenta, estudiando: () => !!$('#capa') });
 pintar();
@@ -2156,7 +2159,7 @@ companero.pintarPastilla();
 const widget = iniciarWidget({ perfil: () => perfil, activa: mascotaActiva, hoy: hoyLocal, crearMascota });
 yo = iniciarYo({ esc, ico, $, tono, SON, crearMascota, perfil: () => perfil, ajustes: () => ajustes, planes: () => planes,
   cuantosApuntes: () => apuntes?.cuantos?.() || 0, pintarCubos: (el) => { if(el) el.innerHTML = $('#pCubos .pm-cubos')?.innerHTML || $('#pCubos')?.innerHTML || ''; },
-  svgPersonaje: (p) => vestidor.svgPersonaje(p), personajeVivo, hoja, abrirVestidor: () => vestidor.abrir(), abrirCompanero: () => companero.abrir(), abrirJuegos: () => juegos?.abrir(), abrirIdiomas: () => abrirIdiomas(), abrirModelos: () => abrirModelos() });
+  svgPersonaje: (p) => vestidor.svgPersonaje(p), personajeVivo, hoja, abrirVestidor: () => vestidor.abrir(), abrirCompanero: () => companero.abrir(), abrirJuegos: () => juegos?.abrir(), abrirIdiomas: () => abrirIdiomas(), abrirModelos: () => abrirModelos(), abrirTarjetas: () => mazos.abrir() });
 /* tu personaje vivo: el mismo del vestidor, con lo que te pusiste (personaje-vivo.js) */
 configurarPersonaje({ personaje: () => normalizarPersonaje(perfil.personaje || personajeDeArranque(perfil.cuenta || perfil.nombre || ''), perfil.ropa || [], perfil.cuenta || ''), svg: (p) => vestidor.svgPersonaje(p) });
 iniciarPerfilOtro({ sala, hoja, esc, ico, tono, SON, svgPersonaje: (p) => vestidor.svgPersonaje(p) });
