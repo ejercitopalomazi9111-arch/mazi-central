@@ -35,3 +35,16 @@ En `vr/monarca/LEEME.md`: monarca escaneada de Virginia Tech (CC BY), cinco foto
 - **Android (Chrome):** el mismo estéreo propio funciona igual. WebXR depende del aparato: se investigará `immersive-ar` (ARCore) como fuente de 6DoF más firme. No se promete hasta probarlo en un Android real.
 - **Sin visor:** el modo pantalla del motor (tocar para elegir).
 - **No salir de la experiencia:** la página bloquea sus propios botones (modo exposición). Bloquear el botón de inicio o el cambio de apps **no lo puede hacer una página web**: eso es **Acceso guiado** en iPhone y **Fijar pantalla** en Android. Se escribirá la guía para el docente.
+
+## Estado · primera versión (19 nov 2026)
+
+Hecho en `vr/monarca/monarca.js` (entra desde Juegos → Monarca, o directo y en exposición con `/vr/?monarca`):
+bienvenida, la monarca escaneada, migración con el mapa y la ruta que se dibuja, santuario con colonia, dos amenazas,
+dilema ético, cuestionario de 4, final con créditos; voz del teléfono que lee cada cartel (se apaga con «Voz»); salida del
+docente (Opciones o PS 5 veces, o 5 toques en la esquina); fotos, modelo y mapa guardados para usarse sin internet.
+QR imprimible: `vr/monarca/qr.html`. Guía del docente: `vr/monarca/DOCENTE.md`.
+Prueba: `node vr/pruebas-monarca.mjs` (recorre todo como alumno y revisa que cada cifra en pantalla esté en la tabla de arriba).
+
+**Falta:** videos con licencia, minijuegos (guiar a la monarca por la ruta, plantar algodoncillo), ciclo de vida
+(huevo → oruga → crisálida → adulta, cuando se verifiquen sus datos), voz grabada en vez de la del teléfono, y probarla en
+un iPhone y un Android de verdad con el visor.

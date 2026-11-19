@@ -59,6 +59,7 @@ import { montarSables } from './sables.js';
 import { montarObjetos } from './objetos.js';
 import { montarMusica } from './musica.js';
 import { montarTemShop } from './temshop.js';
+import { montarMonarca } from './monarca/monarca.js';
 import { crearPantallaWeb } from './pantalla.js';
 import { crearAgarre, crearMoverConControl } from './agarre.js';
 const { THREE, B } = V;
@@ -113,6 +114,8 @@ $('#bEntrar').addEventListener('click', async () => {
   await armado;
   $('#entrada').remove(); document.body.classList.add('dentro');
   V.arrancar(); V.ir('inicio'); V.recentrar(); V.hud('Bienvenido', 2);
+  /* el QR de MONARCH XR trae ?monarca: directo a la experiencia y en modo exposición */
+  if(new URLSearchParams(location.search).has('monarca')){ window.__monarca.exposicion(true); V.ir('monarca'); }
   /* las manos cargan después (el modelo pesa ~8 MB): el visor ya se puede usar mientras */
   /* 6DoF guardado en Ajustes: se prende en cuanto hay cámara */
   if(V.AJ.seis) camara.then((ok) => ok && V.ponerSeis(true));
@@ -189,7 +192,7 @@ async function montar(){
   V.registrar('inicio', inicio);
 
   /* JUEGOS y LA SALA: lo que viene (fase 2 y 3 en PLAN.md) */
-  for(const [nombre, items] of [['juegos', [['Sables', 'swords', '', () => V.ir('sables')], ['Objetos', 'box', '', () => V.ir('objetos')], ['VS Tiles', 'music', 'Pronto']]], ['sala', [['La Sala', 'users', 'Pronto']]]]){
+  for(const [nombre, items] of [['juegos', [['Sables', 'swords', '', () => V.ir('sables')], ['Objetos', 'box', '', () => V.ir('objetos')], ['Monarca', 'compass', '', () => V.ir('monarca')], ['VS Tiles', 'music', 'Pronto']]], ['sala', [['La Sala', 'users', 'Pronto']]]]){
     const v = { grupo: new THREE.Group() }; const L = [];
     for(const [i, [t, ic, sub, fn]] of items.entries()){
       const p = await V.tarjeta({ titulo: t, icono: ic, sub, apagada: !fn }); const a = (i - (items.length - 1) / 2) * 20 * Math.PI / 180;
@@ -213,6 +216,9 @@ async function montar(){
   /* OBJETOS: agarrar cajas y figuras, y una pistola que dispara doblando el índice (objetos.js) */
   window.__objetos = montarObjetos(V);
   montarTemShop(V);
+
+  /* MONARCH XR: la experiencia de la mariposa monarca (monarca/monarca.js); con ?monarca entra directo en modo exposición */
+  montarMonarca(V);
 
   /* MÚSICA: buscar canciones, radio de México y las del teléfono; sigue sonando en todo el visor (musica.js) */
   window.__musica = montarMusica(V, { pedirTexto, CANCIONES });
