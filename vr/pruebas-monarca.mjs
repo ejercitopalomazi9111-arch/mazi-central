@@ -27,7 +27,9 @@ await opciones(); sí(await p.evaluate(() => __vr.ahora()) === 'monarca', 'Opcio
 sí(await tocar('Empezar') && await escena() === 'mariposa', 'Empezar → La monarca'); await cap('2-mariposa');
 const vis = await p.evaluate(() => ({ mariposa: __monarca.grupo.children.some((c) => c.visible && c.children.length && c.children[0].isGroup) }));
 sí(vis.mariposa, 'se ve el ejemplar escaneado de monarca');
-await tocar('Siguiente'); sí(await escena() === 'flores', 'Siguiente → Flores en el camino');
+await tocar('Siguiente'); sí(await escena() === 'ciclo', 'Siguiente → Su ciclo de vida'); await p.waitForTimeout(2000); await cap('2a-ciclo');
+sí((await p.evaluate(() => window.__monarca.grupo.children.find((g) => g.isGroup && g.children.length === 4)?.children.length)) === 4, 'las cuatro etapas: huevo, oruga, crisálida y adulta');
+await tocar('Siguiente'); sí(await escena() === 'flores', '→ Flores en el camino');
 await p.evaluate(() => window.__monarca.armadoFlores); await p.waitForTimeout(300);
 for(let i = 0; i < 5; i++){ sí(await tocar('Plantar'), `planta la flor ${i + 1}`); await p.waitForTimeout(i === 2 ? 1200 : 200); if(i === 2) await cap('2b-flores'); }
 const fl = await p.evaluate(() => ({ flores: window.__monarca.grupo.children.find((g) => g.isGroup && g.children.length === 5 && g.children.every((c) => c.isMesh))?.children.length || 0, lugares: window.__monarca.elegibles().filter((b) => b.userData.panel.titulo === 'Plantar').length }));
@@ -41,12 +43,13 @@ await tocar('Siguiente'); sí(await escena() === 'decision', '→ Tú decides');
 await tocar('Turismo'); await cap('7b-turismo'); await tocar('Siguiente');
 sí(await escena() === 'cuestionario', '→ Cuestionario'); await cap('8-cuestionario');
 /* contesta bien las cuatro */
-for(let i = 0; i < 4; i++){ const r = await p.evaluate((i) => __monarca.PREGUNTAS[i][1][__monarca.PREGUNTAS[i][2]], i); await tocar(r); await p.waitForTimeout(150); await tocar('Siguiente'); await p.waitForTimeout(150); }
-sí(await escena() === 'final' && (await p.evaluate(() => __monarca.estado.puntos)) === 4, 'cuatro de cuatro y llega al final'); await cap('9-final');
+const NP = await p.evaluate(() => __monarca.PREGUNTAS.length);
+for(let i = 0; i < NP; i++){ const r = await p.evaluate((i) => __monarca.PREGUNTAS[i][1][__monarca.PREGUNTAS[i][2]], i); await tocar(r); await p.waitForTimeout(150); await tocar('Siguiente'); await p.waitForTimeout(150); }
+sí(await escena() === 'final' && (await p.evaluate(() => __monarca.estado.puntos)) === NP, `${NP} de ${NP} y llega al final`); await cap('9-final');
 await tocar('Créditos'); await cap('9b-creditos');
 /* cada cifra que sale en pantalla está en la tabla verificada */
 const verificado = fs.readFileSync(new URL('../are/Documentation/MONARCH_XR.md', import.meta.url), 'utf8');
-const cifras = await p.evaluate(() => __monarca.ESCENAS.flatMap((e) => e.texto || []).join(' ').match(/\d[\d,.]*/g));
+const cifras = await p.evaluate(() => __monarca.ESCENAS.flatMap((e) => [...(e.texto || []), ...(e.etapas || []).flat()]).join(' ').match(/\d[\d,.]*/g));
 const sinFuente = [...new Set(cifras)].filter((c) => !verificado.includes(c.replace(/[.,]$/, '')));
 sí(!sinFuente.length, `cada cifra de los carteles está en la tabla verificada${sinFuente.length ? ': faltan ' + sinFuente.join(', ') : ''}`);
 /* el docente sale: Opciones 5 veces */

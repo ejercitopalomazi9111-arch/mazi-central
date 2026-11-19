@@ -23,6 +23,8 @@ Cada dato con su fuente y año. Lo que no está aquí no se pone en la narració
 | EE. UU. **propuso** listarla como amenazada (12 dic. 2024); **no hay decisión final**: por un acuerdo judicial, el plazo es el **6 de junio de 2030** (reportado en oct. 2026). | Federal Register 89 FR 239; DTN (oct. 2026) |
 | Las hembras ponen sus huevos sólo en **algodoncillo (asclepia)**, que es lo único que comen las orugas; las adultas toman néctar de muchas flores. | National Park Service, «Milkweed and Monarchs» |
 
+| Ciclo de vida (depende de la temperatura): **huevo ~4 días**; **oruga 9-14 días**, con **5 estadios** (muda de piel para crecer); **crisálida ~9-15 días**; en verano, de huevo a adulta **menos de 30 días**, con frío puede pasar de 60. | U.S. Forest Service, «Monarch Butterfly Monitoring in North America» (fs.usda.gov); USFWS (3-8 días el huevo, 25-49 días el ciclo); Monarch Watch (~30 días). Verificado el 19 nov 2026 |
+
 **Lo que NO se dirá:** que una mariposa viaja 9,000 km ida y vuelta; que la población «ya se recuperó» (una temporada buena no es una tendencia); cifras sin año.
 
 ## Medios ya elegidos
@@ -45,8 +47,7 @@ docente (Opciones o PS 5 veces, o 5 toques en la esquina); fotos, modelo y mapa 
 QR imprimible: `vr/monarca/qr.html`. Guía del docente: `vr/monarca/DOCENTE.md`.
 Prueba: `node vr/pruebas-monarca.mjs` (recorre todo como alumno y revisa que cada cifra en pantalla esté en la tabla de arriba).
 
-**Hecho después:** minijuego «Flores en el camino» (plantas 5 flores reales de Poly Haven y la monarca llega a tomar néctar; no es algodoncillo porque no hay modelo libre de asclepia y no se va a fingir).
+**Hecho después:** escena «Su ciclo de vida» (huevo, oruga, crisálida y adulta con sus días, del Forest Service) y una pregunta más; minijuego «Flores en el camino» (plantas 5 flores reales de Poly Haven y la monarca llega a tomar néctar; no es algodoncillo porque no hay modelo libre de asclepia y no se va a fingir).
 
-**Falta:** videos con licencia, más minijuegos (guiar a la monarca por la ruta), ciclo de vida
-(huevo → oruga → crisálida → adulta, cuando se verifiquen sus datos), voz grabada en vez de la del teléfono, y probarla en
-un iPhone y un Android de verdad con el visor.
+**Falta:** videos con licencia, más minijuegos (guiar a la monarca por la ruta), voz grabada en vez de la del
+teléfono, y probarla en un iPhone y un Android de verdad con el visor.
