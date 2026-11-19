@@ -217,7 +217,23 @@ function leerCabeza(){
   } else if(cabeza.position.lengthSq()) cabeza.position.set(0, 0, 0);
 }
 /* ── 6DoF (ENGINEERING_LOG 006): el VIO de visloc-rs con la MISMA cámara, y el filtro que no te deja salir volando ── */
-export const seis = { vio: null, filtro: crearSeis(), ojo: null, aviso: '', avisoEn: 0, error: '', ancla: null, anclaEn: 0, anclaCargando: false };
+export const seis = { vio: null, filtro: crearSeis(), ojo: null, aviso: '', avisoEn: 0, error: '', ancla: null, anclaEn: 0, anclaCargando: false, salaPuesta: false, anclaVista: false };
+/* EL MENÚ EN SU LUGAR DEL CUARTO entre sesiones (ancla.js): en cuanto la hoja se ve con giro confiable, el inicio se
+   pone donde quedó la vez pasada respecto a ella; si no había nada guardado, se guarda donde está. «Al centro» (Cuadro)
+   lo vuelve a guardar donde lo dejes */
+function poseHub(){ return { pos: [hub.position.x, hub.position.y, hub.position.z], yaw: hub.rotation.y }; }
+function anclaConGiro(){ const a0 = seis.ancla?.st.a0; return a0 && a0.yaw != null ? a0 : null; }
+async function guardarSala(){ const a0 = anclaConGiro(); if(!a0) return false; const { respectoAncla, LLAVE_SALA } = await import('./ancla.js');
+  try{ localStorage.setItem(LLAVE_SALA, JSON.stringify({ hub: respectoAncla(poseHub(), a0) })); }catch{} return true; }
+function ponerSala(){
+  if(seis.salaPuesta) return; const a0 = anclaConGiro(); if(!a0) return;
+  seis.salaPuesta = true;
+  import('./ancla.js').then(({ desdeAncla, LLAVE_SALA }) => {
+    let g = null; try{ g = JSON.parse(localStorage.getItem(LLAVE_SALA) || 'null'); }catch{}
+    if(!g?.hub){ guardarSala(); hud('Cuarto guardado', 1.6); return; }
+    const p = desdeAncla(g.hub, a0); hub.position.set(...p.pos); hub.rotation.y = p.yaw; hud('Menú en su lugar', 1.6);
+  }).catch((e) => fallo('E-ANCLA', 'ponerSala', e));
+}
 /* mover TU CUERPO para corregir la deriva (ancla.js): girar alrededor de tu cabeza y luego trasladar */
 export function corregirCuerpo(dYaw, dPos){
   const h = new THREE.Vector3(); cabeza.getWorldPosition(h);
@@ -243,6 +259,8 @@ function vigilarAncla(){
   const cam = { pos: hp.clone().add(ojoThree().negate().applyQuaternion(hq)), quat: hq };
   const obs = seis.ancla.observar(rgba, w, h, seis.vio.intrinsecos(w, h), cam);
   const r = seis.ancla.corregir(obs, hp, { quieta: (seis.vio.S.giro ?? 0) < .6 });
+  if(r) seis.anclaVista = true;
+  ponerSala();
   if(!r) return;
   if(r.primera){ hud('Ancla vista', 1.6); return; }
   corregirCuerpo(r.dYaw, r.dPos);
@@ -252,7 +270,7 @@ function vigilarAncla(){
 export async function ponerSeis(si, { demo = null, videoDemo = null } = {}){
   AJ.seis = !!si && !demo ? true : (demo ? AJ.seis : false); if(!demo) guardar();
   if(seis.vio){ seis.vio.parar(); seis.vio = null; }
-  seis.filtro = crearSeis(); seis.aviso = ''; seis.error = '';
+  seis.filtro = crearSeis(); seis.aviso = ''; seis.error = ''; seis.ancla?.olvidar(); seis.salaPuesta = false; seis.anclaVista = false;
   if(!si){ if(!demo && camVIO) await reabrirCamara(); return true; }
   let paso = 'cargar vio.js';
   try{
@@ -283,6 +301,8 @@ export function recentrar(){
   const r = rumbo(); hub.rotation.y = r; cabeza.getWorldPosition(hub.position); hub.position.y = rig.position.y; hud('Al centro');
   /* y las pantallas que se movieron con las manos regresan enfrente y a su tamaño */
   for(const v of Object.values(vistas)) v.alRecentrar?.();
+  /* con la hoja del ancla vista, «Al centro» también guarda dónde quedó el menú en tu cuarto */
+  if(seis.vio && anclaConGiro()) guardarSala().then((ok) => ok && hud('Al centro · guardado', 1.6));
 }
 
 /* ── texto y tarjetas en lienzos ── */
