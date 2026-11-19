@@ -58,5 +58,7 @@ export function crearNube({ THREE, escena, rig, pared }){
     return st;
   }
   function borrar(){ celdas.clear(); n = 0; ultimaNube = -1; gM.setDrawRange(0, 0); st.mapa = 0; }
-  return { cuadro, borrar, st, vivos, mapa };
+  /* el mapa en crudo (posiciones del mundo), para los obstáculos y la zona segura (limites.js) */
+  const datos = () => ({ pos: gM.attributes.position.array, n });
+  return { cuadro, borrar, st, vivos, mapa, datos };
 }

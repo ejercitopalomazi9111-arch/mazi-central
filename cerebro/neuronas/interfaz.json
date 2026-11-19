@@ -336,6 +336,27 @@
     "seis-dof-se-desliza"
    ],
    "salioDe": "vr/sable-mano.js, 19 nov 2026."
+  },
+  {
+   "id": "piso-por-lo-mas-bajo",
+   "clase": "error",
+   "titulo": "El piso del mapa que sale a -3 m",
+   "gravedad": "media",
+   "sintoma": "Con la caminata real del iPhone, el piso de los límites de Mazi VR quedaba muy abajo y el piso de verdad habría contado como obstáculo.",
+   "causa": "Tomaba el piso como lo más bajo del mapa (el 5 % de abajo); el rastreo deja ruido muy por debajo del piso.",
+   "porque": "En una nube de puntos de rastreo los extremos son ruido; el plano grande es lo que se repite.",
+   "arreglo": "El piso es la capa de 5 cm con más puntos entre 0.7 y 2 m abajo de los ojos; un obstáculo pide 4 puntos y 12 cm de alto en su casilla (vr/limites.js).",
+   "cazar": "node vr/pruebas-limites.mjs (trae ruido muy abajo) y la parte de límites de vr/pruebas-seis-motor.mjs, que imprime el piso de la caminata real",
+   "senales": [
+    "avisa obstáculo todo el tiempo",
+    "cuidado sin nada cerca",
+    "el piso cuenta como obstáculo",
+    "límites del cuarto mal"
+   ],
+   "vecinas": [
+    "seis-dof-se-desliza"
+   ],
+   "salioDe": "vr/limites.js, 19 nov 2026."
   }
  ]
 }

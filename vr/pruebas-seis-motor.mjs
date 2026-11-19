@@ -40,6 +40,24 @@ async function pagina(url){
   sí(an.cargada && !an.fallos.length, `el ancla del cuarto se busca durante el 6DoF sin errores${an.fallos.length ? ': ' + an.fallos.join(' | ') : ''}`);
   const nb = await p.evaluate(() => ({ ...window.__vr.nube.st, mapaVis: window.__vr.nube.mapa.visible }));
   sí(nb.vivos > 20 && nb.mapa > 50 && nb.mapaVis, `los puntitos: ${nb.vivos} puntos siguiéndose en la imagen y ${nb.mapa} puestos en el mapa del cuarto (${nb.estado})`);
+  /* OBSTÁCULOS Y ZONA (limites.js): el mapa real de la caminata ya da piso; luego un cuarto inventado con una cama a 30 cm
+     de tu cabeza (se cambia lo que lee el motor, no el motor) */
+  const li = await p.evaluate(() => ({ leidos: window.__vr.limites.st.leidos, piso: window.__vr.limites.st.piso, zona: !!window.__vr.limites.st.zona, cerca: window.__vr.limites.st.cerca }));
+  console.log('   en la caminata real: piso', li.piso, '· lo más cerca', li.cerca);
+  sí(li.leidos > 50 && li.zona, `los límites leen el mapa de la caminata (${li.leidos} puntos, piso ${li.piso?.toFixed(2) ?? '—'}) y ponen su zona`);
+  const ob = await p.evaluate(async () => { const V = window.__vr, c = new V.THREE.Vector3(); V.cabeza.getWorldPosition(c);
+    const pts = []; let s = 9; const az = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    for(let i = 0; i < 1200; i++) pts.push(c.x + az() * 4 - 2, c.y - 1.6, c.z + az() * 4 - 2);
+    for(let i = 0; i < 400; i++) pts.push(c.x + .3 + az() * .02, c.y - 1.6 + az() * .5, c.z - .5 + az());
+    const pos = new Float32Array(pts), n = pts.length / 3; V.nube.datos = () => ({ pos, n }); V.limites.olvidar();
+    V.seis.filtro.paso = ((f) => (...a) => { const st = f(...a); st.pos = [...V.cabeza.position.toArray()]; return st; })(V.seis.filtro.paso);   /* que no camines mientras se mide */
+    await new Promise((r) => setTimeout(r, 1200));
+    return { cerca: V.limites.st.cerca, aviso: V.limites.st.obstaculo }; });
+  sí(ob.aviso && ob.cerca < .5, `con una cama a 30 cm, avisa del obstáculo (a ${ob.cerca.toFixed(2)} m)`);
+  const zn = await p.evaluate(async () => { const V = window.__vr, z = V.limites.st.zona; const c = new V.THREE.Vector3(); V.cabeza.getWorldPosition(c);
+    z.x = c.x + .95; z.z = c.z; z.radio = 1; await new Promise((r) => setTimeout(r, 600)); const a = V.limites.st.pared;
+    z.x = c.x + 1.5; await new Promise((r) => setTimeout(r, 600)); return { pared: a, fuera: V.limites.st.fuera }; });
+  sí(zn.pared > .5 && zn.fuera, `en la orilla de la zona se ve su pared (${zn.pared.toFixed(2)}) y afuera avisa`);
   await p.evaluate(() => { const V = window.__vr; V.AJ.puntos = false; }); await p.waitForTimeout(300);
   const apagado = await p.evaluate(() => !window.__vr.nube.mapa.visible && !window.__vr.nube.vivos.visible);
   await p.evaluate(() => { const V = window.__vr; V.AJ.puntos = true; V.nube.borrar(); }); await p.waitForTimeout(300);
