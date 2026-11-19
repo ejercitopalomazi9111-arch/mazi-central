@@ -17,6 +17,7 @@ const MORADO = '#AC27FF', VINO = '#7E1735', NARANJA = '#F28C1B';
 const ESCENAS = [
   { id: 'bienvenida', cielo: 'alps_field', titulo: 'MONARCH XR', texto: ['Viaja con la mariposa monarca.', 'Mira a tu alrededor. Elige con la mirada, la mano, el control o tocando.'], boton: 'Empezar', monarca: 'vuela' },
   { id: 'mariposa', cielo: 'alps_field', titulo: 'La monarca', texto: ['La hembra pone sus huevos sólo en el algodoncillo (asclepia).', 'Es lo único que comen sus orugas. Ya adulta, toma néctar de muchas flores.'], fuente: 'National Park Service', monarca: 'cerca' },
+  { id: 'ciclo', cielo: 'alps_field', titulo: 'Su ciclo de vida', texto: ['Del huevo sale una oruga que sólo come algodoncillo y muda de piel 5 veces para crecer. Luego se vuelve crisálida y de ahí sale la mariposa.', 'En verano, de huevo a adulta tarda menos de 30 días; con frío, más.'], fuente: 'U.S. Forest Service · USFWS', etapas: [['Huevo', '~4 días'], ['Oruga', '9 a 14 días'], ['Crisálida', '9 a 15 días'], ['Adulta', 'vuela']], monarca: 'cerca' },
   { id: 'flores', cielo: 'alps_field', titulo: 'Flores en el camino', texto: ['Ya adulta, la monarca toma néctar de muchas flores.', 'Planta cinco flores: elige dónde y mira cómo llega.'], fuente: 'National Park Service', juego: 'flores', monarca: 'vuela' },
   { id: 'migracion', cielo: null, titulo: 'La migración', texto: ['Cada otoño viajan más de 3,000 km hasta el centro de México; desde Canadá, unos 4,500.', 'Ninguna hace sola la ida y la vuelta: es un viaje de varias generaciones. La que viaja al sur vive hasta unos 9 meses; las de verano, semanas.'], fuente: 'U.S. Fish & Wildlife Service, 2024', mapa: true },
   { id: 'santuario', cielo: 'misty_pines', titulo: 'El santuario', texto: ['Pasan el invierno en 11 o 12 montañas de Michoacán y el Estado de México, de octubre a finales de marzo, en bosques de oyamel.', 'La Reserva de la Biosfera Mariposa Monarca mide 56,259 ha y es Patrimonio Mundial desde 2008.'], fuente: 'U.S. Forest Service · UNESCO', monarca: 'colonia' },
@@ -32,6 +33,7 @@ const ESCENAS = [
 /* el cuestionario: sólo lo que se contó */
 const PREGUNTAS = [
   ['¿Dónde pone sus huevos la monarca?', ['En cualquier flor', 'En el algodoncillo', 'En el oyamel'], 1],
+  ['¿En qué orden cambia la monarca?', ['Oruga, huevo, mariposa', 'Huevo, oruga, crisálida, mariposa', 'Crisálida, oruga, mariposa'], 1],
   ['¿Una sola mariposa hace la ida y la vuelta?', ['Sí, cada año', 'No: son varias generaciones', 'Sólo las de verano'], 1],
   ['¿Qué árbol domina en su santuario?', ['El oyamel', 'El pino de playa', 'La palmera'], 0],
   ['¿Qué degradó más bosque en 2024-2025?', ['La sequía', 'Los incendios', 'La tala ilegal'], 2],
@@ -150,6 +152,22 @@ export function montarMonarca(V){
     mapaP.listo();
   }
 
+  /* ── las etapas del ciclo: cuatro tarjetitas debajo del cartel; se enciende una tras otra ── */
+  const etapas = new THREE.Group(); m.grupo.add(etapas); let etapasP = [];
+  function ponerEtapas(lista){
+    etapas.clear(); etapasP = [];
+    if(!lista) return;
+    const w = .4, sep = .05, total = lista.length * w + (lista.length - 1) * sep;
+    lista.forEach(([nombre, dias], k) => { const p = new V.Panel(w, .2, 520); p.malla.position.set(-total / 2 + w / 2 + k * (w + sep), -.2, -2.15); etapas.add(p.malla); etapasP.push({ p, nombre, dias, on: null }); });
+  }
+  function pintarEtapas(activa){
+    etapasP.forEach((e, k) => { const on = k === activa; if(e.on === on) return; e.on = on;
+      const { x, cv } = e.p, w = cv.width, h = cv.height; x.clearRect(0, 0, w, h); V.redondo(x, 4, 4, w - 8, h - 8, 26);
+      x.fillStyle = on ? '#3A1A5C' : 'rgba(23,10,38,.9)'; x.fill(); x.lineWidth = on ? 6 : 3; x.strokeStyle = on ? NARANJA : '#3C2652'; x.stroke();
+      x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = on ? NARANJA : '#F4EEF2'; x.font = '800 34px system-ui, -apple-system, sans-serif'; x.fillText(e.nombre, w / 2, h * .38);
+      x.fillStyle = '#C9B6DA'; x.font = '600 24px system-ui, -apple-system, sans-serif'; x.fillText(e.dias, w / 2, h * .72); e.p.listo(); });
+  }
+
   /* ── la voz ── */
   function decir(textos){
     try{ speechSynthesis.cancel(); if(!st.voz || !textos.length) return;
@@ -168,6 +186,7 @@ export function montarMonarca(V){
     mariposa.visible = E.monarca === 'vuela' || E.monarca === 'cerca'; colonia.visible = E.monarca === 'colonia';
     if(E.mapa){ mapaP.malla.position.set(.72, .42, -2.3); mapaP.malla.lookAt(0, .42 * .3, 0); }
     const siguiente = () => mostrar(i + 1);
+    ponerEtapas(E.etapas); if(E.etapas) pintarEtapas(0);
     quitarLugares(); flores.visible = E.juego === 'flores'; if(E.juego !== 'flores') objetivo = null;
     if(E.juego === 'flores'){ cartel.malla.position.set(0, .62, -2.3); juegoFlores(); pintarCartel(E.titulo, E.texto, E.fuente); decir(E.texto); ponerBotones([boton('Atrás', () => mostrar(i - 1), .36), vozBoton()], -.2); return; }
     if(E.id === 'cuestionario') return preguntar();
@@ -178,7 +197,7 @@ export function montarMonarca(V){
     }
     pintarCartel(E.titulo, E.texto, E.fuente); decir(E.texto);
     if(E.id === 'final'){ ponerBotones([boton(`${st.puntos} de ${PREGUNTAS.length}`, () => {}, .4), boton('Créditos', () => { pintarCartel('Créditos', [CREDITOS]); decir([]); }, .4), boton('Otra vez', () => reiniciar(), .4)]); return; }
-    ponerBotones([...(i > 0 ? [boton('Atrás', () => mostrar(i - 1), .36)] : []), boton(E.boton || 'Siguiente', siguiente), vozBoton()]);
+    ponerBotones([...(i > 0 ? [boton('Atrás', () => mostrar(i - 1), .36)] : []), boton(E.boton || 'Siguiente', siguiente), vozBoton()], E.etapas ? -.44 : -.38);
   }
   function preguntar(){
     const E = ESCENAS[st.escena], q = PREGUNTAS[st.pregunta];
@@ -201,6 +220,7 @@ export function montarMonarca(V){
       else if(objetivo){ mariposa.position.lerp(new THREE.Vector3(objetivo.x + Math.sin(t * 2) * .12, objetivo.y + Math.sin(t * 3.1) * .06, objetivo.z + Math.cos(t * 2) * .12), .04); mariposa.rotation.set(0, t * 2, Math.sin(t * 12) * .25); mariposa.scale.setScalar(.8); }
       else { const a = t * .5; mariposa.position.set(Math.sin(a) * 1.1, .9 + Math.sin(t * 1.3) * .15, -1.8 + Math.cos(a) * .6); mariposa.rotation.set(0, a + Math.PI / 2, Math.sin(t * 12) * .25); mariposa.scale.setScalar(1); }
     }
+    if(E.etapas) pintarEtapas(Math.floor((t - t0) / 1.6) % E.etapas.length);
     for(const f of flores.children){ const k = Math.min(1, (t - f.userData.nace) / .8); f.scale.setScalar(Math.max(.01, 1 - Math.pow(1 - k, 3))); }
     if(colonia.visible) for(const c of colonia.children){ const b = c.userData.base, f = c.userData.fase;
       c.position.set(b.x + Math.sin(t * .4 + f) * .25, b.y + Math.sin(t * .9 + f) * .12, b.z + Math.cos(t * .4 + f) * .25); c.rotation.set(0, t * .4 + f, Math.sin(t * 11 + f) * .3); }
