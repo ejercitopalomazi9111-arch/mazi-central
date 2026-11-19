@@ -7,6 +7,7 @@
    La distancia a la mano se calcula por su tamaño en la imagen (una mano mide ~8.5 cm de la muñeca al nudillo
    del medio): no es exacto, pero alcanza para apuntar y tocar cosas cercanas. */
 import { leer, tamano, contadorPuno } from './gestos.js';
+import { crearEstable } from './manos-estables.js';
 const MP = '../presentaciones/vendor/mediapipe/';
 const HUESOS = [[0, 1], [1, 2], [2, 3], [3, 4], [0, 5], [5, 6], [6, 7], [7, 8], [5, 9], [9, 10], [10, 11], [11, 12], [9, 13], [13, 14], [14, 15], [15, 16], [13, 17], [17, 18], [18, 19], [19, 20], [0, 17]];
 
@@ -35,7 +36,7 @@ export async function iniciarManos(V){
     const pts = Array.from({ length: 21 }, (_, i) => { const m = new THREE.Mesh(bola, i === 8 || i === 4 ? matP : mat); m.renderOrder = 999; g.add(m); return m; });
     const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(HUESOS.length * 6), 3));
     const lin = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: new THREE.Color('#AC27FF'), depthTest: false, transparent: true, opacity: .8 })); lin.renderOrder = 998; g.add(lin);
-    return { g, pts, lin, suave: null, pellizco: false, palmaDesde: 0, vista: 0, puno: contadorPuno() };
+    return { g, pts, lin, suave: null, pellizco: false, palmaDesde: 0, vista: 0, puno: contadorPuno(), estable: crearEstable() };
   });
   /* el puntero (Carlos, 18 nov: «que el punto blanco lance un rayo como cursor»): sale de entre la punta del índice y la
      del pulgar (los dos puntos blancos), en la dirección hombro → mano, como en los visores de verdad; y donde pega se
@@ -90,7 +91,9 @@ export async function iniciarManos(V){
     if(!V.hayCamara() || !V.AJ.manos || video.readyState < 2){ manos.forEach((m) => { m.g.visible = false; }); rayosVis.forEach((x) => { x.linea.visible = x.cursor.visible = false; }); V.extra.rayo = null; V.extra.rayos = []; V.extra.manos = []; return; }
     /* un cuadro sí y uno no: en el iPhone el rastreo cuesta y la pantalla va a 60 */
     /* y si el teléfono va lento (el rastreo tarda más de 28 ms), uno de cada tres: que el visor no se trabe por las manos */
-    if(++cuadroN % (estado.ms > 28 ? 3 : 2) || video.currentTime === ultimoT) return;
+    /* MÁS SEGUIDO SI SE PUEDE (guía de Carlos: «aumentar la frecuencia del tracking»): si el rastreo tarda menos de 14 ms,
+       en cada cuadro; si tarda más, uno sí y uno no; si pasa de 28 ms, uno de cada tres */
+    if(++cuadroN % (estado.ms > 28 ? 3 : estado.ms > 14 ? 2 : 1) || video.currentTime === ultimoT) return;
     ultimoT = video.currentTime;
     const t0 = performance.now(); let r;
     try{ r = lm.detectForVideo(video, ahora); }catch(e){ estado.error = String(e?.message || e); return; }
@@ -123,9 +126,11 @@ export async function iniciarManos(V){
       const c = asign[k];
       /* perdida un instante: se sostiene como iba (no se suelta lo agarrado, el cursor no parpadea) */
       if(!c && m.info && ahora - (m.vistaEn || 0) < 350){ m.info.estimada = true; visibles.push(m.info); return; }
-      if(!c){ m.g.visible = false; m.pellizco = false; m.palmaDesde = 0; m.suave = null; m.ult = null; m.info = null; m.fijo = null; m.hist = null; m.etiqueta = ''; m.G = null; m.filtro = null; m.fW = null; return; }
+      if(!c){ m.g.visible = false; m.pellizco = false; m.palmaDesde = 0; m.suave = null; m.ult = null; m.info = null; m.fijo = null; m.hist = null; m.etiqueta = ''; m.G = null; m.filtro = null; m.fW = null; m.estable = crearEstable(); return; }
       m.vistaEn = ahora;
-      const L = filtrar(m, c.L, ahora); m.ult = { x: c.wx, y: c.wy }; m.W = filtrarW(m, c.W); if(c.etiqueta && c.seguro > .8) m.etiqueta = c.etiqueta;
+      /* antes de suavizar: dedos inventados, palma volteada de golpe y lado que brinca (manos-estables.js) */
+      const E = m.estable.paso(c.L, c.W, c.etiqueta, c.seguro); m.dudosos = E.dudosos; m.sostenida = E.sostenida;
+      const L = filtrar(m, E.L, ahora); m.ult = { x: c.wx, y: c.wy }; m.W = filtrarW(m, E.W); if(E.lado) m.etiqueta = E.lado;
       const s = tamano(L, asp), dist = Math.min(1.2, Math.max(.15, .085 / (s * 2 * tx)));
       /* EN tu mano (Carlos, 18 nov): con la mixta, la imagen de la cámara está pintada al fondo (a 20 m) y cada ojo la ve en el
          mismo lugar; los puntos se ponen a esa misma distancia y en la misma dirección, así caen justo encima de tu mano y no

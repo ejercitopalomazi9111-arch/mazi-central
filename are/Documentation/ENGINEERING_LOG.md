@@ -160,3 +160,14 @@ Niveles de prueba: **documentado** · **implementado** · **probado en navegador
 - **«Teléfono quieto, mundo quieto» (`vr/seis.js`):** si el acelerómetro casi no se sacude y el giroscopio casi no gira, no se suma ningún movimiento aunque el VIO se vaya. Mover la cabeza siempre gira algo.
 - **Pruebas:** `pruebas-seis` 12/12 (nuevo: teléfono quieto con el VIO yéndose 21 cm → 0 cm; girando un poco sí cuenta); `pruebas-seis-motor` 10/10 con la caminata real (118 puntos siguiéndose y 2,262 en el mapa).
 - **Honesto:** los puntos no arreglan el rastreo; enseñan DÓNDE falla (pocos puntos = pared lisa o poca luz). Si el VIO web sigue sin dar en el cuarto de Carlos, la ruta firme es ARKit nativo (`are/`) o ARCore en Android.
+
+## 013 · Manos que no se deforman ni se voltean (19 nov 2026)
+
+- **De la guía de Carlos** (prioridad 1 y 2): «cuando pierde de vista algunos dedos intenta inventar su posición: la mano cambia de forma, los dedos se estiran, o confunde una mano con la otra o invierte la palma».
+- **Hecho (`vr/manos-estables.js`, antes del suavizado en `vr/manos.js`):**
+  - **largos de hueso:** las primeras 12 lecturas aprenden cuánto mide cada hueso de esa mano (worldLandmarks, metros). Un dedo con huesos 40 % más largos o más cortos, o doblado más de 125° en una articulación, es inventado: se queda en su última forma buena, pegada a la palma de ahora (se mueve, gira y crece con ella);
+  - **palma volteada de golpe:** más de 120° entre dos lecturas se sostiene hasta 3 lecturas (con la forma buena, sin girarla); si sigue, era tu mano y se acepta;
+  - **lado:** izquierda o derecha sólo cambia si se repite 8 lecturas seguidas;
+  - **más seguido:** si el rastreo de manos tarda menos de 14 ms, corre en cada cuadro (antes, uno sí y uno no).
+- **Pruebas:** `vr/pruebas-manos-estables.mjs` 10/10 (mano sana pasa tal cual; índice estirado al doble y medio doblado al revés se quedan en su forma buena; volteo de un cuadro se ignora y uno que se mantiene se acepta; 3 lecturas de «izquierda» no cambian la derecha y 8 sí; un puño de verdad no se confunde). Las de manos, gestos, agarrar, sables y objetos siguen en verde.
+- **Nivel:** probado en Node con manos inventadas. **Falta:** las manos de Carlos.
