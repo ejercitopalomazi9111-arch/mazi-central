@@ -1,0 +1,36 @@
+# MAZI'S ARE 1 · el proyecto de Xcode, generado en la Mac de GitHub con XcodeGen (aquí no hay Mac).
+# Usa los mismos archivos que MaziXR.swiftpm (el de Swift Playgrounds en el iPad).
+name: MaziXR
+options:
+  bundleIdPrefix: mx.grupomazi
+  deploymentTarget: { iOS: "16.0" }
+targets:
+  MaziXR:
+    type: application
+    platform: iOS
+    # carpeta por carpeta: «MaziXR.swiftpm» entera la toma como un paquete de recursos y la COPIA sin compilar
+    # (así salió la primera .ipa: 14 KB y sin código)
+    sources:
+      - MaziXR.swiftpm/App
+      - MaziXR.swiftpm/Core
+      - MaziXR.swiftpm/Hardware
+      - MaziXR.swiftpm/UI
+    info:
+      path: Generado/Info.plist
+      properties:
+        CFBundleDisplayName: "MAZI'S ARE 1"
+        CFBundleShortVersionString: "0.1"
+        NSCameraUsageDescription: "Para ver tu cuarto dentro del visor y seguir tus manos."
+        NSMotionUsageDescription: "Para saber hacia dónde miras con el visor puesto."
+        UILaunchScreen: {}
+        GCSupportsControllerUserInteraction: true
+        GCSupportedGameControllers: [{ ProfileName: ExtendedGamepad }]
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        UIRequiredDeviceCapabilities: [arm64]
+        UIRequiresFullScreen: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: mx.grupomazi.are1
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGNING_ALLOWED: "NO"

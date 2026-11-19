@@ -323,19 +323,7 @@ function ponerAtras(){
   if(atrasP._f === undefined){ atrasP._f = false; pintarAtras(false); }
   const [x, y, z] = v.atrasEn || [0, -.95, -1.7]; atras.position.set(x, y, z); atras.lookAt(0, y * .3, 0);
 }
-/* el botón más cercano al rayo, si pasa a menos de 5° de su orilla (la orilla se toma de su esfera) */
-const _c = new THREE.Vector3(), _d = new THREE.Vector3();
-function iman(o, dir, L){
-  let mejor = null, mejorA = Infinity;
-  for(const m of L){ if(!m.visible || !m.geometry) continue;
-    if(!m.geometry.boundingSphere) m.geometry.computeBoundingSphere();
-    m.getWorldPosition(_c); const r = m.geometry.boundingSphere.radius * Math.max(m.getWorldScale(_d).x, _d.y) * .8;
-    _d.copy(_c).sub(o); const dist = _d.length(); if(dist < .05) continue;
-    const a = _d.normalize().angleTo(dir) - Math.atan(r / dist);
-    if(a < .087 && a < mejorA){ mejorA = a; mejor = m; } }
-  return mejor ? { object: mejor, point: mejor.getWorldPosition(new THREE.Vector3()) } : null;
-}
-export { ponerAtras, iman, atras };
+export { ponerAtras, atras };
 export const ahora = () => vista;
 
 /* lo que se puede elegir: cada vista da sus objetos; la mira o las flechas les dan el foco */
@@ -400,9 +388,7 @@ function cuadro(t){
     const flechasRecientes = performance.now() - focoPorFlechas < 4000 && cabeza.quaternion.angleTo(ultimoGiro) < .12;
     /* cada mano con su rayo: cada uno sabe a qué le pega; el foco lo da el principal (o la mira, sin manos) */
     for(const R of extra.rayos || []){ ray.set(R.origen, R.dir); let hh = ray.intersectObjects(L, false)[0];
-      /* IMÁN (Carlos, 19 nov: los botones fallaban «aún así»): si el rayo pasa CERCA de un botón (hasta 5° más allá de su
-         orilla), cuenta como encima. El rastreo de la mano tiembla unos grados; un botón chico como Atrás se escapaba */
-      if(!hh) hh = iman(R.origen, R.dir, L);
+      /* (el imán de 5° se quitó el 19 nov: Carlos, «estaba mejor antes del imán») */
       R.hit = hh ? hh.point.clone() : null; R.objeto = hh?.object || null;
       if(R.objeto && R.mano){ R.mano.objetoAntes = R.objeto; R.mano.objetoEn = performance.now(); } }
     let h;

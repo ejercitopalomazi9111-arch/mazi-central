@@ -1,0 +1,51 @@
+# MAZI'S ARE 1 (are/): la app nativa de iPhone, armada sin Mac.
+#  · nucleo: las pruebas de la matemática (orientación, frecuencia, criterios del Hito 01) en Linux.
+#  · iphone: una Mac de GitHub (gratis en repos públicos) genera el proyecto con XcodeGen, compila para iPhone SIN
+#    firmar y deja la .ipa como artefacto. SideStore la firma en el teléfono con tu Apple ID gratis (are/INSTALAR.md).
+name: MAZI'S ARE 1
+
+on:
+  push:
+    branches: [main, 'claude/**']
+    paths: ['are/**', '.github/workflows/are-ios.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: are-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nucleo:
+    runs-on: ubuntu-latest
+    container: swift:6.0
+    defaults: { run: { working-directory: are } }
+    steps:
+      - uses: actions/checkout@v4
+      - run: swift test
+
+  iphone:
+    runs-on: macos-15
+    defaults: { run: { working-directory: are } }
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen
+      - run: xcodegen generate
+      - name: Compila para iPhone, sin firmar
+        run: |
+          set -o pipefail
+          xcodebuild -project MaziXR.xcodeproj -scheme MaziXR -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build | tail -60
+      - name: Revisa que el código SÍ entró a la app (una .ipa de 14 KB ya pasó como «verde»)
+        run: |
+          APP=build/Build/Products/Release-iphoneos/MaziXR.app
+          ls -l "$APP/MaziXR"
+          test $(stat -f%z "$APP/MaziXR") -gt 100000
+          grep -aq DiagnosticView "$APP/MaziXR" && echo "DiagnosticView adentro"
+          test ! -e "$APP/MaziXR.swiftpm"
+      - name: Empaca la .ipa
+        run: |
+          mkdir -p Payload && cp -R build/Build/Products/Release-iphoneos/MaziXR.app Payload/
+          zip -qr MAZI-ARE-1.ipa Payload && ls -lh MAZI-ARE-1.ipa
+      - uses: actions/upload-artifact@v4
+        with: { name: MAZI-ARE-1-ipa, path: are/MAZI-ARE-1.ipa }
