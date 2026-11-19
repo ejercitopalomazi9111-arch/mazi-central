@@ -47,4 +47,26 @@ const W0 = mano();
   const W = W0.map((p) => ({ ...p })); for(const f of [[5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16], [17, 18, 19, 20]]){ const b = W0[f[0]];
     W[f[1]] = { x: b.x, y: b.y - .022 * Math.cos(.9), z: .022 * Math.sin(.9) }; W[f[2]] = { x: b.x, y: W[f[1]].y - .022 * Math.cos(1.9), z: W[f[1]].z + .022 * Math.sin(1.9) }; W[f[3]] = { x: b.x, y: W[f[2]].y - .022 * Math.cos(2.6), z: W[f[2]].z + .022 * Math.sin(2.6) }; }
   const r = e.paso(aImagen(W), W, 'Right', .95); sí(r.dudosos.length === 0, `cerrar la mano (puño de verdad) no se confunde con dedos inventados (dudosos: ${r.dudosos.join(',') || 'ninguno'})`); }
+/* LO QUE VIO CARLOS EN EL VISOR (19 nov) */
+/* 7. aprender con la mano CERRADA y luego abrirla: los dedos no se quedan congelados chiquitos (a lo más 4 lecturas) */
+{ const puno = W0.map((p) => ({ ...p })); for(const f of [[5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16], [17, 18, 19, 20]]){ const b = W0[f[0]];
+    /* un puño mal leído: los dedos se ven cortitos (MediaPipe los encoge al taparse) */
+    for(let k = 1; k < 4; k++) puno[f[k]] = { x: b.x + .002 * k, y: b.y - .009 * k, z: .004 * k }; }
+  const e = crearEstable(); for(let i = 0; i < 15; i++) e.paso(aImagen(puno), puno, 'Right', .95);
+  let r, n = 0; const L = aImagen(W0); for(; n < 10; n++){ r = e.paso(L, W0, 'Right', .95); if(cerca(r.L, L, 1e-9)) break; }
+  sí(n <= 4, `aprender con el puño y abrir la mano: en ${n + 1} lecturas los dedos ya salen estirados como son (antes: congelados para siempre)`);
+  let fijos = true; for(let i = 0; i < 10; i++){ r = e.paso(L, W0, 'Right', .95); if(r.dudosos.length) fijos = false; }
+  sí(fijos, 'y ya re-aprendió sus largos: la mano abierta deja de parecer «rara»'); }
+/* 8. la mano VOLTEADA en espejo (palma arriba) con un dedo raro: el dedo viejo NO se pega girado media vuelta */
+{ const e = crearEstable(); for(let i = 0; i < 15; i++) e.paso(aImagen(W0), W0, 'Right', .95);
+  const W = W0.map((p) => ({ ...p })); for(const i of [6, 7, 8]) W[i] = { x: W0[i].x, y: W0[5].y + (W0[i].y - W0[5].y) * 2.1, z: 0 };
+  const espejo = aImagen(W).map((p) => ({ x: 1 - p.x, y: p.y, z: p.z }));
+  const r = e.paso(espejo, W, 'Right', .95);
+  const lejos = Math.max(...[6, 7, 8].map((i) => Math.hypot(r.L[i].x - espejo[i].x, r.L[i].y - espejo[i].y)));
+  sí(!r.dudosos.includes(1) && lejos < 1e-9, `palma volteada en la imagen: el índice sale de la lectura, no disparado al otro lado (diferencia ${lejos.toFixed(3)})`); }
+/* 9. un dedo de verdad raro (inventado) se sostiene, pero no más de 4 lecturas seguidas */
+{ const e = crearEstable(); for(let i = 0; i < 15; i++) e.paso(aImagen(W0), W0, 'Right', .95);
+  const W = W0.map((p) => ({ ...p })); for(const i of [6, 7, 8]) W[i] = { x: W0[i].x, y: W0[5].y + (W0[i].y - W0[5].y) * 2.1, z: 0 };
+  const sost = []; for(let i = 0; i < 7; i++) sost.push(e.paso(aImagen(W), W, 'Right', .95).dudosos.includes(1));
+  sí(sost.filter(Boolean).length === 4 && !sost[4], `el índice raro se sostiene 4 lecturas y a la quinta se acepta (${sost.map((x) => x ? 'S' : '·').join('')})`); }
 console.log(`${ok} bien · ${mal} mal`); process.exit(mal ? 1 : 0);

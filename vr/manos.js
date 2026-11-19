@@ -76,7 +76,12 @@ export async function iniciarManos(V){
     const out = L.map((q, i) => {
       const P = f.p[i]; let x = q.x, y = q.y, z = q.z;
       /* brinco de un solo dedo: más de un tercio de mano lejos de donde iba, con la muñeca casi quieta */
-      const salto = Math.hypot(x - P.x, y - P.y) - mw; if(i > 4 && salto > escala * .35){ x = P.x + (x - P.x) * .25; y = P.y + (y - P.y) * .25; z = P.z + (z - P.z) * .25; }
+      /* …pero sólo 2 lecturas seguidas: si sigue «brincado», era movimiento de verdad (abrir el puño, girar la mano) y se
+         acepta. Antes se frenaba sin límite y los dedos se quedaban atrás, doblados (fotos de Carlos, 19 nov) */
+      const salto = Math.hypot(x - P.x, y - P.y) - mw;
+      if(i > 4 && salto > escala * .35 && (P.frenos || 0) < 2){ P.frenos = (P.frenos || 0) + 1; x = P.x + (x - P.x) * .25; y = P.y + (y - P.y) * .25; z = P.z + (z - P.z) * .25; }
+      else if(salto <= escala * .35) P.frenos = 0;
+      else { P.frenos = 0; P.x = x; P.y = y; P.z = z; P.dx = P.dy = P.dz = 0; }
       const ad = alfa(UE.dCorte, dt);
       P.dx += ad * ((x - P.x) / dt - P.dx); P.dy += ad * ((y - P.y) / dt - P.dy); P.dz += ad * ((z - P.z) / dt - P.dz);
       const vel = Math.hypot(P.dx, P.dy), a = alfa(UE.minCorte + UE.beta * vel, dt);
