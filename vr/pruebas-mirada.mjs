@@ -11,8 +11,10 @@ const BASE = process.env.BASE || 'http://localhost:8765', CAPS = process.env.CAP
 const b = await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
 const ctx = await b.newContext({ viewport: { width: 844, height: 390 } });
 await ctx.addInitScript(() => { navigator.getGamepads = () => [];   // sin control
-  /* y sin manos: la cámara de mentiras a veces «parece» una mano y el puntero de la mano le gana a la mirada */
-  try{ localStorage.setItem('mazivr.ajustes', JSON.stringify({ manos: false })); }catch{} });
+  /* y sin manos: la cámara de mentiras a veces «parece» una mano y el puntero de la mano le gana a la mirada; y con el fondo
+     simple: el navegador de pruebas no tiene tarjeta gráfica y el Tem Shop le baja tanto los cuadros que el giro llega tarde
+     (el Tem Shop tiene su propia prueba) */
+  try{ localStorage.setItem('mazivr.ajustes', JSON.stringify({ manos: false, fondo: 1 })); }catch{} });
 const p = await ctx.newPage(); const errores = []; p.on('pageerror', (e) => errores.push(e.message));
 let ok = 0, mal = 0; const sí = (c, t) => { c ? ok++ : mal++; console.log(c ? '✓' : '✗', t); };
 await p.goto(BASE + '/vr/', { waitUntil: 'networkidle' }); await p.click('#bEntrar');

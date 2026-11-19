@@ -18,7 +18,7 @@
 import * as THREE from 'three';
 
 /* ── ajustes: se guardan en el teléfono (sólo comodidad; si se borran, salen los de fábrica) ── */
-const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true, menuTam: 1, menuDist: 1 };
+const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true, menuTam: 1, menuDist: 1, fondo: 0 };
 const AJ = { ...FABRICA };
 try{ Object.assign(AJ, JSON.parse(localStorage.getItem('mazivr.ajustes') || '{}')); }catch{}
 const guardar = () => { try{ localStorage.setItem('mazivr.ajustes', JSON.stringify(AJ)); }catch{} };
@@ -323,7 +323,19 @@ function ponerAtras(){
   if(atrasP._f === undefined){ atrasP._f = false; pintarAtras(false); }
   const [x, y, z] = v.atrasEn || [0, -.95, -1.7]; atras.position.set(x, y, z); atras.lookAt(0, y * .3, 0);
 }
-export { ponerAtras };
+/* el botón más cercano al rayo, si pasa a menos de 5° de su orilla (la orilla se toma de su esfera) */
+const _c = new THREE.Vector3(), _d = new THREE.Vector3();
+function iman(o, dir, L){
+  let mejor = null, mejorA = Infinity;
+  for(const m of L){ if(!m.visible || !m.geometry) continue;
+    if(!m.geometry.boundingSphere) m.geometry.computeBoundingSphere();
+    m.getWorldPosition(_c); const r = m.geometry.boundingSphere.radius * Math.max(m.getWorldScale(_d).x, _d.y) * .8;
+    _d.copy(_c).sub(o); const dist = _d.length(); if(dist < .05) continue;
+    const a = _d.normalize().angleTo(dir) - Math.atan(r / dist);
+    if(a < .087 && a < mejorA){ mejorA = a; mejor = m; } }
+  return mejor ? { object: mejor, point: mejor.getWorldPosition(new THREE.Vector3()) } : null;
+}
+export { ponerAtras, iman, atras };
 export const ahora = () => vista;
 
 /* lo que se puede elegir: cada vista da sus objetos; la mira o las flechas les dan el foco */
@@ -387,7 +399,12 @@ function cuadro(t){
   if(mirar.activo && L.length){
     const flechasRecientes = performance.now() - focoPorFlechas < 4000 && cabeza.quaternion.angleTo(ultimoGiro) < .12;
     /* cada mano con su rayo: cada uno sabe a qué le pega; el foco lo da el principal (o la mira, sin manos) */
-    for(const R of extra.rayos || []){ ray.set(R.origen, R.dir); const hh = ray.intersectObjects(L, false)[0]; R.hit = hh ? hh.point.clone() : null; R.objeto = hh?.object || null; }
+    for(const R of extra.rayos || []){ ray.set(R.origen, R.dir); let hh = ray.intersectObjects(L, false)[0];
+      /* IMÁN (Carlos, 19 nov: los botones fallaban «aún así»): si el rayo pasa CERCA de un botón (hasta 5° más allá de su
+         orilla), cuenta como encima. El rastreo de la mano tiembla unos grados; un botón chico como Atrás se escapaba */
+      if(!hh) hh = iman(R.origen, R.dir, L);
+      R.hit = hh ? hh.point.clone() : null; R.objeto = hh?.object || null;
+      if(R.objeto && R.mano){ R.mano.objetoAntes = R.objeto; R.mano.objetoEn = performance.now(); } }
     let h;
     if(extra.rayo){ h = extra.rayo.objeto !== undefined ? (extra.rayo.objeto ? { object: extra.rayo.objeto } : null) : (ray.set(extra.rayo.origen, extra.rayo.dir), ray.intersectObjects(L, false)[0]);
       if(h && !extra.rayo.hit && h.point) extra.rayo.hit = h.point.clone(); }
@@ -402,12 +419,15 @@ function cuadro(t){
   const xMano = !!extra.botones?.[B.X], clicMano = xMano && !xManoAntes; xManoAntes = xMano;
   if(clicMano && !usado.x && extra.rayo){
     /* el clic va a lo que apunta LA MANO QUE PELLIZCA (su rayo ya está congelado en hacia dónde apuntaba antes de juntar los dedos) */
-    const quien = (extra.rayos || []).find((R) => R.pellizco && R.objeto);
+    const quien = (extra.rayos || []).find((R) => R.pellizco && R.objeto)
+      || (extra.rayos || []).filter((R) => R.mano?.agarro && ahoraMs - R.mano.agarro < 250).map((R) => ({ objeto: R.mano.objetoAntes }))[0];
     const antes = quien ? null : historialMira.find(([t, o]) => ahoraMs - t <= 260 && ahoraMs - t >= 90 && o) || historialMira.findLast?.(([, o]) => o);
     const o = quien?.objeto || antes?.[1] || foco; if(o){ darFoco(o); activar(o); } usado.x = true; }
   /* MIRAR O APUNTAR FIJO 1.6 s ELIGE, SIEMPRE (Carlos, 18 nov: «si apunto hacia un elemento unos segundos, que se clique, además
      del pellizcar; y que se pueda seguir pulsando sólo quedándote viendo»): antes se apagaba con el control conectado o con
      las manos a la vista. Con las manos cuenta a lo que apunta el rayo principal; sin manos, a lo que ve la mira. */
+  /* con L2 apretado estás moviendo o agrandando algo: mirar fijo no elige (si no, al acomodar el menú se metía a lo que veías) */
+  if(control.apretado(B.L2)) focoDesde = performance.now();
   const fijo = !mirarBloqueado && viendo && viendo === foco && !(extra.rayo && extra.rayo.pellizco) ? Math.max(0, (performance.now() - focoDesde) / 1600) : 0;
   anillo.visible = fijo > .05;
   /* el anillo se llena donde estás apuntando: en el cursor del rayo, o en la mira */
@@ -473,6 +493,7 @@ export function arrancar(){
   render.setAnimationLoop(cuadro);
 }
 export const hayControl = () => padVisto;
+export { cuarto, domo, piso };
 export { render, THREE, escena, cabeza, rig, hub, AJ, FABRICA, guardar, aplicarAjustes, ponerMixta, tarjeta, Panel, redondo, svgImg, C, camTex, video };
 export const hayCamara = () => !!camTex;
 /* dónde cae en la PANTALLA del teléfono un punto de la imagen de un ojo, ya pasado por el lente (el pase de arriba,
