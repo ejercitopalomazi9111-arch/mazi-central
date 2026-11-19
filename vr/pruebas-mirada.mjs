@@ -27,7 +27,7 @@ const girar = async (dx, dy) => { await p.mouse.move(mx, my); await p.mouse.down
 const grados = (g) => Math.round(g * Math.PI / 180 / .005);
 /* el foco se pone en el cuadro siguiente al giro: se espera hasta 1.5 s a que aparezca */
 const foco = async () => { let f = null; for(let i = 0; i < 10 && !f; i++){ f = await p.evaluate(() => __vr.focoActual()); if(!f) await p.waitForTimeout(150); } return f; };
-const fijo = async () => p.waitForTimeout(2300);
+const fijo = async () => p.waitForTimeout(2900);   /* mirar fijo tarda 2.5 s (Carlos, 19 nov) */
 const volverAlCentro = async () => { await girar(422 - mx, 195 - my); mx = 422; my = 195; };
 
 sí(await p.evaluate(() => __vr.ahora()) === 'inicio', 'entra al inicio');

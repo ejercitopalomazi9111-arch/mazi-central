@@ -9,8 +9,8 @@
      sale de lo guardado marcado como redirigido: el navegador rechaza una navegación «redirigida» (lo que tumbó a
      INKWELL el 11 nov, ver inkwell/sw.js v31).
    Prueba: node vr/pruebas-sinred.mjs (apaga el servidor de a de veras). */
-const V = 'mazivr-v32';
-const APP = ['./', './vr.js', './iconos.js', './teclado.js', './cine.js', './lector.js', './sables.js', './sable-mano.js', './objetos.js', './musica.js', './agarre.js', './temshop.js', './seis.js', './ancla.js', './nube.js', './limites.js', './prediccion.js', './monarca/monarca.js', './monarca/narrador.js', './monarca/travesuras.js', './pantalla.js', './manos.js', './manos-estables.js', './gestos.js',
+const V = 'mazivr-v35';
+const APP = ['./', './vr.js', './iconos.js', './teclado.js', './cine.js', './lector.js', './sables.js', './sable-mano.js', './objetos.js', './musica.js', './agarre.js', './temshop.js', './seis.js', './ancla.js', './nube.js', './limites.js', './prediccion.js', './monarca/monarca.js', './monarca/narrador.js', './monarca/travesuras.js', './pantalla.js', './manos.js', './manos-estables.js', './mano3d.js', './modelos/manos/izquierda.glb', './modelos/manos/derecha.glb', './gestos.js',
   './manifest.webmanifest', './silencio.mp4', './sonidos/toque.wav', './sonidos/whoosh.wav', './sonidos/ding.wav',
   './vendor/three.module.min.js', './vendor/three.core.min.js', './vendor/loaders/GLTFLoader.js', './vendor/utils/BufferGeometryUtils.js', './vendor/utils/SkeletonUtils.js',
   './modelos/objetos/desk.glb', './modelos/objetos/crate-small.glb', './modelos/objetos/crate-medium.glb', './modelos/objetos/blaster-a.glb', './modelos/objetos/Textures/colormap.png', './modelos/temshop/temshop-cuarto.webp', './modelos/temshop/temshop-letrero.png', './modelos/temshop/temshop-piso.webp', './modelos/temshop/temmie.glb', './modelos/temshop/bookcaseOpen.glb', './modelos/temshop/books.glb', './modelos/temshop/cardboardBoxClosed.glb', './modelos/temshop/cardboardBoxOpen.glb', './modelos/temshop/coatRack.glb', './modelos/temshop/bear.glb', './modelos/temshop/trashcan.glb', './modelos/temshop/sideTable.glb', './modelos/temshop/radio.glb', './modelos/temshop/tableCoffee.glb', './modelos/temshop/lampRoundFloor.glb', './modelos/temshop/plantSmall1.glb', './modelos/temshop/pillow.glb', './modelos/temshop/rugRound.glb', '../marca/paloma-2026/logo-icono.svg', '../marca/paloma-2026/icono-512.png', '../inkwell/biblioteca.js', '../inkwell/fuentes.js', '../inkwell/red.js', '../inkwell/compartir.js'];
@@ -45,8 +45,9 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('message', async (e) => {
   if(e.data !== 'listo?') return;
   const c = await caches.open(V), falta = [];
-  for(const u of [...APP, ...PESADO]){ const k = /\/$/.test(u) ? clave(u) : new URL(u, self.location.href).href; if(!(await c.match(k))) falta.push(u); }
-  e.source?.postMessage({ listo: falta.length === 0, falta });
+  /* los audios del narrador no cuentan: si falta uno, el narrador usa la voz del teléfono (narrador.js) */
+  for(const u of [...APP, ...PESADO].filter((x) => !x.includes('/narrador/'))){ const k = /\/$/.test(u) ? clave(u) : new URL(u, self.location.href).href; if(!(await c.match(k))) falta.push(u); }
+  e.source?.postMessage({ listo: falta.length === 0, falta, version: +V.replace(/\D/g, '') });
 });
 
 /* lo que no cambia (three, el modelo de manos, sonidos) no se vuelve a pedir: bajar 7.5 MB en cada visita sería peor
