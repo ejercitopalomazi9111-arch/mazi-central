@@ -909,6 +909,22 @@ for(const ev of ['gesturestart', 'gesturechange']) document.addEventListener(ev,
   .mz-carta.volteada .mz-frente{ transform:rotateY(-180deg) } .mz-carta.volteada .mz-reves{ transform:rotateY(0) }
   .mz-pista{ text-align:center; color:var(--tenue); font-size:13px; margin:0 0 12px }
   .mz-botones{ display:grid; grid-template-columns:1fr 1fr; gap:10px } .mz-botones[hidden]{ display:none }
+  /* Tu tarea (tarea.js) */
+  .tr-duda{ margin-top:12px; min-height:64px }
+  .tarea .apagado{ opacity:.5; pointer-events:none }
+  .tr-escribir{ margin-top:12px } .tr-escribir summary{ gap:6px } .tr-escribir summary svg{ width:18px; height:18px }
+  .tr-materia{ color:var(--suave); font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; margin:4px 0 0 }
+  .tr-enunciado{ padding:14px; border:1px solid var(--borde); border-radius:16px; background:var(--fondo-2); line-height:1.5; margin:12px 0 }
+  .tr-pasos{ list-style:none; counter-reset:paso; padding:0; margin:0 0 14px; display:grid; gap:10px }
+  .tr-paso{ counter-increment:paso; display:grid; grid-template-columns:auto minmax(0, 1fr); column-gap:12px; padding:14px; border-radius:16px; background:var(--fondo-2); border:1px solid var(--borde); line-height:1.5 }
+  .tr-paso::before{ content:counter(paso); grid-row:span 2; display:grid; place-items:center; width:32px; height:32px; border-radius:50%; background:var(--vino); color:#fff; font-weight:900 }
+  .tr-paso b{ display:block; margin-bottom:2px }
+  .tr-resultado{ display:grid; gap:4px; padding:16px; border-radius:16px; background:var(--vino); color:#fff; margin:6px 0 4px } .tr-resultado small{ opacity:.85; font-weight:800 }
+  .tr-resultado b{ font-size:20px; line-height:1.3 }
+  .tr-cuidado{ margin:0; padding-left:20px; line-height:1.5; color:var(--hueso) }
+  .tr-parecido{ padding:14px; border:1px dashed var(--borde); border-radius:16px; display:grid; gap:10px; line-height:1.5 } .tr-parecido p{ margin:0 }
+  .tr-resp{ font-weight:800; color:var(--hueso) }
+  .tr-paso, .tr-resultado, .tr-enunciado, .tr-parecido{ overflow-wrap:anywhere }
   .mz-fin{ display:grid; justify-items:center; gap:10px; text-align:center; padding:30px 0 } .mz-fin p{ color:var(--suave) }
   @media (prefers-reduced-motion: reduce){ .mz-cara{ transition:none } }
   .acad-cab{ text-align:center; padding:6px 4px 18px }
