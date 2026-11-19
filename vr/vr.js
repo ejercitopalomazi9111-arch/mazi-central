@@ -245,7 +245,7 @@ addEventListener('deviceorientation', (e) => { if(e.alpha == null) return; ori.a
 const angPantalla = () => (screen.orientation?.angle ?? window.orientation ?? 0) * Math.PI / 180;
 let guinada = 0;                                             // el giro extra: stick derecho y «recentrar»
 const qCab = new THREE.Quaternion(), qG = new THREE.Quaternion(), yUp = new THREE.Vector3(0, 1, 0);
-const sim = { yaw: 0, pitch: 0 };                            // sin giroscopio (pruebas y computadora): ratón y flechas
+export const sim = { yaw: 0, pitch: 0 };                            // sin giroscopio (pruebas y computadora): ratón y flechas
 function leerCabeza(){
   if(ori.hay){
     const D = THREE.MathUtils.DEG2RAD; eul.set(ori.b * D, ori.a * D, -ori.g * D, 'YXZ');
@@ -414,9 +414,9 @@ export function hud(txt, seg = 2.2){
 /* ── el control ── */
 const B = { X: 0, O: 1, CUADRO: 2, TRIANGULO: 3, L1: 4, R1: 5, L2: 6, R2: 7, SHARE: 8, OPTIONS: 9, L3: 10, R3: 11, ARRIBA: 12, ABAJO: 13, IZQ: 14, DER: 15, PS: 16 };
 export { B };
-const antes = [];
+const antes = [], antesPad = [];
 let padVisto = false;
-export const control = { ejes: [0, 0, 0, 0], apretado: () => false, oprimido: [] };
+export const control = { ejes: [0, 0, 0, 0], apretado: () => false, oprimido: [], oprimidoPad: [] };
 /* cuál es EL control (Carlos, 18 nov: «tengo el control pero no detecta ni pulsaciones ni al propio control»): varios
    Android reportan como «control» cosas que no lo son (el lector de huella, los botones de volumen), y el primero de la
    lista no siempre es el tuyo. Se queda el que parece un control de verdad: conectado, con 10 botones o más y, si hay
@@ -437,8 +437,13 @@ function leerControl(){
   if(p){ if(!padVisto){ padVisto = true; hud(`Control: ${nombrePad(p)}`, 1.6); } p.buttons.forEach((b, i) => { ahora[i] = b.pressed || b.value > .5; }); control.ejes = [...p.axes].map((v) => Math.abs(v) < .18 ? 0 : v); }
   else control.ejes = [0, 0, 0, 0];
   teclas.forEach((v, i) => { if(v) ahora[i] = true; });
+  /* lo del control y el teclado, aparte de los gestos: las vistas usan esto para la X, porque un pellizco al aire NO
+     es una X (Carlos, 19 nov: «cada vez que pellizco el aire se activa y se desactiva»: pausaba el cine, cambiaba el
+     renglón de Ajustes, prendía y apagaba el modo solo del lector). El pellizco elige sólo lo que la mano apunta (clicMano). */
+  const sinMano = ahora.slice();
   (extra.botones || []).forEach((v, i) => { if(v) ahora[i] = true; });   // los gestos de las manos
   control.oprimido = ahora.map((v, i) => v && !antes[i]); ahora.forEach((v, i) => { antes[i] = v; });
+  control.oprimidoPad = sinMano.map((v, i) => v && !antesPad[i]); sinMano.forEach((v, i) => { antesPad[i] = v; });
   control.apretado = (i) => !!ahora[i];
 }
 /* el teclado hace de control para probar en la computadora */
@@ -587,7 +592,7 @@ function cuadro(t){
     if(control.oprimido[B.IZQ]) moverFoco(-1, 0); if(control.oprimido[B.DER]) moverFoco(1, 0);
     if(control.oprimido[B.ARRIBA]) moverFoco(0, 1); if(control.oprimido[B.ABAJO]) moverFoco(0, -1);
   }
-  if(control.oprimido[B.X] && !usado.x && !(extra.rayo && extra.botones?.[B.X])) activar(foco);
+  if(control.oprimidoPad[B.X] && !usado.x) activar(foco);   /* sólo la X del control o Enter; el pellizco va por clicMano */
   if(control.oprimido[B.O] && !usado.o) v?.atras?.();
   /* la mira: lo que ves al centro toma el foco, salvo justo después de usar las flechas sin mover la cabeza */
   if(mirarBloqueado && (cabeza.quaternion.angleTo(giroAlBloquear) > .14 || performance.now() > bloqueadoHasta)){ mirarBloqueado = false; focoDesde = performance.now(); }   /* el reloj de mirar fijo empieza al soltarse, no antes */

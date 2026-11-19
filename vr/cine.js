@@ -201,7 +201,7 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
   cine.control = (c, dt) => {
     if(fase !== 'viendo') return {};
     if(moverCtl(c, dt)) return { x: true, flechas: true };
-    if(c.oprimido[B.X]) pausar();
+    if(c.oprimidoPad[B.X]) pausar();
     if(c.oprimido[B.R2]) aFondo();
     if(c.oprimido[B.L1]) brincar(-10);
     if(c.oprimido[B.R1]) brincar(10);

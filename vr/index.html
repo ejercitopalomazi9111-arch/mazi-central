@@ -311,9 +311,9 @@ async function montar(){
     if(c.oprimido[B.ABAJO]) fila = (fila + 1) % FILAS.length;
     const d = (c.oprimido[B.DER] ? 1 : 0) - (c.oprimido[B.IZQ] ? 1 : 0);
     if(d) cambiar(fila, d);
-    if(c.oprimido[B.X]) accion(fila);
+    if(c.oprimidoPad[B.X]) accion(fila);   /* sólo la X del control: el pellizco elige la zona que apunta la mano */
     if(c.oprimido[B.ARRIBA] || c.oprimido[B.ABAJO]) pintarHoja();
-    return { flechas: true, x: true };
+    return { flechas: true, x: !!c.oprimidoPad[B.X] };
   };
   aj.elegibles = () => zonas;
   window.__ajustes = aj;
