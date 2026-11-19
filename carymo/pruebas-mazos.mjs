@@ -22,6 +22,10 @@ const M = await import('./mazos.js');
   const orden = M.paraHoy({ tarjetas: [{ frente: 'x', caja: 3, toca: '' }, { frente: 'y', caja: 0, toca: '' }] }, hoy).map((t) => t.frente).join();
   ok(orden === 'y,x', 'primero las de caja más baja (las que más fallas)'); }
 
+{ const l = M.revisarTarjetas({ tarjetas: [{ frente: '1. to fly', reverso: 'Respuesta: volar' }, { frente: 'To fly', reverso: 'repetida' }, { frente: 'vacía', reverso: '' }, { frente: 'to swim', reverso: 'nadar' }] });
+  ok(l.length === 2 && l[0].frente === 'to fly' && l[0].reverso === 'volar', 'lo que arma la IA se limpia: sin número, sin «Respuesta:», sin repetidas ni vacías');
+  let tiro = false; try{ M.revisarTarjetas({ tarjetas: [] }); }catch{ tiro = true; } ok(tiro, 'si la IA no arma ninguna, es error (y se pide otra vez)'); }
+
 console.log('La pantalla');
 const raiz = fileURLToPath(new URL('..', import.meta.url));
 const PUERTO = 8700 + Math.floor(Math.random() * 90);
@@ -31,7 +35,10 @@ const perfil = { cuenta: 'ana', nombre: 'Ana', xp: 120, racha: 2, cubos: 9, cuid
 const b = await chromium.launch();
 const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: process.env.FOTOS ? 2 : 1 });
 const pg = await ctx.newPage(); const err = []; pg.on('pageerror', (e) => err.push(e.message));
-await pg.route(/^http:\/\/localhost:1\//, (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ bien: true, perfil, planes: [], ranking: { semana: '', filas: [] }, personajes: {}, tienda: {} }) }));
+let pedidoIA = null;
+await pg.route(/ia-texto/, async (r) => { pedidoIA = r.request().postDataJSON(); await new Promise((x) => setTimeout(x, 300));
+  r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ bien: true, motor: 'groq', texto: JSON.stringify({ tarjetas: [{ frente: '1. to run', reverso: 'correr' }, { frente: 'to swim', reverso: 'nadar' }, { frente: 'to fly', reverso: 'Respuesta: volar' }] }) }) }); });
+await pg.route(/^http:\/\/localhost:1\/(?!.*ia-texto)/, (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ bien: true, perfil, planes: [], ranking: { semana: '', filas: [] }, personajes: {}, tienda: {} }) }));
 await pg.addInitScript((p) => { localStorage.setItem('salaLlave', 'x'); localStorage.setItem('est.perfil', JSON.stringify(p)); localStorage.setItem('est.ajustes', JSON.stringify({ sonido: false, vibrar: false, mascota: 'tigre' })); sessionStorage.setItem('carymo.entrada', '1'); }, perfil);
 await pg.goto(`http://127.0.0.1:${PUERTO}/carymo/?servidor=http://localhost:1&sala=G`, { waitUntil: 'load' });
 await pg.waitForFunction(() => window.__estudio && window.__estudio.yo && window.__estudio.yo()); await pg.waitForTimeout(500);
@@ -64,6 +71,16 @@ const guardado = await pg.evaluate(() => JSON.parse(localStorage.getItem('carymo
 ok(guardado.find(([x]) => x === 'to run')[1] === 0 && guardado.filter(([, c]) => c === 1).length === 3, 'queda guardado: la fallada en la primera caja y las demás en la segunda');
 await pg.click('[data-volver]'); await pg.waitForTimeout(300);
 ok(/Al día/.test(await pg.textContent('[data-repasar]')), 'el mazo queda «Al día»');
+await pg.click('.mz-ia summary'); await pg.fill('#mzTexto', 'Verbos irregulares: run, swim, fly');
+await foto('mazos-3-ia');
+await pg.click('#mzIa'); await pg.waitForTimeout(100);
+ok(/Creando/.test(await pg.textContent('#mzIa')) && await pg.isDisabled('#mzIa'), 'mientras la IA trabaja, el botón dice «Creando…» y no se puede volver a tocar');
+await pg.waitForFunction(() => document.querySelectorAll('.mz-t').length === 6, null, { timeout: 5000 }).catch(() => {});
+const tras = await pg.evaluate(() => [...document.querySelectorAll('.mz-t b')].map((x) => x.textContent));
+ok(tras.length === 6 && tras.includes('to swim') && tras.includes('to fly') && tras.filter((x) => x === 'to run').length === 1, `la IA agrega las nuevas y se salta la que ya tenías (${tras.length} tarjetas)`);
+ok(pedidoIA && /Verbos irregulares/.test(pedidoIA.mensajes?.[0]?.texto || '') && /Mazo: Verbos en inglés/.test(pedidoIA.mensajes[0].texto) && /flashcards/.test(pedidoIA.sistema || ''), 'a la IA le llega lo que pegaste, el nombre del mazo y la instrucción de tarjetas');
+ok(/Repasar \(2\)/.test(await pg.textContent('[data-repasar]')), 'las nuevas tocan hoy');
+await foto('mazos-4-ia-listo');
 ok(await pg.evaluate(() => document.documentElement.scrollWidth) <= 390, 'nada se sale de lado');
 ok(err.length === 0, 'sin errores' + (err.length ? ': ' + err.slice(0, 3).join(' | ') : ''));
 console.log(`${n - f} bien · ${f} mal`); await b.close(); srv.kill(); process.exit(f ? 1 : 0);

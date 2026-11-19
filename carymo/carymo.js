@@ -2134,7 +2134,7 @@ document.addEventListener('visibilitychange', () => { if(!document.hidden) sincr
 /* juegos de mesa (juegos/juegos.js): clases jugando, contra la máquina y en línea */
 juegos = iniciarJuegos({ capa, cerrarCapa, hoja, cerrarHoja, ico, esc, sala, tono, SON, brindis, mascotaEn, confeti, sumarXP, conAcceso, amigos: () => amigos?.estado });
 /* Mis tarjetas: mazos que arma el alumno (mazos.js) */
-const mazos = iniciarMazos({ capa, cerrarCapa, hoja, cerrarHoja, ico, esc, brindis, tono, SON, sumarXP });
+const mazos = iniciarMazos({ capa, cerrarCapa, hoja, cerrarHoja, ico, esc, brindis, tono, SON, sumarXP, ia });
 amigos = iniciarAmigos({ sala, brindis, hoja, cerrarHoja, esc, ico, tono, SON, vibrar, mascotaEn, $, guardarPlan, colorDe: colorMateria, alPerfil: ponerPerfil, alJuego: (m) => juegos?.avisoDeJuego(m),
   perfil: () => perfil, planes: () => planes, actual: () => actualId, vista: () => vista, cuenta: () => perfil.cuenta, estudiando: () => !!$('#capa') });
 pintar();
