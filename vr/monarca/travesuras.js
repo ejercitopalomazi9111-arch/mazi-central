@@ -18,13 +18,13 @@
 
 export const T = {
   cada: 7,                   /* s entre dos reacciones cualesquiera */
-  ventana: 15,               /* s de historia que se guardan */
+  ventana: 22,               /* s de historia que se guardan */
   lejos: 75, atras: 150, lejosSeg: 3,          /* grados y segundos para «mirar a otro lado» */
   piso: -55, cielo: 55, verticalSeg: 3,        /* grados de cabeceo */
   ladeo: 35, ladeoSeg: 2.5,
   vueltas: 540, vueltasSeg: 4,                 /* grados acumulados en esa ventana */
   oscila: 4, oscilaSeg: 1.6, oscilaGrados: 8,  /* sí y no con la cabeza */
-  sinCabeza: .3, sinCabezaSeg: 12,             /* grados de rango: así de quieto sólo está un visor en la mesa */
+  sinCabeza: .2, sinCabezaSeg: 20,             /* grados de rango: así de quieto sólo está un visor en la mesa */
   agacha: .35, salta: .15, cartel: .8, lejosCuerpo: 1.5,
   manosJuega: 6, saludo: 4, saludoAmp: .08, pellizcos: 6, pellizcosSeg: 4,
   oscuro: .06, oscuroSeg: 1.5, machaca: 8, machacaSeg: 3, stickSeg: 5,
@@ -102,7 +102,7 @@ export function crearTravesuras(op = {}){
       if(durante((x) => deg(x.pitch || 0) > L.cielo, L.verticalSeg, t) && puede('r-cielo', t, { enfria: 60 })) return decir('r-cielo', t);
       if(durante((x) => Math.abs(deg(x.roll || 0)) > L.ladeo, L.ladeoSeg, t) && puede('r-ladeado', t, { enfria: 90 })) return decir('r-ladeado', t);
       const zs = h.filter((x) => t - x.t <= L.sinCabezaSeg && x.yaw != null);
-      if(zs.length > 20 && t - zs[0].t > L.sinCabezaSeg * .9){
+      if(f.conGiro && zs.length > 20 && t - zs[0].t > L.sinCabezaSeg * .9){
         const rango = (k) => { const v = zs.map((x) => deg(x[k] || 0)); return Math.max(...v) - Math.min(...v); };
         if(rango('yaw') < L.sinCabeza && rango('pitch') < L.sinCabeza && puede('r-sin-cabeza', t, { enfria: 120 })) return decir('r-sin-cabeza', t);
       }

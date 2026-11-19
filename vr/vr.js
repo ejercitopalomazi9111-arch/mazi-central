@@ -670,6 +670,7 @@ export function arrancar(){
   render.setAnimationLoop((t) => { try{ cuadro(t); }catch(e){ fallo('E-MOTOR', 'cuadro', e); } });
 }
 export const hayControl = () => padVisto;
+export const hayGiro = () => ori.hay;   /* ¿la cabeza la mueve el giroscopio de verdad? (sin él, la mueve el ratón) */
 export { cuarto, domo, piso };
 export { render, THREE, escena, cabeza, rig, hub, AJ, FABRICA, guardar, aplicarAjustes, ponerMixta, tarjeta, Panel, redondo, svgImg, C, camTex, video };
 export const hayCamara = () => !!camTex;

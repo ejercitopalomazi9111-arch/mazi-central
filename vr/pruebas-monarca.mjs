@@ -33,6 +33,8 @@ sí(await p.evaluate(() => __monarca.narrador.actual === 'e-bienvenida'), 'al en
 const opciones = async () => { await p.evaluate(() => { window.__pad.buttons[9] = { pressed: true, value: 1 }; }); await p.waitForTimeout(150); await p.evaluate(() => { window.__pad.buttons[9] = { pressed: false, value: 0 }; }); await p.waitForTimeout(150); };
 await opciones(); sí(await p.evaluate(() => __vr.ahora()) === 'monarca', 'Opciones una vez no saca de la experiencia');
 /* el recorrido */
+/* lo de Opciones lo comentó el narrador («Ese botón no te va a sacar»); se espera a que retome la bienvenida */
+await p.waitForFunction(() => __monarca.narrador.actual === 'e-bienvenida' && __monarca.narrador.falta() > 3, null, { timeout: 15000 }).catch(() => {});
 sí(await tocar('Empezar') && await escena() === 'mariposa', 'Empezar → La monarca'); await cap('2-mariposa');
 await p.waitForTimeout(300);
 sí((await dichos()).slice(-2).join() === 'r-prisa-1,e-mariposa', `adelantarse mientras explica: primero reclama («¿Ya? Iba a la mitad»), luego sigue (${(await dichos()).slice(-2).join(' → ')})`);
@@ -52,7 +54,7 @@ await p.evaluate(() => window.__monarca.armadoFlores); await p.waitForTimeout(30
 await p.waitForFunction(() => __monarca.narrador.actual === 'e-flores' && __monarca.narrador.falta() > 3, null, { timeout: 10000 }).catch(() => {});
 for(let i = 0; i < 5; i++){ sí(await tocar('Plantar'), `planta la flor ${i + 1}`); await p.waitForTimeout(i === 2 ? 1200 : 200); if(i === 2) await cap('2b-flores'); }
 const fl = await p.evaluate(() => ({ flores: window.__monarca.grupo.children.find((g) => g.isGroup && g.children.length === 5 && g.children.every((c) => c.isMesh))?.children.length || 0, lugares: window.__monarca.elegibles().filter((b) => b.userData.panel.titulo === 'Plantar').length }));
-const df = await dichos(); sí(df.includes('r-flor-hablando') && df.includes('r-flores-todas'), 'plantar mientras explica: «Me gusta tu iniciativa»; y al terminar: «Cinco flores en su camino»');
+const df = await dichos(); sí(df.includes('r-flor-hablando') && df.includes('r-flores-rapido'), `plantar mientras explica: «Me gusta tu iniciativa»; y las cinco de golpe: «Eso no es jardinería: es una carrera» (${df.slice(-6).join(' → ')})`);
 sí(fl.flores === 5 && fl.lugares === 0, `crecen las cinco flores y ya no quedan lugares (${fl.flores} flores)`); await cap('2c-flores');
 await tocar('Siguiente'); sí(await escena() === 'migracion', '«¡Listo!» → La migración'); await p.waitForTimeout(6500); await cap('3-migracion');
 await tocar('Siguiente'); sí(await escena() === 'santuario', '→ El santuario'); await p.waitForTimeout(1500); await cap('4-santuario');
@@ -68,6 +70,7 @@ for(let i = 0; i < NP; i++){ const r = await p.evaluate((i) => __monarca.PREGUNT
 const dq = await dichos(); sí(dq.includes('e-cuestionario') && [1, 2, 3, 4, 5].every((n) => dq.includes('q-' + n)) && dq.filter((x) => x.startsWith('r-bien')).length >= 4, 'el cuestionario: lee cada pregunta y celebra cada acierto');
 sí(await escena() === 'final' && (await p.evaluate(() => __monarca.estado.puntos)) === NP, `${NP} de ${NP} y llega al final`); await cap('9-final');
 /* LAS TRAVESURAS con los sensores de verdad (travesuras.js tiene su propia prueba con 41 casos) */
+await p.waitForTimeout(7500);   /* el narrador habla cada 7 s como mucho: el cuestionario rápido ya se ganó su «¿contestaste sin leer?» */
 await p.evaluate(() => { const e = new Event('devicemotion'); e.acceleration = { x: 30, y: 20, z: 10 }; window.dispatchEvent(e); }); await p.waitForTimeout(700);
 sí((await dichos()).includes('r-agitar'), 'agitar el teléfono: «No es una bola mágica»');
 await p.waitForTimeout(7300);

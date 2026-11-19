@@ -295,7 +295,7 @@ export function montarMonarca(V){
       return o; });
     const ang = (screen.orientation?.angle ?? window.orientation ?? 90) % 180 === 0;
     const r = trav.paso({ t, escena: E.id, explicando: !!(narr.actual && narr.actual.startsWith('e-')), mirarLibre: ['bienvenida', 'santuario', 'flores'].includes(E.id),
-      ocupado: narr.ocupado, final: E.id === 'final', yaw, pitch, roll,
+      ocupado: narr.ocupado, final: E.id === 'final', yaw, pitch, roll, conGiro: !!V.hayGiro?.(),
       pos: conPos ? ojo.toArray() : null, dCartel: conPos ? Math.hypot(dirCartel.x, dirCartel.z) : null,
       manos, luz: medirLuz(t), zona: V.limites?.st?.aviso || null,
       ejes: Math.max(Math.hypot(V.control.ejes[0] || 0, V.control.ejes[1] || 0), Math.hypot(V.control.ejes[2] || 0, V.control.ejes[3] || 0)),

@@ -25,7 +25,8 @@ caso('ladear la cabeza', () => ({ ...normal(), roll: 50 * R }), 4, 'r-ladeado');
 caso('dar vueltas', (t) => ({ ...normal(), explicando: false, yaw: ((t * 200) % 360 - 180) * R }), 4, 'r-vueltas-1');
 caso('decir que no con la cabeza', (t) => ({ ...normal(), yaw: Math.sin(t * 14) * 20 * R }), 2, 'r-no-cabeza');
 caso('asentir sin parar', (t) => ({ ...normal(), pitch: Math.sin(t * 14) * 20 * R }), 2, 'r-si-cabeza');
-caso('dejar el visor en la mesa (cero movimiento)', () => ({ ...normal(), explicando: false, yaw: .5 * R, pitch: -10 * R }), 14, 'r-sin-cabeza');
+caso('dejar el visor en la mesa (cero movimiento)', () => ({ ...normal(), conGiro: true, explicando: false, yaw: .5 * R, pitch: -10 * R }), 22, 'r-sin-cabeza');
+{ const tr = crearTravesuras(); const d = correr(tr, 30, () => ({ ...normal(), explicando: false, yaw: 0, pitch: 0 })); sí(!d.includes('r-sin-cabeza'), 'sin giroscopio (computadora, pruebas) no juzga «visor en la mesa»'); }
 /* las vueltas escalan */
 { const tr = crearTravesuras(); correr(tr, 2, normal); const d = correr(tr, 40, (t) => ({ ...normal(), explicando: false, yaw: ((t * 200) % 360 - 180) * R }), 2);
   sí(d.includes('r-vueltas-1') && d.includes('r-vueltas-2'), `seguir dando vueltas sube de tono (${d.join(', ')})`); }
