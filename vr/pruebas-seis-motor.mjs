@@ -36,6 +36,8 @@ async function pagina(url){
   sí(mov > .3 && z.c.every(Number.isFinite), `tus ojos se mueven por el cuarto (${mov.toFixed(2)} m en 6 s; recorrido total ${z.st.recorrido.toFixed(2)} m)`);
   sí(Math.hypot(z.t[0] - a.t[0], z.t[1] - a.t[1], z.t[2] - a.t[2]) < 1e-9, 'el menú se queda en su lugar del cuarto mientras caminas');
   console.log('   tirado por el filtro:', JSON.stringify(z.st.tirado));
+  const an = await p.evaluate(() => ({ cargada: !!window.__vr.seis.ancla, fallos: window.__vr.bitacora.filter((f) => f.codigo !== 'E-CAMARA').map((f) => `${f.codigo} ${f.donde}: ${f.msg}`) }));
+  sí(an.cargada && !an.fallos.length, `el ancla del cuarto se busca durante el 6DoF sin errores${an.fallos.length ? ': ' + an.fallos.join(' | ') : ''}`);
   await p.screenshot({ path: '/tmp/mazivr-6dof.png' });
   sí(p.errores.length === 0, 'sin errores' + (p.errores.length ? ': ' + p.errores.slice(0, 3).join(' | ') : ''));
 }

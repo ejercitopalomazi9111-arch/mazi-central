@@ -200,5 +200,7 @@ export function crearVIO({ video, demo = null, ancho = 360 } = {}){
   function parar(){ S.corriendo = false; removeEventListener('devicemotion', alMovimiento); removeEventListener('deviceorientation', alOrientacion); worker?.postMessage({ type: 'stop' }); S.estado = null; ultimo = null; }
   /* volver a empezar (perdió el rastreo para siempre, o el usuario lo pidió) */
   function reiniciar(){ if(S.listo) empezarSesion(); }
-  return { S, iniciar, parar, reiniciar, pose, get aparato(){ return aparato; }, get calib(){ return calib; }, guardarCalib: () => aparato && saveCalibration(aparato, calib) };
+  /* las del lente principal para una imagen de w×h (para leer marcadores con la misma cámara) */
+  const intrinsecos = (w, h) => demo && rig ? { fx: rig.fx * w / rig.width, fy: rig.fy * w / rig.width, cx: (w - 1) / 2, cy: (h - 1) / 2 } : intrinsics(w, h, calib?.focal35 ?? 26);
+  return { S, iniciar, parar, reiniciar, pose, intrinsecos, get aparato(){ return aparato; }, get calib(){ return calib; }, guardarCalib: () => aparato && saveCalibration(aparato, calib) };
 }
