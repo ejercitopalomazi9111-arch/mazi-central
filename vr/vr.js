@@ -137,6 +137,7 @@ function vigilarLimites(){
   cabeza.getWorldPosition(cabezaMundo); const c = cabezaMundo.toArray();
   if(!limites.st.zona) limites.ponerZona(c, AJ.zona || 1);
   const aviso = limites.paso(c);
+  limites.st.aviso = aviso || null;   /* lo lee el narrador de MONARCH (travesuras.js) */
   if(aviso === 'obstaculo'){ hud('Cuidado', 1.4); sonar('toque', .35); }
   if(aviso === 'zona'){ hud('Fuera de zona', 1.6); sonar('toque', .35); }
   /* los rojos: cada casilla cercana como una columna de puntos del piso hasta arriba de tus ojos (si sólo llegaran a la
@@ -232,8 +233,10 @@ function aplicarAjustes(){
 
 /* ── giroscopio → cabeza ── */
 const ori = { a: 0, b: 90, g: 0, hay: false, t: 0, nuevo: false };
-/* la vista se dibuja con el giro PREDICHO para cuando sale el cuadro (prediccion.js, investigación R2); ?nopred lo apaga */
-const pred = crearPredictor(), conPred = !new URLSearchParams(location.search).has('nopred');
+/* el giro PREDICHO (prediccion.js, investigación R2) queda APAGADO de fábrica: Carlos lo probó el 19 nov en el visor y
+   «estaba mejor antes» (con el giroscopio del iPhone en horizontal, gamma cerca de ±90°, las lecturas brincan y la
+   predicción las agranda). Sólo con ?pred, para seguir probándolo. */
+const pred = crearPredictor(), conPred = new URLSearchParams(location.search).has('pred');
 const zee = new THREE.Vector3(0, 0, 1), eul = new THREE.Euler(), q0 = new THREE.Quaternion(), q1 = new THREE.Quaternion(-Math.SQRT1_2, 0, 0, Math.SQRT1_2);
 addEventListener('deviceorientation', (e) => { if(e.alpha == null) return; ori.a = e.alpha; ori.b = e.beta; ori.g = e.gamma; ori.hay = true; ori.t = performance.now(); ori.nuevo = true; });
 const angPantalla = () => (screen.orientation?.angle ?? window.orientation ?? 0) * Math.PI / 180;
@@ -667,6 +670,7 @@ export function arrancar(){
   render.setAnimationLoop((t) => { try{ cuadro(t); }catch(e){ fallo('E-MOTOR', 'cuadro', e); } });
 }
 export const hayControl = () => padVisto;
+export const hayGiro = () => ori.hay;   /* ¿la cabeza la mueve el giroscopio de verdad? (sin él, la mueve el ratón) */
 export { cuarto, domo, piso };
 export { render, THREE, escena, cabeza, rig, hub, AJ, FABRICA, guardar, aplicarAjustes, ponerMixta, tarjeta, Panel, redondo, svgImg, C, camTex, video };
 export const hayCamara = () => !!camTex;

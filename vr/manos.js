@@ -162,7 +162,7 @@ export async function iniciarManos(V){
       const muneca = L[0], ix = L[8], tp = L[4];
       /* la mano en el espacio, aproximada (para el rayo y para los sables): palma, punta del medio y muñeca */
       const est = (q) => cabeza.localToWorld(aEspacio(q, dist, tx, ty, new THREE.Vector3()));
-      const mano = { pellizco: m.pellizco, x: (ix.x + tp.x) / 2, y: (ix.y + tp.y) / 2, palma: G.palma, muneca: { x: muneca.x, y: muneca.y },
+      const mano = { pellizco: m.pellizco, puno: !!G.puno, x: (ix.x + tp.x) / 2, y: (ix.y + tp.y) / 2, palma: G.palma, muneca: { x: muneca.x, y: muneca.y },
         lado: (L[0].x < .5) ? -1 : 1, mundo: { palma: est(L[9]), punta: est(L[12]), muneca: est(L[0]), dedo: est(L[8]), indice: est({ x: (ix.x + tp.x) / 2, y: (ix.y + tp.y) / 2, z: (ix.z + tp.z) / 2 }) },
         dist, tx, ty };
       /* la orientación de la mano y el gatillo (objetos.js): adelante = muñeca → nudillo del índice, lado = nudillo del
