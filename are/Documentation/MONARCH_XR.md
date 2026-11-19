@@ -57,5 +57,16 @@ Orus y reacciona con Charon, la grave (voces de Google de la casa). Guion propio
 audios están hechos de antemano (`node vr/monarca/narrador-armar.mjs`, 2 MB) y se guardan para sonar sin internet; si
 uno falta, lo lee la voz del teléfono. Al cambiar un renglón: se corre ese comando (sólo pide lo que cambió).
 
+**Las travesuras (19 nov, Carlos: «que prevea cualquier estupidez que se le ocurra al jugador»):** `vr/monarca/travesuras.js`
+lee cada cuadro la cabeza (mirar a otro lado, de espaldas, al piso, al cielo, ladeada, dar vueltas, decir sí o no con la
+cabeza, cero movimiento = visor en la mesa), el cuerpo con 6DoF (agacharse, saltar, pegarse al cartel, irse caminando,
+obstáculo real), las manos (tocar la mariposa, manos arriba, dos puños, saludar, pellizcar el aire, jugar con ellas mientras
+explica), el teléfono (cámara tapada, teléfono parado, agitarlo, salir de la página y volver) y el control (machacar
+botones, stick apretado, Opciones en exposición), más el ritmo: ignorarlo por completo sube de tono cinco veces y a la
+quinta **avanza solo**; adelante-atrás-adelante, prender y apagar la voz, tocar el puntaje, contestar sin leer, plantar
+las cinco flores de golpe, terminar en menos de un minuto («Récord. No aprendiste nada»), sacar 5 de 5 sin escuchar
+(«Sospechoso»), la tercera vuelta y regresar a la experiencia. Habla como mucho cada 7 s (lo de seguridad se salta la
+fila) y lo que interrumpe una explicación la pausa y sigue donde iba. Prueba: `node vr/pruebas-travesuras.mjs`.
+
 **Falta:** videos con licencia, más minijuegos (guiar a la monarca por la ruta), y probarla en un iPhone y un Android de
 verdad con el visor (en especial que el narrador suene desde el primer toque).

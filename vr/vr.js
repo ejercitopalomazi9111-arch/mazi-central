@@ -137,6 +137,7 @@ function vigilarLimites(){
   cabeza.getWorldPosition(cabezaMundo); const c = cabezaMundo.toArray();
   if(!limites.st.zona) limites.ponerZona(c, AJ.zona || 1);
   const aviso = limites.paso(c);
+  limites.st.aviso = aviso || null;   /* lo lee el narrador de MONARCH (travesuras.js) */
   if(aviso === 'obstaculo'){ hud('Cuidado', 1.4); sonar('toque', .35); }
   if(aviso === 'zona'){ hud('Fuera de zona', 1.6); sonar('toque', .35); }
   /* los rojos: cada casilla cercana como una columna de puntos del piso hasta arriba de tus ojos (si sólo llegaran a la

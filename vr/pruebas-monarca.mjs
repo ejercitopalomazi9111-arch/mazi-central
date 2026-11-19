@@ -67,6 +67,15 @@ const NP = await p.evaluate(() => __monarca.PREGUNTAS.length);
 for(let i = 0; i < NP; i++){ const r = await p.evaluate((i) => __monarca.PREGUNTAS[i][1][__monarca.PREGUNTAS[i][2]], i); await tocar(r); await p.waitForTimeout(150); await tocar('Siguiente'); await p.waitForTimeout(150); }
 const dq = await dichos(); sí(dq.includes('e-cuestionario') && [1, 2, 3, 4, 5].every((n) => dq.includes('q-' + n)) && dq.filter((x) => x.startsWith('r-bien')).length >= 4, 'el cuestionario: lee cada pregunta y celebra cada acierto');
 sí(await escena() === 'final' && (await p.evaluate(() => __monarca.estado.puntos)) === NP, `${NP} de ${NP} y llega al final`); await cap('9-final');
+/* LAS TRAVESURAS con los sensores de verdad (travesuras.js tiene su propia prueba con 41 casos) */
+await p.evaluate(() => { const e = new Event('devicemotion'); e.acceleration = { x: 30, y: 20, z: 10 }; window.dispatchEvent(e); }); await p.waitForTimeout(700);
+sí((await dichos()).includes('r-agitar'), 'agitar el teléfono: «No es una bola mágica»');
+await p.waitForTimeout(7300);
+await p.evaluate(() => { __vr.extra.manos = [{ puno: true, x: .3 }, { puno: true, x: .7 }]; }); await p.waitForTimeout(2500);
+await p.evaluate(() => { __vr.extra.manos = []; });
+sí((await dichos()).includes('r-punos'), 'dos puños frente a la cámara: «¿Me vas a pegar?»');
+for(let i = 0; i < 3; i++){ await tocar(`${NP} de ${NP}`); await p.waitForTimeout(120); }
+sí((await dichos()).slice(-1)[0] === 'r-puntaje-2', 'tocar el puntaje tres veces: «Lo sigues tocando…»');
 await tocar('Créditos'); await cap('9b-creditos');
 const vz = await p.evaluate(async () => { const b = __monarca.elegibles().find((m) => /^Voz/.test(m.userData.panel.titulo)); return !!b; });
 await tocar('Otra vez'); await p.waitForTimeout(200);
