@@ -120,7 +120,7 @@ export const nube = crearNube({ THREE, escena, rig, pared });
    zona cuando te acercas a su orilla. Sólo con 6DoF (sin él no se sabe dónde estás). */
 export const limites = crearLimites();
 const limVis = (() => {
-  const MAX = 1600, g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAX * 3), 3)); g.setDrawRange(0, 0);
+  const MAX = 4000, g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAX * 3), 3)); g.setDrawRange(0, 0);
   const m = new THREE.PointsMaterial({ color: 0xFF4A5A, size: 9, sizeAttenuation: false, transparent: true, opacity: 0, depthTest: false, depthWrite: false });
   const rojos = new THREE.Points(g, m); rojos.frustumCulled = false; rojos.renderOrder = 8; escena.add(rojos);
   const pared = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 2.4, 48, 8, true), new THREE.MeshBasicMaterial({ color: 0xAC27FF, wireframe: true, transparent: true, opacity: 0, depthWrite: false }));
@@ -138,11 +138,13 @@ function vigilarLimites(){
   const aviso = limites.paso(c);
   if(aviso === 'obstaculo'){ hud('Cuidado', 1.4); sonar('toque', .35); }
   if(aviso === 'zona'){ hud('Fuera de zona', 1.6); sonar('toque', .35); }
-  /* los rojos: cada casilla cercana como una columnita de puntos, más fuertes mientras más cerca */
+  /* los rojos: cada casilla cercana como una columna de puntos del piso hasta arriba de tus ojos (si sólo llegaran a la
+     altura del obstáculo, a 35 cm quedan abajo de la vista y no se ven), más fuertes mientras más cerca */
   const cerca = limites.st.cerca, k = Math.max(0, Math.min(1, (1 - cerca) / .5));
   limVis.rojos.visible = k > 0;
   if(k > 0){ const P = limVis.rojos.geometry.attributes.position.array, piso = limites.st.piso ?? (c[1] - 1.5); let n = 0;
-    for(const q of limites.cercanas(c, 1.2)){ for(let h = 0; h < 4 && n < limVis.MAX; h++){ P[n * 3] = q.x; P[n * 3 + 1] = piso + .2 + h * .25; P[n * 3 + 2] = q.z; n++; } }
+    const alto = c[1] + .25 - (piso + .15), pasos = Math.max(4, Math.round(alto / .15));
+    for(const q of limites.cercanas(c, 1.2)){ for(let h = 0; h <= pasos && n < limVis.MAX; h++){ P[n * 3] = q.x; P[n * 3 + 1] = piso + .15 + alto * h / pasos; P[n * 3 + 2] = q.z; n++; } }
     limVis.rojos.geometry.attributes.position.needsUpdate = true; limVis.rojos.geometry.setDrawRange(0, n); limVis.rojos.material.opacity = .35 + .6 * k; limVis.cuenta = n; }
   const z = limites.st.zona, p = limites.st.pared; limVis.pared.visible = !!z && p > 0;
   if(z && p > 0){ limVis.pared.position.set(z.x, (limites.st.piso ?? c[1] - 1.5) + 1.2, z.z); limVis.pared.scale.set(z.radio, 1, z.radio); limVis.pared.material.opacity = .15 + .5 * p; }
