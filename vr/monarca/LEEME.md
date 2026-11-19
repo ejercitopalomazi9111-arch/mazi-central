@@ -11,6 +11,7 @@ Aquí ya están los medios elegidos, con su licencia, para no volver a buscarlos
 | `medios/cielos/barnaslingan_02.webp` | Foto 360°: bosque talado con troncos apilados (amenaza: tala) | Poly Haven, **CC0** |
 | `medios/cielos/derelict_highway_midday.webp` | Foto 360°: carretera (amenaza: urbanización y fragmentación) | Poly Haven, **CC0** |
 | `medios/cielos/misty_farm_road.webp` | Foto 360°: campo de cultivo sin flores (amenaza: pérdida de algodoncillo) | Poly Haven, **CC0** |
+| `medios/flores.glb` | Cinco flores de *Empodium* (minijuego «Flores en el camino»), sólo con su textura de color | «Flower Empodium», Rico Cilliers (modelo) y Jenelle van Heerden (foto), **Poly Haven, CC0** |
 | `medios/mapa.json` | Contornos de Norteamérica simplificados | **Natural Earth** 1:50m, dominio público |
 | `vendor/qrcode-1.4.4.min.js` | Generador de QR | Kazuhiko Arase, MIT |
 

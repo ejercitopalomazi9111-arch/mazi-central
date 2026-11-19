@@ -9,12 +9,12 @@
      sale de lo guardado marcado como redirigido: el navegador rechaza una navegación «redirigida» (lo que tumbó a
      INKWELL el 11 nov, ver inkwell/sw.js v31).
    Prueba: node vr/pruebas-sinred.mjs (apaga el servidor de a de veras). */
-const V = 'mazivr-v23';
+const V = 'mazivr-v24';
 const APP = ['./', './vr.js', './iconos.js', './teclado.js', './cine.js', './lector.js', './sables.js', './sable-mano.js', './objetos.js', './musica.js', './agarre.js', './temshop.js', './seis.js', './ancla.js', './nube.js', './limites.js', './monarca/monarca.js', './pantalla.js', './manos.js', './manos-estables.js', './gestos.js',
   './manifest.webmanifest', './silencio.mp4', './sonidos/toque.wav', './sonidos/whoosh.wav', './sonidos/ding.wav',
   './vendor/three.module.min.js', './vendor/three.core.min.js', './vendor/loaders/GLTFLoader.js', './vendor/utils/BufferGeometryUtils.js', './vendor/utils/SkeletonUtils.js',
   './modelos/objetos/desk.glb', './modelos/objetos/crate-small.glb', './modelos/objetos/crate-medium.glb', './modelos/objetos/blaster-a.glb', './modelos/objetos/Textures/colormap.png', './modelos/temshop/temshop-cuarto.webp', './modelos/temshop/temshop-letrero.png', './modelos/temshop/temshop-piso.webp', './modelos/temshop/temmie.glb', './modelos/temshop/bookcaseOpen.glb', './modelos/temshop/books.glb', './modelos/temshop/cardboardBoxClosed.glb', './modelos/temshop/cardboardBoxOpen.glb', './modelos/temshop/coatRack.glb', './modelos/temshop/bear.glb', './modelos/temshop/trashcan.glb', './modelos/temshop/sideTable.glb', './modelos/temshop/radio.glb', './modelos/temshop/tableCoffee.glb', './modelos/temshop/lampRoundFloor.glb', './modelos/temshop/plantSmall1.glb', './modelos/temshop/pillow.glb', './modelos/temshop/rugRound.glb', '../marca/paloma-2026/logo-icono.svg', '../marca/paloma-2026/icono-512.png', '../inkwell/biblioteca.js', '../inkwell/fuentes.js', '../inkwell/red.js', '../inkwell/compartir.js'];
-const PESADO = ['./modelos/hand_landmarker.task', './monarca/medios/monarca.glb', './monarca/medios/mapa.json', './monarca/medios/cielos/alps_field.webp', './monarca/medios/cielos/misty_pines.webp', './monarca/medios/cielos/barnaslingan_02.webp', './monarca/medios/cielos/misty_farm_road.webp', '../presentaciones/vendor/mediapipe/vision_bundle.mjs',
+const PESADO = ['./modelos/hand_landmarker.task', './monarca/medios/monarca.glb', './monarca/medios/flores.glb', './monarca/medios/mapa.json', './monarca/medios/cielos/alps_field.webp', './monarca/medios/cielos/misty_pines.webp', './monarca/medios/cielos/barnaslingan_02.webp', './monarca/medios/cielos/misty_farm_road.webp', '../presentaciones/vendor/mediapipe/vision_bundle.mjs',
   '../presentaciones/vendor/mediapipe/wasm/vision_wasm_internal.js', '../presentaciones/vendor/mediapipe/wasm/vision_wasm_internal.wasm'];
 
 const clave = (u) => { const url = new URL(u, self.location.href); let p = url.pathname;

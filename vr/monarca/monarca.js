@@ -17,6 +17,7 @@ const MORADO = '#AC27FF', VINO = '#7E1735', NARANJA = '#F28C1B';
 const ESCENAS = [
   { id: 'bienvenida', cielo: 'alps_field', titulo: 'MONARCH XR', texto: ['Viaja con la mariposa monarca.', 'Mira a tu alrededor. Elige con la mirada, la mano, el control o tocando.'], boton: 'Empezar', monarca: 'vuela' },
   { id: 'mariposa', cielo: 'alps_field', titulo: 'La monarca', texto: ['La hembra pone sus huevos sólo en el algodoncillo (asclepia).', 'Es lo único que comen sus orugas. Ya adulta, toma néctar de muchas flores.'], fuente: 'National Park Service', monarca: 'cerca' },
+  { id: 'flores', cielo: 'alps_field', titulo: 'Flores en el camino', texto: ['Ya adulta, la monarca toma néctar de muchas flores.', 'Planta cinco flores: elige dónde y mira cómo llega.'], fuente: 'National Park Service', juego: 'flores', monarca: 'vuela' },
   { id: 'migracion', cielo: null, titulo: 'La migración', texto: ['Cada otoño viajan más de 3,000 km hasta el centro de México; desde Canadá, unos 4,500.', 'Ninguna hace sola la ida y la vuelta: es un viaje de varias generaciones. La que viaja al sur vive hasta unos 9 meses; las de verano, semanas.'], fuente: 'U.S. Fish & Wildlife Service, 2024', mapa: true },
   { id: 'santuario', cielo: 'misty_pines', titulo: 'El santuario', texto: ['Pasan el invierno en 11 o 12 montañas de Michoacán y el Estado de México, de octubre a finales de marzo, en bosques de oyamel.', 'La Reserva de la Biosfera Mariposa Monarca mide 56,259 ha y es Patrimonio Mundial desde 2008.'], fuente: 'U.S. Forest Service · UNESCO', monarca: 'colonia' },
   { id: 'tala', cielo: 'barnaslingan_02', titulo: 'Amenaza: el bosque', texto: ['Entre febrero de 2024 y febrero de 2025 se degradaron 2.55 ha del corazón de la reserva:', 'tala ilegal 1.85 ha, incendios 0.58 ha y sequía 0.11 ha.'], fuente: 'WWF México y UNAM, 2026' },
@@ -35,7 +36,7 @@ const PREGUNTAS = [
   ['¿Qué árbol domina en su santuario?', ['El oyamel', 'El pino de playa', 'La palmera'], 0],
   ['¿Qué degradó más bosque en 2024-2025?', ['La sequía', 'Los incendios', 'La tala ilegal'], 2],
 ];
-const CREDITOS = 'Monarca escaneada: Virginia Tech University Libraries (CC BY 4.0). Fotos 360°: Poly Haven (CC0). Mapa: Natural Earth. Datos: USFWS, US Forest Service, UNESCO, WWF México, CONANP, UNAM, UICN, NPS.';
+const CREDITOS = 'Monarca escaneada: Virginia Tech University Libraries (CC BY 4.0). Flores: Poly Haven, Rico Cilliers y Jenelle van Heerden (CC0). Fotos 360°: Poly Haven (CC0). Mapa: Natural Earth. Datos: USFWS, US Forest Service, UNESCO, WWF México, CONANP, UNAM, UICN, NPS.';
 
 export function montarMonarca(V){
   const { THREE } = V;
@@ -101,6 +102,32 @@ export function montarMonarca(V){
       c2.userData.base = new THREE.Vector3(Math.sin(a) * r, -.3 + az() * 1.6, -Math.cos(a) * r); c2.userData.fase = az() * 6; c2.scale.multiplyScalar(.6 + az() * .5); colonia.add(c2); }
   }).catch((e) => { V.fallo?.('E-MONARCA', 'cargar monarca.glb', e); });
 
+  /* ── el minijuego «Flores en el camino»: cinco lugares en el pasto; al elegir uno crece una flor (Poly Haven, cinco
+     variedades de Empodium) y la monarca vuela a tomar néctar ── */
+  const flores = new THREE.Group(); m.grupo.add(flores); let variedades = [], lugares = [], plantadas = 0, objetivo = null;
+  m.armadoFlores = new GLTFLoader().loadAsync(AQUI('medios/flores.glb')).then((g) => {
+    g.scene.updateMatrixWorld(true);
+    g.scene.traverse((o) => { if(!o.isMesh) return;
+      const geo = o.geometry.clone().applyMatrix4(o.matrixWorld); geo.computeBoundingBox(); const b = geo.boundingBox, c = b.getCenter(new THREE.Vector3());
+      geo.translate(-c.x, -b.min.y, -c.z); const alto = b.max.y - b.min.y || 1; geo.scale(.6 / alto, .6 / alto, .6 / alto);
+      variedades.push(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: o.material.map || null, side: THREE.DoubleSide, alphaTest: .4 }))); });
+  }).catch((e) => V.fallo?.('E-MONARCA', 'cargar flores.glb', e));
+  /* cerca y a la vista (más abajo y más a los lados se salían de lo que se ve con el visor) */
+  const PASTO = [-38, -19, 0, 19, 38].map((g, i) => { const a = g * Math.PI / 180, d = i % 2 ? 1.35 : 1.7; return new THREE.Vector3(Math.sin(a) * d, -.95, -Math.cos(a) * d); });
+  function juegoFlores(){
+    flores.clear(); plantadas = 0; objetivo = null;
+    lugares = PASTO.map((p, i) => { const b = boton('Plantar', () => plantar(i, b), .34); b.position.copy(p).add(new THREE.Vector3(0, .3, 0)); b.lookAt(0, b.position.y * .3, 0); m.grupo.add(b); return b; });
+  }
+  function plantar(i, b){
+    m.grupo.remove(b); lugares = lugares.filter((x) => x !== b);
+    const v = variedades[i % Math.max(1, variedades.length)]; if(v){ const f = v.clone(); f.position.copy(PASTO[i]); f.scale.setScalar(.01); f.userData.nace = performance.now() / 1000; flores.add(f); }
+    objetivo = PASTO[i].clone().add(new THREE.Vector3(0, .5, 0)); plantadas++; V.sonar('ding', .3);
+    if(plantadas >= PASTO.length){ objetivo = null; const E = ESCENAS[st.escena];
+      pintarCartel('¡Listo!', ['Cinco flores en su camino: cinco lugares para tomar néctar.'], E.fuente); decir(['¡Listo! Cinco flores en su camino.']);
+      ponerBotones([boton('Siguiente', () => mostrar(st.escena + 1)), vozBoton()]); }
+  }
+  const quitarLugares = () => { lugares.forEach((b) => m.grupo.remove(b)); lugares = []; };
+
   /* ── el mapa de la migración: Norteamérica de Natural Earth y la ruta que se dibuja sola ── */
   const mapaP = new V.Panel(1.3, 1.0, 500); mapaP.malla.position.set(0, .42, -2.25); mapaP.malla.visible = false; m.grupo.add(mapaP.malla);
   let mapa = null; fetch(AQUI('medios/mapa.json')).then((r) => r.json()).then((j) => { mapa = j; }).catch((e) => V.fallo?.('E-MONARCA', 'cargar mapa.json', e));
@@ -141,6 +168,8 @@ export function montarMonarca(V){
     mariposa.visible = E.monarca === 'vuela' || E.monarca === 'cerca'; colonia.visible = E.monarca === 'colonia';
     if(E.mapa){ mapaP.malla.position.set(.72, .42, -2.3); mapaP.malla.lookAt(0, .42 * .3, 0); }
     const siguiente = () => mostrar(i + 1);
+    quitarLugares(); flores.visible = E.juego === 'flores'; if(E.juego !== 'flores') objetivo = null;
+    if(E.juego === 'flores'){ cartel.malla.position.set(0, .62, -2.3); juegoFlores(); pintarCartel(E.titulo, E.texto, E.fuente); decir(E.texto); ponerBotones([boton('Atrás', () => mostrar(i - 1), .36), vozBoton()], -.2); return; }
     if(E.id === 'cuestionario') return preguntar();
     if(E.id === 'decision' && st.eleccion == null){
       pintarCartel(E.titulo, E.texto); decir([...E.texto]);
@@ -169,8 +198,10 @@ export function montarMonarca(V){
     const t = performance.now() / 1000, E = ESCENAS[st.escena];
     if(modelo && mariposa.visible){
       if(E.monarca === 'cerca'){ mariposa.position.set(.95, .1, -1.3); mariposa.rotation.set(.3, t * .6, Math.sin(t * 9) * .12); mariposa.scale.setScalar(1.6); }
+      else if(objetivo){ mariposa.position.lerp(new THREE.Vector3(objetivo.x + Math.sin(t * 2) * .12, objetivo.y + Math.sin(t * 3.1) * .06, objetivo.z + Math.cos(t * 2) * .12), .04); mariposa.rotation.set(0, t * 2, Math.sin(t * 12) * .25); mariposa.scale.setScalar(.8); }
       else { const a = t * .5; mariposa.position.set(Math.sin(a) * 1.1, .9 + Math.sin(t * 1.3) * .15, -1.8 + Math.cos(a) * .6); mariposa.rotation.set(0, a + Math.PI / 2, Math.sin(t * 12) * .25); mariposa.scale.setScalar(1); }
     }
+    for(const f of flores.children){ const k = Math.min(1, (t - f.userData.nace) / .8); f.scale.setScalar(Math.max(.01, 1 - Math.pow(1 - k, 3))); }
     if(colonia.visible) for(const c of colonia.children){ const b = c.userData.base, f = c.userData.fase;
       c.position.set(b.x + Math.sin(t * .4 + f) * .25, b.y + Math.sin(t * .9 + f) * .12, b.z + Math.cos(t * .4 + f) * .25); c.rotation.set(0, t * .4 + f, Math.sin(t * 11 + f) * .3); }
     if(E.mapa){ const k = Math.min(1, (t - t0) / 6); if(Math.abs(k - rutaK) > .01 || (k >= 1 && rutaK < 1)){ rutaK = k; pintarMapa(k); } } else rutaK = -1;
@@ -187,7 +218,7 @@ export function montarMonarca(V){
     try{ speechSynthesis.cancel(); }catch{}
     if(antes){ V.cuarto.visible = antes.cuarto; if(window.__temshop) window.__temshop.grupo.visible = !!antes.tem; if(antes.mixta) V.ponerMixta(true); }
   };
-  m.elegibles = () => botones;
+  m.elegibles = () => [...botones, ...lugares];
   /* en exposición no hay «Atrás» (ni el botón ni el Círculo): sólo la salida del docente */
   Object.defineProperty(m, 'atras', { get: () => (V.kiosco.activo ? undefined : () => V.ir('juegos')), configurable: true });
   m.atrasEn = [0, -1.25, -1.7];
