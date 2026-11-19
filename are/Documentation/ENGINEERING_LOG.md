@@ -53,6 +53,24 @@ Niveles de prueba: **documentado** · **implementado** · **probado en navegador
 | Fusión giroscopio + marcador | después de tener las dos fuentes |
 
 - **Decisión:** primero el **marcador óptico** (es 100 % web y da posición). El puente nativo queda como segunda fuente para la fusión.
+- **Hecho (19 nov): marcador ArUco en el control** (`vr/espacial/control.js`, hoja para imprimir en `vr/espacial/marcador.html`):
+  - detector js-aruco2 (BSD) sobre la misma imagen de la cámara, 12-15 veces por segundo;
+  - pose propia con perspectiva completa: homografía → Gauss-Newton sobre el error de reproyección;
+  - esquinas afinadas a fracción de pixel (paso claro→oscuro más cercano al lado, parábola, recta por mínimos cuadrados);
+  - al mundo con la pose del VIO: `T_mundo_marcador = T_mundo_cámara · T_cámara_marcador`;
+  - modelo del DualShock, rayo de 3 m que se pone blanco cuando le pega al cubo o a la tele, y botón **Calibrar**;
+  - sin marcador no hay pose: dice «sin marcador» o «perdido», nunca inventa.
+- **Medido (`vr/pruebas-marcador.mjs`, marcador de 4 cm dibujado en poses conocidas):**
+
+| Paso | Peor posición | Peor giro |
+|---|---|---|
+| POSIT (de la librería) | 10.7 % a 70 cm | 3.8° |
+| Homografía + Gauss-Newton | 7.8 % a 70 cm | 2.8° |
+| + esquinas a fracción de pixel | **2.6 % a 70 cm** | **≤ 2° (inclinado)** |
+
+  - **Limitación medida:** visto DE FRENTE, la inclinación se lee hasta 6.6° mal (con un marcador plano casi no hay perspectiva que la delate). El eje del RAYO queda en 2.6° aun así. Con el marcador inclinado, como queda encima del control al sostenerlo, el error es de 0.1° a 2°.
+  - Mitigaciones pendientes: marcador de 6 cm (la hoja ya lo trae), varios marcadores (un cubo), y sumar el giroscopio por el puente nativo.
+- **Nivel:** pose probada contra la verdad en navegador; integrado y probado sin marcador en la caminata. **Falta: el DualShock real con el marcador impreso, en el iPhone.**
 - **Nunca:** integrar dos veces la aceleración para sacar posición (deriva en segundos).
 
 ## 003 · Botones con la mano (19 nov 2026)

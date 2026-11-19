@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marcador del control</title>
+<style>
+  :root { --tinta: #170A26; --papel: #fff; --morado: #7E1735; }
+  body { margin: 0; background: var(--papel); color: var(--tinta); font: 16px/1.5 system-ui, -apple-system, sans-serif; }
+  main { max-width: 640px; margin: 0 auto; padding: 24px 16px; }
+  h1 { font-size: 22px; margin: 0 0 12px; }
+  ol { padding-left: 20px; }
+  .hoja { display: flex; gap: 10mm; flex-wrap: wrap; margin: 16px 0; }
+  .marca { width: 50mm; height: 50mm; }        /* el cuadro NEGRO es el 80 %: 40 mm = 4 cm */
+  .marca.grande { width: 75mm; height: 75mm; } /* cuadro negro de 6 cm */
+  label { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+  input { font: inherit; width: 80px; padding: 8px; }
+  button { font: inherit; padding: 10px 16px; background: var(--morado); color: #fff; border: 0; border-radius: 8px; }
+  @media print { .no-imprimir { display: none; } main { padding: 0; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="no-imprimir">
+    <h1>Marcador del control</h1>
+    <ol>
+      <li>Imprime al 100 % (sin «ajustar a la página»).</li>
+      <li>Mide el cuadro NEGRO con una regla: debe medir 4 cm (o 6 cm el grande).</li>
+      <li>Pégalo plano encima del DualShock, con la flecha hacia la barra de luz (hacia adelante).</li>
+      <li>Si midió otra cosa, escribe la medida real aquí.</li>
+    </ol>
+    <label>Cuadro negro <input id="cm" type="number" step="0.1" min="2" max="15"> cm <button id="guardar">Guardar</button></label>
+    <p id="aviso"></p>
+  </div>
+  <div class="hoja" id="hoja"></div>
+</main>
+<script src="./vendor/aruco/cv.js"></script>
+<script src="./vendor/aruco/aruco.js"></script>
+<script>
+  const svg = new AR.Dictionary('ARUCO_MIP_36h12').generateSVG(0);
+  /* una flecha chiquita afuera del cuadro negro, en el margen de arriba: indica «adelante» sin tocar el código */
+  const flecha = '<path d="M5 0.15 L5.45 0.75 L4.55 0.75 Z" fill="#7E1735"/>';
+  const conFlecha = svg.replace('<svg ', '<svg shape-rendering="crispEdges" ').replace('</svg>', flecha + '</svg>');   /* sin rayitas entre celdas */
+  for (const c of ['marca', 'marca grande']) {
+    const d = document.createElement('div'); d.className = c; d.innerHTML = conFlecha;
+    d.querySelector('svg').setAttribute('width', '100%'); d.querySelector('svg').setAttribute('height', '100%');
+    document.getElementById('hoja').appendChild(d);
+  }
+  const cm = document.getElementById('cm');
+  try { cm.value = localStorage.getItem('mazixr-marcador-cm') || 4; } catch { cm.value = 4; }
+  document.getElementById('guardar').onclick = () => {
+    const v = Number(cm.value); if (!(v >= 2 && v <= 15)) return;
+    try { localStorage.setItem('mazixr-marcador-cm', String(v)); document.getElementById('aviso').textContent = 'Guardado: ' + v + ' cm'; } catch {}
+  };
+</script>
+</body>
+</html>

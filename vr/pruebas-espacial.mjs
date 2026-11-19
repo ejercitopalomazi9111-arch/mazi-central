@@ -48,5 +48,9 @@ const anc2 = await p.evaluate(() => window.__mazi.anclado());
 sí(anc && anc2 && anc.visible && Math.hypot(anc2.x - anc.x, anc2.y - anc.y, anc2.z - anc.z) < 1e-9, `lo anclado no se mueve mientras caminas (${anc && anc.x.toFixed(2)}, ${anc && anc.y.toFixed(2)}, ${anc && anc.z.toFixed(2)})`);
 await p.screenshot({ path: CAPS + '/mazixr-ar.png' });
 
+/* el control: con la detección prendida y sin marcador en la caminata, no inventa pose y lo dice */
+await p.click('#b-visor'); await p.click('#b-ctl'); await p.waitForTimeout(1500);
+const ctl = await p.evaluate(() => ({ on: document.getElementById('b-ctl').getAttribute('aria-pressed'), txt: document.getElementById('m-ctl').textContent, visible: window.__mazi.control.grupo.visible, hz: window.__mazi.control.estado.hz }));
+sí(ctl.on === 'true' && ctl.txt === 'sin marcador' && !ctl.visible && ctl.hz > 3, `el control busca su marcador (${ctl.hz.toFixed(0)} veces/s) y sin verlo no inventa pose («${ctl.txt}»)`);
 sí(errores.length === 0, 'sin errores' + (errores.length ? ': ' + errores.slice(0, 3).join(' | ') : ''));
 console.log(`${ok} bien · ${mal} mal`); await b.close(); process.exit(mal ? 1 : 0);
