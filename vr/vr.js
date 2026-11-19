@@ -18,9 +18,10 @@
 import * as THREE from 'three';
 import { crearSeis, ojoPorDefecto } from './seis.js';
 import { crearNube } from './nube.js';
+import { crearLimites } from './limites.js';
 
 /* ── ajustes: se guardan en el teléfono (sólo comodidad; si se borran, salen los de fábrica) ── */
-const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true, menuTam: 1, menuDist: 1, fondo: 0, seis: false, puntos: true };
+const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true, menuTam: 1, menuDist: 1, fondo: 0, seis: false, puntos: true, limites: true, zona: 1 };
 const AJ = { ...FABRICA };
 try{ Object.assign(AJ, JSON.parse(localStorage.getItem('mazivr.ajustes') || '{}')); }catch{}
 const guardar = () => { try{ localStorage.setItem('mazivr.ajustes', JSON.stringify(AJ)); }catch{} };
@@ -115,6 +116,37 @@ const pared = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicM
 pared.renderOrder = -10; pared.position.z = -20; pared.visible = false; cabeza.add(pared);
 /* los puntitos del rastreo (nube.js): los que sigue la cámara, sobre la imagen; y el mapa del cuarto que se va dibujando */
 export const nube = crearNube({ THREE, escena, rig, pared });
+/* OBSTÁCULOS Y ZONA SEGURA (limites.js), con ese mismo mapa: puntos rojos en lo que tienes cerca y la pared morada de la
+   zona cuando te acercas a su orilla. Sólo con 6DoF (sin él no se sabe dónde estás). */
+export const limites = crearLimites();
+const limVis = (() => {
+  const MAX = 1600, g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAX * 3), 3)); g.setDrawRange(0, 0);
+  const m = new THREE.PointsMaterial({ color: 0xFF4A5A, size: 9, sizeAttenuation: false, transparent: true, opacity: 0, depthTest: false, depthWrite: false });
+  const rojos = new THREE.Points(g, m); rojos.frustumCulled = false; rojos.renderOrder = 8; escena.add(rojos);
+  const pared = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 2.4, 48, 8, true), new THREE.MeshBasicMaterial({ color: 0xAC27FF, wireframe: true, transparent: true, opacity: 0, depthWrite: false }));
+  pared.visible = false; pared.renderOrder = 7; escena.add(pared);
+  return { rojos, pared, MAX, en: 0, cuenta: 0 };
+})();
+const cabezaMundo = new THREE.Vector3();
+function vigilarLimites(){
+  const ahora = performance.now(); if(ahora - limVis.en < 100) return; limVis.en = ahora;
+  const prendido = AJ.limites !== false && seis.vio?.S.listo;
+  if(!prendido){ limVis.rojos.visible = limVis.pared.visible = false; return; }
+  const d = nube.datos(); if(d.n < limites.st.leidos) limites.olvidar(); limites.agregar(d.pos, d.n);
+  cabeza.getWorldPosition(cabezaMundo); const c = cabezaMundo.toArray();
+  if(!limites.st.zona) limites.ponerZona(c, AJ.zona || 1);
+  const aviso = limites.paso(c);
+  if(aviso === 'obstaculo'){ hud('Cuidado', 1.4); sonar('toque', .35); }
+  if(aviso === 'zona'){ hud('Fuera de zona', 1.6); sonar('toque', .35); }
+  /* los rojos: cada casilla cercana como una columnita de puntos, más fuertes mientras más cerca */
+  const cerca = limites.st.cerca, k = Math.max(0, Math.min(1, (1 - cerca) / .5));
+  limVis.rojos.visible = k > 0;
+  if(k > 0){ const P = limVis.rojos.geometry.attributes.position.array, piso = limites.st.piso ?? (c[1] - 1.5); let n = 0;
+    for(const q of limites.cercanas(c, 1.2)){ for(let h = 0; h < 4 && n < limVis.MAX; h++){ P[n * 3] = q.x; P[n * 3 + 1] = piso + .2 + h * .25; P[n * 3 + 2] = q.z; n++; } }
+    limVis.rojos.geometry.attributes.position.needsUpdate = true; limVis.rojos.geometry.setDrawRange(0, n); limVis.rojos.material.opacity = .35 + .6 * k; limVis.cuenta = n; }
+  const z = limites.st.zona, p = limites.st.pared; limVis.pared.visible = !!z && p > 0;
+  if(z && p > 0){ limVis.pared.position.set(z.x, (limites.st.piso ?? c[1] - 1.5) + 1.2, z.z); limVis.pared.scale.set(z.radio, 1, z.radio); limVis.pared.material.opacity = .15 + .5 * p; }
+}
 export async function abrirCamara(){
   if(flujo) return true;
   /* con 6DoF, la cámara PRINCIPAL a 640×480 y 60 cuadros: su lente es la que conoce el rastreo (vio.js) */
@@ -217,10 +249,11 @@ function leerCabeza(){
     cabeza.position.set(st.pos[0], st.pos[1], st.pos[2]);
     if(seis.vio.S.listo) try{ vigilarAncla(); }catch(e){ fallo('E-ANCLA', 'vigilarAncla', e); }
     try{ nube.cuadro(seis.vio, seis.filtro, { mostrar: AJ.puntos !== false }); }catch(e){ fallo('E-NUBE', 'nube.cuadro', e); }
+    try{ vigilarLimites(); }catch(e){ fallo('E-LIMITES', 'vigilarLimites (obstáculos y zona)', e); }
     if(seis.vio.S.error && seis.vio.S.error !== seis.errorVisto){ seis.errorVisto = seis.vio.S.error; fallo('E-6DOF-VIO', 'trabajador del rastreo (worker.js)', seis.vio.S.error); }
     const e = seis.vio.S.estado, aviso6 = !seis.vio.S.listo ? '' : e === 'track' ? '6DoF' : e === 'coast' ? 'Muévete despacio' : e === 'wait' ? 'Quédate quieto' : e === 'init' ? 'Mueve el teléfono de lado' : String(e || '').startsWith('reset') ? 'Rastreo perdido' : '';
     if(aviso6 && aviso6 !== seis.aviso && performance.now() - seis.avisoEn > 1500){ seis.aviso = aviso6; seis.avisoEn = performance.now(); hud(aviso6, 1.6); }
-  } else { if(cabeza.position.lengthSq()) cabeza.position.set(0, 0, 0); if(nube.vivos.visible || nube.mapa.visible) nube.cuadro(null); }
+  } else { if(cabeza.position.lengthSq()) cabeza.position.set(0, 0, 0); if(nube.vivos.visible || nube.mapa.visible) nube.cuadro(null); limVis.rojos.visible = limVis.pared.visible = false; }
 }
 /* ── 6DoF (ENGINEERING_LOG 006): el VIO de visloc-rs con la MISMA cámara, y el filtro que no te deja salir volando ── */
 export const seis = { vio: null, filtro: crearSeis(), ojo: null, aviso: '', avisoEn: 0, error: '', ancla: null, anclaEn: 0, anclaCargando: false, salaPuesta: false, anclaVista: false };
@@ -276,7 +309,7 @@ function vigilarAncla(){
 export async function ponerSeis(si, { demo = null, videoDemo = null } = {}){
   AJ.seis = !!si && !demo ? true : (demo ? AJ.seis : false); if(!demo) guardar();
   if(seis.vio){ seis.vio.parar(); seis.vio = null; }
-  seis.filtro = crearSeis(); seis.aviso = ''; seis.error = ''; seis.ancla?.olvidar(); seis.salaPuesta = false; seis.anclaVista = false;
+  seis.filtro = crearSeis(); limites.st.zona = null; seis.aviso = ''; seis.error = ''; seis.ancla?.olvidar(); seis.salaPuesta = false; seis.anclaVista = false;
   if(!si){ if(!demo && camVIO) await reabrirCamara(); return true; }
   let paso = 'cargar vio.js';
   try{
@@ -307,6 +340,8 @@ export function recentrar(){
   const r = rumbo(); hub.rotation.y = r; cabeza.getWorldPosition(hub.position); hub.position.y = rig.position.y; hud('Al centro');
   /* y las pantallas que se movieron con las manos regresan enfrente y a su tamaño */
   for(const v of Object.values(vistas)) v.alRecentrar?.();
+  /* y la zona segura se vuelve a poner alrededor de donde estás */
+  if(seis.vio) limites.ponerZona(cabeza.getWorldPosition(new THREE.Vector3()).toArray(), AJ.zona || 1);
   /* con la hoja del ancla vista, «Al centro» también guarda dónde quedó el menú en tu cuarto */
   if(seis.vio && anclaConGiro()) guardarSala().then((ok) => ok && hud('Al centro · guardado', 1.6));
 }
