@@ -210,13 +210,45 @@ function leerCabeza(){
     const pose = seis.vio.S.corriendo ? seis.vio.pose(performance.now()) : null;
     const st = seis.filtro.paso(pose, [qCab.w, qCab.x, qCab.y, qCab.z], seis.vio.S, performance.now(), seis.ojo || ojoPorDefecto((((screen.orientation?.angle ?? window.orientation ?? 90) % 360) + 360) % 360));
     cabeza.position.set(st.pos[0], st.pos[1], st.pos[2]);
+    if(seis.vio.S.listo) try{ vigilarAncla(); }catch(e){ fallo('E-ANCLA', 'vigilarAncla', e); }
     if(seis.vio.S.error && seis.vio.S.error !== seis.errorVisto){ seis.errorVisto = seis.vio.S.error; fallo('E-6DOF-VIO', 'trabajador del rastreo (worker.js)', seis.vio.S.error); }
     const e = seis.vio.S.estado, aviso6 = !seis.vio.S.listo ? '' : e === 'track' ? '6DoF' : e === 'coast' ? 'Muévete despacio' : e === 'wait' ? 'Quédate quieto' : e === 'init' ? 'Mueve el teléfono de lado' : String(e || '').startsWith('reset') ? 'Rastreo perdido' : '';
     if(aviso6 && aviso6 !== seis.aviso && performance.now() - seis.avisoEn > 1500){ seis.aviso = aviso6; seis.avisoEn = performance.now(); hud(aviso6, 1.6); }
   } else if(cabeza.position.lengthSq()) cabeza.position.set(0, 0, 0);
 }
 /* ── 6DoF (ENGINEERING_LOG 006): el VIO de visloc-rs con la MISMA cámara, y el filtro que no te deja salir volando ── */
-export const seis = { vio: null, filtro: crearSeis(), ojo: null, aviso: '', avisoEn: 0, error: '' };
+export const seis = { vio: null, filtro: crearSeis(), ojo: null, aviso: '', avisoEn: 0, error: '', ancla: null, anclaEn: 0, anclaCargando: false };
+/* mover TU CUERPO para corregir la deriva (ancla.js): girar alrededor de tu cabeza y luego trasladar */
+export function corregirCuerpo(dYaw, dPos){
+  const h = new THREE.Vector3(); cabeza.getWorldPosition(h);
+  guinada += dYaw; rig.quaternion.setFromAxisAngle(yUp, guinada); rig.updateMatrixWorld(true);
+  const h2 = new THREE.Vector3(); cabeza.getWorldPosition(h2);
+  rig.position.add(h.sub(h2)).add(dPos); rig.updateMatrixWorld(true);
+}
+/* EL ANCLA DEL CUARTO (ancla.js): con 6DoF prendido, 4 veces por segundo se busca la hoja impresa (ArUco id 1) en la
+   imagen de la cámara; si se ve bien, se corrige la deriva hacia donde estaba la primera vez */
+const lienzoAncla = document.createElement('canvas'), ctxAncla = lienzoAncla.getContext('2d', { willReadFrequently: true });
+const ojoThree = () => { const o = seis.ojo || ojoPorDefecto((((screen.orientation?.angle ?? window.orientation ?? 90) % 360) + 360) % 360); return new THREE.Vector3(o[0], -o[1], -o[2]); };
+function vigilarAncla(){
+  const ahoraMs = performance.now(); if(ahoraMs - seis.anclaEn < 250) return; seis.anclaEn = ahoraMs;
+  const fuente = seis.videoFuente || video;
+  if(!seis.ancla){ if(seis.anclaCargando) return; seis.anclaCargando = true;
+    Promise.all([import('./ancla.js'), import('./espacial/control.js')]).then(async ([A, C]) => { await A.cargarAruco(new URL('./espacial/vendor/aruco/', import.meta.url).href); seis.ancla = A.crearAncla({ THREE, montarControl: C.montarControl }); })
+      .catch((e) => fallo('E-ANCLA', 'cargar el detector (ancla.js, aruco)', e)); return; }
+  if(!fuente.videoWidth || !seis.vio?.intrinsecos) return;
+  const w = Math.min(640, fuente.videoWidth), h = Math.round(fuente.videoHeight * w / fuente.videoWidth);
+  lienzoAncla.width = w; lienzoAncla.height = h; ctxAncla.drawImage(fuente, 0, 0, w, h);
+  const rgba = ctxAncla.getImageData(0, 0, w, h).data;
+  const hp = new THREE.Vector3(), hq = new THREE.Quaternion(); cabeza.getWorldPosition(hp); cabeza.getWorldQuaternion(hq);
+  const cam = { pos: hp.clone().add(ojoThree().negate().applyQuaternion(hq)), quat: hq };
+  const obs = seis.ancla.observar(rgba, w, h, seis.vio.intrinsecos(w, h), cam);
+  const r = seis.ancla.corregir(obs, hp, { quieta: (seis.vio.S.giro ?? 0) < .6 });
+  if(!r) return;
+  if(r.primera){ hud('Ancla vista', 1.6); return; }
+  corregirCuerpo(r.dYaw, r.dPos);
+  const cm = Math.round(r.dPos.length() * 200);   /* lo que faltaba (se corrige la mitad cada vez) */
+  if(cm >= 10) hud(`Ancla: corregí ${cm} cm`, 1.4);
+}
 export async function ponerSeis(si, { demo = null, videoDemo = null } = {}){
   AJ.seis = !!si && !demo ? true : (demo ? AJ.seis : false); if(!demo) guardar();
   if(seis.vio){ seis.vio.parar(); seis.vio = null; }
@@ -228,7 +260,7 @@ export async function ponerSeis(si, { demo = null, videoDemo = null } = {}){
     paso = 'abrir la cámara principal';
     if(!demo){ if(!camVIO || !flujo) await reabrirCamara(); if(!flujo) throw new Error('Sin cámara'); }
     paso = 'arrancar el rastreo (sensores, WebAssembly, video)';
-    const v = crearVIO({ video: demo ? videoDemo : video, demo });
+    const v = crearVIO({ video: demo ? videoDemo : video, demo }); seis.videoFuente = demo ? videoDemo : null;
     seis.vio = v; hud('Preparando 6DoF', 2);
     await v.iniciar();
     return true;

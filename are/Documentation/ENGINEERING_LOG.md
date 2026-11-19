@@ -127,3 +127,17 @@ Niveles de prueba: **documentado** · **implementado** · **probado en navegador
 - **Pedido de Carlos:** «que el código de error sea tan claro que sepas exactamente dónde falló, cómo y cuándo».
 - **Hecho (`fallo()` en `vr/vr.js`):** código (E-MOTOR, E-VISTA, E-CUADRO, E-6DOF, E-6DOF-VIO, E-CAMARA, E-PAGINA, E-PROMESA) + pieza y función o archivo:línea + mensaje + hora, vista y segundos desde que abriste. Sale 5 s en el visor, en la consola y se guarda: la pantalla de entrada enseña el último. Una vista que truena ya no tumba el motor entero.
 - **Pendiente sabido:** en `pruebas-lector.mjs`, «L2 + sticks» midió 22.9° contra 25° pedidos (prueba de tiempo en un Chromium sin tarjeta gráfica). No se confirmó si ya pasaba antes; Carlos pidió no gastar más tiempo ahí.
+
+## 010 · El ancla del cuarto: corregir la deriva con una hoja impresa (19 nov 2026)
+
+- **Problema:** el 6DoF por cámara se va desviando poco a poco; en zonas con poca textura se nota rápido (lo que vio Carlos). El filtro de 006 frena los deslices absurdos, pero no regresa lo que ya se fue.
+- **Rutas consideradas:** mapa con relocalización (cerrar el ciclo; es la cura de fondo, pero el VIO web no la trae: etapa aparte), ARKit nativo (necesita instalar la app), y **un punto fijo conocido en el cuarto**: una hoja impresa con un marcador ArUco. Se eligió la hoja porque es 100 % web, se puede hacer hoy y además sirve para dejar cosas en el mismo lugar entre sesiones.
+- **Hecho (`vr/ancla.js` + `vigilarAncla` en `vr/vr.js`):**
+  - con 6DoF prendido, 4 veces por segundo se busca la hoja (ArUco id 1, 14 cm; el control usa el id 0);
+  - la primera vez que se ve, se guarda dónde quedó; después, si se ve corrida, se mueve tu cuerpo para cancelar la mitad de la diferencia cada vez (sin brincos);
+  - sólo con buena lectura: reproyección < 1.5 px, a menos de 3 m, la hoja de más de 40 px y la cabeza casi quieta;
+  - **el giro sólo se corrige con lecturas confiables**: una hoja plana vista de frente no delata hacia dónde mira (8.6° de error medido, con la posición a 4 mm). Se toma el giro si la hoja está acostada en el escritorio (su giro en el plano sí se lee bien) o si la pared se ve de lado (más de 25°). La posición, siempre.
+- **Medido (`vr/pruebas-ancla.mjs`, 8/8):** pared de lado a 1.4 m: 1.7 cm y 0.05°; hoja en el escritorio: 1.5 cm y 0.05°; con 25 cm y 6° de deriva el mundo regresa a 0.0 cm y 0.01° de la primera lectura, a la mitad por paso; con la cabeza girando rápido no corrige.
+- **La hoja:** segunda página de `vr/espacial/marcador.html` (cuadro negro de 14 cm, comprobado en el PDF de carta).
+- **Nivel:** probado en navegador con la hoja dibujada en lugares conocidos. **Falta:** el cuarto de Carlos.
+- **Siguiente:** guardar dónde quedan las cosas respecto a la hoja, para que al volver a entrar aparezcan en el mismo lugar del cuarto (persistencia).
