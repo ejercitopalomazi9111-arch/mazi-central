@@ -141,3 +141,10 @@ Niveles de prueba: **documentado** · **implementado** · **probado en navegador
 - **La hoja:** segunda página de `vr/espacial/marcador.html` (cuadro negro de 14 cm, comprobado en el PDF de carta).
 - **Nivel:** probado en navegador con la hoja dibujada en lugares conocidos. **Falta:** el cuarto de Carlos.
 - **Siguiente:** guardar dónde quedan las cosas respecto a la hoja, para que al volver a entrar aparezcan en el mismo lugar del cuarto (persistencia).
+
+## 011 · El menú en su mismo lugar del cuarto entre sesiones (19 nov 2026)
+
+- **Qué hace:** con la hoja del ancla vista con giro confiable (acostada en el escritorio, o la pared vista de lado), el inicio se pone donde quedó la vez pasada RESPECTO a la hoja. La primera vez se guarda solo («Cuarto guardado»); «Al centro» (Cuadro) lo vuelve a guardar donde lo dejes («Al centro · guardado»).
+- **Por qué hace falta la hoja:** el giroscopio del iPhone empieza cada sesión con otro rumbo y otro origen; sin un punto fijo del cuarto, «el mismo lugar» no existe para el motor.
+- **Prueba:** `vr/pruebas-ancla-sala.mjs` 4/4. Con el mundo de la segunda sesión girado 69°, −155° o 180° y movido, el menú cae en el mismo lugar del cuarto (error 0).
+- **Nivel:** probado en Node. **Falta:** el cuarto de Carlos.

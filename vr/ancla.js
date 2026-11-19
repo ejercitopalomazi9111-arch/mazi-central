@@ -68,6 +68,21 @@ export function crearAncla({ THREE, montarControl, AR = window.AR }){
   return { st, observar, corregir, olvidar, tamano: leerCm };
 }
 
+/* LO QUE SE QUEDA EN SU LUGAR ENTRE SESIONES: el menú (o lo que sea) se guarda RESPECTO a la hoja. Hace falta saber
+   hacia dónde mira la hoja (giro confiable): por eso la hoja acostada en el escritorio es la que mejor sirve.
+   pose: { pos: [x,y,z], yaw }  ·  ancla: { pos: Vector3|[x,y,z], yaw } */
+const xyz = (v) => Array.isArray(v) ? v : [v.x, v.y, v.z];
+export function respectoAncla(pose, ancla){
+  const [px, py, pz] = xyz(pose.pos), [ax, ay, az] = xyz(ancla.pos), c = Math.cos(-ancla.yaw), s = Math.sin(-ancla.yaw);
+  const dx = px - ax, dz = pz - az;
+  return { pos: [c * dx + s * dz, py - ay, -s * dx + c * dz], yaw: envolver(pose.yaw - ancla.yaw) };
+}
+export function desdeAncla(rel, ancla){
+  const [rx, ry, rz] = rel.pos, [ax, ay, az] = xyz(ancla.pos), c = Math.cos(ancla.yaw), s = Math.sin(ancla.yaw);
+  return { pos: [ax + c * rx + s * rz, ay + ry, az - s * rx + c * rz], yaw: envolver(rel.yaw + ancla.yaw) };
+}
+export const LLAVE_SALA = 'mazixr-ancla-sala';
+
 /* carga el detector de js-aruco2 (scripts clásicos, BSD) una vez */
 let cargaAR = null;
 export function cargarAruco(base){
