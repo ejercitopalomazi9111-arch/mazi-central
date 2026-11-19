@@ -480,6 +480,8 @@ const cargaSonidos = (async () => {
   }catch(e){ console.warn('audio', e); }
 })();
 export function despertarAudio(){
+  /* con el iPhone en silencio, el sonido de la página se apaga salvo que se pida como «reproducción» (Safari 17+) */
+  try{ if(navigator.audioSession) navigator.audioSession.type = 'playback'; }catch{}
   try{ actx = actx || new (window.AudioContext || window.webkitAudioContext)(); return actx.resume().catch(() => {}); }catch{ return Promise.resolve(); }
 }
 export const sonidosListos = () => cargaSonidos;
@@ -529,8 +531,17 @@ const giroAlBloquear = new THREE.Quaternion();
 let bloqueadoHasta = 0;
 /* …o hasta que pase un momento: Carlos (18 nov) se quedaba viendo lo que ya estaba iluminado al entrar y no se abría
    hasta mirar otro y regresar. Ahora espera 0.9 s y luego cuenta como siempre (2.5 s en total), con el anillo llenándose */
-function bloquearMirada(){ mirarBloqueado = true; giroAlBloquear.copy(cabeza.quaternion); bloqueadoHasta = performance.now() + 900; }
-function darFoco(o){ if(foco === o) return; if(foco || !o) mirarBloqueado = false; foco?.userData.panel?.foco?.(false); foco = o; focoDesde = performance.now(); o?.userData.panel?.foco?.(true); if(o) sonar('toque', .18); }
+/* MIRAR FIJO NO ELIGE HASTA MOVER LA CABEZA (Carlos, 19 nov: «al abrir el modo VR casi siempre te mete a Leer» y «la
+   siguiente diapositiva se pasa casi casi viéndola de reojo»): al cambiar de pantalla, lo que quedó enfrente NO se elige
+   solo hasta que muevas la cabeza; después de elegir algo, para volver a elegir lo mismo mirando hay que esperar `ms`
+   (o mover la cabeza). Y mirar fijo tarda 2.5 s, no 1.6. */
+/* y lo PRIMERO que quede bajo la mira después de cambiar de pantalla o de elegir algo tampoco se elige mirándolo: hay que
+   quitarle la vista y volver (el botón «Siguiente» de la diapositiva nueva sale en el mismo lugar que el de antes y,
+   como es otro objeto, se elegía solo) */
+let primerFoco = null;
+function bloquearMirada(ms = Infinity){ mirarBloqueado = true; giroAlBloquear.copy(cabeza.quaternion); bloqueadoHasta = performance.now() + ms; primerFoco = 'pendiente'; }
+export const MIRAR_MS = 2500;
+function darFoco(o){ if(foco === o) return; if(o && primerFoco === 'pendiente') primerFoco = o; else if(primerFoco !== 'pendiente') primerFoco = null; if(foco || !o) mirarBloqueado = false; foco?.userData.panel?.foco?.(false); foco = o; focoDesde = performance.now(); o?.userData.panel?.foco?.(true); }   /* sin «tiuk» al ver algo (Carlos, 19 nov) */
 function moverFoco(dx, dy){
   const L = elegibles(); if(!L.length) return;
   focoPorFlechas = performance.now(); ultimoGiro.copy(cabeza.quaternion);
@@ -541,7 +552,7 @@ function moverFoco(dx, dy){
     if(along <= .01) continue; const d = along + Math.abs(dx ? v.y : v.x) * 2; if(d < md){ md = d; mejor = o; } }
   if(mejor) darFoco(mejor);
 }
-function activar(o){ if(!o) return; sonar('ding', .3); bloquearMirada(); o.userData.accion?.(); }
+function activar(o){ if(!o) return; bloquearMirada(3000); o.userData.accion?.(); }   /* sin campanita al tocar (Carlos, 19 nov: «súper castroso») */
 
 /* ── el ciclo ── */
 let giroArmado = true, ultimo = performance.now();
@@ -599,14 +610,18 @@ function cuadro(t){
     /* el clic va a lo que apunta LA MANO QUE PELLIZCA (su rayo ya está congelado en hacia dónde apuntaba antes de juntar los dedos) */
     const quien = (extra.rayos || []).find((R) => R.pellizco && R.objeto)
       || (extra.rayos || []).filter((R) => R.mano?.agarro && ahoraMs - R.mano.agarro < 250).map((R) => ({ objeto: R.mano.objetoAntes }))[0];
-    const antes = quien ? null : historialMira.find(([t, o]) => ahoraMs - t <= 260 && ahoraMs - t >= 90 && o) || historialMira.findLast?.(([, o]) => o);
-    const o = quien?.objeto || antes?.[1] || foco; if(o){ darFoco(o); activar(o); } usado.x = true; }
+    const antes = quien ? null : historialMira.find(([t, o]) => ahoraMs - t <= 260 && ahoraMs - t >= 90 && o);
+    /* PELLIZCAR EL AIRE NO ELIGE NADA (Carlos, 19 nov: en MONARCH «se aburren, juegan con sus manos y omiten el video por
+       accidente»): antes, sin nada bajo el rayo, el clic caía en lo último que tuvo el foco (el «Siguiente»). Ahora sólo
+       cuenta lo que la mano apuntaba en ese instante. */
+    const o = quien?.objeto || antes?.[1]; if(o){ darFoco(o); activar(o); } usado.x = true; }
   /* MIRAR O APUNTAR FIJO 1.6 s ELIGE, SIEMPRE (Carlos, 18 nov: «si apunto hacia un elemento unos segundos, que se clique, además
      del pellizcar; y que se pueda seguir pulsando sólo quedándote viendo»): antes se apagaba con el control conectado o con
      las manos a la vista. Con las manos cuenta a lo que apunta el rayo principal; sin manos, a lo que ve la mira. */
   /* con L2 apretado estás moviendo o agrandando algo: mirar fijo no elige (si no, al acomodar el menú se metía a lo que veías) */
   if(control.apretado(B.L2)) focoDesde = performance.now();
-  const fijo = !mirarBloqueado && viendo && viendo === foco && !(extra.rayo && extra.rayo.pellizco) ? Math.max(0, (performance.now() - focoDesde) / 1600) : 0;
+  if(!viendo && primerFoco && primerFoco !== 'pendiente') primerFoco = null;   /* le quitaste la vista: ya cuenta */
+  const fijo = !mirarBloqueado && viendo && viendo === foco && viendo !== primerFoco && !(extra.rayo && extra.rayo.pellizco) ? Math.max(0, (performance.now() - focoDesde) / MIRAR_MS) : 0;
   anillo.visible = fijo > .05;
   /* el anillo se llena donde estás apuntando: en el cursor del rayo, o en la mira */
   if(anillo.visible && extra.rayo?.hit){ const pl = cabeza.worldToLocal(extra.rayo.hit.clone()); const k = Math.max(.3, -pl.z); anillo.position.copy(pl).multiplyScalar(.98); anillo.scale.setScalar(k); }
@@ -619,7 +634,7 @@ function cuadro(t){
      prenderlo después de su propio salir) */
   const va = vistas[vista];
   try{ va?.cuadro?.(t / 1000, dt); }catch(e){ fallo('E-VISTA', `${vista}.cuadro`, e); }
-  if(va?.atrasEn) ponerAtras();
+  ponerAtras();   /* cada cuadro: al volver de un capítulo al estante, Atrás se quedaba a un lado, fuera de la vista */
   for(const f of alCuadro) try{ f(t / 1000, dt); }catch(e){ fallo('E-CUADRO', f.name || 'alCuadro', e); }
   /* la mira sólo cuando estás viendo un botón (Carlos, 18 nov: «si no estoy mirando a ningún botón, que el cursor desaparezca, es molesto») */
   mira.visible = !extra.rayo && !!viendo;

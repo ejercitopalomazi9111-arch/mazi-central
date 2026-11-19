@@ -88,7 +88,7 @@ try{ const L = JSON.parse(localStorage.getItem('mazivr.errores') || '[]'), u = L
 /* LA VERSIÓN (Carlos, 19 nov: «un mensajito que diga la versión en la que estás y que se actualizó»). Va igual que la
    de sw.js (pruebas-sinred.mjs lo revisa). La primera vez que se abre una versión nueva dice «actualizada»; y si el
    trabajador de fondo ya trae una más nueva que esta página, recarga sola (sólo en la entrada, una vez) */
-const VERSION = 33;
+const VERSION = 34;
 { let antes = 0; try{ antes = +localStorage.getItem('mazivr.version') || 0; if(antes !== VERSION) localStorage.setItem('mazivr.version', VERSION); }catch{}
   const el = $('#version'); el.textContent = antes < VERSION ? `v${VERSION} · actualizada` : `v${VERSION}`; el.classList.toggle('nueva', antes < VERSION); }
 const versionSW = (n) => { if(!(n > VERSION) || document.body.classList.contains('dentro')) return;
@@ -115,6 +115,8 @@ $('#bEntrar').addEventListener('click', async () => {
   /* Android: a pantalla completa y acostado (si no, se queda la barra del navegador y la vista sale como «pantalla
      individual»). En el iPhone no existe para páginas: ahí se usa «Agregar a inicio» */
   try{ const p = document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); p?.then(() => screen.orientation?.lock?.('landscape')).catch(() => {}); }catch{}
+  /* la voz del teléfono (respaldo del narrador) sólo habla después de hablar una vez dentro de un toque */
+  try{ const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); }catch{}
   web.desbloquear(); window.__musica?.desbloquear?.();      /* los videos de la web sólo suenan si ya sonaron una vez con un toque */
   V.despertarAudio();
   try{ if(typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) await DeviceOrientationEvent.requestPermission(); }catch{}
@@ -144,6 +146,8 @@ $('#bEntrar').addEventListener('click', async () => {
    mantén L2: stick derecho lo mueve, stick izquierdo cambia el tamaño, flechas arriba/abajo lo acercan o alejan.
    El tamaño y la distancia se guardan; Cuadro (recentrar) sólo lo regresa enfrente. */
 function menuAjustable(v, piezas){
+  /* lo que el gesto dejó agrandado sin querer, de regreso a como venía (una sola vez) */
+  if(!V.AJ.menuSinGesto){ V.AJ.menuTam = 1; V.AJ.menuDist = 1; V.AJ.menuSinGesto = true; V.guardar(); }
   const tam = () => V.AJ.menuTam || 1, dist = () => V.AJ.menuDist || 1;
   let puesto = '';
   /* más grandes, más separadas (si no, se enciman): cada pieza guarda su ángulo y su radio de origen y se abre el arco */
@@ -157,10 +161,11 @@ function menuAjustable(v, piezas){
       p.scale.setScalar(tam() / dist()); } };
   let guardarEn = 0; const guardarLuego = () => { clearTimeout(guardarEn); guardarEn = setTimeout(V.guardar, 600); };
   const setTam = (e) => { V.AJ.menuTam = +e.toFixed(3); poner(); guardarLuego(); };
-  const agarrar = crearAgarre(V, { soporte: v.grupo, getEscala: tam, setEscala: setTam, min: .5, max: 2.2 });
   const mover = crearMoverConControl(V, { soporte: v.grupo, getEscala: tam, setEscala: setTam, min: .5, max: 2.2 });
   const cuadroAntes = v.cuadro, controlAntes = v.control;
-  v.cuadro = (t, dt) => { poner(); agarrar(); cuadroAntes?.(t, dt); };
+  /* SIN GESTO DE MANOS PARA EL MENÚ (Carlos, 19 nov: «no sé cuál es y a cada rato se está re-escalando sin razón»): dos
+     pellizcos falsos a la vez lo agrandaban. Ahora sólo con el control (L2). */
+  v.cuadro = (t, dt) => { poner(); cuadroAntes?.(t, dt); };
   v.control = (c, dt) => {
     if(mover(c, dt)){
       const d = (c.apretado(V.B.ARRIBA) ? -1 : 0) + (c.apretado(V.B.ABAJO) ? 1 : 0);

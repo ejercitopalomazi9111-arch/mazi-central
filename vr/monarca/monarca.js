@@ -48,7 +48,10 @@ export function montarMonarca(V){
   const { THREE } = V;
   const m = { grupo: new THREE.Group(), estado: { escena: 0, puntos: 0, pregunta: 0, eleccion: null, voz: true, cargados: 0 } };
   const st = m.estado;
-  const narr = crearNarrador({ actx: V.audio, base: (id) => AQUI(`medios/narrador/${id}.mp3`), sinVoz: () => !st.voz });
+  /* si un audio falla, se dice UNA vez en el visor con su causa (para saber qué pasó en el teléfono) */
+  let avisoVoz = false;
+  const narr = crearNarrador({ actx: V.audio, base: (id) => AQUI(`medios/narrador/${id}.mp3`), sinVoz: () => !st.voz,
+    alFallar: (m) => { if(avisoVoz) return; avisoVoz = true; V.hud('Voz: ' + m.slice(0, 40), 4); } });
   m.narrador = narr;
   /* lo que hace la persona, para que el narrador se dé cuenta */
   const ahora = () => performance.now() / 1000;
@@ -249,10 +252,44 @@ export function montarMonarca(V){
   }
   function reiniciar(){ const otra = st.escena ? (ev('otraVez') || 'r-otra-vez') : null; st.puntos = 0; st.pregunta = 0; st.eleccion = null; mostrar(0, otra ? [otra] : []); }
 
+  /* ── SUBTÍTULOS QUE SIGUEN TU VISTA (Carlos, 19 nov): abajo de lo que ves, se acercan con suavidad a donde miras (no
+     pegados de golpe), y van escribiendo lo que el narrador dice EN ESE MOMENTO, también cuando reacciona a lo que haces.
+     Sólo se repinta cuando cambia una palabra (regla 13: nada de repintar por cuadro). ── */
+  const subt = new V.Panel(1.5, .3, 560); subt.malla.material.depthTest = false; subt.malla.material.depthWrite = false;
+  subt.malla.renderOrder = 30; subt.malla.visible = false; V.escena.add(subt.malla);
+  const subQ = new THREE.Quaternion(), subP = new THREE.Vector3(), subC = new THREE.Vector3(), subD = new THREE.Vector3(), subUp = new THREE.Vector3(0, 1, 0);
+  let subPuesto = '', subNuevo = true;
+  function pintarSub(texto, n){
+    const { x, cv } = subt, w = cv.width, h = cv.height; x.clearRect(0, 0, w, h);
+    x.font = '700 40px system-ui, -apple-system, sans-serif';
+    const palabras = texto.split(' '), dicho = palabras.slice(0, n).join(' ');
+    let ls = renglones(x, dicho, w - 80); ls = ls.slice(-2);   /* los dos últimos renglones: va corriendo como subtítulo */
+    if(!ls.length || !dicho){ subt.listo(); return; }
+    const alto = ls.length * 52 + 36, y0 = h - alto;
+    V.redondo(x, 10, y0, w - 20, alto - 6, 28); x.fillStyle = 'rgba(11,5,19,.78)'; x.fill();
+    x.fillStyle = '#FFFFFF'; x.textAlign = 'center'; x.textBaseline = 'top';
+    ls.forEach((r, k) => x.fillText(r, w / 2, y0 + 18 + k * 52));
+    subt.listo();
+  }
+  function subtitulos(dt){
+    const pr = narr.progreso(), ver = !!pr && st.voz;
+    subt.malla.visible = ver; if(!ver){ subPuesto = ''; subNuevo = true; return; }
+    const palabras = pr.texto.split(' '), n = Math.min(palabras.length, Math.ceil(palabras.length * Math.min(1, pr.f * 1.08 + .04)));
+    const clave = pr.id + '|' + n; if(clave !== subPuesto){ subPuesto = clave; pintarSub(pr.texto, n); }
+    /* a dónde va: 1.6 m enfrente de tu vista, un poco abajo, siempre de frente a ti */
+    V.cabeza.getWorldPosition(subC); V.cabeza.getWorldQuaternion(subQ);
+    subD.set(0, -.32, -1.6).applyQuaternion(subQ); subP.copy(subC).add(subD);
+    const k = subNuevo ? 1 : 1 - Math.exp(-(dt || 1 / 60) * 3.5); subNuevo = false;
+    subt.malla.position.lerp(subP, k);
+    subt.malla.up.copy(subUp); subt.malla.lookAt(subC);
+  }
+
   /* ── cada cuadro: la mariposa vuela, la colonia aletea, la ruta se dibuja ── */
   let rutaK = -1;
+  let tSub = 0;
   m.cuadro = () => {
     const t = performance.now() / 1000, E = ESCENAS[st.escena];
+    subtitulos(tSub ? Math.min(.1, t - tSub) : 1 / 60); tSub = t;
     if(modelo && mariposa.visible){
       if(E.monarca === 'cerca'){ mariposa.position.set(.95, .1, -1.3); mariposa.rotation.set(.3, t * .6, Math.sin(t * 9) * .12); mariposa.scale.setScalar(1.6); }
       else if(objetivo){ mariposa.position.lerp(new THREE.Vector3(objetivo.x + Math.sin(t * 2) * .12, objetivo.y + Math.sin(t * 3.1) * .06, objetivo.z + Math.cos(t * 2) * .12), .04); mariposa.rotation.set(0, t * 2, Math.sin(t * 12) * .25); mariposa.scale.setScalar(.8); }
@@ -312,7 +349,7 @@ export function montarMonarca(V){
     mostrar(st.escena); narr.precargar(); reaccionar(ev('entrar'));
   };
   m.salir = () => {
-    narr.callar(); ev('salir');
+    narr.callar(); ev('salir'); subt.malla.visible = false;
     if(antes){ V.cuarto.visible = antes.cuarto; if(window.__temshop) window.__temshop.grupo.visible = !!antes.tem; if(antes.mixta) V.ponerMixta(true); }
   };
   m.elegibles = () => [...botones, ...lugares];
@@ -330,6 +367,7 @@ export function montarMonarca(V){
   addEventListener('pointerdown', (e) => { if(V.kiosco.activo && e.clientX < 80 && e.clientY < 80) intentoSalir(); });
 
   V.registrar('monarca', m);
+  m.subt = subt;
   window.__monarca = m;
   return m;
 }

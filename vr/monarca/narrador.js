@@ -119,19 +119,32 @@ export const VOCES = { n: 'google:Orus', s: 'google:Charon' };
 /* crearNarrador({ actx, base, alHablar }) → { decir(ids), callar(), pausar(), seguir(), hablando(), clip, precargar() }
    · decir(['r-prisa-1', 'e-mariposa']) corta lo que suene y dice la fila en orden.
    · interrumpir('r-lejos-1') pausa lo que suena, dice la reacción y sigue donde iba. */
-export function crearNarrador({ actx, base, sinVoz = () => false }){
-  const bufs = {}, pidiendo = {};
-  let fila = [], fuente = null, actual = null, desde = 0, inicio = 0, pausado = null, gen = 0;
-  const dichos = [], pedidos = [];   /* lo que empezó a sonar y lo que se pidió decir, en orden (pruebas y depurar) */
+export function crearNarrador({ actx, base, sinVoz = () => false, alFallar = () => {} }){
+  /* MEMORIA (Carlos, 19 nov: «en MONARCH no suena el narrador»): antes se DECODIFICABAN los 89 audios al entrar, ~100 MB de
+     sonido crudo encima del 3D y las manos, y en el iPhone eso fallaba callado. Ahora se bajan comprimidos (3 MB en total)
+     y se decodifica sólo lo que va a sonar, guardando los últimos `GUARDAR` ya decodificados. */
+  const GUARDAR = 8;
+  const crudos = {}, bajando = {}, bufs = new Map();
+  let fila = [], fuente = null, actual = null, desde = 0, inicio = 0, pausado = null, gen = 0, porVoz = false;
+  const dichos = [], pedidos = [], errores = [];   /* lo que empezó a sonar, lo que se pidió y lo que falló (pruebas y depurar) */
   const ctx = () => (typeof actx === 'function' ? actx() : actx);
-  function cargar(id){
-    if(bufs[id] || pidiendo[id]) return pidiendo[id] || Promise.resolve(bufs[id]);
-    const c = ctx(); if(!c) return Promise.resolve(null);
-    return (pidiendo[id] = fetch(base(id)).then((r) => { if(!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
-      .then((a) => new Promise((ok, no) => c.decodeAudioData(a, ok, no))).then((b) => (bufs[id] = b))
-      .catch(() => null).finally(() => { delete pidiendo[id]; }));
+  const fallar = (id, e) => { const m = `${id}: ${e?.message || e}`; errores.push(m); try{ alFallar(m); }catch{} return null; };
+  function bajar(id){
+    if(crudos[id]) return Promise.resolve(crudos[id]);
+    return bajando[id] || (bajando[id] = fetch(base(id)).then((r) => { if(!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })
+      .then((a) => (crudos[id] = a)).catch((e) => fallar(id, e)).finally(() => { delete bajando[id]; }));
   }
-  const precargar = (ids) => Promise.all((ids || Object.keys(LINEAS)).map(cargar));
+  async function cargar(id){
+    if(bufs.has(id)){ const b = bufs.get(id); bufs.delete(id); bufs.set(id, b); return b; }
+    const a = await bajar(id), c = ctx(); if(!a || !c) return null;
+    /* decodeAudioData se queda con el arreglo: se le pasa una copia para poder decodificarlo otra vez después */
+    const b = await new Promise((ok, no) => { try{ const p = c.decodeAudioData(a.slice(0), ok, no); p?.catch?.(no); }catch(e){ no(e); } }).catch((e) => fallar(id, e || 'no se pudo leer'));
+    if(!b) return null;
+    bufs.set(id, b); while(bufs.size > GUARDAR) bufs.delete(bufs.keys().next().value);
+    return b;
+  }
+  /* sólo baja los archivos comprimidos (no decodifica) */
+  const precargar = (ids) => Promise.all((ids || Object.keys(LINEAS)).map(bajar));
   function parar(){ if(fuente){ fuente.onended = null; try{ fuente.stop(); }catch{} fuente = null; } try{ speechSynthesis.cancel(); }catch{} }
   /* sin audio (archivo que falta o no se pudo leer): la voz del teléfono con el mismo texto */
   function porTelefono(id, fin){
@@ -144,8 +157,10 @@ export function crearNarrador({ actx, base, sinVoz = () => false }){
     const b = await cargar(id); if(g !== gen) return;
     const c = ctx();
     const fin = () => { if(g !== gen) return; fuente = null; actual = null; siguiente(g); };
-    if(!b || !c){ porTelefono(id, fin); inicio = performance.now() / 1000; return; }
-    if(c.state === 'suspended') c.resume().catch(() => {});
+    if(!b || !c){ porTelefono(id, fin); inicio = performance.now() / 1000; porVoz = true; return; }
+    porVoz = false;
+    /* en el iPhone el estado también puede ser «interrupted» (llamada, bloqueo): cualquier cosa que no sea «running» se reanuda */
+    if(c.state !== 'running') c.resume().catch(() => {});
     const s = c.createBufferSource(); s.buffer = b; s.connect(c.destination); s.onended = fin;
     inicio = c.currentTime; s.start(0, Math.min(offset, Math.max(0, b.duration - .05))); fuente = s;
   }
@@ -162,16 +177,26 @@ export function crearNarrador({ actx, base, sinVoz = () => false }){
   }
   function interrumpir(id){
     if(sinVoz() || !LINEAS[id]) return; pedidos.push(id);
-    const c = ctx(), b = actual && bufs[actual];
+    const c = ctx(), b = actual && bufs.get(actual);
     if(actual && actual.startsWith('e-') && b && c && fuente) pausado = { id: actual, en: desde + (c.currentTime - inicio) - .4 };
     gen++; parar(); fila = []; const g = gen; tocar(id, 0, g);
   }
   function callar(){ gen++; parar(); fila = []; pausado = null; actual = null; }
   /* lo que falta del clip que suena (en segundos); 0 si nada suena */
   function falta(){
-    const c = ctx(), b = actual && bufs[actual];
+    const c = ctx(), b = actual && bufs.get(actual);
     if(!actual) return 0; if(!b || !c) return 1;
     return Math.max(0, b.duration - (desde + c.currentTime - inicio));
   }
-  return { decir, interrumpir, callar, precargar, falta, get actual(){ return actual; }, dichos, pedidos, get ocupado(){ return !!actual || fila.length > 0; } };
+  /* LO QUE SE ESTÁ DICIENDO, para los subtítulos: el renglón y qué tanto va (0..1). Con audio, por el reloj del clip;
+     con la voz del teléfono, calculado a ~14 letras por segundo */
+  function progreso(){
+    if(!actual || !LINEAS[actual]) return null;
+    const texto = LINEAS[actual][1], c = ctx(), b = bufs.get(actual);
+    let f;
+    if(b && c && !porVoz) f = (desde + c.currentTime - inicio) / b.duration;
+    else f = (performance.now() / 1000 - inicio) / Math.max(1.5, texto.length / 14);
+    return { id: actual, texto, f: Math.max(0, Math.min(1, f)) };
+  }
+  return { decir, interrumpir, callar, precargar, falta, progreso, get actual(){ return actual; }, dichos, pedidos, errores, get ocupado(){ return !!actual || fila.length > 0; } };
 }
