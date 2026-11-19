@@ -64,9 +64,15 @@ const W0 = mano();
   const r = e.paso(espejo, W, 'Right', .95);
   const lejos = Math.max(...[6, 7, 8].map((i) => Math.hypot(r.L[i].x - espejo[i].x, r.L[i].y - espejo[i].y)));
   sí(!r.dudosos.includes(1) && lejos < 1e-9, `palma volteada en la imagen: el índice sale de la lectura, no disparado al otro lado (diferencia ${lejos.toFixed(3)})`); }
-/* 9. un dedo de verdad raro (inventado) se sostiene, pero no más de 4 lecturas seguidas */
+/* 9. un dedo de verdad raro (inventado) se sostiene, pero no más de 3 lecturas seguidas */
 { const e = crearEstable(); for(let i = 0; i < 15; i++) e.paso(aImagen(W0), W0, 'Right', .95);
   const W = W0.map((p) => ({ ...p })); for(const i of [6, 7, 8]) W[i] = { x: W0[i].x, y: W0[5].y + (W0[i].y - W0[5].y) * 2.1, z: 0 };
   const sost = []; for(let i = 0; i < 7; i++) sost.push(e.paso(aImagen(W), W, 'Right', .95).dudosos.includes(1));
-  sí(sost.filter(Boolean).length === 4 && !sost[4], `el índice raro se sostiene 4 lecturas y a la quinta se acepta (${sost.map((x) => x ? 'S' : '·').join('')})`); }
+  sí(sost.filter(Boolean).length === 3 && !sost[3], `el índice raro se sostiene 3 lecturas y a la cuarta se acepta (${sost.map((x) => x ? 'S' : '·').join('')})`); }
+/* 10. EL RUIDO DE LAS PUNTAS (fotos del 19 nov en la noche): MediaPipe mueve cada falange ±0.6 cm; eso no es un dedo inventado */
+{ const e = crearEstable(); for(let i = 0; i < 15; i++) e.paso(aImagen(W0), W0, 'Right', .95);
+  let k = 7; const az = () => ((k = (k * 16807) % 2147483647) / 2147483647 - .5); let marcados = 0;
+  for(let n = 0; n < 60; n++){ const W = W0.map((p, i) => i > 1 && i % 4 !== 1 ? { x: p.x + az() * .012, y: p.y + az() * .012, z: p.z + az() * .012 } : { ...p });
+    marcados += e.paso(aImagen(W), W, 'Right', .95).dudosos.length; }
+  sí(marcados <= 3, `el temblor normal de las puntas casi nunca se toma por dedo inventado (${marcados} dedos sostenidos en 60 lecturas)`); }
 console.log(`${ok} bien · ${mal} mal`); process.exit(mal ? 1 : 0);

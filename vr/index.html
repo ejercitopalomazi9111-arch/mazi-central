@@ -31,6 +31,8 @@
   .estado{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center }
   .estado span{ padding:8px 14px; border-radius:99px; background:var(--sup); box-shadow:inset 0 0 0 2px #3C2652; font-size:15px; font-weight:700; color:var(--suave) }
   .estado span.si{ color:#fff; box-shadow:inset 0 0 0 2px var(--acento) }
+  #version{ margin-top:-10px; font-size:14px; font-weight:700; color:var(--suave) }
+  #version.nueva{ color:#fff }
   #gira{ position:fixed; inset:0; z-index:6; display:none; place-items:center; background:#0B0513; font-size:22px; font-weight:800; text-align:center; padding:30px }
   @media (orientation: portrait){ body.dentro #gira{ display:grid } }
 </style>
@@ -41,6 +43,7 @@
   <div class="caja">
     <img src="../marca/paloma-2026/logo-icono.svg" alt="">
     <h1>Mazi <em>VR</em></h1>
+    <p id="version"></p>
     <div class="estado"><span id="eControl">Control</span><span id="eVideos">Archivos</span><span id="eGuardado">Sin internet</span></div>
     <button class="boton" id="bEntrar" type="button">Entrar</button>
     <button class="boton sec" id="bPantalla" type="button">Sin visor</button>
@@ -82,11 +85,20 @@ const armado = montar();
 /* el último error de la vez pasada, con su código, dónde y cuándo (vr.js, fallo) */
 try{ const L = JSON.parse(localStorage.getItem('mazivr.errores') || '[]'), u = L[L.length - 1];
   if(u){ const el = $('#ultimoError'); el.textContent = `Último error: ${u.codigo} · ${u.donde} · ${u.msg}${u.linea ? ' · ' + u.linea : ''} · en «${u.vista}» a las ${u.hora}`; el.hidden = false; } }catch{}
+/* LA VERSIÓN (Carlos, 19 nov: «un mensajito que diga la versión en la que estás y que se actualizó»). Va igual que la
+   de sw.js (pruebas-sinred.mjs lo revisa). La primera vez que se abre una versión nueva dice «actualizada»; y si el
+   trabajador de fondo ya trae una más nueva que esta página, recarga sola (sólo en la entrada, una vez) */
+const VERSION = 33;
+{ let antes = 0; try{ antes = +localStorage.getItem('mazivr.version') || 0; if(antes !== VERSION) localStorage.setItem('mazivr.version', VERSION); }catch{}
+  const el = $('#version'); el.textContent = antes < VERSION ? `v${VERSION} · actualizada` : `v${VERSION}`; el.classList.toggle('nueva', antes < VERSION); }
+const versionSW = (n) => { if(!(n > VERSION) || document.body.classList.contains('dentro')) return;
+  try{ if(sessionStorage.getItem('mazivr.recargo') === String(n)) return; sessionStorage.setItem('mazivr.recargo', String(n)); }catch{ return; }
+  $('#version').textContent = `v${n} · cargando`; location.reload(); };
 /* «Sin internet» se prende cuando todo quedó guardado en el teléfono (sw.js) */
 if('serviceWorker' in navigator && !navigator.webdriver || 'serviceWorker' in navigator && new URLSearchParams(location.search).has('sw')){
   navigator.serviceWorker.register('sw.js').catch(() => {});
   const preguntar = () => navigator.serviceWorker.controller?.postMessage('listo?');
-  navigator.serviceWorker.addEventListener('message', (e) => { if(e.data?.listo != null) $('#eGuardado')?.classList.toggle('si', !!e.data.listo); if(e.data && !e.data.listo) setTimeout(preguntar, 3000); });
+  navigator.serviceWorker.addEventListener('message', (e) => { if(e.data?.listo != null) $('#eGuardado')?.classList.toggle('si', !!e.data.listo); versionSW(e.data?.version); if(e.data && !e.data.listo) setTimeout(preguntar, 3000); });
   navigator.serviceWorker.ready.then(() => setTimeout(preguntar, 500));
   navigator.serviceWorker.addEventListener('controllerchange', () => setTimeout(preguntar, 500));
 }

@@ -17,10 +17,14 @@
      2. Al voltear la mano (palma arriba) la imagen queda en ESPEJO; la semejanza 2D (giro + escala) no puede representar un
         espejo y lo «resolvía» girando media vuelta: los dedos guardados salían apuntando al revés, fuera de la pantalla.
         Ahora: si la palma cambió de lado en la imagen (espejo), no se pega ningún dedo viejo; se usa la lectura.
+     3. (fotos del 19 nov en la noche) Los huesos de la punta miden 2 cm y el ruido de MediaPipe es de medio centímetro:
+        compararlos UNO POR UNO marcaba «raro» a cada rato y la mano abierta salía con los dedos de hace un momento
+        (cortos y doblados en los nudillos). Ahora se compara el dedo ENTERO (sus tres falanges sumadas) y el hueso de la
+        palma aparte; un hueso suelto sólo cuenta si se dispara al doble o se encoge a menos de un tercio.
    Sin dependencias: se prueba en Node (vr/pruebas-manos-estables.mjs). Puntos: { x, y, z }. */
 export const DEDOS = [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16], [17, 18, 19, 20]];
 const PALMA = [0, 5, 9, 13, 17];
-export const LIM = { largo: .45, angulo: 125, voltea: 120, sostenerVolteo: 3, aprender: 12, cambiarLado: 8, sostenerDedo: 4, reaprender: .08 };
+export const LIM = { largo: .45, angulo: 125, voltea: 120, sostenerVolteo: 3, aprender: 12, cambiarLado: 8, sostenerDedo: 3, reaprender: .08, hueso: 1 };
 const d3 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
 const resta = (a, b) => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
 const cruz = (a, b) => ({ x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x });
@@ -67,7 +71,9 @@ export function crearEstable(op = {}){
     if(!st.huesos){ st.muestras.push(h); if(st.muestras.length >= L0.aprender) st.huesos = DEDOS.map((_, f) => [0, 1, 2, 3].map((b) => mediana(st.muestras.map((m) => m[f][b])))); }
     else {
       DEDOS.forEach((dedo, f) => {
-        const raro = h[f].some((v, b) => Math.abs(v / (st.huesos[f][b] || 1e-6) - 1) > L0.largo)
+        const H = st.huesos[f], rel = (a, b) => Math.abs(a / (b || 1e-6) - 1), dedoAhora = h[f][1] + h[f][2] + h[f][3], dedoAntes = H[1] + H[2] + H[3];
+        const raro = rel(h[f][0], H[0]) > L0.largo || rel(dedoAhora, dedoAntes) > L0.largo
+          || h[f].some((v, b) => v > H[b] * (1 + L0.hueso) || v < H[b] / 3)
           || [0, 1, 2].some((b) => { const a = resta(W[dedo[b]], b ? W[dedo[b - 1]] : W[0]), c = resta(W[dedo[b + 1]], W[dedo[b]]); return angulo(a, c) > L0.angulo; });
         const ref = st.dedoReal[f];
         /* sostener SÓLO si: hay un dedo real guardado, la palma no se volteó en espejo desde entonces y no lleva demasiado */
@@ -81,8 +87,8 @@ export function crearEstable(op = {}){
         st.sostenido[f] = 0;
         st.dedoReal[f] = { L: dedo.map((i) => ({ ...L[i] })), W: W ? dedo.map((i) => ({ ...W[i] })) : null, palmaL: L.map((p) => ({ ...p })) };
         /* si siguió «raro» todo el tiempo que se sostuvo, ERA real (la mano se aprendió mal, p. ej. cerrada): se re-aprende
-           ese dedo de golpe; si no, poco a poco */
-        if(raro) st.huesos[f] = h[f].slice();
+           ese dedo a medias (un dedo inventado y tapado mucho rato no se vuelve «lo normal» de un jalón); si no, poco a poco */
+        if(raro) st.huesos[f] = st.huesos[f].map((v, b) => (v + h[f][b]) / 2);
         else st.huesos[f] = st.huesos[f].map((v, b) => v + (h[f][b] - v) * L0.reaprender);
       });
     }

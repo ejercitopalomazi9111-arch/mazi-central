@@ -42,6 +42,14 @@ const guardado = await p.evaluate(async () => { const c = await caches.open((awa
 ok(guardado.includes('/vr/') && guardado.some((u) => u.endsWith('hand_landmarker.task')) && guardado.some((u) => u.endsWith('vision_wasm_internal.wasm')),
   `guarda la página y las manos (${guardado.length} archivos)`);
 ok(!guardado.includes('/vr/index.html'), 'la página se guarda con su dirección limpia, no la redirigida');
+/* la versión: la de la página y la del trabajador son la misma, se ve en la entrada y dice «actualizada» al cambiar */
+{ const vPag = +fs.readFileSync(path.join(raiz, 'vr/index.html'), 'utf8').match(/const VERSION = (\d+)/)[1], vSW = +fs.readFileSync(path.join(raiz, 'vr/sw.js'), 'utf8').match(/mazivr-v(\d+)/)[1];
+  ok(vPag === vSW, `la versión de la página (${vPag}) y la del trabajador (${vSW}) son la misma`);
+  ok((await p.textContent('#version')).trim() === `v${vPag} · actualizada`, `la primera vez dice «v${vPag} · actualizada»`);
+  await p.reload({ waitUntil: 'load' });
+  ok((await p.textContent('#version')).trim() === `v${vPag}`, `al volver a abrir sólo dice «v${vPag}»`);
+  await p.evaluate(() => localStorage.setItem('mazivr.version', '1')); await p.reload({ waitUntil: 'load' });
+  ok((await p.textContent('#version')).trim() === `v${vPag} · actualizada`, 'viniendo de una versión vieja, dice «actualizada»'); }
 /* una primera entrada con red: aquí se aprende cuál es la cámara */
 await p.click('#bEntrar'); await p.waitForFunction(() => window.__vr?.ahora() === 'inicio', null, { timeout: 15000 });
 await p.waitForTimeout(1500);

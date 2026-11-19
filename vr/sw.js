@@ -9,7 +9,7 @@
      sale de lo guardado marcado como redirigido: el navegador rechaza una navegación «redirigida» (lo que tumbó a
      INKWELL el 11 nov, ver inkwell/sw.js v31).
    Prueba: node vr/pruebas-sinred.mjs (apaga el servidor de a de veras). */
-const V = 'mazivr-v32';
+const V = 'mazivr-v33';
 const APP = ['./', './vr.js', './iconos.js', './teclado.js', './cine.js', './lector.js', './sables.js', './sable-mano.js', './objetos.js', './musica.js', './agarre.js', './temshop.js', './seis.js', './ancla.js', './nube.js', './limites.js', './prediccion.js', './monarca/monarca.js', './monarca/narrador.js', './monarca/travesuras.js', './pantalla.js', './manos.js', './manos-estables.js', './gestos.js',
   './manifest.webmanifest', './silencio.mp4', './sonidos/toque.wav', './sonidos/whoosh.wav', './sonidos/ding.wav',
   './vendor/three.module.min.js', './vendor/three.core.min.js', './vendor/loaders/GLTFLoader.js', './vendor/utils/BufferGeometryUtils.js', './vendor/utils/SkeletonUtils.js',
@@ -45,8 +45,9 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('message', async (e) => {
   if(e.data !== 'listo?') return;
   const c = await caches.open(V), falta = [];
-  for(const u of [...APP, ...PESADO]){ const k = /\/$/.test(u) ? clave(u) : new URL(u, self.location.href).href; if(!(await c.match(k))) falta.push(u); }
-  e.source?.postMessage({ listo: falta.length === 0, falta });
+  /* los audios del narrador no cuentan: si falta uno, el narrador usa la voz del teléfono (narrador.js) */
+  for(const u of [...APP, ...PESADO].filter((x) => !x.includes('/narrador/'))){ const k = /\/$/.test(u) ? clave(u) : new URL(u, self.location.href).href; if(!(await c.match(k))) falta.push(u); }
+  e.source?.postMessage({ listo: falta.length === 0, falta, version: +V.replace(/\D/g, '') });
 });
 
 /* lo que no cambia (three, el modelo de manos, sonidos) no se vuelve a pedir: bajar 7.5 MB en cada visita sería peor

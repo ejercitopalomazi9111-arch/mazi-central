@@ -68,10 +68,13 @@ export async function iniciarManos(V){
        desconfianza: se acerca poco a poco al nuevo lugar en vez de saltar.
      · Si la mano se pierde un instante (≤ 0.35 s), se sostiene donde iba: no se suelta lo que traías ni desaparece el cursor. */
   const UE = { minCorte: 1.4, beta: 9, dCorte: 1 };
+  const UE_DIBUJO = { minCorte: 4, beta: 20, dCorte: 1 };
   const alfa = (corte, dt) => { const r = 2 * Math.PI * corte * dt; return r / (r + 1); };
-  function filtrar(m, L, ahora){
-    const f = m.filtro, dt = f ? Math.max(1 / 120, (ahora - f.t) / 1000) : 1 / 30;
-    if(!f){ m.filtro = { t: ahora, p: L.map((q) => ({ x: q.x, y: q.y, z: q.z, dx: 0, dy: 0, dz: 0 })) }; return L.map((q) => ({ ...q })); }
+  /* `clave` y `op`: el dibujo sobre tu mano (realidad mixta) usa su PROPIO filtro, más ligero y sin frenar brincos: lo que
+     se pinta encima de la cámara tiene que ir pegado a la imagen; el filtro fuerte se queda para los gestos y el rayo */
+  function filtrar(m, L, ahora, clave = 'filtro', op = UE, frenar = true){
+    const f = m[clave], dt = f ? Math.max(1 / 120, (ahora - f.t) / 1000) : 1 / 30;
+    if(!f){ m[clave] = { t: ahora, p: L.map((q) => ({ x: q.x, y: q.y, z: q.z, dx: 0, dy: 0, dz: 0 })) }; return L.map((q) => ({ ...q })); }
     const escala = Math.hypot(L[9].x - L[0].x, L[9].y - L[0].y) || .1, mw = Math.hypot(L[0].x - f.p[0].x, L[0].y - f.p[0].y);
     const out = L.map((q, i) => {
       const P = f.p[i]; let x = q.x, y = q.y, z = q.z;
@@ -79,12 +82,12 @@ export async function iniciarManos(V){
       /* …pero sólo 2 lecturas seguidas: si sigue «brincado», era movimiento de verdad (abrir el puño, girar la mano) y se
          acepta. Antes se frenaba sin límite y los dedos se quedaban atrás, doblados (fotos de Carlos, 19 nov) */
       const salto = Math.hypot(x - P.x, y - P.y) - mw;
-      if(i > 4 && salto > escala * .35 && (P.frenos || 0) < 2){ P.frenos = (P.frenos || 0) + 1; x = P.x + (x - P.x) * .25; y = P.y + (y - P.y) * .25; z = P.z + (z - P.z) * .25; }
+      if(frenar && i > 4 && salto > escala * .35 && (P.frenos || 0) < 2){ P.frenos = (P.frenos || 0) + 1; x = P.x + (x - P.x) * .25; y = P.y + (y - P.y) * .25; z = P.z + (z - P.z) * .25; }
       else if(salto <= escala * .35) P.frenos = 0;
       else { P.frenos = 0; P.x = x; P.y = y; P.z = z; P.dx = P.dy = P.dz = 0; }
-      const ad = alfa(UE.dCorte, dt);
+      const ad = alfa(op.dCorte, dt);
       P.dx += ad * ((x - P.x) / dt - P.dx); P.dy += ad * ((y - P.y) / dt - P.dy); P.dz += ad * ((z - P.z) / dt - P.dz);
-      const vel = Math.hypot(P.dx, P.dy), a = alfa(UE.minCorte + UE.beta * vel, dt);
+      const vel = Math.hypot(P.dx, P.dy), a = alfa(op.minCorte + op.beta * vel, dt);
       P.x += a * (x - P.x); P.y += a * (y - P.y); P.z += a * (z - P.z);
       return { x: P.x, y: P.y, z: P.z };
     });
@@ -95,7 +98,7 @@ export async function iniciarManos(V){
     m.fW.forEach((P, i) => { P.x += (W[i].x - P.x) * .6; P.y += (W[i].y - P.y) * .6; P.z += (W[i].z - P.z) * .6; }); return m.fW.map((q) => ({ ...q })); }
   estado.cuadro = (t) => {
     const video = V.video, ahora = performance.now();
-    if(!V.hayCamara() || !V.AJ.manos || video.readyState < 2){ manos.forEach((m) => { m.g.visible = false; }); rayosVis.forEach((x) => { x.linea.visible = x.cursor.visible = false; }); V.extra.rayo = null; V.extra.rayos = []; V.extra.manos = []; return; }
+    if(!V.hayCamara() || !V.AJ.manos || video.readyState < 2){ manos.forEach((m) => { m.g.visible = false; }); rayosVis.forEach((x) => { x.linea.visible = x.cursor.visible = false; }); V.extra.rayo = null; V.extra.rayos = []; V.extra.manos = []; V.extra.camSinc = false; return; }
     /* un cuadro sí y uno no: en el iPhone el rastreo cuesta y la pantalla va a 60 */
     /* y si el teléfono va lento (el rastreo tarda más de 28 ms), uno de cada tres: que el visor no se trabe por las manos */
     /* MÁS SEGUIDO SI SE PUEDE (guía de Carlos: «aumentar la frecuencia del tracking»): si el rastreo tarda menos de 14 ms,
@@ -103,8 +106,13 @@ export async function iniciarManos(V){
     if(++cuadroN % (estado.ms > 28 ? 3 : estado.ms > 14 ? 2 : 1) || video.currentTime === ultimoT) return;
     ultimoT = video.currentTime;
     const t0 = performance.now(); let r;
-    try{ r = lm.detectForVideo(video, ahora); }catch(e){ estado.error = String(e?.message || e); return; }
+    try{ r = lm.detectForVideo(video, ahora); }catch(e){ estado.error = String(e?.message || e); V.extra.camSinc = false; return; }
     estado.ms = Math.round(performance.now() - t0);
+    /* LA IMAGEN Y LOS PUNTOS, DEL MISMO CUADRO (fotos de Carlos, 19 nov en la noche: los puntos iban un paso atrás de su mano
+       y los dedos salían cortos). El rastreo corre uno de cada dos o tres cuadros y la cámara se pintaba en TODOS: la
+       imagen se adelantaba a los puntos. Con una mano a la vista en la mixta, la cámara sólo se repinta cuando hubo
+       rastreo (vr.js), así lo que ves y lo que se dibuja encima son la misma foto. */
+    V.extra.camFresco = true; V.extra.camSinc = !!V.AJ.mixta && r.landmarks.length > 0;
     const asp = video.videoWidth / video.videoHeight, tx = Math.tan(V.campoCamara() * Math.PI / 360), ty = tx / asp;
     const voltear = V.AJ.camVoltear;
     estado.manos = r.landmarks.length; estado.gesto = '';
@@ -133,7 +141,7 @@ export async function iniciarManos(V){
       const c = asign[k];
       /* perdida un instante: se sostiene como iba (no se suelta lo agarrado, el cursor no parpadea) */
       if(!c && m.info && ahora - (m.vistaEn || 0) < 350){ m.info.estimada = true; visibles.push(m.info); return; }
-      if(!c){ m.g.visible = false; m.pellizco = false; m.palmaDesde = 0; m.suave = null; m.ult = null; m.info = null; m.fijo = null; m.hist = null; m.etiqueta = ''; m.G = null; m.filtro = null; m.fW = null; m.estable = crearEstable(); return; }
+      if(!c){ m.g.visible = false; m.pellizco = false; m.palmaDesde = 0; m.suave = null; m.ult = null; m.info = null; m.fijo = null; m.hist = null; m.etiqueta = ''; m.G = null; m.filtro = null; m.filtroDibujo = null; m.fW = null; m.estable = crearEstable(); return; }
       m.vistaEn = ahora;
       /* antes de suavizar: dedos inventados, palma volteada de golpe y lado que brinca (manos-estables.js) */
       const E = m.estable.paso(c.L, c.W, c.etiqueta, c.seguro); m.dudosos = E.dudosos; m.sostenida = E.sostenida;
@@ -143,7 +151,8 @@ export async function iniciarManos(V){
          mismo lugar; los puntos se ponen a esa misma distancia y en la misma dirección, así caen justo encima de tu mano y no
          se desdoblan entre ojos. Sin la mixta no se ve tu mano: se dibujan a la distancia que se calcula, como una mano virtual */
       const mixta = V.AJ.mixta, lejos = 19.5;
-      const nuevos = L.map((p) => mixta ? aEspacio({ x: p.x, y: p.y, z: 0 }, lejos, tx, ty, new THREE.Vector3()) : aEspacio(p, dist, tx, ty, new THREE.Vector3()));
+      const Ld = mixta ? filtrar(m, E.L, ahora, 'filtroDibujo', UE_DIBUJO, false) : L;
+      const nuevos = Ld.map((p) => mixta ? aEspacio({ x: p.x, y: p.y, z: 0 }, lejos, tx, ty, new THREE.Vector3()) : aEspacio(p, dist, tx, ty, new THREE.Vector3()));
       m.suave = nuevos;   /* ya viene filtrado (un euro): sin otra capa de retraso */
       m.mixta = mixta;
       m.suave.forEach((q, i) => { m.pts[i].position.copy(q); m.pts[i].scale.setScalar(q.length() * (i === 8 || i === 4 ? .0062 : .0042)); });

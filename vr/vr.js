@@ -105,7 +105,7 @@ const video = document.createElement('video'); video.playsInline = true; video.m
    jalaban en el cuarto virtual (sin la mixta) */
 video.style.cssText = 'position:fixed; left:0; bottom:0; width:2px; height:2px; opacity:.01; pointer-events:none; z-index:0';
 (document.body ? document.body.appendChild(video) : addEventListener('DOMContentLoaded', () => document.body.appendChild(video)));
-let camTex = null, flujo = null, ultra = false, camVIO = false;
+let camTex = null, camNuevo = true, flujo = null, ultra = false, camVIO = false;
 /* lo que abre la cámara de lado. En Android casi nunca se reconoce la gran angular por su nombre y la imagen salía como
    una ventanita en medio de la vista (foto de Carlos, 18 nov): si la cámara abre menos que el ojo, se estira hasta
    llenarlo. Las manos usan esta misma medida, así que siguen cayendo sobre tu mano */
@@ -176,7 +176,10 @@ export async function abrirCamara(){
 }
 async function ponerFlujo(){
   video.srcObject = flujo; await video.play();
-  if(!camTex){ camTex = new THREE.VideoTexture(video); camTex.colorSpace = THREE.SRGBColorSpace; }
+  /* textura a mano (no VideoTexture): se repinta cuando llega un cuadro nuevo de la cámara, o —con una mano a la vista en la
+     mixta— sólo cuando el rastreo de manos leyó ESE cuadro (manos.js, camSinc), para que los puntos caigan sobre tu mano */
+  if(!camTex){ camTex = new THREE.Texture(video); camTex.colorSpace = THREE.SRGBColorSpace; camTex.minFilter = camTex.magFilter = THREE.LinearFilter; camTex.generateMipmaps = false;
+    if(video.requestVideoFrameCallback){ const nuevo = () => { camNuevo = true; video.requestVideoFrameCallback(nuevo); }; video.requestVideoFrameCallback(nuevo); } else camNuevo = null; }
   pared.material.map = camTex; pared.material.color.set(0xffffff); pared.material.needsUpdate = true;
   ponerMixta(AJ.mixta);   /* la cámara llega después de entrar: si la mixta ya estaba puesta, ahora sí se ve */
   return true;
@@ -621,7 +624,11 @@ function cuadro(t){
   /* la mira sólo cuando estás viendo un botón (Carlos, 18 nov: «si no estoy mirando a ningún botón, que el cursor desaparezca, es molesto») */
   mira.visible = !extra.rayo && !!viendo;
   if(aviso.malla.visible && performance.now() > avisoHasta) aviso.malla.visible = false;
-  if(pared.visible) medirPared();
+  if(pared.visible){ medirPared();
+    /* camNuevo === null: sin aviso de cuadros (navegador viejo), se repinta siempre */
+    if(extra.camSinc ? extra.camFresco : camNuevo !== false){ if(video.readyState >= 2) camTex.needsUpdate = true; if(camNuevo) camNuevo = false; }
+  }
+  extra.camFresco = false;
 
   /* dos ojos a dos texturas, y el pase del lente a la pantalla */
   rig.updateMatrixWorld(true);

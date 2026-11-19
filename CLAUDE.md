@@ -639,6 +639,8 @@ dependemos.
    | `ahora[i] = true` sólo para lo apretado arma bien el arreglo de botones del cuadro | deja HUECOS, y `map`/`forEach` se los saltan: `antes[i]` nunca vuelve a falso | sin control conectado, Opciones del teclado y los gestos de las manos de Mazi VR funcionaban UNA sola vez; lo cazó la prueba del modo exposición. El arreglo nace lleno: `new Array(17).fill(false)` |
    | el filtro de Douglas-Peucker simplifica cualquier contorno | un anillo de GeoJSON CIERRA repitiendo el primer punto: con los dos extremos iguales la distancia a «la recta» es la del punto al extremo y todo se reduce a dos puntos | el mapa de Norteamérica salió vacío dos veces sin error. Se le quita el último punto antes de simplificar |
 
+   | los puntos de la mano dibujados sobre la cámara caen sobre la mano si la geometría cuadra | la cámara se repintaba en CADA cuadro (VideoTexture) y el rastreo corría uno de cada dos o tres: la imagen iba adelante de los puntos. Y el estabilizador comparaba cada falange (2 cm) contra un ruido de MediaPipe de medio centímetro: marcaba dedos «inventados» 12 veces por minuto y los dibujaba como estaban hace un momento | en el visor, la mano abierta salía con los dedos cortos y doblados en los nudillos (fotos de Carlos, 19 nov). Con una mano a la vista en la mixta, la cámara sólo se repinta cuando hubo rastreo (`camSinc` en `vr/manos.js` y `vr/vr.js`), y el estabilizador mide el dedo entero (`vr/pruebas-manos-estables.mjs` §10) |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 13. **CERO PARPADEO. Nunca, jamás, de los jamases** (Carlos, 14 nov, por el ajedrez de CARYMO). Tocar algo o que
