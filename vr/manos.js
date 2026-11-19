@@ -8,7 +8,7 @@
    del medio): no es exacto, pero alcanza para apuntar y tocar cosas cercanas. */
 import { leer, tamano, contadorPuno } from './gestos.js';
 import { crearEstable } from './manos-estables.js';
-import { crearManos3D } from './mano3d.js';
+import { crearManos3D, ladoPorForma, elegirLado } from './mano3d.js';
 const MP = '../presentaciones/vendor/mediapipe/';
 const HUESOS = [[0, 1], [1, 2], [2, 3], [3, 4], [0, 5], [5, 6], [6, 7], [7, 8], [5, 9], [9, 10], [10, 11], [11, 12], [9, 13], [13, 14], [14, 15], [15, 16], [13, 17], [17, 18], [18, 19], [19, 20], [0, 17]];
 
@@ -168,7 +168,8 @@ export async function iniciarManos(V){
          con la cámara de atrás, su «Left» es tu mano derecha. */
       const modelo = conModelo(); m.lin.visible = !modelo; m.pts.forEach((b, i) => { b.visible = !modelo || i === 4 || i === 8; });
       if(modelo){ const k3 = mixta ? lejos / dist : 1, P3 = Ld.map((p) => aEspacio(p, dist, tx, ty, new THREE.Vector3()).multiplyScalar(k3));
-        manos3d.poner(k, P3, (m.etiqueta || c.etiqueta) === 'Right' ? 'izq' : 'der', mixta); }
+        if(ahora - (m.visto3d || 0) > 600) m.lado3d = {}; m.visto3d = ahora;   /* mano nueva: decide otra vez */
+        manos3d.poner(k, P3, elegirLado(m.lado3d, ladoPorForma(THREE, P3), (m.etiqueta || c.etiqueta) === 'Right' ? 'izq' : 'der'), mixta); }
       else manos3d?.esconder(k);
       /* los gestos */
       const G = leer(L, asp); m.G = G;
