@@ -36,7 +36,7 @@ const envolver = (a) => Math.atan2(Math.sin(a), Math.cos(a));
    lente queda arriba a la izquierda de lo que ves; con 270°, abajo a la derecha. Se ajusta en Ajustes si no cuadra. */
 export function ojoPorDefecto(angulo){ return angulo === 270 ? [-.053, -.018, -.06] : [.053, .018, -.06]; }
 
-export const LIMITES = { brinco: .30, desliz: .35, agitadoPasos: .15, coastMs: 300, alinear: .02 };
+export const LIMITES = { brinco: .30, desliz: .35, agitadoPasos: .15, coastMs: 300, alinear: .02, quietoAgitado: .06, quietoGiro: .1 };
 
 export function crearSeis(op = {}){
   const L = { ...LIMITES, ...op };
@@ -57,7 +57,7 @@ export function crearSeis(op = {}){
     if(!pose){ st.antes = null; st.estado = st.alineado ? 'retenido' : 'sin'; if(st.alineado) st.tirado.perdido++; return st; }
     const qc = camaraThree(pose.q);
     const ojoVio = [0, 1, 2].map((i) => pose.p[i] + qRot(pose.q, ojo)[i]);
-    const e = aThree(ojoVio);
+    const e = aThree(ojoVio); st.eAhora = e;   /* tus ojos en el mundo del VIO (en ejes de three): la nube se pone respecto a ellos */
     /* el giro entre los dos mundos: al primer cuadro se pone de golpe; luego se acerca despacio (el del giroscopio
        también se va un poco con el tiempo, y así no se pelean) */
     const meta = envolver(rumboDe(qGiro) - rumboDe(qc));
@@ -72,6 +72,10 @@ export function crearSeis(op = {}){
     if(largo > L.brinco){ st.tirado.brinco++; d = [0, 0, 0]; st.estado = 'brinco'; }
     else if(st.coastDesde && t - st.coastDesde > L.coastMs){ st.tirado.coast++; d = [0, 0, 0]; st.estado = 'coast'; }
     else if(lado / dt > L.desliz && (quieto?.agitado ?? 1) < L.agitadoPasos){ st.tirado.desliz++; d = [0, d[1], 0]; st.estado = 'desliz'; }
+    /* TELÉFONO QUIETO, MUNDO QUIETO (Carlos, 19 nov: «de repente se empieza a mover cuando yo ni siquiera me estaba
+       moviendo»): si el acelerómetro y el giroscopio dicen que el teléfono no se mueve, no se suma nada aunque el VIO se
+       vaya despacio. Mover la cabeza siempre gira algo; un teléfono que no gira ni se sacude no se está trasladando */
+    else if((quieto?.agitado ?? 1) < L.quietoAgitado && (quieto?.giro ?? 1) < L.quietoGiro && largo > 0){ st.tirado.quieto = (st.tirado.quieto || 0) + 1; d = [0, 0, 0]; st.estado = 'quieto'; }
     const c = Math.cos(st.phi), s = Math.sin(st.phi);
     /* girar el pedazo por phi alrededor de y (de rumbo VIO a rumbo giroscopio) */
     const dx = c * d[0] + s * d[2], dz = -s * d[0] + c * d[2];

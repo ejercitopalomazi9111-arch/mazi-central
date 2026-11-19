@@ -17,9 +17,10 @@
    ══════════════════════════════════════════════════════════════════════════ */
 import * as THREE from 'three';
 import { crearSeis, ojoPorDefecto } from './seis.js';
+import { crearNube } from './nube.js';
 
 /* ── ajustes: se guardan en el teléfono (sólo comodidad; si se borran, salen los de fábrica) ── */
-const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true, menuTam: 1, menuDist: 1, fondo: 0, seis: false };
+const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true, menuTam: 1, menuDist: 1, fondo: 0, seis: false, puntos: true };
 const AJ = { ...FABRICA };
 try{ Object.assign(AJ, JSON.parse(localStorage.getItem('mazivr.ajustes') || '{}')); }catch{}
 const guardar = () => { try{ localStorage.setItem('mazivr.ajustes', JSON.stringify(AJ)); }catch{} };
@@ -107,9 +108,13 @@ let camTex = null, flujo = null, ultra = false, camVIO = false;
    una ventanita en medio de la vista (foto de Carlos, 18 nov): si la cámara abre menos que el ojo, se estira hasta
    llenarlo. Las manos usan esta misma medida, así que siguen cayendo sobre tu mano */
 const ojoH = () => 2 * Math.atan(Math.tan(AJ.campo * Math.PI / 360) * Math.max(.5, (W / 2) / Math.max(1, H))) * 180 / Math.PI;
-export const campoCamara = () => AJ.camCampo || (ultra ? 104 : Math.max(69, Math.min(110, ojoH())));
+/* con 6DoF la imagen va a su campo REAL (el de la lente principal): así los puntitos y lo 3D caen justo sobre tus cosas */
+const campoVIO = () => { const k = camVIO && seis?.vio?.intrinsecos?.(640, 480); return k ? 2 * Math.atan(320 / k.fx) * 180 / Math.PI : 0; };
+export const campoCamara = () => AJ.camCampo || campoVIO() || (ultra ? 104 : Math.max(69, Math.min(110, ojoH())));
 const pared = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0x000000, depthWrite: false, depthTest: false, toneMapped: false }));
 pared.renderOrder = -10; pared.position.z = -20; pared.visible = false; cabeza.add(pared);
+/* los puntitos del rastreo (nube.js): los que sigue la cámara, sobre la imagen; y el mapa del cuarto que se va dibujando */
+export const nube = crearNube({ THREE, escena, rig, pared });
 export async function abrirCamara(){
   if(flujo) return true;
   /* con 6DoF, la cámara PRINCIPAL a 640×480 y 60 cuadros: su lente es la que conoce el rastreo (vio.js) */
@@ -211,10 +216,11 @@ function leerCabeza(){
     const st = seis.filtro.paso(pose, [qCab.w, qCab.x, qCab.y, qCab.z], seis.vio.S, performance.now(), seis.ojo || ojoPorDefecto((((screen.orientation?.angle ?? window.orientation ?? 90) % 360) + 360) % 360));
     cabeza.position.set(st.pos[0], st.pos[1], st.pos[2]);
     if(seis.vio.S.listo) try{ vigilarAncla(); }catch(e){ fallo('E-ANCLA', 'vigilarAncla', e); }
+    try{ nube.cuadro(seis.vio, seis.filtro, { mostrar: AJ.puntos !== false }); }catch(e){ fallo('E-NUBE', 'nube.cuadro', e); }
     if(seis.vio.S.error && seis.vio.S.error !== seis.errorVisto){ seis.errorVisto = seis.vio.S.error; fallo('E-6DOF-VIO', 'trabajador del rastreo (worker.js)', seis.vio.S.error); }
     const e = seis.vio.S.estado, aviso6 = !seis.vio.S.listo ? '' : e === 'track' ? '6DoF' : e === 'coast' ? 'Muévete despacio' : e === 'wait' ? 'Quédate quieto' : e === 'init' ? 'Mueve el teléfono de lado' : String(e || '').startsWith('reset') ? 'Rastreo perdido' : '';
     if(aviso6 && aviso6 !== seis.aviso && performance.now() - seis.avisoEn > 1500){ seis.aviso = aviso6; seis.avisoEn = performance.now(); hud(aviso6, 1.6); }
-  } else if(cabeza.position.lengthSq()) cabeza.position.set(0, 0, 0);
+  } else { if(cabeza.position.lengthSq()) cabeza.position.set(0, 0, 0); if(nube.vivos.visible || nube.mapa.visible) nube.cuadro(null); }
 }
 /* ── 6DoF (ENGINEERING_LOG 006): el VIO de visloc-rs con la MISMA cámara, y el filtro que no te deja salir volando ── */
 export const seis = { vio: null, filtro: crearSeis(), ojo: null, aviso: '', avisoEn: 0, error: '', ancla: null, anclaEn: 0, anclaCargando: false, salaPuesta: false, anclaVista: false };
