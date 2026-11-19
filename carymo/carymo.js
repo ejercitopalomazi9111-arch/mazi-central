@@ -1712,32 +1712,36 @@ let horarioModo = guarda.leer('est.horarioModo', 'semana');
 const PPM = 1.2;   /* pixeles por minuto en la semana */
 /* en una columna de ~60 px no cabe «Matemáticas»: se usa el nombre corto de la materia si lo tiene */
 const nombreCorto = (nombre) => { const m = listaMaterias().find((x) => quitarAcentos(x.nombre) === quitarAcentos(nombre)); return m?.corto || nombre; };
-/* ninguna palabra se parte a la mitad («Matem áticas»): la letra baja hasta 8.5 px para que la palabra más larga quepa,
-   y si ni así, se abrevia con punto («Matemát.»). El ancho de la letra se estima (~0.6 em por letra en Titulo) */
-function ajustarNombre(nombre, ancho){
-  const largas = nombre.split(/\s+/), L = Math.max(...largas.map((w) => w.length)), tam = Math.max(8.5, Math.min(11, ancho / (L * .6)));
-  const caben = Math.floor(ancho / (tam * .6));
-  return { tam: +tam.toFixed(1), texto: largas.map((w) => w.length > caben ? w.slice(0, Math.max(3, caben - 1)) + '.' : w).join(' ') };
+/* ninguna palabra se parte a la mitad («Matem áticas»): después de pintar, cada bloque MIDE sus palabras con su letra
+   real; la letra baja hasta 8.5 px para que la más larga quepa, y si ni así, la palabra se abrevia con punto («Matemát.»).
+   (Estimar el ancho por letra se quedó corto: seguía partiendo.) Sólo cambia el texto y el tamaño, no crea nodos. */
+const medidor = document.createElement('canvas').getContext('2d');
+function ajustarBloques(raiz){
+  for(const b of $$('.hs-clase b', raiz)){
+    const nombre = b.dataset.nombre || b.textContent; b.dataset.nombre = nombre;
+    const ancho = b.clientWidth - 1, fam = getComputedStyle(b).fontFamily, mide = (t, px) => { medidor.font = `800 ${px}px ${fam}`; return medidor.measureText(t).width; };
+    const palabras = nombre.split(/\s+/); let px = 11;
+    while(px > 8.5 && Math.max(...palabras.map((w) => mide(w, px))) > ancho) px -= .5;
+    const texto = palabras.map((w) => { if(mide(w, px) <= ancho) return w; let k = w.length - 1; while(k > 2 && mide(w.slice(0, k) + '.', px) > ancho) k--; return w.slice(0, k) + '.'; }).join(' ');
+    b.style.fontSize = px + 'px'; if(b.textContent !== texto) b.textContent = texto;
+  }
 }
 function rangoSemana(hz){
   const ini = hz.clases.map((x) => aMin(x.inicio)).filter((x) => x != null), fin = hz.clases.map((x) => aMin(x.fin)).filter((x) => x != null);
   const a = ini.length ? Math.floor(Math.min(...ini) / 60) * 60 : 7 * 60, b = fin.length ? Math.ceil(Math.max(...fin) / 60) * 60 : 14 * 60;
   return [a, Math.max(b, a + 120)];
 }
-function semanaHtml(hz, hoyI, ahora){
-  const [a, b] = rangoSemana(hz), alto = Math.round((b - a) * PPM);
-  /* lo que cabe de texto en un bloque: el ancho de la vista menos la columna de horas, los huecos y el relleno */
-  const anchoTxt = ((($('#vHorario').clientWidth || 358) - 18 - 26 - 16) / 5) - 13;
-  const horas = []; for(let h = a; h <= b; h += 60) horas.push(`<span style="top:${Math.round((h - a) * PPM)}px">${h / 60}</span>`);
+function semanaHtml(hz, hoyI, ahora, diasExamen = new Set()){
+  const [a, b] = rangoSemana(hz), alto = Math.round((b - a) * PPM);  const horas = []; for(let h = a; h <= b; h += 60) horas.push(`<span style="top:${Math.round((h - a) * PPM)}px">${h / 60}</span>`);
   const cols = DIAS_ESC.map((n, i) => {
     const cl = hz.clases.map((x, k) => [x, k]).filter(([x]) => x.dia === i);
     const bloques = cl.map(([x, k]) => { const t = (aMin(x.inicio) - a) * PPM, h = Math.max(22, (aMin(x.fin) - aMin(x.inicio)) * PPM - 2);
       const ahoraEs = i === hoyI && aMin(x.inicio) <= ahora && ahora < aMin(x.fin);
-      return `<button class="hs-clase${ahoraEs ? ' ahora' : ''}" data-hs-clase="${k}" style="top:${Math.round(t)}px;height:${Math.round(h)}px;--c:${colorMateria(x.materia)}" aria-label="${esc(x.materia)}, ${n.toLowerCase()} de ${esc(x.inicio)} a ${esc(x.fin)}" ${(() => { const n2 = ajustarNombre(nombreCorto(x.materia), anchoTxt); return `><b style="font-size:${n2.tam}px">${esc(n2.texto)}</b>`; })()}${h > 34 ? `<small>${esc(x.inicio)}</small>` : ''}</button>`; }).join('');
+      return `<button class="hs-clase${ahoraEs ? ' ahora' : ''}" data-hs-clase="${k}" style="top:${Math.round(t)}px;height:${Math.round(h)}px;--c:${colorMateria(x.materia)}" aria-label="${esc(x.materia)}, ${n.toLowerCase()} de ${esc(x.inicio)} a ${esc(x.fin)}"><b>${esc(nombreCorto(x.materia))}</b>${h > 34 ? `<small>${esc(x.inicio)}</small>` : ''}</button>`; }).join('');
     const linea = i === hoyI && ahora >= a && ahora <= b ? `<i class="hs-ahora" style="top:${Math.round((ahora - a) * PPM)}px"></i>` : '';
     return `<div class="hs-col${i === hoyI ? ' hoy' : ''}" data-hs-dia="${i}" aria-label="${n}">${bloques}${linea}</div>`;
   }).join('');
-  return `<div class="hz-semana" data-desde="${a}" data-hasta="${b}"><div class="hs-cab"><span></span>${DIAS_ESC.map((n, i) => `<b${i === hoyI ? ' class="hoy"' : ''}>${n.slice(0, 3)}</b>`).join('')}</div>
+  return `<div class="hz-semana" data-desde="${a}" data-hasta="${b}"><div class="hs-cab"><span></span>${DIAS_ESC.map((n, i) => `<b${i === hoyI ? ' class="hoy"' : ''}>${n.slice(0, 3)}${diasExamen.has(i) ? '<i class="hz-ex hs-ex" role="img" aria-label="examen"></i>' : ''}</b>`).join('')}</div>
     <div class="hs-cuerpo" style="height:${alto}px;--hora:${60 * PPM}px"><div class="hs-horas">${horas.join('')}</div>${cols}</div>
     <p class="hs-pista">Toca un hueco para agregar una clase</p></div>`;
 }
@@ -1789,8 +1793,9 @@ function pintarHorario(){
     ${ahoraHtml}
     ${examenes.length ? `<div class="seccion-t">Cuánto falta para tus exámenes</div><div class="cuentas-ex">${examenes.slice(0, 4).map(lineaExamen).join('')}</div>` : ''}
     ${hz.clases.length ? `<div class="seccion-t hz-cab">La semana<span class="hz-modo" role="group" aria-label="Cómo ver la semana"><button data-hz-modo="semana" aria-pressed="${horarioModo === 'semana'}">Semana</button><button data-hz-modo="lista" aria-pressed="${horarioModo === 'lista'}">Lista</button></span>${horarioModo === 'lista' ? `<button class="bt mini" id="bEditarHorario" aria-pressed="${horarioEditando}">${ico(horarioEditando ? 'check' : 'pencil')}${horarioEditando ? 'Listo' : 'Editar'}</button>` : ''}</div>
-    ${horarioModo === 'semana' ? semanaHtml(hz, hoyI, ahora) : `<div class="horario${horarioEditando ? ' editando' : ''}">${dias}</div>`}` : ''}
+    ${horarioModo === 'semana' ? semanaHtml(hz, hoyI, ahora, new Set(examenes.filter((p) => diasHasta(p.fecha) <= 6).map((p) => (hoyI + diasHasta(p.fecha)) % 7))) : `<div class="horario${horarioEditando ? ' editando' : ''}">${dias}</div>`}` : ''}
     <div style="display:grid;gap:10px;margin:22px 0 30px"><button class="bt fuerte ancho" id="bAgregarClase">${ico('plus')}Agregar una clase</button><label class="bt ancho" id="bFotoHorario">${ico('camera')}Subir foto de mi horario<input type="file" accept="image/*" hidden id="fFotoHorario"></label><button class="bt ancho" id="bPegarHorario">${ico('clipboard-paste')}Pegar desde Excel</button></div>`;
+  if(horarioModo === 'semana') ajustarBloques(v);
   $('#bAgregarClase').addEventListener('click', () => agregarClase());
   $('#bPegarHorario').addEventListener('click', pegarHorario);
   $('#fFotoHorario').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; if(f) fotoHorario(f); });

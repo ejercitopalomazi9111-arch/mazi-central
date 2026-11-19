@@ -69,7 +69,11 @@ await pg.click('#nav [data-ir="yo"]'); await pg.click('#vYo [data-ir="horario"]'
 const lineas = await pg.$$eval('.cuenta-ex', (x) => x.map((e) => ({ t: e.querySelector('.cx-cab').textContent, dias: e.querySelectorAll('.cx-dia').length, urge: e.classList.contains('urge') })));
 ok(lineas.length === 2 && /Es HOY/.test(lineas[0].t) && lineas[0].urge, 'el examen de hoy va primero y resaltado: «Es HOY»');
 ok(/Faltan 3 días/.test(lineas[1].t) && lineas[1].dias === 2, 'el de dentro de 3 días: «Faltan 3 días», con un puntito por cada día de en medio');
-ok(await pg.locator('.hz-dia .hz-ex').count() === 2, 'y en la semana, los dos días con examen dicen «examen»');
+/* la semana viene de fábrica como calendario (pruebas-semana.mjs): ahí el día con examen lleva un punto; en la lista, la palabra */
+/* los exámenes caen hoy y en 3 días; el horario sólo trae de lunes a viernes, así que cuántos se marcan depende del día en
+   que corre la prueba (un jueves, el de dentro de 3 días cae en domingo y no hay dónde marcarlo) */
+const entreSemana = [0, 3].filter((k) => { const d = new Date(Date.now() + k * 864e5).getDay(); return d >= 1 && d <= 5; }).length;
+ok(await pg.locator('.hz-dia .hz-ex, .hs-cab .hz-ex').count() === entreSemana, `y en la semana, los días con examen lo dicen (${entreSemana} entre semana)`);
 await foto('yo-horario-examen');
 ok(await pg.evaluate(() => document.documentElement.scrollWidth) <= 390, 'nada se sale de lado en el horario');
 ok(err.length === 0, 'cero errores' + (err.length ? ': ' + err[0] : ''));

@@ -30,8 +30,12 @@ ok(await pg.locator('.hs-clase').count() === clases.length, `cada clase es un bl
 const pos = await pg.evaluate(() => { const c = document.querySelectorAll('.hs-col')[0].querySelectorAll('.hs-clase'); return [...c].map((x) => x.offsetTop); });
 ok(pos[1] - pos[0] === 72, `una hora más tarde = 72 px más abajo (${pos[1] - pos[0]})`);
 ok(await pg.locator('.hs-col.hoy[data-hs-dia="1"] .hs-ahora').count() === 1, 'el martes es «hoy» y trae la línea roja de ahora');
-ok(await pg.locator('.hs-col.hoy .hs-clase.ahora').count() === 1 && /Literatura/.test(await pg.textContent('.hs-col.hoy .hs-clase.ahora')), 'la clase de ahorita (la de las 10:00) se marca');
+ok(await pg.locator('.hs-col.hoy .hs-clase.ahora').count() === 1 && /Literatura/.test(await pg.getAttribute('.hs-col.hoy .hs-clase.ahora', 'aria-label')), 'la clase de ahorita (la de las 10:00) se marca');
 const des = await pg.evaluate(() => ({ pag: document.documentElement.scrollWidth, bloques: [...document.querySelectorAll('.hs-clase')].every((x) => { const r = x.getBoundingClientRect(), c = x.parentElement.getBoundingClientRect(); return r.left >= c.left - .5 && r.right <= c.right + .5; }) }));
+/* ninguna palabra se parte: cada palabra del bloque cabe en un renglón (se mide con un rango por palabra) */
+const partidas = await pg.evaluate(() => [...document.querySelectorAll('.hs-clase b')].filter((b) => { const t = b.firstChild; if(!t) return false; let i = 0;
+  for(const w of t.textContent.split(' ')){ const r = document.createRange(); r.setStart(t, i); r.setEnd(t, i + w.length); i += w.length + 1; if(r.getClientRects().length > 1) return true; } return false; }).map((b) => b.textContent));
+ok(!partidas.length, `ninguna palabra se parte a la mitad${partidas.length ? ': ' + partidas.slice(0, 3).join(' | ') : ''}`);
 ok(des.pag <= 390 && des.bloques, `nada se sale: la página mide ${des.pag} px y cada bloque cabe en su día (también la materia de nombre larguísimo)`);
 await foto('semana-1');
 
