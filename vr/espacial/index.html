@@ -204,6 +204,7 @@
   <div class="status" id="status" data-state="idle"><span class="dot"></span><span id="status-text">Ready</span><span class="sub" id="status-sub"></span></div>
   <div class="metrics" id="metrics" hidden>
     <span><b id="m-fps">–</b> fps</span>
+    <span><b id="m-ctl">–</b> control</span>
     <span><b id="m-ms">–</b> ms</span>
     <span>pts <b id="m-pts">–</b></span>
     <span>imu <b id="m-imu">–</b> Hz</span>
@@ -226,6 +227,8 @@
     <button id="b-rec" aria-pressed="false">Record</button>
     <button id="b-map" aria-pressed="true">Map</button>
     <button id="b-visor" aria-pressed="false">Visor</button>
+    <button id="b-ctl" aria-pressed="false">Control</button>
+    <button id="b-cal">Calibrar</button>
     <button id="b-set" aria-label="Settings">⚙</button>
   </div>
 </div>
@@ -296,6 +299,8 @@
 
 <pre class="debug" id="debug" hidden></pre>
 <div class="toast" id="toast"></div>
+<script src="./vendor/aruco/cv.js"></script>
+<script src="./vendor/aruco/aruco.js"></script>
 <script type="module" src="./app.js"></script>
 </body>
 </html>

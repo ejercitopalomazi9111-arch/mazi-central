@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three";
 import { detectDevice, loadCalibration, saveCalibration, clearCalibration, defaultCalibration, intrinsics, IMU_DEFAULT } from "./profiles.js";
 import { recordingBlob } from "./recording.js";
+import { montarControl } from "./control.js";
 import { emit, flush, sessionId, environment, enabled as telemetryOn, hasServer, text } from "./telemetry.js";
 
 const $ = (id) => document.getElementById(id);
@@ -1122,6 +1123,7 @@ function ponerVisor(si) {
 $("b-visor").addEventListener("click", () => ponerVisor(!visor.on));
 // Lo de MAZI anclado alrededor del cubo cuando aparece: un piso de 4×4 m, cuatro postes y una «tele»
 const mazi = new THREE.Group(); mazi.visible = false;
+const objetivosMazi = [];   /* a lo que el rayo del control puede apuntar */
 {
   const piso = new THREE.GridHelper(4, 16, 0xac27ff, 0x3a1a5c); piso.rotation.x = Math.PI / 2; mazi.add(piso);
   for (const [x, y] of [[-1.2, 1.2], [1.2, 1.2], [-1.2, -1.2], [1.2, -1.2]]) {
@@ -1130,12 +1132,28 @@ const mazi = new THREE.Group(); mazi.visible = false;
     poste.position.set(x, y, 0.8); mazi.add(poste);
   }
   const tele = new THREE.Mesh(new THREE.BoxGeometry(0.03, 1.2, 0.7), new THREE.MeshBasicMaterial({ color: 0x7e1735 }));
-  tele.position.set(1.8, 0, 1.0); mazi.add(tele);
+  tele.position.set(1.8, 0, 1.0); tele.name = "tele"; mazi.add(tele); objetivosMazi.push(tele);
   const marco = new THREE.LineSegments(new THREE.EdgesGeometry(tele.geometry), new THREE.LineBasicMaterial({ color: 0xffffff }));
   marco.position.copy(tele.position); mazi.add(marco);
 }
 arScene.add(mazi);
-window.__mazi = { visor, ponerVisor, pose: () => (latest && rig && posed(latest.status) ? predictedCameraPose(lastFrameTime) : null), estado: () => latest?.status ?? null,
+cube.children[0].name = "cubo"; objetivosMazi.push(cube.children[0]);
+// El DualShock 4 con un marcador impreso: su propia pose (ENGINEERING_LOG 002). Imprimir: ./marcador.html
+let tCuadro = 0, controlOn = localStorage.getItem("mazixr-control") === "1";
+const control = montarControl({
+  THREE, escena: arScene, video: $("video"), objetivos: () => objetivosMazi,
+  poseCamara: () => (latest && rig && posed(latest.status) ? predictedCameraPose(tCuadro) : null),
+  intrinsecos: () => (rig && frameW ? { fx: rig.fx, cx: rig.cx, cy: rig.cy, ancho: frameW } : null),
+});
+function ponerControl(si) { controlOn = si; $("b-ctl").setAttribute("aria-pressed", String(si)); if (!si) control.grupo.visible = false; try { localStorage.setItem("mazixr-control", si ? "1" : "0"); } catch {} }
+$("b-ctl").addEventListener("click", () => ponerControl(!controlOn));
+$("b-cal").addEventListener("click", () => toast(control.calibrar() ? "Control calibrado: apunta a donde ves" : "Primero que se vea el marcador del control"));
+ponerControl(controlOn);
+function estadoControl() {
+  const e = control.estado;
+  $("m-ctl").textContent = !controlOn ? "apagado" : e.visto ? `${e.distancia} m${e.apunta ? " · " + e.apunta : ""}` : e.detecciones ? "perdido" : "sin marcador";
+}
+window.__mazi = { visor, ponerVisor, control, ponerControl, pose: () => (latest && rig && posed(latest.status) ? predictedCameraPose(lastFrameTime) : null), estado: () => latest?.status ?? null,
   anclado: () => ({ x: mazi.position.x, y: mazi.position.y, z: mazi.position.z, visible: mazi.visible }),
   /* para las pruebas: dibuja ya y cuenta pixeles con algo en cada mitad (el lienzo se borra al componer) */
   muestreo() { renderAR(lastFrameTime); const gl = arRenderer.getContext(), w = gl.drawingBufferWidth, h = gl.drawingBufferHeight, px = new Uint8Array(w * h * 4);
@@ -1428,6 +1446,8 @@ function loop(rafNow) {
   if (interval > 4 && interval < 40) refreshMs += 0.05 * (interval - refreshMs);
   if (!running) return;
   const t = overlayTime(rafNow);
+  tCuadro = t;
+  if (controlOn) { control.cuadro(rafNow); estadoControl(); }
   renderTracks(t);
   renderAR(t);
   renderMap();
