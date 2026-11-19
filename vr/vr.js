@@ -19,6 +19,7 @@ import * as THREE from 'three';
 import { crearSeis, ojoPorDefecto } from './seis.js';
 import { crearNube } from './nube.js';
 import { crearLimites } from './limites.js';
+import { crearPredictor } from './prediccion.js';
 
 /* ── ajustes: se guardan en el teléfono (sólo comodidad; si se borran, salen los de fábrica) ── */
 const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true, menuTam: 1, menuDist: 1, fondo: 0, seis: false, puntos: true, limites: true, zona: 1 };
@@ -230,9 +231,11 @@ function aplicarAjustes(){
 }
 
 /* ── giroscopio → cabeza ── */
-const ori = { a: 0, b: 90, g: 0, hay: false };
+const ori = { a: 0, b: 90, g: 0, hay: false, t: 0, nuevo: false };
+/* la vista se dibuja con el giro PREDICHO para cuando sale el cuadro (prediccion.js, investigación R2); ?nopred lo apaga */
+const pred = crearPredictor(), conPred = !new URLSearchParams(location.search).has('nopred');
 const zee = new THREE.Vector3(0, 0, 1), eul = new THREE.Euler(), q0 = new THREE.Quaternion(), q1 = new THREE.Quaternion(-Math.SQRT1_2, 0, 0, Math.SQRT1_2);
-addEventListener('deviceorientation', (e) => { if(e.alpha == null) return; ori.a = e.alpha; ori.b = e.beta; ori.g = e.gamma; ori.hay = true; });
+addEventListener('deviceorientation', (e) => { if(e.alpha == null) return; ori.a = e.alpha; ori.b = e.beta; ori.g = e.gamma; ori.hay = true; ori.t = performance.now(); ori.nuevo = true; });
 const angPantalla = () => (screen.orientation?.angle ?? window.orientation ?? 0) * Math.PI / 180;
 let guinada = 0;                                             // el giro extra: stick derecho y «recentrar»
 const qCab = new THREE.Quaternion(), qG = new THREE.Quaternion(), yUp = new THREE.Vector3(0, 1, 0);
@@ -241,8 +244,10 @@ function leerCabeza(){
   if(ori.hay){
     const D = THREE.MathUtils.DEG2RAD; eul.set(ori.b * D, ori.a * D, -ori.g * D, 'YXZ');
     qCab.setFromEuler(eul); qCab.multiply(q1); qCab.multiply(q0.setFromAxisAngle(zee, -angPantalla()));
+    if(ori.nuevo){ ori.nuevo = false; try{ pred.muestra(qCab, ori.t); }catch(e){ fallo('E-PREDICCION', 'pred.muestra (giroscopio)', e); } }
   } else qCab.setFromEuler(eul.set(sim.pitch, sim.yaw, 0, 'YXZ'));
-  cabeza.quaternion.copy(qCab);
+  const qp = ori.hay && conPred ? pred.predecir(performance.now()) : null;
+  if(qp) cabeza.quaternion.set(qp.x, qp.y, qp.z, qp.w); else cabeza.quaternion.copy(qCab);
   rig.quaternion.copy(qG.setFromAxisAngle(yUp, guinada));
   /* 6DoF: el giro sigue saliendo del giroscopio; del VIO sale DÓNDE están tus ojos (seis.js) */
   if(seis.vio){
@@ -250,7 +255,12 @@ function leerCabeza(){
     const st = seis.filtro.paso(pose, [qCab.w, qCab.x, qCab.y, qCab.z], seis.vio.S, performance.now(), seis.ojo || ojoPorDefecto((((screen.orientation?.angle ?? window.orientation ?? 90) % 360) + 360) % 360));
     cabeza.position.set(st.pos[0], st.pos[1], st.pos[2]);
     if(seis.vio.S.listo) try{ vigilarAncla(); }catch(e){ fallo('E-ANCLA', 'vigilarAncla', e); }
-    try{ nube.cuadro(seis.vio, seis.filtro, { mostrar: AJ.puntos !== false }); }catch(e){ fallo('E-NUBE', 'nube.cuadro', e); }
+    try{ const ns = nube.cuadro(seis.vio, seis.filtro, { mostrar: AJ.puntos !== false });
+      /* LUGAR DIFÍCIL (investigación R4): con pocos puntos vivos el rastreo está por caerse; se avisa ANTES (cada 8 s como mucho) */
+      const ahoraP = performance.now();
+      if(ns && AJ.puntos !== false && seis.vio.S.estado === 'track' && ns.vivos < 25){ seis.pocos = seis.pocos || ahoraP; if(ahoraP - seis.pocos > 1500 && ahoraP - (seis.pocosAviso || 0) > 8000){ seis.pocosAviso = ahoraP; hud('Poca textura', 2); } }
+      else seis.pocos = 0;
+    }catch(e){ fallo('E-NUBE', 'nube.cuadro', e); }
     try{ vigilarLimites(); }catch(e){ fallo('E-LIMITES', 'vigilarLimites (obstáculos y zona)', e); }
     if(seis.vio.S.error && seis.vio.S.error !== seis.errorVisto){ seis.errorVisto = seis.vio.S.error; fallo('E-6DOF-VIO', 'trabajador del rastreo (worker.js)', seis.vio.S.error); }
     const e = seis.vio.S.estado, aviso6 = !seis.vio.S.listo ? '' : e === 'track' ? '6DoF' : e === 'coast' ? 'Muévete despacio' : e === 'wait' ? 'Quédate quieto' : e === 'init' ? 'Mueve el teléfono de lado' : String(e || '').startsWith('reset') ? 'Rastreo perdido' : '';
