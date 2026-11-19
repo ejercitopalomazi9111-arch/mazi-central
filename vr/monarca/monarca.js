@@ -2,13 +2,16 @@
    Proyecto de Ética y STEAM de Carlos, antes de diciembre de 2026. Plan y datos verificados: are/Documentation/MONARCH_XR.md.
      · Ocho escenas: Bienvenida → La monarca → Migración → Santuario → Amenazas (2) → Decisión → Cuestionario → Final.
      · Cada escena: una foto 360° de fondo (Poly Haven, CC0) o el cielo del motor, un cartel con su texto y botones.
-     · NARRACIÓN: la voz del teléfono (speechSynthesis, es-MX) lee el cartel al entrar. Se apaga con «Voz».
+     · NARRADOR (narrador.js): uno con ironía que explica cada escena (Orus) y reacciona con la voz grave (Charon) a lo
+       que haces: adelantarte mientras habla, regresar, mirar a otro lado, quedarte quieto, plantar, decidir, contestar.
+       Audios hechos de antemano (medios/narrador/), suenan sin internet. Se apaga con «Voz».
      · SÓLO DATOS VERIFICADOS: cada cifra sale de la tabla de MONARCH_XR.md, con su fuente y año. Nada inventado.
      · MODO EXPOSICIÓN: con ?monarca en la dirección (el QR), entra directo y los botones que sacan no sacan. El docente sale
        apretando Opciones (o PS) 5 veces seguidas; en pantalla, tocando 5 veces la esquina de arriba a la izquierda.
        Bloquear el botón de inicio del teléfono no lo puede hacer una página: Acceso guiado (iPhone) o Fijar pantalla
        (Android), ver vr/monarca/DOCENTE.md. */
 import { GLTFLoader } from '../vendor/loaders/GLTFLoader.js';
+import { crearNarrador } from './narrador.js';
 
 const AQUI = (f) => new URL(f, import.meta.url).href;
 const MORADO = '#AC27FF', VINO = '#7E1735', NARANJA = '#F28C1B';
@@ -44,6 +47,13 @@ export function montarMonarca(V){
   const { THREE } = V;
   const m = { grupo: new THREE.Group(), estado: { escena: 0, puntos: 0, pregunta: 0, eleccion: null, voz: true, cargados: 0 } };
   const st = m.estado;
+  const narr = crearNarrador({ actx: V.audio, base: (id) => AQUI(`medios/narrador/${id}.mp3`), sinVoz: () => !st.voz });
+  m.narrador = narr;
+  /* lo que hace la persona, para que el narrador se dé cuenta */
+  const ahora = () => performance.now() / 1000;
+  const vez = { prisa: 0, lejos: 0, quieto: 0, bien: 0 };
+  let tocoEn = 0, calladoDesde = 0, quietosAqui = 0, lejosDesde = 0, lejosAqui = false, florHablo = false, atrasEn = -99;
+  const turno = (pre, n) => `${pre}-${(vez[pre.slice(2)]++ % n) + 1}`;
 
   /* ── el cielo 360° ── */
   const texs = {}, cargador = new THREE.TextureLoader();
@@ -76,12 +86,14 @@ export function montarMonarca(V){
   /* ── los botones: fila debajo del cartel ── */
   let botones = [];
   function boton(texto, accion, ancho = .5){
+    /* «Voz» se vuelve a pintar sola, sin volver a armar la escena (si no, las flores plantadas se borraban) */
     const p = new V.Panel(ancho, .16, 520); p.titulo = texto;
     const pintar = (f) => { const { x, cv } = p, w = cv.width, h = cv.height; x.clearRect(0, 0, w, h); V.redondo(x, 4, 4, w - 8, h - 8, (h - 8) / 2);
       x.fillStyle = f ? '#3A1A5C' : '#24123A'; x.fill(); x.lineWidth = f ? 7 : 3; x.strokeStyle = f ? MORADO : '#3C2652'; x.stroke();
       x.fillStyle = '#F4EEF2'; x.font = `800 ${texto.length > 22 ? 28 : 36}px system-ui, -apple-system, sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(texto, w / 2, h / 2 + 2); p.listo(); };
     p.foco = (f) => { if(p._f === f) return; p._f = f; pintar(f); }; p._f = false; pintar(false);
-    p.malla.userData.accion = () => { V.sonar('toque', .3); accion(); };
+    p.malla.userData.accion = () => { V.sonar('toque', .3); tocoEn = ahora(); accion(); };
+    p.malla.userData.retitular = (t) => { texto = t; p.titulo = t; pintar(p._f); };
     return p.malla;
   }
   function ponerBotones(lista, y = -.38){
@@ -124,8 +136,12 @@ export function montarMonarca(V){
     m.grupo.remove(b); lugares = lugares.filter((x) => x !== b);
     const v = variedades[i % Math.max(1, variedades.length)]; if(v){ const f = v.clone(); f.position.copy(PASTO[i]); f.scale.setScalar(.01); f.userData.nace = performance.now() / 1000; flores.add(f); }
     objetivo = PASTO[i].clone().add(new THREE.Vector3(0, .5, 0)); plantadas++; V.sonar('ding', .3);
+    if(plantadas < PASTO.length){
+      if(narr.actual === 'e-flores' && narr.falta() > 2 && !florHablo){ florHablo = true; narr.interrumpir('r-flor-hablando'); }
+      else if(plantadas === 1 && !narr.actual) narr.decir(['r-flor-1']);
+    }
     if(plantadas >= PASTO.length){ objetivo = null; const E = ESCENAS[st.escena];
-      pintarCartel('¡Listo!', ['Cinco flores en su camino: cinco lugares para tomar néctar.'], E.fuente); decir(['¡Listo! Cinco flores en su camino.']);
+      pintarCartel('¡Listo!', ['Cinco flores en su camino: cinco lugares para tomar néctar.'], E.fuente); narr.decir(['r-flores-todas']);
       ponerBotones([boton('Siguiente', () => mostrar(st.escena + 1)), vozBoton()]); }
   }
   const quitarLugares = () => { lugares.forEach((b) => m.grupo.remove(b)); lugares = []; };
@@ -168,19 +184,22 @@ export function montarMonarca(V){
       x.fillStyle = '#C9B6DA'; x.font = '600 24px system-ui, -apple-system, sans-serif'; x.fillText(e.dias, w / 2, h * .72); e.p.listo(); });
   }
 
-  /* ── la voz ── */
-  function decir(textos){
-    try{ speechSynthesis.cancel(); if(!st.voz || !textos.length) return;
-      const u = new SpeechSynthesisUtterance(textos.join(' ')); u.lang = 'es-MX'; u.rate = 1;
-      const voz = speechSynthesis.getVoices().find((v) => /es[-_]MX/i.test(v.lang)) || speechSynthesis.getVoices().find((v) => /^es/i.test(v.lang)); if(voz) u.voice = voz;
-      speechSynthesis.speak(u); }catch{}
-  }
-  const vozBoton = () => boton(st.voz ? 'Voz: Sí' : 'Voz: No', () => { st.voz = !st.voz; if(!st.voz) try{ speechSynthesis.cancel(); }catch{} mostrar(st.escena); }, .36);
+  /* ── la voz: el narrador ── */
+  const vozBoton = () => { const b = boton(st.voz ? 'Voz: Sí' : 'Voz: No', () => {
+    if(st.voz){ narr.decir(['r-voz-off']); st.voz = false; }   /* se despide y se calla (lo que ya pidió sí suena) */
+    else { st.voz = true; narr.decir(['r-voz-on']); }
+    b.userData.retitular(st.voz ? 'Voz: Sí' : 'Voz: No'); }, .36); return b; };
 
   /* ── las escenas ── */
   let t0 = 0;
-  function mostrar(i){
+  function mostrar(i, pre = []){
+    /* ¿se adelantó mientras explicaba? ¿regresó? el narrador lo dice antes de seguir */
+    const ant = st.escena, explicando = narr.actual && narr.actual.startsWith('e-') && narr.falta() > 2.5;
+    if(!pre.length && i === ant + 1 && explicando) pre = [turno('r-prisa', 3)];
+    else if(!pre.length && i === ant - 1 && ahora() - atrasEn > 40){ pre = ['r-atras']; atrasEn = ahora(); }
+    quietosAqui = 0; lejosAqui = false; lejosDesde = 0; florHablo = false; calladoDesde = ahora();
     st.escena = i; const E = ESCENAS[i]; t0 = performance.now() / 1000;
+    const decir = () => narr.decir([...pre, 'e-' + E.id]);
     /* sin foto 360°, el cielo del motor (si no, se ve negro) */
     ponerCielo(E.cielo); V.cuarto.visible = !E.cielo; mapaP.malla.visible = !!E.mapa; cartel.malla.position.set(E.mapa ? -.92 : 0, .42, E.mapa ? -2.3 : -2.2); cartel.malla.lookAt(0, .42 * .3, 0);
     mariposa.visible = E.monarca === 'vuela' || E.monarca === 'cerca'; colonia.visible = E.monarca === 'colonia';
@@ -188,28 +207,30 @@ export function montarMonarca(V){
     const siguiente = () => mostrar(i + 1);
     ponerEtapas(E.etapas); if(E.etapas) pintarEtapas(0);
     quitarLugares(); flores.visible = E.juego === 'flores'; if(E.juego !== 'flores') objetivo = null;
-    if(E.juego === 'flores'){ cartel.malla.position.set(0, .62, -2.3); juegoFlores(); pintarCartel(E.titulo, E.texto, E.fuente); decir(E.texto); ponerBotones([boton('Atrás', () => mostrar(i - 1), .36), vozBoton()], -.2); return; }
-    if(E.id === 'cuestionario') return preguntar();
+    if(E.juego === 'flores'){ cartel.malla.position.set(0, .62, -2.3); juegoFlores(); pintarCartel(E.titulo, E.texto, E.fuente); decir(); ponerBotones([boton('Atrás', () => mostrar(i - 1), .36), vozBoton()], -.2); return; }
+    if(E.id === 'cuestionario') return preguntar([...pre, 'e-cuestionario']);
     if(E.id === 'decision' && st.eleccion == null){
-      pintarCartel(E.titulo, E.texto); decir([...E.texto]);
-      ponerBotones(E.opciones.map(([t, que], k) => boton(t, () => { st.eleccion = k; pintarCartel(t, [que]); decir([que]); ponerBotones([boton('Siguiente', () => { mostrar(i + 1); }), vozBoton()]); }, .44)));
+      pintarCartel(E.titulo, E.texto); decir();
+      ponerBotones(E.opciones.map(([t, que], k) => boton(t, () => { st.eleccion = k; pintarCartel(t, [que]); narr.decir([['r-talar', 'r-conservar', 'r-turismo'][k]]); ponerBotones([boton('Siguiente', () => { mostrar(i + 1); }), vozBoton()]); }, .44)));
       return;
     }
-    pintarCartel(E.titulo, E.texto, E.fuente); decir(E.texto);
-    if(E.id === 'final'){ ponerBotones([boton(`${st.puntos} de ${PREGUNTAS.length}`, () => {}, .4), boton('Créditos', () => { pintarCartel('Créditos', [CREDITOS]); decir([]); }, .4), boton('Otra vez', () => reiniciar(), .4)]); return; }
+    pintarCartel(E.titulo, E.texto, E.fuente);
+    if(E.id === 'final'){ narr.decir([...pre, 'e-final', st.puntos === PREGUNTAS.length ? 'r-perfecto' : st.puntos === 0 ? 'r-cero' : 'r-medio']);
+      ponerBotones([boton(`${st.puntos} de ${PREGUNTAS.length}`, () => {}, .4), boton('Créditos', () => { pintarCartel('Créditos', [CREDITOS]); narr.decir(['r-creditos']); }, .4), boton('Otra vez', () => reiniciar(), .4)]); return; }
+    decir();
     ponerBotones([...(i > 0 ? [boton('Atrás', () => mostrar(i - 1), .36)] : []), boton(E.boton || 'Siguiente', siguiente), vozBoton()], E.etapas ? -.44 : -.38);
   }
-  function preguntar(){
-    const E = ESCENAS[st.escena], q = PREGUNTAS[st.pregunta];
+  function preguntar(pre = []){
+    const E = ESCENAS[st.escena], q = PREGUNTAS[st.pregunta], n = st.pregunta + 1;
     if(!q){ mostrar(st.escena + 1); return; }
-    pintarCartel(`${E.titulo} · ${st.pregunta + 1} de ${PREGUNTAS.length}`, [q[0]]); decir([q[0]]);
+    pintarCartel(`${E.titulo} · ${n} de ${PREGUNTAS.length}`, [q[0]]); narr.decir([...pre, 'q-' + n]);
     ponerBotones(q[1].map((t, k) => boton(t, () => {
       const bien = k === q[2]; if(bien) st.puntos++; V.sonar(bien ? 'ding' : 'toque', .35);
-      pintarCartel(bien ? 'Correcto' : 'Casi', [bien ? q[1][k] : `Era: ${q[1][q[2]]}`]); decir([bien ? 'Correcto.' : `Era: ${q[1][q[2]]}.`]);
+      pintarCartel(bien ? 'Correcto' : 'Casi', [bien ? q[1][k] : `Era: ${q[1][q[2]]}`]); narr.decir([bien ? turno('r-bien', 4) : `q-${n}-mal`]);
       ponerBotones([boton('Siguiente', () => { st.pregunta++; preguntar(); })]);
     }, .62)), -.38);
   }
-  function reiniciar(){ st.puntos = 0; st.pregunta = 0; st.eleccion = null; mostrar(0); }
+  function reiniciar(){ st.puntos = 0; st.pregunta = 0; st.eleccion = null; mostrar(0, st.escena ? ['r-otra-vez'] : []); }
 
   /* ── cada cuadro: la mariposa vuela, la colonia aletea, la ruta se dibuja ── */
   let rutaK = -1;
@@ -224,18 +245,37 @@ export function montarMonarca(V){
     for(const f of flores.children){ const k = Math.min(1, (t - f.userData.nace) / .8); f.scale.setScalar(Math.max(.01, 1 - Math.pow(1 - k, 3))); }
     if(colonia.visible) for(const c of colonia.children){ const b = c.userData.base, f = c.userData.fase;
       c.position.set(b.x + Math.sin(t * .4 + f) * .25, b.y + Math.sin(t * .9 + f) * .12, b.z + Math.cos(t * .4 + f) * .25); c.rotation.set(0, t * .4 + f, Math.sin(t * 11 + f) * .3); }
+    vigilar(t, E);
     if(E.mapa){ const k = Math.min(1, (t - t0) / 6); if(Math.abs(k - rutaK) > .01 || (k >= 1 && rutaK < 1)){ rutaK = k; pintarMapa(k); } } else rutaK = -1;
   };
+
+  /* ── el narrador se da cuenta: mirar a otro lado mientras explica, o quedarse quieto cuando ya terminó ── */
+  const dirCabeza = new THREE.Vector3(), dirCartel = new THREE.Vector3(), ojo = new THREE.Vector3();
+  function vigilar(t, E){
+    if(!st.voz || !m.grupo.visible) return;
+    /* mirar lejos: más de 75° del cartel por 3 s mientras explica (no en las escenas que piden mirar alrededor) */
+    if(narr.actual && narr.actual.startsWith('e-') && !lejosAqui && !['bienvenida', 'santuario', 'flores'].includes(E.id)){
+      V.cabeza.getWorldPosition(ojo); V.cabeza.getWorldDirection(dirCabeza); cartel.malla.getWorldPosition(dirCartel).sub(ojo);
+      dirCabeza.y = 0; dirCartel.y = 0;
+      const ang = dirCabeza.lengthSq() > 1e-4 && dirCartel.lengthSq() > 1e-4 ? dirCabeza.angleTo(dirCartel) : 0;
+      if(ang > 75 * Math.PI / 180){ if(!lejosDesde) lejosDesde = t; if(t - lejosDesde > 3){ lejosAqui = true; narr.interrumpir(turno('r-lejos', 2)); } }
+      else lejosDesde = 0;
+    }
+    /* quieto: 25 s callados sin tocar nada (dos veces por escena como mucho; en el final, no) */
+    if(narr.ocupado) calladoDesde = t;
+    else if(E.id !== 'final' && quietosAqui < 2 && t - calladoDesde > 25 && t - tocoEn > 25){ quietosAqui++; calladoDesde = t; narr.decir([turno('r-quieto', 2)]); }
+  }
+  m.vigilar = vigilar;
 
   /* ── entrar y salir: se apaga el cuarto del motor y la mixta; al salir, todo vuelve ── */
   let antes = null;
   m.entrar = () => {
     antes = { cuarto: V.cuarto.visible, tem: window.__temshop?.grupo.visible, mixta: V.AJ.mixta };
     if(V.AJ.mixta) V.ponerMixta(false); V.cuarto.visible = false; if(window.__temshop) window.__temshop.grupo.visible = false;
-    mostrar(st.escena);
+    mostrar(st.escena); narr.precargar();
   };
   m.salir = () => {
-    try{ speechSynthesis.cancel(); }catch{}
+    narr.callar();
     if(antes){ V.cuarto.visible = antes.cuarto; if(window.__temshop) window.__temshop.grupo.visible = !!antes.tem; if(antes.mixta) V.ponerMixta(true); }
   };
   m.elegibles = () => [...botones, ...lugares];

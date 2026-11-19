@@ -42,12 +42,20 @@ En `vr/monarca/LEEME.md`: monarca escaneada de Virginia Tech (CC BY), cinco foto
 
 Hecho en `vr/monarca/monarca.js` (entra desde Juegos → Monarca, o directo y en exposición con `/vr/?monarca`):
 bienvenida, la monarca escaneada, migración con el mapa y la ruta que se dibuja, santuario con colonia, dos amenazas,
-dilema ético, cuestionario de 4, final con créditos; voz del teléfono que lee cada cartel (se apaga con «Voz»); salida del
+dilema ético, cuestionario de 4, final con créditos; narrador con voz (ver abajo; se apaga con «Voz»); salida del
 docente (Opciones o PS 5 veces, o 5 toques en la esquina); fotos, modelo y mapa guardados para usarse sin internet.
 QR imprimible: `vr/monarca/qr.html`. Guía del docente: `vr/monarca/DOCENTE.md`.
 Prueba: `node vr/pruebas-monarca.mjs` (recorre todo como alumno y revisa que cada cifra en pantalla esté en la tabla de arriba).
 
 **Hecho después:** escena «Su ciclo de vida» (huevo, oruga, crisálida y adulta con sus días, del Forest Service) y una pregunta más; minijuego «Flores en el camino» (plantas 5 flores reales de Poly Haven y la monarca llega a tomar néctar; no es algodoncillo porque no hay modelo libre de asclepia y no se va a fingir).
 
-**Falta:** videos con licencia, más minijuegos (guiar a la monarca por la ruta), voz grabada en vez de la del
-teléfono, y probarla en un iPhone y un Android de verdad con el visor.
+**El narrador (19 nov, pedido de Carlos «tipo Stanley Parable»):** `vr/monarca/narrador.js`. Un narrador con ironía cuenta
+«la historia de alguien con un visor en la cara» con los MISMOS datos del cartel (en palabras; nada cambia de cifra) y se da
+cuenta de lo que haces: te adelantas mientras explica, regresas, miras a otro lado 3 s, te quedas quieto 25 s, plantas antes
+de que termine, qué decides, si aciertas o fallas cada pregunta, cuántas sacaste, «Otra vez» y apagar la voz. Explica con
+Orus y reacciona con Charon, la grave (voces de Google de la casa). Guion propio: del juego sólo se toma el género. Los 46
+audios están hechos de antemano (`node vr/monarca/narrador-armar.mjs`, 2 MB) y se guardan para sonar sin internet; si
+uno falta, lo lee la voz del teléfono. Al cambiar un renglón: se corre ese comando (sólo pide lo que cambió).
+
+**Falta:** videos con licencia, más minijuegos (guiar a la monarca por la ruta), y probarla en un iPhone y un Android de
+verdad con el visor (en especial que el narrador suene desde el primer toque).
