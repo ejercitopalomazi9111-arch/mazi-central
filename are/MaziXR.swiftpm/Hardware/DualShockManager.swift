@@ -73,8 +73,9 @@ final class DualShockManager: ObservableObject {
         b(g.buttonMenu, "Options"); b(g.buttonOptions, "Share")
         if let ds = g as? GCDualShockGamepad {
             b(ds.touchpadButton, "Touchpad")
-            let t = ds.touchpadPrimary
-            touchpad = (t.xAxis.value != 0 || t.yAxis.value != 0) ? (Double(t.xAxis.value), Double(t.yAxis.value)) : nil
+            if let t = ds.touchpadPrimary, t.xAxis.value != 0 || t.yAxis.value != 0 {
+                touchpad = (Double(t.xAxis.value), Double(t.yAxis.value))
+            } else { touchpad = nil }
         }
         apretados = a
         vistos.formUnion(a)
