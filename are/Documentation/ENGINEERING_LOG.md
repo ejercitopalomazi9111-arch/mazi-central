@@ -91,3 +91,39 @@ Niveles de prueba: **documentado** · **implementado** · **probado en navegador
 - **Problema:** con el Tem Shop, el Chromium de pruebas bajó a 7 cuadros por segundo y perdía botones de 80 ms.
 - **Arreglo:** las pruebas de tiempos corren con el fondo simple; el Tem Shop tiene su prueba propia.
 - **Pendiente:** medir el Tem Shop en el iPhone.
+
+## 006 · El 6DoF en el iPhone de verdad, y dentro del motor (19 nov 2026)
+
+- **Medido por Carlos en su iPhone 13 (`/vr/espacial/`):** el cubo se queda en su lugar casi siempre; **a veces se desliza lejos «al azar»**. Él mismo lo atribuye a que mapeó en una zona muy difícil. Primer resultado en aparato real: **funciona, con deriva en zonas pobres**.
+- **Decisión de motor:** el 6DoF ya no vive sólo en su página. `vr/espacial/vio.js` es el VIO de visloc-rs **sin interfaz**, usando LA MISMA cámara del motor (en el iPhone abrir la cámara dos veces calla la primera). `vr/seis.js` convierte la pose de la cámara a dónde están tus ojos. Se prende en Mazi VR → Ajustes → 6DoF.
+- **Diseño del filtro (`vr/seis.js`):**
+  - el GIRO sigue saliendo del giroscopio (60+ por segundo, nunca se pierde); del VIO sólo la POSICIÓN;
+  - la posición se suma por pedazos, girados al marco del giroscopio con un ángulo que se acerca despacio;
+  - rastreo perdido → te quedas donde estabas, y al volver no te teletransporta aunque el VIO cambie de origen;
+  - brinco de más de 30 cm entre cuadros → se tira;
+  - **deslizarse sin dar pasos** (VIO > 35 cm/s y el acelerómetro sin pasos) → se tira lo horizontal: es el caso que vio Carlos;
+  - «coast» (sin puntos de cámara) más de 0.3 s → se tira;
+  - desplazamiento cámara→ojos: ESTIMADO para iPhone 13 (5.3 cm, 1.8 cm, 6 cm), sin medir.
+- **Pruebas:** `vr/pruebas-seis.mjs` 10/10 (caminatas inventadas con la verdad conocida: girar en tu lugar no te mueve, brincos, desliz, pérdida, coast); `vr/pruebas-seis-motor.mjs` con la caminata real de iPhone (ADVIO): el motor llega a «track», tus ojos recorren ~1 m en 6 s y el menú no se mueve ni una milésima.
+- **Nivel:** probado en navegador con datos reales de iPhone. **Falta:** que Carlos lo pruebe dentro de Mazi VR y diga si el desliz bajó.
+- **Limitación honesta:** el freno al desliz es una regla, no magia. Si el VIO se va DESPACIO (menos de 35 cm/s) estando parado, o se va mientras caminas, todavía se nota. La cura de fondo es un mapa con relocalización (cerrar el ciclo), etapa aparte.
+- **Siguiente para Android:** WebXR `immersive-ar` en Chrome con ARCore daría un 6DoF mucho más firme que el VIO web; se dibujaría nuestro estéreo encima. Por investigar y probar en un Android real; no se promete.
+
+## 007 · Botones que sólo funcionaban una vez (19 nov 2026)
+
+- **Síntoma (cazado por la prueba del modo exposición):** sin control conectado, Opciones con el teclado sacaba a Inicio una vez y luego ya no.
+- **Causa:** el arreglo de botones del cuadro se llenaba con huecos (`ahora[i] = true` sólo para lo apretado); `map` y `forEach` se saltan los huecos, así que `antes[i]` se quedaba en «apretado» para siempre.
+- **Alcance real:** también los gestos de las manos sin control (la palma que abre el menú) funcionaban UNA vez.
+- **Arreglo:** el arreglo nace lleno de falsos (`new Array(17).fill(false)`).
+
+## 008 · Modo sin visor y modo exposición en el motor (19 nov 2026)
+
+- **Sin visor:** una sola vista, el teléfono es una ventana que se mueve con el giroscopio y **tocar** un botón lo elige; mirar fijo NO elige (abría «Leer» solo al entrar). Con visor, tocar la pantalla equivale a X (el botón de los visores de cartón toca la pantalla).
+- **Exposición (`kiosco`):** Opciones, PS y Triángulo no sacan de la experiencia; la salida del docente la pone cada experiencia.
+- **Prueba:** `vr/pruebas-seis-motor.mjs` (tocar «Leer» lo abre; nada se abre solo; en exposición Opciones no saca y fuera sí).
+
+## 009 · Errores que dicen qué, dónde y cuándo (19 nov 2026)
+
+- **Pedido de Carlos:** «que el código de error sea tan claro que sepas exactamente dónde falló, cómo y cuándo».
+- **Hecho (`fallo()` en `vr/vr.js`):** código (E-MOTOR, E-VISTA, E-CUADRO, E-6DOF, E-6DOF-VIO, E-CAMARA, E-PAGINA, E-PROMESA) + pieza y función o archivo:línea + mensaje + hora, vista y segundos desde que abriste. Sale 5 s en el visor, en la consola y se guarda: la pantalla de entrada enseña el último. Una vista que truena ya no tumba el motor entero.
+- **Pendiente sabido:** en `pruebas-lector.mjs`, «L2 + sticks» midió 22.9° contra 25° pedidos (prueba de tiempo en un Chromium sin tarjeta gráfica). No se confirmó si ya pasaba antes; Carlos pidió no gastar más tiempo ahí.

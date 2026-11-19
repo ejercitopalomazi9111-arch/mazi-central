@@ -635,6 +635,9 @@ dependemos.
    | «agarrar» un botón con la mano es como pellizcarlo | cerrar la mano entera se lee como PUÑO (que no es clic: el puño es para recentrar), y el rayo de una mano que tiembla pasa a 2-3° de un botón chico como Atrás | Carlos: «casi casi trato de agarrar el botón y aún así no quiere». Cerrar la mano sobre un botón ahora es clic (`vr/pruebas-agarrar.mjs`). Se probó un imán de 5° y Carlos lo tumbó: «estaba mejor antes del imán» |
    | si las pruebas de la VR pasaban ayer, una escena más pesada no las cambia | el Chromium de pruebas pinta sin tarjeta gráfica: el Tem Shop bajó de 15 a 7 cuadros por segundo y los botones simulados de 80 ms caían ENTRE cuadros, así que la mirada fija entraba sola a lo de enfrente | tres pruebas rojas sin un defecto en el código. Las que miden tiempos corren con el fondo simple (`fondo: 1`) y el Tem Shop tiene la suya |
 
+   | `ahora[i] = true` sólo para lo apretado arma bien el arreglo de botones del cuadro | deja HUECOS, y `map`/`forEach` se los saltan: `antes[i]` nunca vuelve a falso | sin control conectado, Opciones del teclado y los gestos de las manos de Mazi VR funcionaban UNA sola vez; lo cazó la prueba del modo exposición. El arreglo nace lleno: `new Array(17).fill(false)` |
+   | el filtro de Douglas-Peucker simplifica cualquier contorno | un anillo de GeoJSON CIERRA repitiendo el primer punto: con los dos extremos iguales la distancia a «la recta» es la del punto al extremo y todo se reduce a dos puntos | el mapa de Norteamérica salió vacío dos veces sin error. Se le quita el último punto antes de simplificar |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 13. **CERO PARPADEO. Nunca, jamás, de los jamases** (Carlos, 14 nov, por el ajedrez de CARYMO). Tocar algo o que
