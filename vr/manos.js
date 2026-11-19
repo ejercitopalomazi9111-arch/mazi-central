@@ -53,6 +53,8 @@ export async function iniciarManos(V){
   let principalAntes = null;
 
   let ultimoT = -1, cuadroN = 0, enfriar = 0;
+  /* donde la palma NO es «Atrás»: las manos están jugando (ver abajo, «PALMA ARRIBA») */
+  const PALMA_NO = ['sables', 'monarca', 'taller'];
   const v3 = new THREE.Vector3(), origen = new THREE.Vector3(), dir = new THREE.Vector3();
   /* de un punto de la imagen (0..1) y la distancia estimada, a un punto en el espacio de la cabeza */
   function aEspacio(p, dist, tx, ty, out){
@@ -179,8 +181,17 @@ export async function iniciarManos(V){
       { const ojo = cabeza.getWorldPosition(new THREE.Vector3()), dirDe = (i) => cabeza.localToWorld(m.suave[i].clone()).sub(ojo).normalize();
         mano.vista = { punta: dirDe(8), nudillo: dirDe(5), muneca: dirDe(0) }; }
       m.info = mano; visibles.push(mano);
-      if(G.palma && !m.pellizco){ m.palmaDesde = m.palmaDesde || ahora; if(ahora - m.palmaDesde > 800 && ahora > enfriar){ botones[V.B.O] = true; enfriar = ahora + 1500; m.palmaDesde = 0; estado.gesto = 'palma'; } }
-      else m.palmaDesde = 0;
+      /* PALMA ARRIBA = «Atrás», pero SÓLO a propósito (Carlos, 19 nov: «pones la palma hacia arriba y explota todo»: con las
+         manos a la vista se disparaba sola y te sacaba de Sables o de MONARCH a media partida). Ahora:
+           · no cuenta donde las manos se usan para jugar (Sables, MONARCH, el Taller): ahí se sale con el control o el menú;
+           · hay que sostenerla 1.5 s y QUIETA (si la muñeca se mueve más de 4 % de la imagen, se vuelve a empezar);
+           · a la mitad sale «Atrás…» en el HUD: si no era tu intención, bajas la mano y no pasa nada. */
+      const palmaVale = G.palma && !m.pellizco && !PALMA_NO.includes(V.ahora?.());
+      if(palmaVale){
+        if(!m.palmaDesde || Math.hypot(muneca.x - m.palmaEn.x, muneca.y - m.palmaEn.y) > .04){ m.palmaDesde = ahora; m.palmaEn = { x: muneca.x, y: muneca.y }; m.palmaAviso = false; }
+        if(!m.palmaAviso && ahora - m.palmaDesde > 750){ m.palmaAviso = true; V.hud('Atrás…', .9); }
+        if(ahora - m.palmaDesde > 1500 && ahora > enfriar){ botones[V.B.O] = true; enfriar = ahora + 2500; m.palmaDesde = 0; estado.gesto = 'palma'; }
+      } else m.palmaDesde = 0;
     });
     V.extra.botones = botones; V.extra.manos = visibles;
     /* UN RAYO POR MANO (Carlos, 18 nov: «solamente aparece un rayo a la vez; haz que sea el derecho o que los dos tengan»).
