@@ -41,7 +41,7 @@ jobs:
           APP=build/Build/Products/Release-iphoneos/MaziXR.app
           ls -l "$APP/MaziXR"
           test $(stat -f%z "$APP/MaziXR") -gt 100000
-          nm "$APP/MaziXR" | grep -q DiagnosticView && echo "DiagnosticView adentro"
+          grep -aq DiagnosticView "$APP/MaziXR" && echo "DiagnosticView adentro"
           test ! -e "$APP/MaziXR.swiftpm"
       - name: Empaca la .ipa
         run: |
