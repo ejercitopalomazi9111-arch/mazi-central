@@ -233,10 +233,10 @@ function aplicarAjustes(){
 
 /* ── giroscopio → cabeza ── */
 const ori = { a: 0, b: 90, g: 0, hay: false, t: 0, nuevo: false };
-/* el giro PREDICHO (prediccion.js, investigación R2) queda APAGADO de fábrica: Carlos lo probó el 19 nov en el visor y
-   «estaba mejor antes» (con el giroscopio del iPhone en horizontal, gamma cerca de ±90°, las lecturas brincan y la
-   predicción las agranda). Sólo con ?pred, para seguir probándolo. */
-const pred = crearPredictor(), conPred = new URLSearchParams(location.search).has('pred');
+/* el giro PREDICHO (prediccion.js, investigación R2), PRENDIDO de fábrica: se apagó un rato el 19 nov porque «estaba mejor
+   antes», pero Carlos lo pidió de vuelta: lo que se veía mal eran las manos (dedos congelados y en espejo, ya arreglados en
+   manos-estables.js), no esto. ?nopred lo apaga para comparar. */
+const pred = crearPredictor(), conPred = !new URLSearchParams(location.search).has('nopred');
 const zee = new THREE.Vector3(0, 0, 1), eul = new THREE.Euler(), q0 = new THREE.Quaternion(), q1 = new THREE.Quaternion(-Math.SQRT1_2, 0, 0, Math.SQRT1_2);
 addEventListener('deviceorientation', (e) => { if(e.alpha == null) return; ori.a = e.alpha; ori.b = e.beta; ori.g = e.gamma; ori.hay = true; ori.t = performance.now(); ori.nuevo = true; });
 const angPantalla = () => (screen.orientation?.angle ?? window.orientation ?? 0) * Math.PI / 180;
