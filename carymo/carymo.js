@@ -1704,6 +1704,43 @@ function colorMateria(nombre){ const m = listaMaterias().find((x) => quitarAcent
    abrir, y que salga en qué hora estás para que sepas en qué clase estás y cuál te toca». Arriba: la clase de ahorita
    (con lo que falta) y la que sigue. Abajo: cada día plegado; sólo hoy viene abierto. Quitar clases va en «Editar». */
 let horarioEditando = false, relojHorario = 0;
+/* LA SEMANA (pendiente de Carlos: «horario tipo calendario semanal, como la captura, y agregar clases fácil»): una cuadrícula
+   de lunes a viernes, cada clase un bloque de su color a la altura de su hora, y la línea roja de «ahora» en el día de hoy.
+   Tocar un hueco abre «Agregar una clase» con ese día y esa hora puestos; tocar un bloque dice qué es y deja quitarlo.
+   La lista de antes sigue (Lista | Semana); se recuerda cuál eligió. */
+let horarioModo = guarda.leer('est.horarioModo', 'semana');
+const PPM = 1.2;   /* pixeles por minuto en la semana */
+/* en una columna de ~60 px no cabe «Matemáticas»: se usa el nombre corto de la materia si lo tiene */
+const nombreCorto = (nombre) => { const m = listaMaterias().find((x) => quitarAcentos(x.nombre) === quitarAcentos(nombre)); return m?.corto || nombre; };
+/* ninguna palabra se parte a la mitad («Matem áticas»): la letra baja hasta 8.5 px para que la palabra más larga quepa,
+   y si ni así, se abrevia con punto («Matemát.»). El ancho de la letra se estima (~0.6 em por letra en Titulo) */
+function ajustarNombre(nombre, ancho){
+  const largas = nombre.split(/\s+/), L = Math.max(...largas.map((w) => w.length)), tam = Math.max(8.5, Math.min(11, ancho / (L * .6)));
+  const caben = Math.floor(ancho / (tam * .6));
+  return { tam: +tam.toFixed(1), texto: largas.map((w) => w.length > caben ? w.slice(0, Math.max(3, caben - 1)) + '.' : w).join(' ') };
+}
+function rangoSemana(hz){
+  const ini = hz.clases.map((x) => aMin(x.inicio)).filter((x) => x != null), fin = hz.clases.map((x) => aMin(x.fin)).filter((x) => x != null);
+  const a = ini.length ? Math.floor(Math.min(...ini) / 60) * 60 : 7 * 60, b = fin.length ? Math.ceil(Math.max(...fin) / 60) * 60 : 14 * 60;
+  return [a, Math.max(b, a + 120)];
+}
+function semanaHtml(hz, hoyI, ahora){
+  const [a, b] = rangoSemana(hz), alto = Math.round((b - a) * PPM);
+  /* lo que cabe de texto en un bloque: el ancho de la vista menos la columna de horas, los huecos y el relleno */
+  const anchoTxt = ((($('#vHorario').clientWidth || 358) - 18 - 26 - 16) / 5) - 13;
+  const horas = []; for(let h = a; h <= b; h += 60) horas.push(`<span style="top:${Math.round((h - a) * PPM)}px">${h / 60}</span>`);
+  const cols = DIAS_ESC.map((n, i) => {
+    const cl = hz.clases.map((x, k) => [x, k]).filter(([x]) => x.dia === i);
+    const bloques = cl.map(([x, k]) => { const t = (aMin(x.inicio) - a) * PPM, h = Math.max(22, (aMin(x.fin) - aMin(x.inicio)) * PPM - 2);
+      const ahoraEs = i === hoyI && aMin(x.inicio) <= ahora && ahora < aMin(x.fin);
+      return `<button class="hs-clase${ahoraEs ? ' ahora' : ''}" data-hs-clase="${k}" style="top:${Math.round(t)}px;height:${Math.round(h)}px;--c:${colorMateria(x.materia)}" aria-label="${esc(x.materia)}, ${n.toLowerCase()} de ${esc(x.inicio)} a ${esc(x.fin)}" ${(() => { const n2 = ajustarNombre(nombreCorto(x.materia), anchoTxt); return `><b style="font-size:${n2.tam}px">${esc(n2.texto)}</b>`; })()}${h > 34 ? `<small>${esc(x.inicio)}</small>` : ''}</button>`; }).join('');
+    const linea = i === hoyI && ahora >= a && ahora <= b ? `<i class="hs-ahora" style="top:${Math.round((ahora - a) * PPM)}px"></i>` : '';
+    return `<div class="hs-col${i === hoyI ? ' hoy' : ''}" data-hs-dia="${i}" aria-label="${n}">${bloques}${linea}</div>`;
+  }).join('');
+  return `<div class="hz-semana" data-desde="${a}" data-hasta="${b}"><div class="hs-cab"><span></span>${DIAS_ESC.map((n, i) => `<b${i === hoyI ? ' class="hoy"' : ''}>${n.slice(0, 3)}</b>`).join('')}</div>
+    <div class="hs-cuerpo" style="height:${alto}px;--hora:${60 * PPM}px"><div class="hs-horas">${horas.join('')}</div>${cols}</div>
+    <p class="hs-pista">Toca un hueco para agregar una clase</p></div>`;
+}
 const hhmm = (m) => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`;
 const faltaTexto = (m) => m < 60 ? `${m} min` : `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ''}`;
 /* LA LÍNEA DEL EXAMEN (Carlos, 13 nov: «que aparezca una línea en el horario que te marque cuánto falta para tu examen»):
@@ -1751,25 +1788,44 @@ function pintarHorario(){
   v.innerHTML = `<h1 class="titulo-vista">Tu horario</h1>${hz.clases.length ? '' : '<p class="sub-vista">Agrégalo una vez y listo, siempre lo vas a tener. Tarda 30 segundos.</p>'}
     ${ahoraHtml}
     ${examenes.length ? `<div class="seccion-t">Cuánto falta para tus exámenes</div><div class="cuentas-ex">${examenes.slice(0, 4).map(lineaExamen).join('')}</div>` : ''}
-    ${hz.clases.length ? `<div class="seccion-t hz-cab">La semana<button class="bt mini" id="bEditarHorario" aria-pressed="${horarioEditando}">${ico(horarioEditando ? 'check' : 'pencil')}${horarioEditando ? 'Listo' : 'Editar'}</button></div>
-    <div class="horario${horarioEditando ? ' editando' : ''}">${dias}</div>` : ''}
+    ${hz.clases.length ? `<div class="seccion-t hz-cab">La semana<span class="hz-modo" role="group" aria-label="Cómo ver la semana"><button data-hz-modo="semana" aria-pressed="${horarioModo === 'semana'}">Semana</button><button data-hz-modo="lista" aria-pressed="${horarioModo === 'lista'}">Lista</button></span>${horarioModo === 'lista' ? `<button class="bt mini" id="bEditarHorario" aria-pressed="${horarioEditando}">${ico(horarioEditando ? 'check' : 'pencil')}${horarioEditando ? 'Listo' : 'Editar'}</button>` : ''}</div>
+    ${horarioModo === 'semana' ? semanaHtml(hz, hoyI, ahora) : `<div class="horario${horarioEditando ? ' editando' : ''}">${dias}</div>`}` : ''}
     <div style="display:grid;gap:10px;margin:22px 0 30px"><button class="bt fuerte ancho" id="bAgregarClase">${ico('plus')}Agregar una clase</button><label class="bt ancho" id="bFotoHorario">${ico('camera')}Subir foto de mi horario<input type="file" accept="image/*" hidden id="fFotoHorario"></label><button class="bt ancho" id="bPegarHorario">${ico('clipboard-paste')}Pegar desde Excel</button></div>`;
-  $('#bAgregarClase').addEventListener('click', agregarClase);
+  $('#bAgregarClase').addEventListener('click', () => agregarClase());
   $('#bPegarHorario').addEventListener('click', pegarHorario);
   $('#fFotoHorario').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; if(f) fotoHorario(f); });
   const be = $('#bEditarHorario'); if(be) be.addEventListener('click', () => { horarioEditando = !horarioEditando; pintarHorario(); });
-  /* el «ahora» se pone al día solo cada minuto mientras estés viendo el horario */
+  /* el «ahora» se pone al día solo cada minuto mientras estés viendo el horario. En la semana sólo se mueve la línea roja
+     (regla 13: cero parpadeo; volver a pintar la cuadrícula cada minuto la haría parpadear en el iPhone) */
   clearInterval(relojHorario);
   relojHorario = setInterval(() => { if(!v.isConnected || v.hidden || getComputedStyle(v).display === 'none'){ clearInterval(relojHorario); return; }
+    const sem = $('.hz-semana', v), linea = sem && $('.hs-ahora', sem);
+    if(linea){ const d2 = new Date(), m = d2.getHours() * 60 + d2.getMinutes(), a = +sem.dataset.desde, b = +sem.dataset.hasta; if(m <= b){ linea.style.top = Math.round((m - a) * PPM) + 'px'; return; } }
     const abiertos = $$('details.hz-dia', v).map((x) => x.open); pintarHorario(); $$('details.hz-dia', v).forEach((x, k) => { x.open = abiertos[k]; }); }, 60_000);
 }
-$('#vHorario').addEventListener('click', (e) => { const b = e.target.closest('[data-quitar-clase]'); if(!b) return; const hz = horario(); hz.clases.splice(+b.dataset.quitarClase, 1); guardarHorario(hz); });
+$('#vHorario').addEventListener('click', (e) => {
+  const md = e.target.closest('[data-hz-modo]'); if(md){ horarioModo = md.dataset.hzModo; guarda.poner('est.horarioModo', horarioModo); pintarHorario(); return; }
+  const bl = e.target.closest('[data-hs-clase]'); if(bl){ verClase(+bl.dataset.hsClase); return; }
+  const col = e.target.closest('[data-hs-dia]');
+  if(col){ const sem = col.closest('.hz-semana'), y = e.clientY - col.getBoundingClientRect().top, m = Math.round((+sem.dataset.desde + y / PPM) / 10) * 10;
+    agregarClase({ dia: +col.dataset.hsDia, inicio: hhmm2(m), fin: hhmm2(Math.min(m + 50, 23 * 60 + 59)) }); return; }
+  const b = e.target.closest('[data-quitar-clase]'); if(!b) return; const hz = horario(); hz.clases.splice(+b.dataset.quitarClase, 1); guardarHorario(hz); });
+const hhmm2 = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+/* tocar un bloque de la semana: qué clase es, y quitarla */
+function verClase(k){
+  const hz = horario(), x = hz.clases[k]; if(!x) return;
+  const h = hoja(x.materia, `<p style="color:var(--suave);margin:0 0 16px">${DIAS_ESC[x.dia]} · ${esc(x.inicio)} a ${esc(x.fin)}</p>
+    <div style="display:grid;gap:10px"><button class="bt ancho" id="vcQuitar">${ico('trash')}Quitar</button><button class="bt fuerte ancho" id="vcOk">Listo</button></div>`);
+  $('#vcOk', h).addEventListener('click', cerrarHoja);
+  $('#vcQuitar', h).addEventListener('click', () => { hz.clases.splice(k, 1); cerrarHoja(); guardarHorario(hz); brindis('Clase quitada', '', 'trash'); });
+}
 function guardarHorario(hz){ perfil.horario = hz; guarda.poner('est.perfil', perfil); pintarHorario(); sala({ accion: 'perfil', horario: hz }).catch(() => {}); }
-function agregarClase(){
+function agregarClase(pre = null){
+  pre = pre || {};   /* «function f(s = {})» no cubre null (regla 12): se normaliza adentro */
   const ms = listaMaterias();
   const h = hoja('Agregar una clase', `<label class="seccion-t" for="cMat" style="display:block;margin-top:0">Materia</label><input class="campo" id="cMat" list="cMats" placeholder="Ej. Física"><datalist id="cMats">${ms.map((m) => `<option value="${esc(m.nombre)}">`).join('')}</datalist>
-    <div class="seccion-t">Días</div><div class="chips">${DIAS_ESC.map((d, i) => `<button class="chip" data-dia="${i}" aria-pressed="false">${d}</button>`).join('')}</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px"><label>De<input type="time" class="campo" id="cIni" value="07:00"></label><label>A<input type="time" class="campo" id="cFin" value="07:50"></label></div>
+    <div class="seccion-t">Días</div><div class="chips">${DIAS_ESC.map((d, i) => `<button class="chip" data-dia="${i}" aria-pressed="${pre.dia === i}">${d}</button>`).join('')}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px"><label>De<input type="time" class="campo" id="cIni" value="${pre.inicio || '07:00'}"></label><label>A<input type="time" class="campo" id="cFin" value="${pre.fin || '07:50'}"></label></div>
     <button class="bt fuerte ancho" style="margin-top:16px" id="cListo">Agregar</button>`);
   h.addEventListener('click', (e) => { const d = e.target.closest('[data-dia]'); if(d) d.setAttribute('aria-pressed', d.getAttribute('aria-pressed') !== 'true'); });
   $('#cListo', h).addEventListener('click', () => {

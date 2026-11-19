@@ -796,6 +796,26 @@ for(const ev of ['gesturestart', 'gesturechange']) document.addEventListener(ev,
   .hz-chip{ font:800 11px/1 Titulo; letter-spacing:.06em; text-transform:uppercase; padding:5px 8px; border-radius:99px; background:var(--vino); color:#fff }
   .hz-chip.sig{ background:transparent; color:var(--claro-txt); box-shadow:inset 0 0 0 1.5px currentColor }
   .hz-cab{ display:flex; align-items:center; justify-content:space-between; gap:10px }
+  /* la semana como calendario (carymo.js semanaHtml) */
+  .hz-modo{ display:inline-flex; margin-left:auto; padding:3px; border-radius:99px; background:var(--sup) }
+  .hz-modo button{ border:0; background:none; color:var(--suave); font:800 13px/1 Titulo; padding:0 14px; min-height:36px; border-radius:99px }
+  .hz-modo button[aria-pressed="true"]{ background:var(--vino); color:#fff }
+  .hz-semana{ border-radius:16px; background:var(--fondo-2); border:1px solid var(--borde); padding:10px 8px 8px }
+  .hs-cab, .hs-cuerpo{ display:grid; grid-template-columns:26px repeat(5, minmax(0, 1fr)); gap:4px }
+  .hs-cab{ text-align:center; font:800 12px/1 Titulo; color:var(--suave); padding-bottom:8px } .hs-cab b.hoy{ color:var(--claro-txt) }
+  .hs-cuerpo{ position:relative }
+  .hs-horas{ position:relative } .hs-horas span{ position:absolute; right:3px; transform:translateY(-50%); font:700 10px/1 Texto; color:var(--tenue) }
+  .hs-col{ position:relative; border-radius:8px; cursor:pointer; background-color:color-mix(in srgb, var(--sup) 55%, transparent);
+    background-image:repeating-linear-gradient(to bottom, var(--borde) 0 1px, transparent 1px var(--hora)) }
+  .hs-col.hoy{ background-color:color-mix(in srgb, var(--vino) 22%, var(--fondo-2)) }
+  .hs-clase{ position:absolute; left:2px; right:2px; display:block; border:0; border-left:3px solid var(--c); border-radius:7px; padding:4px 4px 3px 5px; overflow:hidden; text-align:left;
+    background:color-mix(in srgb, var(--c) 34%, var(--sup)); color:var(--hueso) }
+  .hs-clase b{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; hyphens:auto; -webkit-hyphens:auto; overflow-wrap:break-word; font:800 11px/1.15 Titulo }
+  .hs-clase small{ display:block; margin-top:2px; font:700 10px/1 Texto; color:color-mix(in srgb, var(--hueso) 70%, transparent) }
+  .hs-clase.ahora{ box-shadow:0 0 0 2px var(--hueso) }
+  .hs-ahora{ position:absolute; left:-3px; right:-3px; height:2px; background:#FF4A6A; pointer-events:none; z-index:2 }
+  .hs-ahora::before{ content:""; position:absolute; left:-3px; top:-3px; width:8px; height:8px; border-radius:50%; background:#FF4A6A }
+  .hs-pista{ margin:8px 2px 0; font-size:12px; color:var(--tenue); text-align:center }
   .hz-ahora{ position:relative; padding:18px 18px 16px; border-radius:20px; background:var(--vino); margin:6px 0 18px; overflow:hidden }
   .hz-ahora::before{ content:""; position:absolute; inset:0 auto 0 0; width:6px; background:var(--c, var(--claro)) }
   .hz-ahora.libre{ background:var(--sup) }
