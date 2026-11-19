@@ -278,6 +278,42 @@
    "consejo": "Todo lo que una mano «posee» se reasigna cada cuadro con un respaldo para el caso fácil; nunca depende sólo de que la mano no se haya movido mucho.",
    "salioDe": "Mazi VR, 18 nov.",
    "vecinas": []
+  },
+  {
+   "id": "botones-con-huecos",
+   "clase": "error",
+   "titulo": "Un botón que sólo funciona la primera vez",
+   "gravedad": "alta",
+   "sintoma": "Sin control conectado, la palma que abre el menú o una tecla de Mazi VR funcionan una vez y luego nunca.",
+   "causa": "El arreglo de botones del cuadro se llenaba sólo con lo apretado (ahora[i] = true) y quedaba con huecos.",
+   "porque": "map y forEach se saltan los huecos: el estado anterior nunca regresaba a falso, así que «recién apretado» ya no se cumplía.",
+   "arreglo": "El arreglo nace lleno: new Array(17).fill(false) (vr/vr.js, leerControl).",
+   "comoCazarlo": "Apretar el mismo botón DOS veces en la prueba, no una. Lo cazó vr/pruebas-seis-motor.mjs.",
+   "senales": [
+    "el gesto funciona una vez",
+    "la tecla ya no responde",
+    "el botón sólo jala la primera vez",
+    "sin control no funciona el menú"
+   ],
+   "salioDe": "Motor de MAZI XR, 19 nov 2026."
+  },
+  {
+   "id": "seis-dof-se-desliza",
+   "clase": "decision",
+   "titulo": "El 6DoF que se desliza estando parado",
+   "gravedad": "media",
+   "sintoma": "En el iPhone, el cubo anclado a veces se va lejos solo, sobre todo en una zona con poca textura.",
+   "que": "El motor toma del VIO sólo la posición, por pedazos, y tira los que son imposibles: brincos de más de 30 cm, deslizarse a más de 35 cm/s sin pasos en el acelerómetro, y más de 0.3 s sin puntos de cámara. El giro sigue del giroscopio.",
+   "porque": "Así una falla del VIO nunca congela ni voltea la vista, y el caso que vio Carlos (desliz sin caminar) se frena.",
+   "alternativas": "Usar la pose completa del VIO (si se cae, la vista se cae); integrar el acelerómetro (deriva en segundos); mapa con relocalización (es la cura de fondo, etapa aparte).",
+   "ojo": "El freno es una regla: una deriva lenta o mientras caminas todavía se nota.",
+   "senales": [
+    "el cubo se desliza",
+    "lo anclado se va solo",
+    "6dof deriva",
+    "se mueve el mundo estando quieto"
+   ],
+   "salioDe": "vr/seis.js y are/Documentation/ENGINEERING_LOG.md 006, 19 nov 2026."
   }
  ]
 }

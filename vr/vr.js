@@ -16,9 +16,10 @@
    ARKit, de la app nativa).
    ══════════════════════════════════════════════════════════════════════════ */
 import * as THREE from 'three';
+import { crearSeis, ojoPorDefecto } from './seis.js';
 
 /* ── ajustes: se guardan en el teléfono (sólo comodidad; si se borran, salen los de fábrica) ── */
-const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true, menuTam: 1, menuDist: 1, fondo: 0 };
+const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true, menuTam: 1, menuDist: 1, fondo: 0, seis: false };
 const AJ = { ...FABRICA };
 try{ Object.assign(AJ, JSON.parse(localStorage.getItem('mazivr.ajustes') || '{}')); }catch{}
 const guardar = () => { try{ localStorage.setItem('mazivr.ajustes', JSON.stringify(AJ)); }catch{} };
@@ -74,7 +75,7 @@ const video = document.createElement('video'); video.playsInline = true; video.m
    jalaban en el cuarto virtual (sin la mixta) */
 video.style.cssText = 'position:fixed; left:0; bottom:0; width:2px; height:2px; opacity:.01; pointer-events:none; z-index:0';
 (document.body ? document.body.appendChild(video) : addEventListener('DOMContentLoaded', () => document.body.appendChild(video)));
-let camTex = null, flujo = null, ultra = false;
+let camTex = null, flujo = null, ultra = false, camVIO = false;
 /* lo que abre la cámara de lado. En Android casi nunca se reconoce la gran angular por su nombre y la imagen salía como
    una ventanita en medio de la vista (foto de Carlos, 18 nov): si la cámara abre menos que el ojo, se estira hasta
    llenarlo. Las manos usan esta misma medida, así que siguen cayendo sobre tu mano */
@@ -84,6 +85,9 @@ const pared = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicM
 pared.renderOrder = -10; pared.position.z = -20; pared.visible = false; cabeza.add(pared);
 export async function abrirCamara(){
   if(flujo) return true;
+  /* con 6DoF, la cámara PRINCIPAL a 640×480 y 60 cuadros: su lente es la que conoce el rastreo (vio.js) */
+  if(AJ.seis) try{ const { abrirCamaraVIO } = await import('./espacial/vio.js'); flujo = await abrirCamaraVIO(); ultra = false; camVIO = true; return await ponerFlujo(); }catch(e){ console.warn('cámara 6DoF', e); flujo = null; }
+  camVIO = false;
   try{
     /* la ultra gran angular llena la vista del visor (la normal abre ~69°, el ojo en el visor ~90°). La primera vez hay que
        abrir la normal para que el teléfono diga los nombres de sus cámaras; luego se recuerda cuál es y se abre de un jalón
@@ -99,13 +103,18 @@ export async function abrirCamara(){
         if(uw){ flujo.getTracks().forEach((t) => t.stop()); flujo = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: uw.deviceId }, ...tam }, audio: false }); ultra = true; try{ localStorage.setItem('mazivr.camara', uw.deviceId); }catch{} }
       }catch(e){ console.warn('ultra gran angular', e); }
     }
-    video.srcObject = flujo; await video.play();
-    camTex = new THREE.VideoTexture(video); camTex.colorSpace = THREE.SRGBColorSpace;
-    pared.material.map = camTex; pared.material.color.set(0xffffff); pared.material.needsUpdate = true;
-    ponerMixta(AJ.mixta);   /* la cámara llega después de entrar: si la mixta ya estaba puesta, ahora sí se ve */
-    return true;
+    return await ponerFlujo();
   }catch(e){ console.warn('cámara', e); return false; }
 }
+async function ponerFlujo(){
+  video.srcObject = flujo; await video.play();
+  if(!camTex){ camTex = new THREE.VideoTexture(video); camTex.colorSpace = THREE.SRGBColorSpace; }
+  pared.material.map = camTex; pared.material.color.set(0xffffff); pared.material.needsUpdate = true;
+  ponerMixta(AJ.mixta);   /* la cámara llega después de entrar: si la mixta ya estaba puesta, ahora sí se ve */
+  return true;
+}
+/* cambiar de cámara (prender o apagar el 6DoF cambia de lente): se cierra la de antes y se abre la que toca */
+export async function reabrirCamara(){ flujo?.getTracks().forEach((t) => t.stop()); flujo = null; return abrirCamara(); }
 function medirPared(){
   const d = -pared.position.z, ancho = 2 * d * Math.tan(campoCamara() * Math.PI / 360);
   const asp = video.videoWidth && video.videoHeight ? video.videoWidth / video.videoHeight : 16 / 9;
@@ -143,7 +152,7 @@ function medir(){
   const op = { colorSpace: THREE.SRGBColorSpace, samples: 4 };
   rtI = new THREE.WebGLRenderTarget(ew, eh, op); rtD = new THREE.WebGLRenderTarget(ew, eh, op);
   pase.uniforms.tI.value = rtI.texture; pase.uniforms.tD.value = rtD.texture;
-  cabeza.aspect = (W / 2) / H; aplicarAjustes();
+  cabeza.aspect = modo.mono ? W / H : (W / 2) / H; aplicarAjustes();
 }
 function aplicarAjustes(){
   cabeza.fov = AJ.campo; cabeza.updateProjectionMatrix();
@@ -169,6 +178,30 @@ function leerCabeza(){
   } else qCab.setFromEuler(eul.set(sim.pitch, sim.yaw, 0, 'YXZ'));
   cabeza.quaternion.copy(qCab);
   rig.quaternion.copy(qG.setFromAxisAngle(yUp, guinada));
+  /* 6DoF: el giro sigue saliendo del giroscopio; del VIO sale DÓNDE están tus ojos (seis.js) */
+  if(seis.vio){
+    const pose = seis.vio.S.corriendo ? seis.vio.pose(performance.now()) : null;
+    const st = seis.filtro.paso(pose, [qCab.w, qCab.x, qCab.y, qCab.z], seis.vio.S, performance.now(), seis.ojo || ojoPorDefecto((((screen.orientation?.angle ?? window.orientation ?? 90) % 360) + 360) % 360));
+    cabeza.position.set(st.pos[0], st.pos[1], st.pos[2]);
+    const e = seis.vio.S.estado, aviso6 = !seis.vio.S.listo ? '' : e === 'track' ? '6DoF' : e === 'coast' ? 'Muévete despacio' : e === 'wait' ? 'Quédate quieto' : e === 'init' ? 'Mueve el teléfono de lado' : String(e || '').startsWith('reset') ? 'Rastreo perdido' : '';
+    if(aviso6 && aviso6 !== seis.aviso && performance.now() - seis.avisoEn > 1500){ seis.aviso = aviso6; seis.avisoEn = performance.now(); hud(aviso6, 1.6); }
+  } else if(cabeza.position.lengthSq()) cabeza.position.set(0, 0, 0);
+}
+/* ── 6DoF (ENGINEERING_LOG 006): el VIO de visloc-rs con la MISMA cámara, y el filtro que no te deja salir volando ── */
+export const seis = { vio: null, filtro: crearSeis(), ojo: null, aviso: '', avisoEn: 0, error: '' };
+export async function ponerSeis(si, { demo = null, videoDemo = null } = {}){
+  AJ.seis = !!si && !demo ? true : (demo ? AJ.seis : false); if(!demo) guardar();
+  if(seis.vio){ seis.vio.parar(); seis.vio = null; }
+  seis.filtro = crearSeis(); seis.aviso = ''; seis.error = '';
+  if(!si){ if(!demo && camVIO) await reabrirCamara(); return true; }
+  try{
+    const { crearVIO } = await import('./espacial/vio.js');
+    if(!demo){ if(!camVIO || !flujo) await reabrirCamara(); if(!flujo) throw new Error('Sin cámara'); }
+    const v = crearVIO({ video: demo ? videoDemo : video, demo });
+    seis.vio = v; hud('Preparando 6DoF', 2);
+    await v.iniciar();
+    return true;
+  }catch(e){ seis.error = String(e.message || e); console.warn('6DoF', e); hud('6DoF: ' + seis.error.slice(0, 40), 3); if(seis.vio){ seis.vio.parar(); seis.vio = null; } if(!demo){ AJ.seis = false; guardar(); } return false; }
 }
 /* hacia dónde ve la cabeza en el mundo, sólo de lado (para recentrar y caminar) */
 const adelante = new THREE.Vector3();
@@ -184,7 +217,7 @@ export function precalentar(){
 }
 export function recentrar(){
   /* el menú queda enfrente de donde ves ahora */
-  const r = rumbo(); hub.rotation.y = r; hub.position.copy(rig.position); hud('Al centro');
+  const r = rumbo(); hub.rotation.y = r; cabeza.getWorldPosition(hub.position); hub.position.y = rig.position.y; hud('Al centro');
   /* y las pantallas que se movieron con las manos regresan enfrente y a su tamaño */
   for(const v of Object.values(vistas)) v.alRecentrar?.();
 }
@@ -256,7 +289,9 @@ export const nombrePad = (p) => !p ? '' : /dualsense/i.test(p.id) ? 'DualSense' 
 addEventListener('gamepadconnected', (e) => { if(e.gamepad?.buttons?.length >= 10) hud(`Control: ${nombrePad(e.gamepad)}`, 1.6); });
 addEventListener('gamepaddisconnected', () => { if(!elegirPad()){ padVisto = false; hud('Control desconectado', 1.6); } });
 function leerControl(){
-  const p = elegirPad(); const ahora = [];
+  /* el arreglo va LLENO de falsos: con huecos, map/forEach se los saltan y `antes` se quedaba en «apretado» para siempre,
+     así que sin control conectado un gesto de las manos (o una tecla) sólo funcionaba la PRIMERA vez (19 nov) */
+  const p = elegirPad(); const ahora = new Array(Math.max(17, p?.buttons.length || 0)).fill(false);
   if(p){ if(!padVisto){ padVisto = true; hud(`Control: ${nombrePad(p)}`, 1.6); } p.buttons.forEach((b, i) => { ahora[i] = b.pressed || b.value > .5; }); control.ejes = [...p.axes].map((v) => Math.abs(v) < .18 ? 0 : v); }
   else control.ejes = [0, 0, 0, 0];
   teclas.forEach((v, i) => { if(v) ahora[i] = true; });
@@ -275,6 +310,20 @@ const teclas = []; const MAPA = { Enter: B.X, Escape: B.O, Backspace: B.O, KeyR:
 export const texto = { activo: false };
 addEventListener('keydown', (e) => { if(texto.activo && (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Enter')) return; if(e.code in MAPA){ teclas[MAPA[e.code]] = true; e.preventDefault(); } });
 addEventListener('keyup', (e) => { if(e.code in MAPA) teclas[MAPA[e.code]] = false; });
+/* SIN VISOR (modo pantalla): una sola vista, el teléfono es una ventana que se mueve con el giroscopio, y TOCAR un
+   botón lo elige. CON visor, tocar la pantalla (el botón de algunos visores de cartón la toca) es «X». */
+export const modo = { mono: false };
+export function ponerPantalla(si){ modo.mono = !!si; if(W > 1) medir(); }
+/* MODO EXPOSICIÓN (MONARCH XR y lo que venga): los botones que sacan de la experiencia no hacen nada; la salida del
+   docente la pone la experiencia (kiosco.alSalir) */
+export const kiosco = { activo: false, alPS: null };
+let toqueIni = null;
+addEventListener('pointerdown', (e) => { toqueIni = [e.clientX, e.clientY, performance.now()]; });
+addEventListener('pointerup', (e) => { const t = toqueIni; toqueIni = null; if(!t || !document.body.classList.contains('dentro')) return;
+  if(Math.hypot(e.clientX - t[0], e.clientY - t[1]) > 12 || performance.now() - t[2] > 600) return;
+  if(modo.mono){ const L = elegibles(); if(!L.length) return; ray.setFromCamera(new THREE.Vector2((e.clientX / W) * 2 - 1, -(e.clientY / H) * 2 + 1), cabeza);
+    const h = ray.intersectObjects(L, false)[0]; if(h){ darFoco(h.object); activar(h.object); } }
+  else if(foco) activar(foco); });
 let arrastre = null;
 addEventListener('pointerdown', (e) => { if(!ori.hay) arrastre = [e.clientX, e.clientY]; });
 addEventListener('pointermove', (e) => { if(!arrastre) return; sim.yaw += (arrastre[0] - e.clientX) * .005; sim.pitch = Math.max(-1.4, Math.min(1.4, sim.pitch + (arrastre[1] - e.clientY) * .005)); arrastre = [e.clientX, e.clientY]; });
@@ -285,7 +334,7 @@ addEventListener('pointerup', () => { arrastre = null; });
 let actx = null; const sonidos = {};
 const cargaSonidos = (async () => {
   try{ actx = new (window.AudioContext || window.webkitAudioContext)();
-    await Promise.all(['toque', 'whoosh', 'ding'].map(async (n) => { sonidos[n] = await actx.decodeAudioData(await (await fetch(`sonidos/${n}.wav`)).arrayBuffer()); }));
+    await Promise.all(['toque', 'whoosh', 'ding'].map(async (n) => { sonidos[n] = await actx.decodeAudioData(await (await fetch(new URL(`sonidos/${n}.wav`, import.meta.url))).arrayBuffer()); }));
   }catch(e){ console.warn('audio', e); }
 })();
 export function despertarAudio(){
@@ -361,9 +410,9 @@ function cuadro(t){
   leerControl(); leerCabeza();
   const v = vistas[vista];
   /* botones que valen en todas partes */
-  if(control.oprimido[B.OPTIONS] || control.oprimido[B.PS]) ir('inicio');
+  if(control.oprimido[B.OPTIONS] || control.oprimido[B.PS]){ if(kiosco.activo) kiosco.alPS?.(); else ir('inicio'); }
   if(control.oprimido[B.CUADRO]) recentrar();
-  if(control.oprimido[B.TRIANGULO]){ if(camTex){ ponerMixta(!AJ.mixta); hud(AJ.mixta ? 'Realidad mixta' : 'Realidad virtual'); } else hud('Sin cámara'); }
+  if(control.oprimido[B.TRIANGULO] && !kiosco.activo){ if(camTex){ ponerMixta(!AJ.mixta); hud(AJ.mixta ? 'Realidad mixta' : 'Realidad virtual'); } else hud('Sin cámara'); }
   /* girar con el stick derecho, a saltos de 30° (marea menos que girar suave) */
   const rx = control.ejes[2];
   if(Math.abs(rx) > .7 && giroArmado && !v?.ocupaGiro){ guinada -= Math.sign(rx) * Math.PI / 6; giroArmado = false; sonar('toque', .15); }
@@ -384,7 +433,8 @@ function cuadro(t){
   /* la mira: lo que ves al centro toma el foco, salvo justo después de usar las flechas sin mover la cabeza */
   if(mirarBloqueado && (cabeza.quaternion.angleTo(giroAlBloquear) > .14 || performance.now() > bloqueadoHasta)){ mirarBloqueado = false; focoDesde = performance.now(); }   /* el reloj de mirar fijo empieza al soltarse, no antes */
   const L = elegibles(); let viendo = null;
-  if(mirar.activo && L.length){
+  /* sin visor no hay mira: se elige tocando (mirar fijo al centro abría «Leer» solo al entrar) */
+  if(mirar.activo && L.length && !modo.mono){
     const flechasRecientes = performance.now() - focoPorFlechas < 4000 && cabeza.quaternion.angleTo(ultimoGiro) < .12;
     /* cada mano con su rayo: cada uno sabe a qué le pega; el foco lo da el principal (o la mira, sin manos) */
     for(const R of extra.rayos || []){ ray.set(R.origen, R.dir); let hh = ray.intersectObjects(L, false)[0];
@@ -435,7 +485,9 @@ function cuadro(t){
   if(pared.visible) medirPared();
 
   /* dos ojos a dos texturas, y el pase del lente a la pantalla */
-  rig.updateMatrixWorld(true); estereo.update(cabeza);
+  rig.updateMatrixWorld(true);
+  if(modo.mono){ render.setRenderTarget(null); render.render(escena, cabeza); for(const f of trasCuadro) f([cabeza], W, H); capaEncima.style.display = 'none'; return; }
+  estereo.update(cabeza);
   render.setRenderTarget(rtI); render.render(escena, estereo.cameraL);
   render.setRenderTarget(rtD); render.render(escena, estereo.cameraR);
   render.setRenderTarget(null); render.render(paseEsc, paseCam);

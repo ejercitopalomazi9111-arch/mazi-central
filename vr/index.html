@@ -43,6 +43,7 @@
     <h1>Mazi <em>VR</em></h1>
     <div class="estado"><span id="eControl">Control</span><span id="eVideos">Archivos</span><span id="eGuardado">Sin internet</span></div>
     <button class="boton" id="bEntrar" type="button">Entrar</button>
+    <button class="boton sec" id="bPantalla" type="button">Sin visor</button>
     <label class="boton sec" style="display:inline-grid; place-items:center">Archivos<input id="iVideos" type="file" accept="video/*,audio/*" multiple hidden></label>
   </div>
 </div>
@@ -89,6 +90,8 @@ try{ const v = +sessionStorage.getItem('mazivr.volver'); if(v && Date.now() - v 
 /* ya adentro, un botón del control vuelve a pedir pantalla completa si se perdió (Android) */
 setInterval(() => { if(!document.body.classList.contains('dentro') || document.fullscreenElement) return; const p = V.elegirPad();
   if(p?.buttons.some((b) => b.pressed)) try{ document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }).catch(() => {}); }catch{} }, 250);
+/* sin visor: una sola vista y se toca la pantalla para elegir (el mismo motor) */
+$('#bPantalla').addEventListener('click', () => { V.ponerPantalla(true); $('#bEntrar').click(); });
 $('#bEntrar').addEventListener('click', async () => {
   $('#bEntrar').disabled = true;
   /* lo que exige el toque va primero y sin esperar a nada más */
@@ -107,6 +110,12 @@ $('#bEntrar').addEventListener('click', async () => {
   $('#entrada').remove(); document.body.classList.add('dentro');
   V.arrancar(); V.ir('inicio'); V.recentrar(); V.hud('Bienvenido', 2);
   /* las manos cargan después (el modelo pesa ~8 MB): el visor ya se puede usar mientras */
+  /* 6DoF guardado en Ajustes: se prende en cuanto hay cámara */
+  if(V.AJ.seis) camara.then((ok) => ok && V.ponerSeis(true));
+  /* prueba sin teléfono: ?demo6 mete la caminata grabada de un iPhone al 6DoF del motor (vr/pruebas-seis-motor.mjs) */
+  const q6 = new URLSearchParams(location.search).get('demo6');
+  if(q6){ const vd = document.createElement('video'); vd.muted = true; vd.playsInline = true; vd.src = `espacial/demo/${q6}.mp4`; vd.style.cssText = 'position:fixed;width:2px;height:2px;opacity:.01;left:0;top:0'; document.body.appendChild(vd);
+    fetch(`espacial/demo/${q6}.json`).then((r) => r.json()).then(async (demo) => { demo.next = 0; await vd.play(); window.__demo6 = await V.ponerSeis(true, { demo, videoDemo: vd }); }); }
   camara.then((ok) => { if(ok && V.hayCamara()) import('./manos.js').then(async ({ iniciarManos }) => { const m = await iniciarManos(V); window.__manos = m; if(m.listo){ V.alCuadro.push(m.cuadro, m.dibujar); V.hud('Manos listas'); } }); });
 });
 
@@ -217,14 +226,15 @@ async function montar(){
     ['Voltear cámara', 'camVoltear', 0, 1, 1, (v) => v ? 'Sí' : 'No'],
     ['Manos', 'manos', 0, 1, 1, (v) => v ? 'Sí' : 'No'],
     ['Fondo', 'fondo', 0, 1, 1, (v) => v ? 'Espacio' : 'Tem Shop'],
+    ['6DoF', 'seis', 0, 1, 1, (v) => v ? 'Sí' : 'No'],
     ['De fábrica', null],
   ];
   let fila = 0;
   const hoja = new V.Panel(1.5, 1.5, 420); hoja.malla.position.set(0, .05, -2.0); aj.grupo.add(hoja.malla);
   const pintarHoja = () => { const { x, cv } = hoja, w = cv.width; x.clearRect(0, 0, w, cv.height); V.redondo(x, 6, 6, w - 12, cv.height - 12, 40); x.fillStyle = '#1E1428'; x.fill(); x.strokeStyle = '#3C2652'; x.lineWidth = 4; x.stroke();
     x.textBaseline = 'middle'; x.font = '900 46px system-ui, -apple-system, sans-serif'; x.fillStyle = '#F4EEF2'; x.textAlign = 'left'; x.fillText('Ajustes', 50, 64);
-    FILAS.forEach(([t, k, , , , f], i) => { const y = 140 + i * 58, sel = i === fila;
-      if(sel){ V.redondo(x, 30, y - 26, w - 60, 52, 26); x.fillStyle = '#3A1A5C'; x.fill(); x.strokeStyle = '#AC27FF'; x.lineWidth = 3; x.stroke(); }
+    FILAS.forEach(([t, k, , , , f], i) => { const y = 136 + i * 52, sel = i === fila;
+      if(sel){ V.redondo(x, 30, y - 24, w - 60, 48, 24); x.fillStyle = '#3A1A5C'; x.fill(); x.strokeStyle = '#AC27FF'; x.lineWidth = 3; x.stroke(); }
       x.font = '700 32px system-ui, -apple-system, sans-serif'; x.fillStyle = sel ? '#fff' : '#C9B6DA'; x.textAlign = 'left'; x.fillText(t, 56, y);
       if(k){ x.textAlign = 'right'; x.fillStyle = sel ? '#C77DFF' : '#F4EEF2'; x.fillText((sel ? '‹  ' : '') + f(V.AJ[k]) + (sel ? '  ›' : ''), w - 56, y); } });
     hoja.listo(); };
@@ -233,6 +243,7 @@ async function montar(){
     if(c.oprimido[B.ARRIBA]) fila = (fila + FILAS.length - 1) % FILAS.length;
     if(c.oprimido[B.ABAJO]) fila = (fila + 1) % FILAS.length;
     const [, k, a, b, paso] = FILAS[fila]; const d = (c.oprimido[B.DER] ? 1 : 0) - (c.oprimido[B.IZQ] ? 1 : 0);
+    if(k === 'seis' && d){ V.sonar('toque', .15); V.ponerSeis(!V.AJ.seis).then(pintarHoja); V.AJ.seis = !V.AJ.seis; pintarHoja(); return { flechas: true, x: true }; }
     if(k && d){ const actual = k === 'camCampo' ? V.campoCamara() : V.AJ[k]; const v = (k === 'camVoltear' || k === 'manos' || k === 'fondo') ? !V.AJ[k] : Math.round(Math.min(b, Math.max(a, actual + d * paso)) * 100) / 100; V.AJ[k] = v; V.guardar(); V.aplicarAjustes(); if(k === 'manos') V.ponerMixta(V.AJ.mixta); V.sonar('toque', .15); }
     if(!k && c.oprimido[B.X]){ Object.assign(V.AJ, V.FABRICA, { mixta: V.AJ.mixta }); V.guardar(); V.aplicarAjustes(); V.hud('De fábrica'); }
     if(c.oprimido[B.ARRIBA] || c.oprimido[B.ABAJO] || d || c.oprimido[B.X]) pintarHoja();

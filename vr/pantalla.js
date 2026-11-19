@@ -139,8 +139,9 @@ export function crearPantallaWeb(V){
     camaras.forEach((cam, i) => {
       const d = []; let atras = false; inv.copy(cam.matrixWorld).invert();
       for(const e of esq){ p.copy(e).applyMatrix4(anclaje.matrixWorld).applyMatrix4(inv); if(p.z > -.05) atras = true;
-        p.applyMatrix4(cam.projectionMatrix); const [u, v] = V.alLente((p.x + 1) / 2, (p.y + 1) / 2, i === 1); d.push(u * ancho, (1 - v) * alto); }
+        p.applyMatrix4(cam.projectionMatrix); const [u, v] = V.modo?.mono ? [(p.x + 1) / 2, (p.y + 1) / 2] : V.alLente((p.x + 1) / 2, (p.y + 1) / 2, i === 1); d.push(u * ancho, (1 - v) * alto); }
       elems[i].style.visibility = atras ? 'hidden' : 'visible';
+      if(V.modo?.mono && elems[1]) elems[1].style.visibility = 'hidden';   /* sin visor: una sola vista */
       if(!atras) elems[i].style.transform = matrizDe(BASE_W, BASE_H, d);
     });
   }
