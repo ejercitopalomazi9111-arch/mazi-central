@@ -12,6 +12,22 @@
      · ZONA SEGURA: un círculo alrededor de donde estabas al prender el 6DoF (o al centrar), de 1 m de radio. Al llegar al
        80 % se empieza a ver la pared de la zona; afuera, avisa.
    Sin dependencias: se prueba en Node (vr/pruebas-limites.mjs). Coordenadas del mundo de three (y arriba), metros. */
+/** TOPES TEMPORALES DEL 6DoF (Carlos, 20 nov: «que con el 6DoF no puedas salir de la zona segura, que no puedas atravesar
+    el suelo y que si subes no puedas subir más de un cierto límite… un arreglo temporal en lo que lo terminamos»).
+    p: tu cabeza en el espacio del cuerpo (lo que mueve el 6DoF, no el stick); base: dónde arrancó (o donde recentraste).
+    · de lado, no sale del círculo de radio R alrededor de la base;
+    · abajo, nunca más bajo que el suelo (+ margen);
+    · arriba, nunca más de `subir` sobre la altura de arranque.
+    Cambia p en su lugar y regresa qué tope tocó ('' si ninguno). */
+export const TOPES = { margenSuelo: .1, subir: .6 };
+export function toparCabeza(p, base, R, suelo, T = TOPES){
+  let toco = '';
+  const dx = p.x - base.x, dz = p.z - base.z, d = Math.hypot(dx, dz);
+  if(R > 0 && d > R){ p.x = base.x + dx * R / d; p.z = base.z + dz * R / d; toco = 'zona'; }
+  const min = suelo + T.margenSuelo, max = Math.max(min, base.y + T.subir);
+  if(p.y < min){ p.y = min; toco = toco || 'suelo'; } else if(p.y > max){ p.y = max; toco = toco || 'techo'; }
+  return toco;
+}
 export const LIMITES = { celda: .1, minPuntos: 4, alto: .12, sobrePiso: .15, sobreOjos: .3, aviso: .5, soltar: .65, radio: 1, verPared: .8, buscar: 1.5, pisoMin: .7, pisoMax: 2, pisoPuntos: 20 };
 
 export function crearLimites(op = {}){
