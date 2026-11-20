@@ -909,6 +909,26 @@ for(const ev of ['gesturestart', 'gesturechange']) document.addEventListener(ev,
   .mz-carta.volteada .mz-frente{ transform:rotateY(-180deg) } .mz-carta.volteada .mz-reves{ transform:rotateY(0) }
   .mz-pista{ text-align:center; color:var(--tenue); font-size:13px; margin:0 0 12px }
   .mz-botones{ display:grid; grid-template-columns:1fr 1fr; gap:10px } .mz-botones[hidden]{ display:none }
+  /* La pizarra que corrige (corrige.js) */
+  .pc-tabla{ scroll-margin-top:calc(var(--muelle, 0px) + 8px); margin:12px 0 10px; border-radius:18px; overflow:hidden; background:#fff; box-shadow:0 0 0 1px #ffffff1f, 0 10px 30px #0006 }
+  .pc-caja{ position:relative; width:100%; aspect-ratio:1080/1200; max-height:62vh; overflow:hidden; touch-action:none; -webkit-user-select:none; user-select:none }
+  .pc-caja .dib-vista{ position:absolute; inset:0; width:100%; height:100%; display:block }
+  .pc-herr{ display:flex; gap:8px; align-items:center; margin-bottom:12px }
+  .pc-herr .pc-h{ flex:1 1 0; min-width:0 } .pc-herr .pc-h.activo{ background:#AC27FF; color:#fff }
+  .pc-res:empty{ display:none } .pc-res{ display:grid; gap:12px; margin-top:16px; scroll-margin-top:calc(var(--muelle, 0px) + 12px) }
+  .pc-veredicto{ display:flex; gap:12px; align-items:flex-start; padding:14px 16px; border-radius:16px; background:#ffffff10 }
+  .pc-veredicto > svg{ width:28px; height:28px; flex:none } .pc-veredicto b{ font:900 22px/1.1 Titulo } .pc-veredicto p{ margin:4px 0 0; line-height:1.45 }
+  .pc-bien{ background:#1F6B4A; color:#fff } .pc-casi{ background:#5A2E8C; color:#fff } .pc-mal{ background:#7E1735; color:#fff }
+  .pc-pasos{ list-style:none; margin:0; padding:0; display:grid; gap:8px }
+  .pc-pasos li{ display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border-radius:14px; background:#ffffff0d }
+  .pc-pasos li b{ display:block; font-weight:700; overflow-wrap:anywhere } .pc-pasos li small{ display:block; margin-top:2px; color:var(--tenue); line-height:1.4 }
+  .pc-marca{ display:grid; place-items:center; width:26px; height:26px; flex:none; border-radius:50% } .pc-marca svg{ width:16px; height:16px }
+  .pc-ok .pc-marca{ background:#2E9E6B; color:#fff } .pc-mal .pc-marca, li.pc-mal .pc-marca{ background:#E0264E; color:#fff }
+  li.pc-primero{ box-shadow:inset 0 0 0 2px #E0264E }
+  .pc-pista, .pc-correcto{ padding:12px 14px; border-radius:14px; background:#FFF4D6; color:#20152B }
+  .pc-pista small, .pc-correcto small{ display:flex; gap:6px; align-items:center; font-weight:800; color:#7E1735 } .pc-pista small svg{ width:16px; height:16px }
+  .pc-pista p, .pc-correcto p{ margin:4px 0 0; line-height:1.5; overflow-wrap:anywhere } .pc-correcto{ background:#F1E6FF } .pc-correcto small{ color:#5A2E8C }
+  .yo-rejilla > :last-child:nth-child(odd){ grid-column:1 / -1 }
   /* Apuntes en limpio (limpio.js) */
   .ap-ia{ margin-top:10px } .apunte .apagado{ opacity:.5; pointer-events:none }
   .ap-limpio:empty{ display:none } .ap-limpio{ margin-top:14px }

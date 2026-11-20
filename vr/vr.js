@@ -53,6 +53,17 @@ export function fallo(codigo, donde, e){
 }
 addEventListener('error', (e) => fallo('E-PAGINA', `${String(e.filename || '').split('/').pop() || '?'}:${e.lineno || '?'}`, e.error || e.message));
 addEventListener('unhandledrejection', (e) => fallo('E-PROMESA', 'promesa sin atrapar', e.reason));
+/* AUTORREPARACIÓN (20 nov): si un módulo no carga es que lo guardado en el teléfono quedó a medias o mezclado entre
+   versiones. Se tira lo guardado del visor y se recarga, una sola vez por sesión, para que todo venga de la red. */
+const MODULO_ROTO = /Importing a module script failed|does not provide an export|dynamically imported module|error loading dynamically/i;
+async function repararGuardado(){
+  try{ if(sessionStorage.getItem('mazivr.reparo')) return; sessionStorage.setItem('mazivr.reparo', '1'); }catch{ return; }
+  try{ for(const k of await caches.keys()) if(k.startsWith('mazivr-')) await caches.delete(k); }catch{}
+  try{ const r = await navigator.serviceWorker?.getRegistration(); await r?.update(); }catch{}
+  location.reload();
+}
+addEventListener('unhandledrejection', (e) => { if(MODULO_ROTO.test(String(e.reason?.message || e.reason || ''))) repararGuardado(); });
+addEventListener('error', (e) => { if(MODULO_ROTO.test(String(e.message || e.error?.message || ''))) repararGuardado(); });
 
 const C = { fondo: '#170A26', sup: '#24123A', borde: '#3C2652', acento: '#AC27FF', vino: '#7E1735', texto: '#F4EEF2', suave: '#C9B6DA', rosa: '#C77DFF' };
 

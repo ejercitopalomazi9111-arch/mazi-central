@@ -649,6 +649,8 @@ dependemos.
 
    | la `z` de los puntos de MediaPipe crece hacia la escena, así que se suma a `-dist` | es al revés: **más chico = más cerca de la cámara**, y la cámara mira hacia −z, así que se RESTA. Con la mano de frente casi no se nota; de canto, el producto cruz de la palma se voltea | la mano 3D de Mazi VR enseñaba el dorso con la palma hacia arriba («aquí mi palma miraba hacia arriba», 20 nov). Los puntos de mundo del rayo ya tenían el signo bueno; el que estaba mal era `aEspacio`, que ahora vive en `vr/mano3d.js` con una prueba de ida y vuelta por la cámara (`vr/pruebas-mano3d.mjs`) |
 
+   | un trabajador de fondo «lo guardado primero y se actualiza por detrás» deja la app al día en la siguiente visita | lo actualiza ARCHIVO POR ARCHIVO, conforme se piden: el teléfono junta la página de una versión con módulos de otra, y un `import { x }` que la otra no exporta en Safari truena como «Importing a module script failed» | el iPhone de Carlos se quedó en la v38 de Mazi VR con ese error, con producción en la v39. Ahora cada versión se guarda ENTERA al instalar (`?v=N`, sin caché, y la página tiene que traer `VERSION = N` o no se instala), lo de la app sale sólo de su versión y, si un módulo no carga, se tira lo guardado y se recarga una vez (`vr/pruebas-version.mjs`) |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 13. **CERO PARPADEO. Nunca, jamás, de los jamases** (Carlos, 14 nov, por el ajedrez de CARYMO). Tocar algo o que
