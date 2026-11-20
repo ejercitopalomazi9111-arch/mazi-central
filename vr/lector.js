@@ -298,7 +298,9 @@ export async function montarLector(V, { pedirTexto } = {}){
   let repintarT = 0;
   bajada.alTerminar.push((s, c, bien) => {
     if(fase === 'estante' && performance.now() - repintarT > 700){ repintarT = performance.now(); tarjetas.forEach((m) => m.userData.panel?.repintar?.()); }
-    if(bien && obra && obra.id === s.id && !obra.caps.some((x) => x.n === c.n)){ obra.caps.push({ n: c.n, titulo: limpio(c.titulo) }); obra.caps.sort((a, b) => a.n - b.n); sinMas = false; }
+    /* el capítulo que acaba de bajar se apunta YA en su serie del estante (y en la abierta): si la tocabas antes de que el
+       estante se volviera a leer, seguía «sin capítulos» y no abría (lo cazó vr/pruebas-lector.mjs) */
+    if(bien) for(const o of new Set([obra, obras.find((x) => x.id === s.id)])) if(o && o.id === s.id && !o.caps.some((x) => x.n === c.n)){ o.caps.push({ n: c.n, titulo: limpio(c.titulo) }); o.caps.sort((a, b) => a.n - b.n); if(o === obra) sinMas = false; }
     if(bien && !bajada.progreso[s.id] && !bajada.cola.some((x) => x.s.id === s.id)){ V.hud(`Listo: ${limpio(s.titulo).slice(0, 28)}`, 2); if(fase === 'estante') cargarEstante(); }
   });
 
@@ -366,6 +368,8 @@ export async function montarLector(V, { pedirTexto } = {}){
   function quitarSegmento(s){ for(const p of s.piezas){ soltar(p); p.muerta = true; tira.remove(p.malla); p.malla.geometry.dispose(); p.malla.material.dispose(); } }
 
   async function abrirObra(o, k = null, dentro = null){
+    /* sin capítulos en la lista: antes de decir que no hay, se revisa lo bajado de verdad (la lista puede ir atrasada) */
+    if(!o.caps.length && o.tipo === 'tira'){ const fresca = (await obrasBajadas()).find((x) => x.id === o.id); if(fresca?.caps.length) o.caps = fresca.caps; }
     if(!o.caps.length){
       const s = await pedir(await BASES.tiras(), 'series', (st) => st.get(o.id));
       const n = s ? await ponerAlDiaUna(s) : 0; V.hud(n ? `Bajando ${n} capítulos` : (bajada.progreso[o.id] ? 'Ya se está bajando' : 'Sin internet'), 2.5); return;
