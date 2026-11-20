@@ -90,6 +90,13 @@ export function elegirLado(est, t, etiqueta){
   else if(dice) est.contra = 0;
   return est.lado;
 }
+/** un punto de MediaPipe (x, y de 0 a 1 en la imagen; z = profundidad relativa a la muñeca, MÁS CHICO = MÁS CERCA de la
+    cámara) al espacio de la cabeza (la cámara mira hacia −z). Carlos, 20 nov, con la palma hacia arriba: «aquí mi palma
+    miraba hacia arriba» y la mano 3D enseñaba el dorso. La profundidad entraba al revés (`−dist + z`): con la mano de frente
+    casi no se nota, de canto voltea la palma. Lo cercano tiene que quedar MÁS cerca (z de la escena más grande). */
+export function aEspacio(p, dist, tx, ty, out){
+  return out.set((p.x * 2 - 1) * tx * dist, -(p.y * 2 - 1) * ty * dist, -dist - p.z * 2 * tx * dist);
+}
 /** los 21 puntos de MediaPipe sacados del modelo en reposo (para pruebas) */
 export function puntosDeReposo(huesos){
   const P = []; for(const nom of NOMBRES){ const i = MP[nom]; if(i != null) P[i] = huesos[nom].position.clone(); } return P;

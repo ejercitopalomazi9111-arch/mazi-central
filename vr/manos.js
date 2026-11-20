@@ -8,7 +8,7 @@
    del medio): no es exacto, pero alcanza para apuntar y tocar cosas cercanas. */
 import { leer, tamano, contadorPuno } from './gestos.js';
 import { crearEstable } from './manos-estables.js';
-import { crearManos3D, ladoPorForma, elegirLado } from './mano3d.js';
+import { crearManos3D, ladoPorForma, elegirLado, aEspacio } from './mano3d.js';
 const MP = '../presentaciones/vendor/mediapipe/';
 const HUESOS = [[0, 1], [1, 2], [2, 3], [3, 4], [0, 5], [5, 6], [6, 7], [7, 8], [5, 9], [9, 10], [10, 11], [11, 12], [9, 13], [13, 14], [14, 15], [15, 16], [13, 17], [17, 18], [18, 19], [19, 20], [0, 17]];
 
@@ -61,9 +61,7 @@ export async function iniciarManos(V){
   const PALMA_NO = ['sables', 'monarca', 'taller'];
   const v3 = new THREE.Vector3(), origen = new THREE.Vector3(), dir = new THREE.Vector3();
   /* de un punto de la imagen (0..1) y la distancia estimada, a un punto en el espacio de la cabeza */
-  function aEspacio(p, dist, tx, ty, out){
-    return out.set((p.x * 2 - 1) * tx * dist, -(p.y * 2 - 1) * ty * dist, -dist + p.z * 2 * tx * dist);
-  }
+  /* aEspacio vive en mano3d.js (con la profundidad al derecho y su prueba) */
   const d3 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
   /* ── EL RASTREO CON MEMORIA (Carlos, 18 nov: «el tracker no guarda contexto de dónde estaba el dedo antes; si se tapa un
      pedazo lo marca en otra posición») ──

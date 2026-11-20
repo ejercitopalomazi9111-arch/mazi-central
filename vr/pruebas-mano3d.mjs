@@ -5,7 +5,7 @@
    Uso: node vr/pruebas-mano3d.mjs */
 import fs from 'node:fs';
 import * as THREE from './vendor/three.module.min.js';
-import { NOMBRES, prepararReposo, pose, puntosDeReposo, ladoPorForma, elegirLado } from './mano3d.js';
+import { NOMBRES, prepararReposo, pose, puntosDeReposo, ladoPorForma, elegirLado, aEspacio } from './mano3d.js';
 let ok = 0, mal = 0; const sí = (c, t) => { c ? ok++ : mal++; console.log(c ? '✓' : '✗', t); };
 /* los huesos del GLB sin cargador: JSON del archivo */
 function huesosDe(archivo){
@@ -54,4 +54,20 @@ for(const [lado, archivo] of [['derecha', './modelos/manos/derecha.glb'], ['izqu
   const e2 = { lado: 'der' }; elegirLado(e2, tI, 'der'); elegirLado(e2, tD, 'der'); elegirLado(e2, tI, 'der');
   sí(e2.lado === 'der', 'un cuadro suelto que dice lo contrario no cambia el modelo');
   sí(elegirLado({}, .02, 'izq') === 'izq', 'mano de canto (no se sabe): se queda con la etiqueta'); }
+/* ida y vuelta por la cámara (Carlos, 20 nov: «aquí mi palma miraba hacia arriba» y salía el dorso): una mano DERECHA con
+   la palma hacia arriba y los dedos hacia enfrente, abajo de la cámara; se pasa a lo que da MediaPipe (z más chico = más
+   cerca) y de regreso con aEspacio: la palma tiene que seguir hacia arriba y el modelo tiene que ser el derecho */
+{ const D = puntosDeReposo(huesosDe('./modelos/manos/derecha.glb'));
+  const f = D[9].clone().sub(D[0]).normalize(), n0 = new THREE.Vector3().crossVectors(D[5].clone().sub(D[0]), D[17].clone().sub(D[0]));
+  const n = n0.addScaledVector(f, -n0.dot(f)).normalize(), b = new THREE.Vector3().crossVectors(f, n);
+  const S = new THREE.Matrix4().makeBasis(f, n, b), T = new THREE.Matrix4().makeBasis(new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, -1).cross(new THREE.Vector3(0, 1, 0)));
+  const R = T.multiply(S.invert()), dist = .4, tx = .6, ty = .45, donde = new THREE.Vector3(.02, -.12, -dist);
+  const real = D.map((p) => p.clone().sub(D[0]).multiplyScalar(1.1).applyMatrix4(R).add(donde));
+  const mp = real.map((q) => ({ x: (q.x / (dist * tx) + 1) / 2, y: (1 - q.y / (dist * ty)) / 2, z: -(q.z - real[0].z) / (2 * tx * dist) }));
+  const vuelta = mp.map((q) => aEspacio(q, dist, tx, ty, new THREE.Vector3()));
+  const nV = new THREE.Vector3().crossVectors(vuelta[5].clone().sub(vuelta[0]), vuelta[17].clone().sub(vuelta[0])).normalize();
+  const t = ladoPorForma(THREE, vuelta), palma = nV.clone().multiplyScalar(Math.sign(t) || 1);
+  sí(Math.max(...vuelta.map((q, i) => q.distanceTo(real[i]))) < 1e-9, 'MediaPipe → espacio regresa cada punto donde estaba (la profundidad al derecho)');
+  sí(t > .12 && palma.y > .9, `palma hacia arriba sale hacia arriba (palma.y ${palma.y.toFixed(2)}) y con el modelo derecho (${t.toFixed(2)})`);
+  sí(mp[12].z > mp[0].z, 'la punta del medio, más lejos de la cámara que la muñeca, trae z más grande (como MediaPipe)'); }
 console.log(`${ok} bien · ${mal} mal`); process.exit(mal ? 1 : 0);
