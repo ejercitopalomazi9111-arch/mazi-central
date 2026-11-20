@@ -88,7 +88,7 @@ try{ const L = JSON.parse(localStorage.getItem('mazivr.errores') || '[]'), u = L
 /* LA VERSIÓN (Carlos, 19 nov: «un mensajito que diga la versión en la que estás y que se actualizó»). Va igual que la
    de sw.js (pruebas-sinred.mjs lo revisa). La primera vez que se abre una versión nueva dice «actualizada»; y si el
    trabajador de fondo ya trae una más nueva que esta página, recarga sola (sólo en la entrada, una vez) */
-const VERSION = 35;
+const VERSION = 36;
 { let antes = 0; try{ antes = +localStorage.getItem('mazivr.version') || 0; if(antes !== VERSION) localStorage.setItem('mazivr.version', VERSION); }catch{}
   const el = $('#version'); el.textContent = antes < VERSION ? `v${VERSION} · actualizada` : `v${VERSION}`; el.classList.toggle('nueva', antes < VERSION); }
 const versionSW = (n) => { if(!(n > VERSION) || document.body.classList.contains('dentro')) return;
@@ -297,7 +297,7 @@ async function montar(){
   const zona = (i, x0, x1, hacer, repetir) => {
     const ancho = (x1 - x0) / PX, alto = 48 / PX, m = new THREE.Mesh(new THREE.PlaneGeometry(ancho, alto), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
     m.position.set(((x0 + x1) / 2 - w / 2) / PX, ALTO / 2 - yFila(i) / PX, .004); hoja.malla.add(m);
-    m.userData.accion = hacer; m.userData.repetir = !!repetir;
+    m.userData.accion = hacer; m.userData.repetir = !!repetir; m.userData.pegajoso = .035;   /* el renglón no se suelta por un temblor (vr.js, cercaDe) */
     m.userData.panel = { titulo: FILAS[i][0], foco: (f) => { if(f && fila !== i){ fila = i; pintarHoja(); } } };
     zonas.push(m); };
   FILAS.forEach(([, k], i) => {
@@ -311,9 +311,9 @@ async function montar(){
     if(c.oprimido[B.ABAJO]) fila = (fila + 1) % FILAS.length;
     const d = (c.oprimido[B.DER] ? 1 : 0) - (c.oprimido[B.IZQ] ? 1 : 0);
     if(d) cambiar(fila, d);
-    if(c.oprimido[B.X]) accion(fila);
+    if(c.oprimidoPad[B.X]) accion(fila);   /* sólo la X del control: el pellizco elige la zona que apunta la mano */
     if(c.oprimido[B.ARRIBA] || c.oprimido[B.ABAJO]) pintarHoja();
-    return { flechas: true, x: true };
+    return { flechas: true, x: !!c.oprimidoPad[B.X] };
   };
   aj.elegibles = () => zonas;
   window.__ajustes = aj;

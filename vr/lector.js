@@ -519,7 +519,7 @@ export async function montarLector(V, { pedirTexto } = {}){
     velStick = Math.sign(a) * a * a * 2600; if(a) objetivo = null;
     if(c.oprimido[B.ABAJO]) objetivo = (objetivo ?? scroll) + VEN * .85;
     if(c.oprimido[B.ARRIBA]) objetivo = Math.max(0, (objetivo ?? scroll) - VEN * .85);
-    if(c.oprimido[B.X]){ auto = !auto; objetivo = null; V.hud(auto ? 'Solo' : 'Pausa', 1.2); }
+    if(c.oprimidoPad[B.X]){ auto = !auto; objetivo = null; V.hud(auto ? 'Solo' : 'Pausa', 1.2); }
     if(c.oprimido[B.R1]) irCapitulo(1);
     if(c.oprimido[B.L1]) irCapitulo(-1);
     /* R2 cambia la distancia (cerca, normal, lejos); L2 apretado es mover y escalar (arriba) */

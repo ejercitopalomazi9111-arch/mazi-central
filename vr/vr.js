@@ -105,7 +105,7 @@ const video = document.createElement('video'); video.playsInline = true; video.m
    jalaban en el cuarto virtual (sin la mixta) */
 video.style.cssText = 'position:fixed; left:0; bottom:0; width:2px; height:2px; opacity:.01; pointer-events:none; z-index:0';
 (document.body ? document.body.appendChild(video) : addEventListener('DOMContentLoaded', () => document.body.appendChild(video)));
-let camTex = null, camNuevo = true, flujo = null, ultra = false, camVIO = false;
+let camTex = null, camNuevo = true, camPintado = 0, camT = -1, flujo = null, ultra = false, camVIO = false;
 /* lo que abre la cámara de lado. En Android casi nunca se reconoce la gran angular por su nombre y la imagen salía como
    una ventanita en medio de la vista (foto de Carlos, 18 nov): si la cámara abre menos que el ojo, se estira hasta
    llenarlo. Las manos usan esta misma medida, así que siguen cayendo sobre tu mano */
@@ -138,8 +138,8 @@ function vigilarLimites(){
   if(!limites.st.zona) limites.ponerZona(c, AJ.zona || 1);
   const aviso = limites.paso(c);
   limites.st.aviso = aviso || null;   /* lo lee el narrador de MONARCH (travesuras.js) */
-  if(aviso === 'obstaculo'){ hud('Cuidado', 1.4); sonar('toque', .35); }
-  if(aviso === 'zona'){ hud('Fuera de zona', 1.6); sonar('toque', .35); }
+  if(aviso === 'obstaculo'){ hud('Cuidado', 1.4); sonar('toque', .35, true); }
+  if(aviso === 'zona'){ hud('Fuera de zona', 1.6); sonar('toque', .35, true); }
   /* los rojos: cada casilla cercana como una columna de puntos del piso hasta arriba de tus ojos (si sólo llegaran a la
      altura del obstáculo, a 35 cm quedan abajo de la vista y no se ven), más fuertes mientras más cerca */
   const cerca = limites.st.cerca, k = Math.max(0, Math.min(1, (1 - cerca) / .5));
@@ -178,7 +178,13 @@ async function ponerFlujo(){
   video.srcObject = flujo; await video.play();
   /* textura a mano (no VideoTexture): se repinta cuando llega un cuadro nuevo de la cámara, o —con una mano a la vista en la
      mixta— sólo cuando el rastreo de manos leyó ESE cuadro (manos.js, camSinc), para que los puntos caigan sobre tu mano */
-  if(!camTex){ camTex = new THREE.Texture(video); camTex.colorSpace = THREE.SRGBColorSpace; camTex.minFilter = camTex.magFilter = THREE.LinearFilter; camTex.generateMipmaps = false;
+  if(!camTex){ camTex = new THREE.Texture(video);
+    /* que three.js la trate como VIDEO (Carlos, 19 nov: la mixta en negro): una textura normal aparta su memoria UNA vez con el
+       tamaño del primer cuadro (texStorage), y cuando la cámara cambia de resolución —el iPhone empieza chico y luego sube— cada
+       repintado falla («Level of detail outside of range») y la pared se queda negra. Como video se sube entero cada vez.
+       `update` vacío: el repintado lo decidimos nosotros (camSinc), no three. */
+    camTex.isVideoTexture = true; camTex.update = () => {};
+    camTex.colorSpace = THREE.SRGBColorSpace; camTex.minFilter = camTex.magFilter = THREE.LinearFilter; camTex.generateMipmaps = false;
     if(video.requestVideoFrameCallback){ const nuevo = () => { camNuevo = true; video.requestVideoFrameCallback(nuevo); }; video.requestVideoFrameCallback(nuevo); } else camNuevo = null; }
   pared.material.map = camTex; pared.material.color.set(0xffffff); pared.material.needsUpdate = true;
   ponerMixta(AJ.mixta);   /* la cámara llega después de entrar: si la mixta ya estaba puesta, ahora sí se ve */
@@ -245,7 +251,7 @@ addEventListener('deviceorientation', (e) => { if(e.alpha == null) return; ori.a
 const angPantalla = () => (screen.orientation?.angle ?? window.orientation ?? 0) * Math.PI / 180;
 let guinada = 0;                                             // el giro extra: stick derecho y «recentrar»
 const qCab = new THREE.Quaternion(), qG = new THREE.Quaternion(), yUp = new THREE.Vector3(0, 1, 0);
-const sim = { yaw: 0, pitch: 0 };                            // sin giroscopio (pruebas y computadora): ratón y flechas
+export const sim = { yaw: 0, pitch: 0 };                            // sin giroscopio (pruebas y computadora): ratón y flechas
 function leerCabeza(){
   if(ori.hay){
     const D = THREE.MathUtils.DEG2RAD; eul.set(ori.b * D, ori.a * D, -ori.g * D, 'YXZ');
@@ -414,9 +420,9 @@ export function hud(txt, seg = 2.2){
 /* ── el control ── */
 const B = { X: 0, O: 1, CUADRO: 2, TRIANGULO: 3, L1: 4, R1: 5, L2: 6, R2: 7, SHARE: 8, OPTIONS: 9, L3: 10, R3: 11, ARRIBA: 12, ABAJO: 13, IZQ: 14, DER: 15, PS: 16 };
 export { B };
-const antes = [];
+const antes = [], antesPad = [];
 let padVisto = false;
-export const control = { ejes: [0, 0, 0, 0], apretado: () => false, oprimido: [] };
+export const control = { ejes: [0, 0, 0, 0], apretado: () => false, oprimido: [], oprimidoPad: [] };
 /* cuál es EL control (Carlos, 18 nov: «tengo el control pero no detecta ni pulsaciones ni al propio control»): varios
    Android reportan como «control» cosas que no lo son (el lector de huella, los botones de volumen), y el primero de la
    lista no siempre es el tuyo. Se queda el que parece un control de verdad: conectado, con 10 botones o más y, si hay
@@ -437,8 +443,13 @@ function leerControl(){
   if(p){ if(!padVisto){ padVisto = true; hud(`Control: ${nombrePad(p)}`, 1.6); } p.buttons.forEach((b, i) => { ahora[i] = b.pressed || b.value > .5; }); control.ejes = [...p.axes].map((v) => Math.abs(v) < .18 ? 0 : v); }
   else control.ejes = [0, 0, 0, 0];
   teclas.forEach((v, i) => { if(v) ahora[i] = true; });
+  /* lo del control y el teclado, aparte de los gestos: las vistas usan esto para la X, porque un pellizco al aire NO
+     es una X (Carlos, 19 nov: «cada vez que pellizco el aire se activa y se desactiva»: pausaba el cine, cambiaba el
+     renglón de Ajustes, prendía y apagaba el modo solo del lector). El pellizco elige sólo lo que la mano apunta (clicMano). */
+  const sinMano = ahora.slice();
   (extra.botones || []).forEach((v, i) => { if(v) ahora[i] = true; });   // los gestos de las manos
   control.oprimido = ahora.map((v, i) => v && !antes[i]); ahora.forEach((v, i) => { antes[i] = v; });
+  control.oprimidoPad = sinMano.map((v, i) => v && !antesPad[i]); sinMano.forEach((v, i) => { antesPad[i] = v; });
   control.apretado = (i) => !!ahora[i];
 }
 /* el teclado hace de control para probar en la computadora */
@@ -486,7 +497,10 @@ export function despertarAudio(){
 }
 export const sonidosListos = () => cargaSonidos;
 export const audio = () => actx;
-export function sonar(n, vol = .5){ if(!actx || !sonidos[n]) return; const s = actx.createBufferSource(), g = actx.createGain(); g.gain.value = vol; s.buffer = sonidos[n]; s.connect(g).connect(actx.destination); s.start(); }
+/* CERO SONIDOS DE INTERACCIÓN (Carlos, 19 nov: «quita los malditos sonidos, todo sonido de interacción, está horrible»):
+   toques, dings y whooshes ya no suenan, vengan de donde vengan. Sólo suena lo que se pide como `aviso` (el de seguridad
+   de los límites: «Cuidado» y «Fuera de zona», para no pegarte con la pared). La música y el narrador van por otro lado. */
+export function sonar(n, vol = .5, aviso = false){ if(!aviso || !actx || !sonidos[n]) return; const s = actx.createBufferSource(), g = actx.createGain(); g.gain.value = vol; s.buffer = sonidos[n]; s.connect(g).connect(actx.destination); s.start(); }
 
 /* ── las vistas: el inicio (hub), el cine, los ajustes y las que vienen ── */
 const hub = new THREE.Group(); escena.add(hub);
@@ -544,6 +558,14 @@ let primerFoco = null, primerEstricto = false;
 function bloquearMirada(ms = Infinity, estricto = false){ mirarBloqueado = true; giroAlBloquear.copy(cabeza.quaternion); bloqueadoHasta = performance.now() + ms; primerFoco = 'pendiente'; primerEstricto = estricto; }
 export function mirarAlEntrar(){ bloquearMirada(Infinity, true); }
 export const MIRAR_MS = 2500;
+/* ¿el rayo pasa a menos de m metros del rectángulo de o (un plano)? */
+const _inv = new THREE.Matrix4(), _r = new THREE.Ray(), _p = new THREE.Vector3(), _pl = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+function cercaDe(o, r, m){
+  const g = o.geometry?.parameters; if(!g?.width) return false;
+  _r.copy(r).applyMatrix4(_inv.copy(o.matrixWorld).invert()); if(!_r.intersectPlane(_pl, _p)) return false;
+  const k = o.getWorldScale(_p.clone()).x || 1, mm = m / k;
+  return Math.abs(_p.x) <= g.width / 2 + mm && Math.abs(_p.y) <= g.height / 2 + mm;
+}
 function darFoco(o){ if(foco === o) return; if(o && primerFoco === 'pendiente') primerFoco = o; else if(primerFoco !== 'pendiente') primerFoco = null; if(foco || !o) mirarBloqueado = false; foco?.userData.panel?.foco?.(false); foco = o; focoDesde = performance.now(); o?.userData.panel?.foco?.(true); }   /* sin «tiuk» al ver algo (Carlos, 19 nov) */
 function moverFoco(dx, dy){
   const L = elegibles(); if(!L.length) return;
@@ -587,7 +609,7 @@ function cuadro(t){
     if(control.oprimido[B.IZQ]) moverFoco(-1, 0); if(control.oprimido[B.DER]) moverFoco(1, 0);
     if(control.oprimido[B.ARRIBA]) moverFoco(0, 1); if(control.oprimido[B.ABAJO]) moverFoco(0, -1);
   }
-  if(control.oprimido[B.X] && !usado.x && !(extra.rayo && extra.botones?.[B.X])) activar(foco);
+  if(control.oprimidoPad[B.X] && !usado.x) activar(foco);   /* sólo la X del control o Enter; el pellizco va por clicMano */
   if(control.oprimido[B.O] && !usado.o) v?.atras?.();
   /* la mira: lo que ves al centro toma el foco, salvo justo después de usar las flechas sin mover la cabeza */
   if(mirarBloqueado && (cabeza.quaternion.angleTo(giroAlBloquear) > .14 || performance.now() > bloqueadoHasta)){ mirarBloqueado = false; focoDesde = performance.now(); }   /* el reloj de mirar fijo empieza al soltarse, no antes */
@@ -604,6 +626,11 @@ function cuadro(t){
     if(extra.rayo){ h = extra.rayo.objeto !== undefined ? (extra.rayo.objeto ? { object: extra.rayo.objeto } : null) : (ray.set(extra.rayo.origen, extra.rayo.dir), ray.intersectObjects(L, false)[0]);
       if(h && !extra.rayo.hit && h.point) extra.rayo.hit = h.point.clone(); }
     else { ray.setFromCamera(centro, cabeza); h = ray.intersectObjects(L, false)[0]; }
+    /* MARGEN PARA NO SOLTAR (Carlos, 19 nov: «todavía no puedo manejar ajustes con la vista»): los renglones de Ajustes miden
+       ~3° y la cabeza con el visor tiembla más que eso; el foco brincaba al renglón de al lado y el reloj de mirar fijo volvía
+       a empezar. Si lo que tienes enfocado sigue a menos de `pegajoso` metros del rayo (en su propio plano), se queda.
+       No es imán: nunca te jala a algo que no estabas viendo, sólo no te suelta del que ya tenías. */
+    if(foco && h?.object !== foco && foco.userData.pegajoso && L.includes(foco) && (!extra.rayo || ray.set(extra.rayo.origen, extra.rayo.dir)) && cercaDe(foco, ray.ray, foco.userData.pegajoso)){ h = { object: foco }; if(extra.rayo) extra.rayo.objeto = foco; }
     extra.sobreBoton = !!(extra.rayos || []).some((R) => R.objeto) || !!(extra.rayo && h);
     if(h && (!flechasRecientes || extra.rayo)){ viendo = h.object; darFoco(viendo); }
   }
@@ -648,7 +675,13 @@ function cuadro(t){
   if(aviso.malla.visible && performance.now() > avisoHasta) aviso.malla.visible = false;
   if(pared.visible){ medirPared();
     /* camNuevo === null: sin aviso de cuadros (navegador viejo), se repinta siempre */
-    if(extra.camSinc ? extra.camFresco : camNuevo !== false){ if(video.readyState >= 2) camTex.needsUpdate = true; if(camNuevo) camNuevo = false; }
+    /* RESPALDO (Carlos, 19 nov: «la realidad mixta anda valiendo verga», cámara en negro): en el iPhone el aviso de cuadro
+       nuevo (requestVideoFrameCallback) puede no llegar NUNCA con el video escondido de 2 px, y la cámara se quedaba en su
+       primer cuadro (negro). Ahora también se repinta si avanzó el tiempo del video, o si llevamos 80 ms sin repintar;
+       y con una mano a la vista, si el rastreo se atrasa más de 150 ms, se repinta igual */
+    const ahoraCam = performance.now(), avanzo = video.currentTime !== camT, viejo = ahoraCam - camPintado;
+    const toca = extra.camSinc ? (extra.camFresco || viejo > 150) : (camNuevo === true || camNuevo === null || avanzo || viejo > 80);
+    if(toca && video.readyState >= 2){ camTex.needsUpdate = true; camPintado = ahoraCam; camT = video.currentTime; if(camNuevo) camNuevo = false; }
   }
   extra.camFresco = false;
 

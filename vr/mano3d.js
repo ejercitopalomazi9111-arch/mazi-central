@@ -43,6 +43,9 @@ function direcciones(THREE, pos){
   }
   return dir;
 }
+/* las cadenas que se encadenan: del primer hueso que pone la cámara hasta la punta */
+const CADENAS = [['thumb-metacarpal', 'thumb-phalanx-proximal', 'thumb-phalanx-distal', 'thumb-tip'],
+  ...DEDOS.map((d) => [`${d}-phalanx-proximal`, `${d}-phalanx-intermediate`, `${d}-phalanx-distal`, `${d}-tip`])];
 const normal = (THREE, pos) => new THREE.Vector3().crossVectors(pos['index-finger-phalanx-proximal'].clone().sub(pos.wrist), pos['pinky-finger-phalanx-proximal'].clone().sub(pos.wrist)).normalize();
 
 /** del modelo en reposo ({ nombre: { position, quaternion } }) saca lo que hace falta para moverlo con puntos */
@@ -54,13 +57,38 @@ export function prepararReposo(THREE, huesos){
   /* con los metacarpianos del modelo, no los calculados: el ajuste guarda la diferencia real */
   const dir = direcciones(THREE, pos), n = normal(THREE, pos), ajuste = {};
   for(const nom of NOMBRES){ const g = marco(THREE, dir[nom], n, new THREE.Quaternion()); ajuste[nom] = g.invert().multiply(huesos[nom].quaternion.clone()); }
-  return { prop, ajuste, largo: pos['middle-finger-phalanx-proximal'].distanceTo(pos.wrist), metas: Object.fromEntries(DEDOS.map((d) => [d, pos[`${d}-metacarpal`].clone()])) };
+  /* el largo de cada falange en el modelo (para encadenar los dedos sin grietas) */
+  const largos = {}; for(const [a, b] of CADENAS.flatMap((c) => c.slice(1).map((x, i) => [c[i], x]))) largos[a] = pos[a].distanceTo(pos[b]);
+  return { prop, ajuste, largos, largo: pos['middle-finger-phalanx-proximal'].distanceTo(pos.wrist), metas: Object.fromEntries(DEDOS.map((d) => [d, pos[`${d}-metacarpal`].clone()])) };
 }
 /** de 21 puntos (Vector3, en el espacio donde vive el modelo) a { nombre: { p, q } } y la escala */
 export function pose(THREE, P, rep){
   const pos = posiciones(THREE, P, rep.prop), dir = direcciones(THREE, pos), n = normal(THREE, pos), out = {};
+  /* DEDOS SIN GRIETAS (Carlos, 19 nov: «los dedos a veces se cuartean»): si cada articulación va donde la ve la cámara, una
+     falange tuya más larga o más corta que la del modelo abre una grieta en el nudillo. Se encadena: cada hueso empieza donde
+     acaba el anterior, con el largo del modelo (a la escala de tu mano); de la cámara sólo se toma hacia dónde apunta. */
+  const k = pos['middle-finger-phalanx-proximal'].distanceTo(pos.wrist) / rep.largo;
+  for(const c of CADENAS) for(let i = 1; i < c.length; i++) pos[c[i]] = pos[c[i - 1]].clone().addScaledVector(dir[c[i - 1]], rep.largos[c[i - 1]] * k);
   for(const nom of NOMBRES) out[nom] = { p: pos[nom], q: marco(THREE, dir[nom], n, new THREE.Quaternion()).multiply(rep.ajuste[nom]) };
-  return { huesos: out, escala: pos['middle-finger-phalanx-proximal'].distanceTo(pos.wrist) / rep.largo };
+  return { huesos: out, escala: k };
+}
+/** ¿izquierda o derecha, por la FORMA? (Carlos, 19 nov: «en el modo sin mixta la mano se pone al revés»): la etiqueta
+    de MediaPipe supone una cámara de selfie y depende de si la imagen va volteada; con el modelo equivocado la palma sale del
+    lado contrario (en la mixta, transparente, no se nota; en VR sí). El pulgar siempre queda del lado de la palma respecto al
+    plano muñeca-índice-meñique: en el modelo derecho a +0.5 del largo de la mano y en el izquierdo a −0.5
+    (vr/pruebas-mano3d.mjs). Positivo → derecha; cerca de cero no se sabe. */
+export function ladoPorForma(THREE, P){
+  const n = new THREE.Vector3().crossVectors(P[5].clone().sub(P[0]), P[17].clone().sub(P[0])); if(n.lengthSq() < 1e-12) return 0;
+  n.normalize(); const L = P[9].distanceTo(P[0]) || 1; let t = 0;
+  for(const i of [2, 3, 4]) t += P[i].clone().sub(P[0]).dot(n); return t / 3 / L;
+}
+/** con memoria: cambia de modelo sólo si la forma lo dice claro varios cuadros seguidos */
+export function elegirLado(est, t, etiqueta){
+  if(!est.lado) est.lado = etiqueta;
+  const dice = t > .12 ? 'der' : t < -.12 ? 'izq' : null;
+  if(dice && dice !== est.lado){ est.contra = (est.contra || 0) + 1; if(est.contra >= 4){ est.lado = dice; est.contra = 0; } }
+  else if(dice) est.contra = 0;
+  return est.lado;
 }
 /** los 21 puntos de MediaPipe sacados del modelo en reposo (para pruebas) */
 export function puntosDeReposo(huesos){
