@@ -2153,7 +2153,7 @@ cuentaUI = iniciarCuenta({ hoja, cerrarHoja, esc, ico, brindis, tono, SON, $, pe
   /* borrar la cuenta: primero el avance en el servidor; luego se limpia este teléfono y se empieza de cero */
   borrarDatos: async () => { const r = await sala({ accion: 'borrarTodo' }); if(!r || !r.borrado) throw new Error((r && r.error) || 'No se pudo borrar tu avance.'); },
   alBorrar: () => { try{ for(const k of Object.keys(localStorage)) if(/^(est\.|carymo\.)/.test(k)) localStorage.removeItem(k); }catch{} location.reload(); } });
-apuntes = iniciarApuntes({ $, esc, ico, hoja, cerrarHoja, capa, cerrarCapa, brindis, tono, SON, nuevoId, planes: () => planes });
+apuntes = iniciarApuntes({ $, esc, ico, hoja, cerrarHoja, capa, cerrarCapa, brindis, tono, SON, nuevoId, planes: () => planes, ia, tutor: () => TUTOR[nivelEstudio()] });
 sesionEst = iniciarSesionEstudio({ $, esc, ico, hoja, cerrarHoja, brindis, tono, SON, dice, avanceDe, colorDe: colorMateria, cuando: cuandoTexto,
   planes: () => planes, actual: () => actualId, ocupado: () => !!$('#capa'), alCambiar: () => { if(vista === 'plan') pintar(); },
   cambiarPlan: (id) => { if(!planes[id]) return; actualId = id; guardarLocal(); vista = 'plan'; pintarPlan.yaCentrado = false; pintar(); scrollTo({ top: 0 }); } });

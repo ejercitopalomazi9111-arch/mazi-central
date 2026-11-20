@@ -12,6 +12,7 @@
  *     capas con modo, deshacer, cuentagotas, cubeta), con un editor de pinceles para crear los tuyos.
  * ===========================================================================*/
 import { crearLienzoDibujo, PINCELES, FORMAS, MODOS, FONDOS, muestra } from './trazo.js';
+import { SISTEMA_LIMPIO, revisarLimpio, htmlLimpio, fotoChica } from './limpio.js';
 
 /* ── la caja fuerte del teléfono (IndexedDB) ── */
 let bdP = null;
@@ -93,7 +94,7 @@ export function iniciarApuntes(h){
     let cuerpo = '';
     if(q){
       /* buscando: en TODO, sin carpetas */
-      const r = todos.filter((x) => sinAcento([x.titulo, x.materia, x.texto, ...(x.puntos || [])].join(' ')).includes(q));
+      const r = todos.filter((x) => sinAcento([x.titulo, x.materia, x.texto, ...(x.puntos || []), ...(x.bonito ? [x.bonito.resumen, ...x.bonito.secciones.flatMap((z) => [z.titulo, ...z.puntos]), ...x.bonito.clave.flatMap((k) => [k.termino, k.definicion])] : [])].join(' ')).includes(q));
       cuerpo = `<div class="ap-lista">${r.map(tarjeta).join('') || '<p class="ap-vacio">Nada con eso.</p>'}</div>`;
     } else if(filtro === 'todos'){
       /* la entrada: las tres carpetas y lo más reciente */
@@ -154,14 +155,41 @@ export function iniciarApuntes(h){
       <div class="cuerpo">
         <input class="campo" id="apMat" list="apMats" placeholder="Materia" value="${esc(n.materia)}" aria-label="Materia"><datalist id="apMats">${materias.map((m) => `<option value="${esc(m)}">`).join('')}</datalist>
         <textarea class="campo ap-texto" id="apTxt" placeholder="Escribe aquí lo importante…" aria-label="Texto del apunte">${esc(n.texto)}</textarea>
+        <div class="fila-bt ap-ia"><button class="bt" data-limpio>${ico('sparkles')}En limpio</button><label class="bt" id="apFotoBt">${ico('camera')}Desde foto<input type="file" accept="image/*" id="apFoto" hidden></label></div>
+        <div class="ap-limpio" id="apLimpio">${n.bonito ? htmlLimpio(n.bonito, esc) : ''}</div>
         <div class="ap-dibujo" id="apDib">${miniaturas.get(n.id) ? `<img src="${miniaturas.get(n.id)}" alt="Tu dibujo">` : ''}<button class="bt ${n.dibujo ? '' : 'fuerte'}" data-dibujar>${ico('brush')}${n.dibujo ? 'Editar el dibujo' : 'Dibujar con lápiz'}</button></div>
       </div>
       <div class="abajo"><button class="bt ancho peligro-suave" data-borrar>${ico('trash')}Borrar este apunte</button></div>`;
     const guardar = async () => { n.titulo = $('#apTit', c).value.trim(); n.materia = $('#apMat', c).value.trim(); n.texto = $('#apTxt', c).value; n.t = Date.now(); if(n.titulo || n.texto || n.dibujo) await ponerNota(n); };
     let t = 0; c.addEventListener('input', () => { clearTimeout(t); t = setTimeout(guardar, 500); });
     const txt = $('#apTxt', c), crecer = () => { txt.style.height = 'auto'; txt.style.height = Math.max(180, txt.scrollHeight) + 'px'; }; txt.addEventListener('input', crecer); setTimeout(crecer, 0);
+    /* EN LIMPIO (limpio.js): la IA ordena lo que escribiste o una foto del cuaderno; se guarda junto al apunte y sólo se
+       vuelve a pintar ese bloque (regla 13) */
+    let ocupado = false;
+    async function enLimpio(imagenes = []){
+      if(ocupado || !h.ia) return;
+      const texto = $('#apTxt', c).value.trim();
+      if(!imagenes.length && texto.length < 30){ brindis('Escribe un poco más primero', 'vino', 'x'); return; }
+      ocupado = true; const bts = [$('[data-limpio]', c), $('#apFotoBt', c)], antes = bts.map((b) => b.innerHTML);
+      bts.forEach((b) => b.classList.add('apagado')); bts[imagenes.length ? 1 : 0].textContent = 'Leyendo…';
+      try{
+        const r = await h.ia({ sistema: SISTEMA_LIMPIO(h.tutor ? h.tutor() : 'de preparatoria en México'), imagenes, tope: 5000, revisar: revisarLimpio,
+          texto: imagenes.length ? (texto ? `Lo que ya escribí:\n${texto}\n\nY esta foto de mi cuaderno.` : 'Mis apuntes están en la foto.') : `Mis apuntes:\n${texto}` });
+        if(imagenes.length && r.texto && !texto){ $('#apTxt', c).value = r.texto; crecer(); }
+        if(!$('#apTit', c).value.trim() && r.titulo) $('#apTit', c).value = r.titulo;
+        if(!$('#apMat', c).value.trim() && r.materia) $('#apMat', c).value = r.materia;
+        delete r.texto; n.bonito = r; await guardar();
+        $('#apLimpio', c).innerHTML = htmlLimpio(r, esc); tono(SON.ding); brindis('En limpio', '', 'sparkles');
+        $('#apLimpio', c).scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+      }catch(err){ brindis(err.message || 'La IA no contestó', 'vino', 'x'); }
+      finally{ ocupado = false; bts.forEach((b, i) => { if(b.isConnected){ b.innerHTML = antes[i]; b.classList.remove('apagado'); } });
+      }
+    }
+    const alFoto = async (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if(!f) return; const img = await fotoChica(f); if(!img){ brindis('No pude abrir esa foto', 'vino', 'x'); return; } enLimpio([img]); };
+    $('#apFoto', c).addEventListener('change', alFoto);
     c.addEventListener('click', async (e) => {
       if(e.target.closest('[data-cerrar]')){ await guardar(); cerrarCapa(); pintar(); return; }
+      if(e.target.closest('[data-limpio]')){ enLimpio(); return; }
       if(e.target.closest('[data-dibujar]')){ await guardar(); abrirDibujo(n); return; }
       const b = e.target.closest('[data-borrar]');
       if(b){ if(!b.dataset.seguro){ b.dataset.seguro = '1'; b.innerHTML = `${ico('trash')}Toca otra vez para borrarlo`; return; } await quitarNota(n.id); miniaturas.delete(n.id); cerrarCapa(); brindis('Apunte borrado', 'vino', 'trash'); pintar(); }
