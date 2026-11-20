@@ -55,6 +55,7 @@ for(let i = 0; i < 4; i++) await boton(IZQ);
 await boton(DER); await boton(DER);
 await boton(X); await p.waitForTimeout(1200);
 e = await est(); sí(e.fase === 'leyendo' && e.obra === 'webtoon:1' && e.segs[0] === 1, `la serie con capítulos nuevos va primero y abre en el capítulo 1 (${e.obra} · ${e.segs})`);
+e = await hasta((x) => x.texturas >= 2, 4000);   /* se pintan poco a poco; el navegador de pruebas no tiene tarjeta gráfica */
 sí(e.texturas >= 2, `las páginas de cerca ya se pintaron (${e.texturas} de ${e.piezas})`);
 await p.screenshot({ path: CAPS + '/vr-leer-tira.png' });
 /* agarrar la ventana con las dos manos (Carlos, 18 nov): pellizcar con las dos y subirlas la lleva arriba (para leer
