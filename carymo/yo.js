@@ -47,6 +47,7 @@ export function iniciarYo(h){
         ${boton('buscar', 'search', 'Buscar un tema', 'En tus planes y cursos')}
         ${boton('@tarea', 'camera', 'Tu tarea', 'Foto y paso a paso')}
         ${boton('@ensayo', 'feather', 'Tu ensayo', 'Te digo cómo va')}
+        ${boton('@corrige', 'pencil-line', 'Tu pizarra', 'Resuelve y te corrijo')}
         ${boton('@tarjetas', 'layers', 'Tus tarjetas', 'Arma mazos y repásalos')}
         ${boton('@juegos', 'swords', 'Juegos', 'Ajedrez, damas, dominó…')}
         ${boton('@idiomas', 'languages', 'Idiomas', 'Inglés y francés')}
@@ -74,6 +75,7 @@ export function iniciarYo(h){
     if(b.dataset.yo === 'tarjetas') h.abrirTarjetas?.();
     if(b.dataset.yo === 'tarea') h.abrirTarea?.();
     if(b.dataset.yo === 'ensayo') h.abrirEnsayo?.();
+    if(b.dataset.yo === 'corrige') h.abrirCorrige?.();
   });
   /* la vitrina: un trofeo por liga; los que ya alcanzaste a color, con cuántas semanas y podios; los demás en silueta */
   function vitrina(){
