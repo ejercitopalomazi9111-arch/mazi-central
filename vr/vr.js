@@ -18,7 +18,7 @@
 import * as THREE from 'three';
 import { crearSeis, ojoPorDefecto } from './seis.js';
 import { crearNube } from './nube.js';
-import { crearLimites } from './limites.js';
+import { crearLimites, toparCabeza } from './limites.js';
 import { crearPredictor } from './prediccion.js';
 
 /* ── ajustes: se guardan en el teléfono (sólo comodidad; si se borran, salen los de fábrica) ── */
@@ -129,6 +129,16 @@ const limVis = (() => {
   return { rojos, pared, MAX, en: 0, cuenta: 0 };
 })();
 const cabezaMundo = new THREE.Vector3();
+/* topes temporales del 6DoF (limites.js, toparCabeza): la base es dónde estaba tu cabeza cuando el rastreo quedó listo, o
+   donde recentraste; el suelo es el más alto entre el virtual y el real que vio la cámara, pasado al espacio del cuerpo */
+function topar6(){
+  const p = cabeza.position;
+  if(!seis.base6) seis.base6 = { x: p.x, y: p.y, z: p.z };
+  const sueloMundo = Math.max(piso.position.y, limites.st.piso ?? -Infinity);
+  const toco = toparCabeza(p, seis.base6, AJ.zona || 1, sueloMundo - rig.position.y);
+  seis.tope = toco;
+  if(toco && toco !== 'zona' && performance.now() - (seis.topeAviso || 0) > 4000){ seis.topeAviso = performance.now(); hud(toco === 'suelo' ? 'Suelo' : 'Muy alto', 1.2); }
+}
 function vigilarLimites(){
   const ahora = performance.now(); if(ahora - limVis.en < 100) return; limVis.en = ahora;
   const prendido = AJ.limites !== false && seis.vio?.S.listo;
@@ -266,6 +276,7 @@ function leerCabeza(){
     const pose = seis.vio.S.corriendo ? seis.vio.pose(performance.now()) : null;
     const st = seis.filtro.paso(pose, [qCab.w, qCab.x, qCab.y, qCab.z], seis.vio.S, performance.now(), seis.ojo || ojoPorDefecto((((screen.orientation?.angle ?? window.orientation ?? 90) % 360) + 360) % 360));
     cabeza.position.set(st.pos[0], st.pos[1], st.pos[2]);
+    if(seis.vio.S.listo && AJ.topes6 !== false) topar6();
     if(seis.vio.S.listo) try{ vigilarAncla(); }catch(e){ fallo('E-ANCLA', 'vigilarAncla', e); }
     try{ const ns = nube.cuadro(seis.vio, seis.filtro, { mostrar: AJ.puntos !== false });
       /* LUGAR DIFÍCIL (investigación R4): con pocos puntos vivos el rastreo está por caerse; se avisa ANTES (cada 8 s como mucho) */
@@ -333,7 +344,7 @@ function vigilarAncla(){
 export async function ponerSeis(si, { demo = null, videoDemo = null } = {}){
   AJ.seis = !!si && !demo ? true : (demo ? AJ.seis : false); if(!demo) guardar();
   if(seis.vio){ seis.vio.parar(); seis.vio = null; }
-  seis.filtro = crearSeis(); limites.st.zona = null; seis.aviso = ''; seis.error = ''; seis.ancla?.olvidar(); seis.salaPuesta = false; seis.anclaVista = false;
+  seis.filtro = crearSeis(); seis.base6 = null; limites.st.zona = null; seis.aviso = ''; seis.error = ''; seis.ancla?.olvidar(); seis.salaPuesta = false; seis.anclaVista = false;
   if(!si){ if(!demo && camVIO) await reabrirCamara(); return true; }
   let paso = 'cargar vio.js';
   try{
@@ -365,7 +376,7 @@ export function recentrar(){
   /* y las pantallas que se movieron con las manos regresan enfrente y a su tamaño */
   for(const v of Object.values(vistas)) v.alRecentrar?.();
   /* y la zona segura se vuelve a poner alrededor de donde estás */
-  if(seis.vio) limites.ponerZona(cabeza.getWorldPosition(new THREE.Vector3()).toArray(), AJ.zona || 1);
+  if(seis.vio){ limites.ponerZona(cabeza.getWorldPosition(new THREE.Vector3()).toArray(), AJ.zona || 1); seis.base6 = null; }
   /* con la hoja del ancla vista, «Al centro» también guarda dónde quedó el menú en tu cuarto */
   if(seis.vio && anclaConGiro()) guardarSala().then((ok) => ok && hud('Al centro · guardado', 1.6));
 }
