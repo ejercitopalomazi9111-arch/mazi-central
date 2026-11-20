@@ -9,11 +9,11 @@
      sale de lo guardado marcado como redirigido: el navegador rechaza una navegación «redirigida» (lo que tumbó a
      INKWELL el 11 nov, ver inkwell/sw.js v31).
    Prueba: node vr/pruebas-sinred.mjs (apaga el servidor de a de veras). */
-const V = 'mazivr-v39';
+const V = 'mazivr-v40';
 const APP = ['./', './vr.js', './iconos.js', './teclado.js', './cine.js', './lector.js', './sables.js', './sable-mano.js', './objetos.js', './musica.js', './agarre.js', './temshop.js', './seis.js', './ancla.js', './nube.js', './limites.js', './prediccion.js', './monarca/monarca.js', './monarca/narrador.js', './monarca/travesuras.js', './pantalla.js', './manos.js', './manos-estables.js', './mano3d.js', './modelos/manos/izquierda.glb', './modelos/manos/derecha.glb', './gestos.js',
   './manifest.webmanifest', './silencio.mp4', './sonidos/toque.wav', './sonidos/whoosh.wav', './sonidos/ding.wav',
   './vendor/three.module.min.js', './vendor/three.core.min.js', './vendor/loaders/GLTFLoader.js', './vendor/utils/BufferGeometryUtils.js', './vendor/utils/SkeletonUtils.js',
-  './modelos/objetos/desk.glb', './modelos/objetos/crate-small.glb', './modelos/objetos/crate-medium.glb', './modelos/objetos/blaster-a.glb', './modelos/objetos/Textures/colormap.png', './modelos/temshop/temshop-cuarto.webp', './modelos/temshop/temshop-letrero.png', './modelos/temshop/temshop-piso.webp', './modelos/temshop/temmie.glb', './modelos/temshop/bookcaseOpen.glb', './modelos/temshop/books.glb', './modelos/temshop/cardboardBoxClosed.glb', './modelos/temshop/cardboardBoxOpen.glb', './modelos/temshop/coatRack.glb', './modelos/temshop/bear.glb', './modelos/temshop/trashcan.glb', './modelos/temshop/sideTable.glb', './modelos/temshop/radio.glb', './modelos/temshop/tableCoffee.glb', './modelos/temshop/lampRoundFloor.glb', './modelos/temshop/plantSmall1.glb', './modelos/temshop/pillow.glb', './modelos/temshop/rugRound.glb', '../marca/paloma-2026/logo-icono.svg', '../marca/paloma-2026/icono-512.png', '../inkwell/biblioteca.js', '../inkwell/fuentes.js', '../inkwell/red.js', '../inkwell/compartir.js'];
+  './modelos/objetos/desk.glb', './modelos/objetos/crate-small.glb', './modelos/objetos/crate-medium.glb', './modelos/objetos/blaster-a.glb', './modelos/objetos/Textures/colormap.png', './modelos/temshop/temshop-cuarto.webp', './modelos/temshop/temshop-letrero.png', './modelos/temshop/temshop-piso.webp', './modelos/temshop/temmie.glb', './modelos/temshop/bookcaseOpen.glb', './modelos/temshop/books.glb', './modelos/temshop/cardboardBoxClosed.glb', './modelos/temshop/cardboardBoxOpen.glb', './modelos/temshop/coatRack.glb', './modelos/temshop/bear.glb', './modelos/temshop/trashcan.glb', './modelos/temshop/sideTable.glb', './modelos/temshop/radio.glb', './modelos/temshop/tableCoffee.glb', './modelos/temshop/lampRoundFloor.glb', './modelos/temshop/plantSmall1.glb', './modelos/temshop/pillow.glb', './modelos/temshop/rugRound.glb', '../marca/paloma-2026/logo-icono.svg', '../marca/paloma-2026/icono-512.png', '../inkwell/biblioteca.js', '../inkwell/fuentes.js', '../inkwell/red.js', '../inkwell/compartir.js', './espacial/vio.js', './espacial/control.js', './espacial/profiles.js', './espacial/worker.js', './espacial/telemetry.js', './espacial/recording.js', './espacial/pkg/visloc_wasm.js'];
 const PESADO = ['./modelos/hand_landmarker.task', './monarca/medios/monarca.glb', './monarca/medios/flores.glb', './monarca/medios/mapa.json', './monarca/medios/cielos/alps_field.webp', './monarca/medios/cielos/misty_pines.webp', './monarca/medios/cielos/barnaslingan_02.webp', './monarca/medios/cielos/misty_farm_road.webp', '../presentaciones/vendor/mediapipe/vision_bundle.mjs',
   '../presentaciones/vendor/mediapipe/wasm/vision_wasm_internal.js', '../presentaciones/vendor/mediapipe/wasm/vision_wasm_internal.wasm',
   /* el narrador de MONARCH (narrador.js): un audio por renglón */
@@ -25,10 +25,22 @@ const clave = (u) => { const url = new URL(u, self.location.href); let p = url.p
 const sano = async (r) => r && r.redirected ? new Response(await r.blob(), { status: r.status, statusText: r.statusText, headers: r.headers }) : r;
 const guardar = async (c, u) => { try{ const r = await fetch(u, { cache: 'no-cache' }); if(r.ok) await c.put(/\/$|\.html$/.test(u) ? clave(u) : new URL(u, self.location.href).href, await sano(r)); }catch{} };
 
+/* LA VERSIÓN SE GUARDA ENTERA O NO SE GUARDA (20 nov: el iPhone de Carlos se quedó en la v38 con «Importing a module
+   script failed»). Antes cada archivo se actualizaba por su cuenta al pedirse, y el teléfono podía juntar la página de
+   una versión con un módulo de otra: en Safari eso truena justo así. Ahora:
+   · al instalar se bajan TODOS los archivos de la app saltándose cualquier caché (?v=N) y la página tiene que traer
+     `VERSION = N`; si algo falla, la instalación falla y se queda la versión anterior, completa, hasta el siguiente intento;
+   · lo de la lista APP sale SIEMPRE de lo guardado de su versión: se cambia sólo cuando llega un trabajador nuevo. */
+const N = +V.replace(/\D/g, '');
+const bajar = async (u) => { const r = await fetch(new URL(u, self.location.href).href + (u.includes('?') ? '&' : '?') + 'v=' + N, { cache: 'reload' }); if(!r.ok) throw new Error(`${u}: ${r.status}`); return sano(r); };
 self.addEventListener('install', (e) => {
   e.waitUntil((async () => {
+    const pag = await bajar('./'), txt = await pag.clone().text();
+    if(!txt.includes(`const VERSION = ${N};`)) throw new Error('La red todavía da la versión anterior');
+    const listos = [[clave('./'), pag]];
+    for(const u of APP) if(u !== './') listos.push([new URL(u, self.location.href).href, await bajar(u)]);
     const c = await caches.open(V);
-    await Promise.all(APP.map((u) => guardar(c, u)));
+    for(const [k, r] of listos) await c.put(k, r);
     self.skipWaiting();
   })());
 });
@@ -52,6 +64,7 @@ self.addEventListener('message', async (e) => {
 
 /* lo que no cambia (three, el modelo de manos, sonidos) no se vuelve a pedir: bajar 7.5 MB en cada visita sería peor
    que no tener trabajador. Si alguno cambia, se sube la versión (V) de arriba. */
+const DE_LA_APP = new Set(APP.filter((u) => u !== './').map((u) => new URL(u, self.location.href).href));
 const FIJO = /\/(vendor|modelos|sonidos|mediapipe)\/|\.(wasm|task|mp4|wav|svg|glb)$/;
 self.addEventListener('fetch', (e) => {
   const req = e.request;
@@ -64,7 +77,8 @@ self.addEventListener('fetch', (e) => {
     const pagina = req.mode === 'navigate' || req.destination === 'document';
     const llave = pagina ? clave(url) : url.href;
     const hit = await c.match(llave, { ignoreSearch: pagina });
-    if(hit && FIJO.test(url.pathname)) return sano(hit);
+    const deLaApp = pagina ? llave === clave('./') : DE_LA_APP.has(url.origin + url.pathname);
+    if(hit && (deLaApp || FIJO.test(url.pathname))) return sano(hit);
     const red = fetch(pagina ? new Request(url.href, { credentials: 'same-origin' }) : req)
       .then(async (res) => { if(res.ok && res.type === 'basic') await c.put(llave, await sano(res.clone())); return res; });
     if(hit){ e.waitUntil(red.catch(() => {})); return sano(hit); }
