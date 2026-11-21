@@ -258,7 +258,9 @@ de Ecuador). De dónde se baja, porque la red de aquí sólo alcanza GitHub:
 la UTEQ arriba y centrado, nombre de la universidad, carrera/asignatura, título al centro y el bloque de datos (alumna, docente,
 grupo, fecha, lugar); nada de bandas de color ni portadas «de diseño». **Si la tarea no pide un formato, va en APA 7** (página,
 márgenes de 2.54 cm, Times New Roman 12 o Calibri 11, interlineado doble, citas y referencias APA); si el encargo pide otro
-formato, manda el encargo. **Al terminar cada tarea se apunta en el documento de
+formato, manda el encargo. **Todo el texto va JUSTIFICADO** (pedido el 21 nov), y cuando la tarea explica una presentación,
+**las diapositivas van dentro del mismo PDF** como «Anexo A» (una figura APA por lámina): la plataforma sólo deja subir
+un archivo, y éste se llama **igual que el archivo de las diapositivas**. **Al terminar cada tarea se apunta en el documento de
 recapitulación** (Claude Docs «Tareas de Lorena · recapitulación»), por materia y número de actividad.
 El nombre de la alumna y sus datos NO van en este repo: es público.
 
