@@ -558,19 +558,36 @@ console.log('distancia');
     const conv = t.M.get('conv:whatsapp:524421800004'), c2 = conv.cotizacion;
     ok('cambia de zona: el lugar, los km y el precio se recalculan', c1.lugar.nombre === 'Centro Histórico' && c2.lugar.nombre === 'Juriquilla' && c2.distancia.km > c1.distancia.km && c2.desde > c1.desde && conv.lugar.nombre === 'Juriquilla', JSON.stringify([c1.distancia, c2.distancia]));
     ok('…la IA recibe el nuevo lugar con el nuevo precio, y el km ya no se guarda en los datos (no se queda pegado)', vio.at(-1)?.lugar === 'Juriquilla, en el norte de Querétaro' && vio.at(-1).desde === c2.desde && conv.datos.km === undefined, JSON.stringify(vio)); }
-  { /* fuera de la ciudad, sin salida: rigen las reglas de fuera de zona aunque los km típicos sean pocos */
-    const tf = (tipo, m2) => { const t = hacer({ pensar: (a) => ({ bien: true, respuesta: a.cotizacion ? 'Te saldría aproximadamente en {precio}.' : 'Va', necesita_dueno: false, motivo: '', razon: 'x', datos: { plaga: 'cucaracha', m2, zona: 'San Miguel de Allende', tipo } }) }); t.M.set('tarifas', TX); return t; };
-    const casa = tf('casa', 90); await casa.of.atender(msj('tengo cucarachas en mi casa de san miguel de allende, 90 m2', '524421800005'));
-    const cc = casa.M.get('conv:whatsapp:524421800005').cotizacion, dicho = casa.salidas.filter(x => x.chat === '524421800005').map(x => x.texto).join(' | ');
-    ok('San Miguel, casa chica, sin salida: fuera de zona, no se cubre y no sale precio', cc.lugar.rumbo === 'fuera de la ciudad' && cc.fueraDeRadio && cc.atiende === 'no' && !/\$\d/.test(dicho), dicho);
-    const ind = tf('industria', 900); await ind.of.atender(msj('es una planta de alimentos en san miguel de allende, 900 m2, cucarachas', '524421800006'));
-    const ci = ind.M.get('conv:whatsapp:524421800006').cotizacion;
-    ok('San Miguel, industria: sí, con visita para confirmar', ci.fueraDeRadio && ci.atiende === 'si' && ci.visita);
-    const conRadio = hacer({ pensar: (a) => ({ bien: true, respuesta: a.cotizacion ? 'Te saldría aproximadamente en {precio}.' : 'Va', necesita_dueno: false, motivo: '', razon: 'x', datos: { plaga: 'cucaracha', m2: 260, zona: 'Pedro Escobedo', tipo: 'casa' } }) });
-    conRadio.M.set('tarifas', { ...TX, radio_km: 60 }); conRadio.M.set('salida', { direccion: 'Bodega de prueba', lat: 20.593, lon: -100.3916 });
-    await conRadio.of.atender(msj('cucarachas en pedro escobedo, casa de 260 m2', '524421800007'));
-    const cr = conRadio.M.get('conv:whatsapp:524421800007').cotizacion;
-    ok('con salida y radio_km, manda su radio: Pedro Escobedo a menos de 60 km por carretera sí se atiende', cr.lugar.rumbo === 'fuera de la ciudad' && !cr.fueraDeRadio && cr.atiende === 'si', JSON.stringify({ km: cr.distancia, atiende: cr.atiende })); }
+  { /* LEJOS de la ciudad (Luis, 23 nov): su Excel trae servicios en San Miguel y una casa a 55 km. Lejos sí se va:
+       sin km reales es caso por caso (sin precio, lo decide el dueño); con km de carretera se cotiza normal; y «no» sólo con
+       el radio_km que él ponga. */
+    const BODEGA = { direccion: 'Bodega de prueba', lat: 20.593, lon: -100.3916 };
+    const lejos = async (zona, tipo, m2, chat, extra = {}) => {
+      const t = hacer({ mapa: extra.mapa, pensar: (a) => ({ bien: true, respuesta: a.cotizacion ? 'Te saldría aproximadamente en {precio}.' : 'Va',
+        necesita_dueno: false, motivo: '', razon: 'x', datos: { plaga: 'cucaracha', m2, zona, tipo } }) });
+      t.M.set('tarifas', { ...TX, ...(extra.tarifas || {}) }); if(extra.salida) t.M.set('salida', extra.salida);
+      await t.of.atender(msj(`tengo cucarachas en ${zona}, ${m2} m2`, chat));
+      const conv = t.M.get('conv:whatsapp:' + chat), dicho = t.salidas.filter(x => x.chat === chat).map(x => x.texto).join(' | ');
+      const avisos = [...t.M].filter(([k]) => k.startsWith('aviso:')).map(([, v]) => v.motivo).join(' | ');
+      return { cot: conv.cotizacion, dicho, avisos, t };
+    };
+    for(const [zona, tipo, m2, chat] of [['San Miguel de Allende', 'casa', 90, '524421800005'], ['San Juan del Río', 'casa', 90, '524421800008'], ['Huimilpan', 'casa', 90, '524421800009'], ['San Miguel de Allende', 'industria', 900, '524421800006']]){
+      const r = await lejos(zona, tipo, m2, chat);
+      ok(`${zona}, ${tipo}, sin salida: caso por caso (ni «no» ni precio con km típicos) y el aviso al dueño dice dónde`,
+        r.cot.lejos && r.cot.atiende === 'caso-por-caso' && !r.cot.fueraDeRadio && !/\$\d/.test(r.dicho) && !/no cubrimos/i.test(r.dicho) && r.avisos.includes(r.cot.lugar.nombre) && /dale tú el precio/.test(r.avisos), JSON.stringify({ atiende: r.cot.atiende, dicho: r.dicho, avisos: r.avisos }));
+    }
+    { const r = await lejos('San Miguel de Allende', 'casa', 90, '524421800010', { salida: BODEGA });
+      const e = r.cot.desglose.excel.corrida, h = corrida({ horas: e.horas, km: e.km, renglones: [{ producto: '_', cantidad: e.cantidad }] }, { catalogo: [{ id: '_', unidad: 'ml/lt', por_unidad: 20 }], convencional: { mano_hora: 80, ...TX.formula } });
+      ok('San Miguel CON km de carretera y SIN radio_km: se cotiza normal con esos km, como su Excel', r.cot.atiende === 'si' && !r.cot.lejos && r.cot.distancia.por === 'carretera' && r.cot.distancia.km > 50 && r.cot.desde === h.cotizacion && /\$\d/.test(r.dicho), JSON.stringify({ atiende: r.cot.atiende, km: r.cot.distancia })); }
+    { const r = await lejos('San Miguel de Allende', 'casa', 90, '524421800011', { salida: BODEGA, mapa: { osrmCaido: true } });
+      ok('San Miguel con salida pero el mapa no contestó (aprox): caso por caso, y el siguiente mensaje lo vuelve a intentar', r.cot.lejos && r.cot.atiende === 'caso-por-caso' && r.cot.distancia.por === 'aprox' && r.t.M.get('conv:whatsapp:524421800011').lugar.desde == null, JSON.stringify(r.cot.distancia)); }
+    { const r = await lejos('San Miguel de Allende', 'casa', 90, '524421800012', { salida: BODEGA, tarifas: { radio_km: 40 } });
+      ok('con el radio_km que puso el dueño rige su regla: San Miguel (más de 40 km), casa chica → no', r.cot.fueraDeRadio && r.cot.atiende === 'no' && !/\$\d/.test(r.dicho), JSON.stringify({ atiende: r.cot.atiende, km: r.cot.distancia })); }
+    { const r = await lejos('Pedro Escobedo', 'casa', 260, '524421800007', { salida: BODEGA, tarifas: { radio_km: 60 } });
+      ok('…y Pedro Escobedo a menos de 60 km por carretera sí se atiende', r.cot.lugar.rumbo === 'fuera de la ciudad' && !r.cot.fueraDeRadio && r.cot.atiende === 'si', JSON.stringify({ km: r.cot.distancia, atiende: r.cot.atiende })); }
+    ok('sin radio_km nunca sale «no» por lejanía', cotizar({ plaga: 'cucaracha', m2: 90, km: 500, tipo: 'casa' }, TX).atiende === 'si');
+    ok('a la IA le llega «lejos de la ciudad» y la regla le dice que sí vamos y que el encargado confirma el precio',
+      paraLaIA({ atiende: 'caso-por-caso', lejos: true, desde: 1 }).lejos_de_la_ciudad === true && /lejos_de_la_ciudad: true, NO hay precio/.test(readFileSync(new URL('./src/cerebro.js', import.meta.url), 'utf8'))); }
 }
 
 console.log(`\n${bien} pasan · ${mal} fallan`);

@@ -141,12 +141,13 @@ export class Oficina {
     if(!texto && !cotP && /\{\s*precio\s*\}/i.test(p.respuesta)){
       const d = conv.datos || {}, sp = sinPrecioAuto(d, cfg.tarifas);
       texto = cot && cot.atiende !== 'si' ? (cot.enorme ? 'Por el tamaño del lugar, el precio te lo da el encargado después de revisar tu caso. Ya le aviso.'
+          : cot.lejos ? 'Sí vamos hasta allá; por la distancia, el precio te lo confirma el encargado. Ya le paso tus datos.'
           : 'Para tu zona el encargado revisa tu caso y te avisa. Ya le paso tus datos.')
         : !d.plaga ? 'Para darte el precio dime qué plaga es. Si no sabes el nombre, cuéntame cómo es: tamaño, color y dónde la ves.'
         : sp ? `${sp[0].toUpperCase() + sp.slice(1)} sí las atendemos; el precio te lo da el encargado. Ya le aviso.`
         : PREGUNTA_TAMANO;
       if(sp) p.necesita_dueno = true, p.motivo = p.motivo || `Pide precio de ${sp}`;
-      if(cot && cot.atiende !== 'si') p.necesita_dueno = true, p.motivo = p.motivo || (cot.enorme ? 'Lugar muy grande: dale tú el precio.' : 'Fuera de la zona: decide tú.');
+      if(cot && cot.atiende !== 'si') p.necesita_dueno = true, p.motivo = p.motivo || (cot.enorme ? 'Lugar muy grande: dale tú el precio.' : cot.lejos ? 'Lejos de la ciudad: dale tú el precio.' : 'Fuera de la zona: decide tú.');
     }
     if(!texto){
       await this.decir(conv, 'Gracias por escribir. En un momento te contesta el encargado.', { via: 'respaldo', error: 'La IA escribió un precio que el sistema no calculó: ' + p.respuesta.slice(0, 160) });
@@ -182,8 +183,11 @@ export class Oficina {
       await this.decir(conv, `Te dejo tu cotización por escrito, por si la quieres guardar: ${this.env.URL_COTIZACION || URL_COTIZACION}${doc.codigo}`, { via: 'cotizacion', cotizacion: doc.codigo });
     }
     await this.A.put(`manual:${m.id}`, { pregunta: m.texto, respuesta: p.respuesta, razon: p.razon, canal: m.canal, chat: m.chat, cuando: this.reloj(), estado: 'por revisar' });
-    if(p.necesita_dueno) await this.aviso(conv, p.motivo || 'La IA pide que lo veas tú.');
-    else if(cot?.atiende === 'caso-por-caso') await this.aviso(conv, 'Casa grande fuera de la zona: decide si se atiende y cuánto cobrar de traslado.' + (cot.lugar ? ` (${notaDistancia(cot.lugar, cot.distancia?.km, cot.distancia?.por)})` : ''));
+    /* el aviso al dueño lleva el lugar (y sus km, que son suyos) cuando la distancia es la razón */
+    const donde = cot?.lugar && (cot.lejos || cot.atiende !== 'si') ? ` (${notaDistancia(cot.lugar, cot.distancia?.km, cot.distancia?.por)})` : '';
+    if(p.necesita_dueno) await this.aviso(conv, (p.motivo || 'La IA pide que lo veas tú.') + donde);
+    else if(cot?.lejos) await this.aviso(conv, `Cliente lejos de la ciudad y sin km de carretera${cfg.salida ? ' (el mapa no contestó)' : ' (falta de dónde sale la camioneta)'}: dale tú el precio.` + donde);
+    else if(cot?.atiende === 'caso-por-caso') await this.aviso(conv, 'Casa grande fuera de la zona: decide si se atiende y cuánto cobrar de traslado.' + donde);
     await guarda(); return { hecho: 'cerebro', dueno: !!p.necesita_dueno };
   }
 
@@ -201,7 +205,8 @@ export class Oficina {
       if(!u){ delete conv.lugar; return null; }
       L = { zona: clave, nombre: u.nombre, municipio: u.municipio, lat: u.lat, lon: u.lon, rumbo: u.rumbo, de: u.por };
     }
-    if(desde && L.desde !== desde){ const k = await kmPorCarretera(s, L, this.traer); L = { ...L, km: k.km, kmPor: k.por, desde }; }
+    /* si el mapa no contestó (aprox) no se fija: el siguiente mensaje lo vuelve a intentar */
+    if(desde && L.desde !== desde){ const k = await kmPorCarretera(s, L, this.traer); L = { ...L, km: k.km, kmPor: k.por, desde: k.por === 'carretera' ? desde : null }; }
     if(!desde && L.desde){ const { km, kmPor, desde: _, ...sin } = L; L = sin; }
     conv.lugar = L;
     return L;
@@ -221,11 +226,12 @@ export class Oficina {
     if(L?.km != null){ km = L.km; kmPor = L.kmPor; kmEstimado = L.kmPor !== 'carretera'; }
     else if(deTabla != null){ km = deTabla; kmPor = 'zonas'; }
     else if(tarifas.km_tipico > 0){ km = tarifas.km_tipico; kmPor = 'tipico'; kmEstimado = true; }
-    /* «fuera de la ciudad» (San Miguel, Celaya, San Juan del Río…) cuenta como fuera de zona cuando no hay km reales que
-       medir contra su radio_km (o no tiene radio): así rigen las reglas de siempre (industria con visita, casa grande
-       caso por caso, casa chica no). Con km reales y radio, manda su radio. */
-    const kmReal = kmPor === 'carretera' || kmPor === 'aprox' || kmPor === 'zonas';
-    const fuera = L?.rumbo === 'fuera de la ciudad' && (!kmReal || tarifas.radio_km == null);
+    /* Lejos de la ciudad (San Miguel, San Juan del Río, Huimilpan…), Luis, 23 nov: su Excel trae servicios en San Miguel y una
+       casa a 55 km, así que lejos SÍ se va. Sin km reales (falta la salida, o el mapa no contestó) es caso por caso: sin
+       precio, lo ve el dueño (con los km típicos le cobraría casi la mitad). Con km reales de carretera se cotiza normal, como
+       su Excel; y sólo con el radio_km que él ponga rige la regla de fuera de zona. Nunca «no» por lejanía si no hay radio. */
+    const kmReal = kmPor === 'carretera' || kmPor === 'zonas';
+    const lejos = L?.rumbo === 'fuera de la ciudad' && !kmReal;
     const lugar = L ? { nombre: L.nombre, municipio: L.municipio, rumbo: L.rumbo } : null;
     let m2 = d.m2, m2Estimado = false;
     /* si la IA no apuntó los metros pero el cliente sí los escribió («mide 2500 m2»), se toman de su mensaje */
@@ -245,7 +251,7 @@ export class Oficina {
       const e = completo || conv.cuestionario ? estimarM2(d, medidas || MEDIDAS) : { bien: false };
       if(e.bien){ m2 = e.m2; m2Estimado = true; conv.estimacion = e; }
     }
-    const c = cotizar({ plaga: d.plaga && normal(d.plaga), m2, m2Estimado, km, kmEstimado, kmPor, fuera, lugar, tipo: d.tipo || 'casa' }, tarifas);
+    const c = cotizar({ plaga: d.plaga && normal(d.plaga), m2, m2Estimado, km, kmEstimado, kmPor, lejos, lugar, tipo: d.tipo || 'casa' }, tarifas);
     return c.bien ? c : null;
   }
 

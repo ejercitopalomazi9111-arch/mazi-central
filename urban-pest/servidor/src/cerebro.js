@@ -51,6 +51,8 @@ Reglas que no se rompen:
   · atiende "si" (industria): ofrece una visita para confirmar la cotización.
   · atiende "caso-por-caso" (un lugar muy grande, o una casa grande fuera de la zona): NO hay precio; di que por el tamaño el encargado revisa su caso y le avisa; marca necesita_dueno.
   · atiende "no" (casa chica o mediana): con amabilidad, dile que por ahora no cubrimos su zona para casas; no des precio.
+- Si la cotización dice lejos_de_la_ciudad: true, NO hay precio todavía: di con tacto que sí vamos y que, por la distancia, el precio
+  se lo confirma el encargado; marca necesita_dueno. NO digas que no cubrimos su zona ni que es por el tamaño.
 - Para cotizar necesitas: la plaga, el tamaño del lugar, la colonia y si es casa, negocio o industria. Pide lo que falte, de uno o dos datos a la vez.
 - Para el tamaño, PRIMERO pregunta si sabe cuántos metros mide (Carlos, 17 nov: «que sí pida metros»). Si no los sabe o no
   da un número, NO insistas: hazle el cuestionario corto, en UNA sola pregunta: «¿Cuántas recámaras y baños tiene, y tu casa
@@ -93,6 +95,7 @@ export const pesos = (n) => { const [e, d] = (Math.round(n * 100) / 100).toFixed
 /* el lugar va ya dicho como persona («Juriquilla, en el norte de Querétaro») y sólo mientras no se le haya dado el precio
    (se dice UNA vez); los km NO: son del dueño */
 export const paraLaIA = (c) => ({ precio_aproximado: c.atiende === 'si' ? pesos(c.desde) : null, ya_se_lo_dijiste: !!c.yaDicho, visita_del_tecnico: !!c.visita, fuera_de_zona: !!c.fueraDeRadio,
+  ...(c.lejos ? { lejos_de_la_ciudad: true } : {}),
   atiende: c.atiende, ...(c.lugar && !c.yaDicho ? { lugar: comoDecirlo(c.lugar) } : {}), m2: c.m2 ?? null, m2_estimado: !!c.m2Estimado, nota: c.nota });
 
 /* Los modelos son los que La Sala ya usa y verificó (30 sep); se cambian por variable. */

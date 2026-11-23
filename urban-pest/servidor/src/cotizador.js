@@ -99,8 +99,7 @@ export function cotizar(p, t){
       /* lo que hay que poner en su Excel (o en «Cotizar») para que dé este mismo precio */
       corrida: { horas, km: p.km, producto: plaga.producto || null, material: plaga.material || null, columna: plaga.columna || null, cantidad: litros } };
   }
-  /* `p.fuera`: el lugar quedó «fuera de la ciudad» (distancia.js) y no hay km reales contra su radio para decidirlo */
-  const fueraDeRadio = !!p.fuera || (t.radio_km != null && p.km > t.radio_km);
+  const fueraDeRadio = t.radio_km != null && p.km > t.radio_km;
   /* Fuera de la zona (Carlos, 11 nov): industria sí, con visita para confirmar; casa NO, salvo
      que sea un proyecto grande, y ése se ve caso por caso con el dueño. Siempre cuesta más por
      el traslado, y se le avisa al cliente con tacto. */
@@ -108,7 +107,10 @@ export function cotizar(p, t){
   /* Un lugar enorme no se cotiza solo (prueba de seguridad, 23 nov: «mi casa mide 99999999 metros» daba $384,711,032.18
      y una hoja). Arriba de m2_maximo_auto (1,500 m² en casa; 20,000 en negocio o industria) lo revisa el encargado. */
   const enorme = p.m2 > (t.m2_maximo_auto ?? ((p.tipo || 'casa') === 'casa' ? 1500 : 20000));
-  const atiende = enorme ? 'caso-por-caso' : !fueraDeRadio ? 'si' : p.tipo === 'industria' ? 'si' : grande ? 'caso-por-caso' : 'no';
+  /* `p.lejos` (Luis, 23 nov): el lugar queda lejos de la ciudad (distancia.js) y NO hay km reales de carretera (falta la salida
+     o el mapa no contestó). Con los km típicos se le cobraría casi la mitad del traslado: no hay precio, lo decide el dueño,
+     sea casa, negocio o industria. Nunca es «no» por lejanía: eso sólo pasa con el radio_km que él ponga. */
+  const atiende = enorme || p.lejos ? 'caso-por-caso' : !fueraDeRadio ? 'si' : p.tipo === 'industria' ? 'si' : grande ? 'caso-por-caso' : 'no';
   return {
     bien: true, desde, moneda: 'MXN', ...(t.ejemplo ? { ejemplo: true } : {}),
     desglose: excel ? { producto: r2(producto), mano_de_obra: r2(mano), traslado: r2(traslado),
@@ -117,7 +119,7 @@ export function cotizar(p, t){
       material: { nombre: plaga.material || null, litros: Math.round(litros * 100) / 100, costo: Math.round(producto) },
       tecnico, vehiculo: vehiculo && Object.fromEntries(Object.entries(vehiculo).map(([k, v]) => [k, Math.round(v * 10) / 10])),
       factor: tipo.factor || 1, costo: Math.round(costo), ganancia: Math.round(desde - costo) },
-    visita: !!tipo.visita || enorme || (t.umbral_visita_m2 != null && p.m2 >= t.umbral_visita_m2), ...(enorme ? { enorme: true } : {}),
+    visita: !!tipo.visita || enorme || (t.umbral_visita_m2 != null && p.m2 >= t.umbral_visita_m2), ...(enorme ? { enorme: true } : {}), ...(p.lejos ? { lejos: true } : {}),
     fueraDeRadio, atiende,
     ...(p.m2Estimado ? { m2: p.m2, m2Estimado: true } : {}), ...(p.kmEstimado ? { kmEstimado: true } : {}),
     /* dónde es (para que la IA lo diga una vez) y con qué km se cotizó (SÓLO del dueño: la IA y la hoja no lo ven) */

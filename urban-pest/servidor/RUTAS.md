@@ -144,8 +144,13 @@ de su Excel, marcados como estimados. No se deduce ni se inventa.
 En el bot (`oficina.js`): antes de cotizar se ubica la colonia y se guarda en la conversación (`lugar`) por el texto de la
 zona, para no volver a preguntarle al mapa; si el cliente cambia de colonia, se recalculan el lugar, los km y el precio (antes
 los km de la primera zona se quedaban pegados en `datos.km`). Los km salen, en orden, de: la carretera desde la salida, su
-tabla `zonas`, o `km_tipico`. «Fuera de la ciudad» cuenta como fuera de zona cuando no hay km reales contra su `radio_km`;
-con km reales y radio, manda su radio. La IA recibe el lugar ya dicho («Juriquilla, en el norte de Querétaro») y lo menciona
+tabla `zonas`, o `km_tipico`.
+
+**Lejos de la ciudad** (Luis, 23 nov: su Excel trae servicios en San Miguel y una casa a 55 km; lejos sí se va):
+- **sin km reales** (falta la salida, o el mapa no contestó): `atiende: 'caso-por-caso'` y `lejos: true`, sea casa, negocio o
+  industria. Sin precio (con los km típicos le cobraría casi la mitad del traslado); al dueño le llega el aviso con el lugar;
+- **con km reales de carretera y sin `radio_km`**: se cotiza normal con esos km, como su Excel;
+- **con `radio_km`**: la regla de siempre (`fueraDeRadio`). Sin `radio_km` nunca sale «no» por lejanía. La IA recibe el lugar ya dicho («Juriquilla, en el norte de Querétaro») y lo menciona
 una vez al dar el precio; **los km no se le dicen al cliente**: van en `interno` de la hoja (`km`, `km_por`, `lugar`, `nota`).
 
 ## Lo que cuenta el cotizador · 12 nov
