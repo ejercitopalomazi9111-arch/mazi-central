@@ -7,7 +7,32 @@ import { cotizar, aPlaga } from './src/cotizador.js';
 import { corrida } from './src/corrida.js';
 import { firmaValida, leerAviso } from './src/meta.js';
 import { Oficina, ponerPrecio, sinDatosDelDueno, delTexto, elReflejo, sinPrecioAuto, noQuiere, PREGUNTA_TAMANO, hizoCuestionario, respuestaInsegura } from './src/oficina.js';
-import { leerJSON, pesos } from './src/cerebro.js';
+import { leerJSON, pesos, paraLaIA } from './src/cerebro.js';
+import { lugarConocido, rumbo, comoDecirlo, ubicar, buscarLugar, kmPorCarretera, kmRecta, ponerSalida, distanciaA, paraOSM, OSM } from './src/distancia.js';
+import { cotizacionPublica } from './src/cotizacion.js';
+
+/* OpenStreetMap y OSRM de mentiras: las pruebas NUNCA salen a internet. Nominatim contesta lo que diga `osm[q]`; OSRM da la
+   línea recta × 1.25 (así cada lugar tiene sus km). Todo lo que se pide queda en `pedidos`. */
+OSM.pausa_ms = 0;
+const mapaFalso = (opc = {}) => {
+  const pedidos = [];
+  const traer = async (url, init = {}) => {
+    const u = new URL(url); pedidos.push({ url: String(url), host: u.hostname, q: u.searchParams.get('q'), init });
+    if(u.hostname === 'nominatim.openstreetmap.org'){
+      if(opc.sinRed) throw new Error('sin red');
+      const r = (opc.osm || {})[u.searchParams.get('q')];
+      return new Response(JSON.stringify(r ? [r] : []), { status: 200 });
+    }
+    if(u.hostname === 'router.project-osrm.org'){
+      if(opc.osrmCaido) throw new Error('OSRM caído');
+      if(opc.osrmLento) return new Promise(() => {});
+      const [[lo1, la1], [lo2, la2]] = u.pathname.split('/').pop().split(';').map(x => x.split(',').map(Number));
+      return new Response(JSON.stringify({ code: 'Ok', routes: [{ distance: kmRecta({ lat: la1, lon: lo1 }, { lat: la2, lon: lo2 }) * 1250, duration: 900 }] }), { status: 200 });
+    }
+    throw new Error('quiso salir a otro lado: ' + url);
+  };
+  return { traer, pedidos };
+};
 
 let bien = 0, mal = 0;
 const ok = (q, c, d = '') => { if(c){ bien++; console.log('  ✓ ' + q); } else { mal++; console.log('  ✗ ' + q + (d ? '  → ' + d : '')); } };
@@ -112,15 +137,15 @@ ok('Instagram: lee el mensaje y tira el eco', ig.length === 1 && ig[0].canal ===
 console.log('oficina');
 const hacer = (opc = {}) => {
   const M = new Map([['casos', casos], ['tarifas', T], ['personales', ['524421111111']]]);
-  const salidas = [], llamadas = [];
+  const salidas = [], llamadas = [], mapa = mapaFalso(opc.mapa);
   let reloj = 1_700_000_000_000;
   const of = new Oficina({
     almacen: { get: async k => M.get(k), put: async (k, v) => M.set(k, structuredClone(v)), list: async p => [...M].filter(([k]) => k.startsWith(p)) },
-    env: { DUENO_WA: '524429999999' }, reloj: () => reloj,
+    env: { DUENO_WA: '524429999999' }, reloj: () => reloj, traer: mapa.traer,
     enviar: async (env, canal, chat, texto) => { salidas.push({ canal, chat, texto }); return { bien: true }; },
     pensar: async (a) => { llamadas.push(a); return opc.pensar ? opc.pensar(a, llamadas.length) : { bien: true, respuesta: 'r', necesita_dueno: false, motivo: '', razon: 'x', datos: {} }; },
   });
-  return { of, M, salidas, llamadas, avanza: (ms) => { reloj += ms; } };
+  return { of, M, salidas, llamadas, pedidos: mapa.pedidos, avanza: (ms) => { reloj += ms; } };
 };
 let n = 0; const msj = (texto, chat = '524420000000', extra = {}) => ({ canal: 'whatsapp', chat, id: 'id' + (++n), texto, cuando: 0, ...extra });
 
@@ -424,6 +449,129 @@ ok('«chinches» en plural se entiende (antes quedaba «chinch»)', aPlaga('chin
   const e1 = await plantaEjemplo(A), e2 = await plantaEjemplo(A);
   const ce = await carpetaPublica(A, e1.planta.codigo);
   ok('la planta de ejemplo sale marcada y no se duplica', ce.planta.ejemplo && e2.ya && ce.servicios.length === 3 && ce.servicios.every(s => s.ejemplo)); }
+
+/* ── la distancia (23 nov): en qué zona está y cuántos km hay desde la bodega ── */
+console.log('distancia');
+{ const n = (t) => lugarConocido(t)?.nombre;
+  ok('la tabla: «Juriquilla», «juriquiya», «ZIBATÁ» y «zibata»', n('Juriquilla') === 'Juriquilla' && n('por juriquiya') === 'Juriquilla' && n('ZIBATÁ') === 'Zibatá' && n('zibata') === 'Zibatá');
+  ok('la tabla: «x el centro» es el Centro Histórico y «aquí en milenio» es Milenio III', n('x el centro') === 'Centro Histórico' && n('aquí en milenio') === 'Milenio III');
+  ok('el alias más largo gana: «centro sur» no es el Centro; «Zibatá, El Marqués» es Zibatá, no el municipio', n('centro sur') === 'Centro Sur' && n('Zibatá, El Marqués') === 'Zibatá' && n('en el marqués') === 'El Marqués');
+  ok('palabra completa: «colonia del valle» no es Colón; «Av. Mariano Escobedo, centro» no es Pedro Escobedo', n('en la colonia del valle') == null && n('Av. Mariano Escobedo, centro') === 'Centro Histórico');
+  const r = (t) => lugarConocido(t).rumbo;
+  ok('el rumbo: Juriquilla norte, El Refugio noreste, Milenio oriente, El Pueblito suroeste, el Centro centro',
+    [r('juriquilla'), r('refugio'), r('milenio'), r('pueblito'), r('centro')].join() === 'norte,noreste,oriente,suroeste,centro', [r('juriquilla'), r('refugio'), r('milenio'), r('pueblito'), r('centro')].join());
+  ok('fuera de la ciudad: San Miguel, Celaya, San Juan del Río y Huimilpan; el Parque Industrial Querétaro (26 km) sigue siendo norte',
+    ['sma', 'celaya', 'san juan del rio', 'huimilpan'].every(x => r(x) === 'fuera de la ciudad') && r('piq') === 'norte');
+  ok('cómo se dice: «Juriquilla, en el norte de Querétaro», «el Centro Histórico de Querétaro», «El Pueblito, en Corregidora, al suroeste de la ciudad»',
+    comoDecirlo(lugarConocido('juriquilla')) === 'Juriquilla, en el norte de Querétaro' && comoDecirlo(lugarConocido('el centro')) === 'el Centro Histórico de Querétaro'
+    && comoDecirlo(lugarConocido('pueblito')) === 'El Pueblito, en Corregidora, al suroeste de la ciudad' && comoDecirlo(lugarConocido('sma')) === 'San Miguel de Allende, fuera de la ciudad');
+  ok('a OpenStreetMap va la colonia sin relleno, y nunca más de 120 letras', paraOSM('aquí en la colonia Villas del Mesón') === 'villas del meson' && paraOSM('en El Refugio') === 'el refugio' && paraOSM('Por Villas del Mesón') === 'villas del meson' && paraOSM('x'.repeat(500)).length === 120);
+}
+{ const MESON = { lat: '20.7001', lon: '-100.4499', name: 'Villas del Mesón', place_rank: 24, display_name: 'Villas del Mesón, Juriquilla, Santiago de Querétaro, Municipio de Querétaro, Querétaro, México',
+    address: { neighbourhood: 'Villas del Mesón', county: 'Municipio de Querétaro', state: 'Querétaro' } };
+  const M = new Map(), A = { get: async k => M.get(k), put: async (k, v) => M.set(k, v), list: async p => [...M].filter(([k]) => k.startsWith(p)) };
+  const m = mapaFalso({ osm: { 'villas del meson': MESON } });
+  const l1 = await ubicar(A, 'Por Villas del Mesón', m.traer), l2 = await ubicar(A, 'villas del meson', m.traer);
+  ok('lo que no está en la tabla lo busca en OpenStreetMap, con su municipio y su rumbo', l1?.nombre === 'Villas del Mesón' && l1.municipio === 'Querétaro' && l1.rumbo === 'norte' && l1.por === 'osm', JSON.stringify(l1));
+  ok('…y la segunda vez sale de la caché (geo:), sin volver a preguntar', l2?.nombre === 'Villas del Mesón' && m.pedidos.length === 1 && M.has('geo:villas del meson'));
+  const p = m.pedidos[0], u = new URL(p.url);
+  ok('la consulta va acotada a la región (viewbox con SMA y Celaya, bounded, mx) y con el User-Agent de la app',
+    u.searchParams.get('bounded') === '1' && u.searchParams.get('countrycodes') === 'mx' && Number(u.searchParams.get('viewbox').split(',')[0]) <= -100.84 && p.init.headers['user-agent'] === 'cotizador-plagas-qro/1.0');
+  ok('lo que está en la tabla no sale a internet', (await ubicar(A, 'aquí en milenio', m.traer))?.nombre === 'Milenio III' && m.pedidos.length === 1);
+  const caido = mapaFalso({ sinRed: true });
+  const e = await buscarLugar(A, 'Lomas de Querétaro Sur', caido.traer);
+  ok('sin red: no se ubica y el error NO se guarda en la caché (la siguiente vez se vuelve a preguntar)', !!e.error && !M.has('geo:lomas de queretaro sur'));
+  const vacio = mapaFalso();
+  ok('lo que OpenStreetMap no conoce se guarda como «no existe» y no se vuelve a preguntar',
+    (await ubicar(A, 'Colonia Inventada Xyz', vacio.traer)) === null && (await ubicar(A, 'colonia inventada xyz', vacio.traer)) === null && vacio.pedidos.length === 1 && M.get('geo:inventada xyz')?.nada);
+  const BLVD = { lat: '20.7075', lon: '-100.4506', name: 'Boulevard de Prueba', category: 'highway', place_rank: 26, address: { road: 'Boulevard de Prueba', town: 'Juriquilla', county: 'Municipio de Querétaro', state: 'Querétaro' } };
+  ok('si OpenStreetMap encuentra una calle, al cliente se le dice el pueblo o la colonia donde queda', (await ubicar(A, 'boulevard de prueba', mapaFalso({ osm: { 'boulevard de prueba': BLVD } }).traer))?.nombre === 'Juriquilla');
+  ok('«Querétaro» a secas es demasiado general: ni se pregunta', (await ubicar(A, 'Querétaro', vacio.traer)) === null && vacio.pedidos.length === 1);
+}
+{ const de = { lat: 20.593, lon: -100.3916 }, a = lugarConocido('juriquilla');
+  const k = await kmPorCarretera(de, a, mapaFalso().traer);
+  ok('km de ida por carretera, con un decimal', k.por === 'carretera' && k.km === Math.round(kmRecta(de, a) * 1.25 * 10) / 10, JSON.stringify(k));
+  const c = await kmPorCarretera(de, a, mapaFalso({ osrmCaido: true }).traer);
+  ok('OSRM caído: línea recta × 1.3, marcado «aprox»', c.por === 'aprox' && c.km === Math.round(kmRecta(de, a) * 1.3 * 10) / 10, JSON.stringify(c));
+  const t0 = Date.now(), tope = OSM.tope_ms; OSM.tope_ms = 150;
+  const l = await kmPorCarretera(de, a, mapaFalso({ osrmLento: true }).traer); OSM.tope_ms = tope;
+  ok('OSRM que no contesta: a los segundos, aproximado (el cliente no se queda esperando)', l.por === 'aprox' && Date.now() - t0 < 2000); }
+{ /* de dónde sale la camioneta: aparte, ni en tarifas ni en negocio */
+  const M = new Map([['tarifas', { x: 1 }], ['negocio', { nombre: 'N' }]]), A = { get: async k => M.get(k), put: async (k, v) => M.set(k, v), list: async p => [...M].filter(([k]) => k.startsWith(p)) };
+  const sinSalida = await distanciaA(A, 'Juriquilla', mapaFalso().traer);
+  ok('sin salida: dice el lugar y el rumbo, sin km, y dice qué falta', sinSalida.bien && sinSalida.lugar === 'Juriquilla' && sinSalida.rumbo === 'norte' && sinSalida.km === null && /sale la camioneta/.test(sinSalida.falta));
+  const BODEGA = { lat: '20.6100', lon: '-100.4000', name: 'Calle de Prueba', place_rank: 30, display_name: 'Calle de Prueba, Colonia de Prueba, Santiago de Querétaro, Municipio de Querétaro, Querétaro, México',
+    address: { road: 'Calle de Prueba', county: 'Municipio de Querétaro', state: 'Querétaro' } };
+  const m = mapaFalso({ osm: { 'Calle de Prueba 100, Querétaro': BODEGA } });
+  const mala = await ponerSalida(A, { direccion: 'Calle que no existe 1' }, m.traer);
+  ok('una dirección que no encuentra NO se guarda y dice cómo escribirla', !mala.bien && mala.estado === 404 && !M.has('salida') && /coordenadas/.test(mala.error));
+  const s = await ponerSalida(A, { direccion: 'Calle de Prueba 100, Querétaro' }, m.traer);
+  ok('POST /api/salida: guarda la dirección con sus coordenadas y regresa lo que entendió', s.bien && M.get('salida').lat === 20.61 && /Calle de Prueba/.test(s.entendi), JSON.stringify(s));
+  ok('…aparte: las tarifas y el negocio no se tocan', M.get('tarifas').x === 1 && !('salida' in M.get('negocio')) && !('lat' in M.get('negocio')));
+  const g = await ponerSalida(A, { direccion: '20.5930, -100.3916' }, m.traer);
+  ok('también acepta las coordenadas pegadas de Google Maps, sin preguntarle a nadie', g.bien && M.get('salida').lat === 20.593 && m.pedidos.length === 2);
+  const d = await distanciaA(A, 'por juriquilla', m.traer);
+  ok('GET /api/distancia con salida: lugar, municipio, rumbo y km de ida por carretera', d.bien && d.lugar === 'Juriquilla' && d.municipio === 'Querétaro' && d.rumbo === 'norte' && d.por === 'carretera' && d.km > 10 && d.km < 25, JSON.stringify(d));
+  ok('un lugar que no existe: 404 con qué escribir', (await distanciaA(A, 'Colonia Inventada Xyz', m.traer)).estado === 404); }
+{ /* EL BOT: la zona en la cotización, los km de carretera UNA vez en el precio, y lo mismo que da corrida() */
+  const TX = { formula: { tipo: 'excel', x: 2.5, entre: .6, km: 7, traslado_aparte: true }, tecnico: { costo_hora: 80, m2_hora: 330, minimo_horas: 1, personas: 1 },
+    plagas: { cucaracha: { material: 'Insecticida', litros_m2: .025, precio_litro: 20 } }, tipos: { casa: { factor: 1 }, industria: { factor: 1.4, visita: true } }, km_tipico: 10 };
+  const ia = (zona) => (a) => ({ bien: true, respuesta: a.cotizacion ? 'Te saldría aproximadamente en {precio}.' : 'Va', necesita_dueno: false, motivo: '', razon: 'x', datos: { plaga: 'cucaracha', m2: 120, zona, tipo: 'casa' } });
+  { const t = hacer({ pensar: ia('Juriquilla') }); t.M.set('tarifas', TX);
+    await t.of.atender(msj('tengo cucarachas en mi casa de juriquilla, 120 m2', '524421800001', { nombre: 'Ana Pérez' }));
+    const conv = t.M.get('conv:whatsapp:524421800001'), cot = conv.cotizacion, vioIA = t.llamadas.at(-1).cotizacion;
+    ok('sin salida: el bot dice la zona igual y cotiza con los km típicos, marcados estimados', cot.lugar?.nombre === 'Juriquilla' && cot.lugar.rumbo === 'norte' && cot.kmEstimado && cot.distancia.km === 10 && cot.distancia.por === 'tipico', JSON.stringify(cot.distancia));
+    ok('la IA recibe el lugar ya dicho («Juriquilla, en el norte de Querétaro») y NO los km', paraLaIA(vioIA).lugar === 'Juriquilla, en el norte de Querétaro' && !/"km|distancia"/.test(JSON.stringify(paraLaIA(vioIA))), JSON.stringify(paraLaIA(vioIA)));
+    ok('sin salida no se pregunta nada a OSRM', !t.pedidos.some(p => p.host === 'router.project-osrm.org')); }
+  { const t = hacer({ pensar: ia('Juriquilla') }); t.M.set('tarifas', TX); t.M.set('salida', { direccion: 'Bodega de prueba', lat: 20.593, lon: -100.3916 });
+    await t.of.atender(msj('tengo cucarachas en mi casa de juriquilla, 120 m2', '524421800002', { nombre: 'Ana Pérez' }));
+    const conv = t.M.get('conv:whatsapp:524421800002'), cot = conv.cotizacion, e = cot.desglose.excel.corrida;
+    const kmC = Math.round(kmRecta({ lat: 20.593, lon: -100.3916 }, lugarConocido('juriquilla')) * 1.25 * 10) / 10;
+    const h = corrida({ horas: e.horas, km: kmC, renglones: [{ producto: '_', cantidad: e.cantidad }] }, { catalogo: [{ id: '_', unidad: 'ml/lt', por_unidad: 20 }], convencional: { mano_hora: 80, ...TX.formula } });
+    ok('con salida: km de ida por carretera, no estimados', cot.distancia.km === kmC && cot.distancia.por === 'carretera' && !cot.kmEstimado && e.km === kmC, JSON.stringify(cot.distancia));
+    ok('el precio con km de carretera es corrida() con esos mismos km, al centavo', cot.desde === h.cotizacion, `${cot.desde} vs ${h.cotizacion}`);
+    ok('los km se cobran UNA vez (sin ida y vuelta): traslado = km × $/km', cot.desglose.traslado === Math.round(kmC * 7 * 100) / 100, JSON.stringify(cot.desglose.traslado));
+    const doc = [...t.M].find(([k]) => k.startsWith('cotdoc:'))[1], pub = await cotizacionPublica({ get: async k => t.M.get(k) }, doc.codigo);
+    ok('los km van en lo interno de la hoja y en la nota del dueño («Juriquilla · norte · X km por carretera»)', doc.interno.km === kmC && doc.interno.km_por === 'carretera' && doc.interno.nota === `Juriquilla · norte · ${kmC} km por carretera`, JSON.stringify(doc.interno.nota));
+    ok('…y la hoja del cliente no los trae', pub.bien && !JSON.stringify(pub).includes(String(kmC)) && !/carretera|km_por/.test(JSON.stringify(pub)));
+    ok('al cliente no se le dicen los km', t.salidas.every(x => !x.texto.includes(String(kmC)) && !/\bkm\b|kil[oó]metro/i.test(x.texto)));
+    ok('a OpenStreetMap / OSRM no se manda el nombre, el teléfono ni el mensaje del cliente', t.pedidos.length > 0 && t.pedidos.every(p => !/ana|perez|5244218|cucaracha/i.test(decodeURIComponent(p.url)) && !p.init.body), t.pedidos.map(p => p.url).join(' | ')); }
+  { /* una colonia que no está en la tabla: a OSM SÓLO la colonia, y la conversación la guarda (no se vuelve a preguntar) */
+    const MESON = { lat: '20.7001', lon: '-100.4499', name: 'Villas del Mesón', place_rank: 24, display_name: 'Villas del Mesón', address: { county: 'Municipio de Querétaro', state: 'Querétaro' } };
+    let vez = 0;
+    const t = hacer({ mapa: { osm: { 'villas del meson': MESON } }, pensar: (a) => (++vez, { bien: true, respuesta: a.cotizacion ? (a.cotizacion.yaDicho ? 'Sí, incluye todo.' : 'Te saldría aproximadamente en {precio}.') : 'Va', necesita_dueno: false, motivo: '', razon: 'x',
+      datos: { plaga: 'cucaracha', m2: 120, zona: 'aquí en Villas del Mesón', tipo: 'casa' } }) });
+    t.M.set('tarifas', TX); t.M.set('salida', { direccion: 'Bodega de prueba', lat: 20.593, lon: -100.3916 });
+    await t.of.atender(msj('soy Ana Pérez, mi cel 4421234567, tengo cucarachas aquí en Villas del Mesón, 120 m2', '524421800003', { nombre: 'Ana Pérez' }));
+    await t.of.atender(msj('¿y eso incluye todo?', '524421800003'));
+    const osm = t.pedidos.filter(p => p.host === 'nominatim.openstreetmap.org');
+    ok('a OpenStreetMap va SÓLO la colonia («villas del meson»), una vez en toda la plática', osm.length === 1 && osm[0].q === 'villas del meson' && !/4421234567|ana|cucaracha/i.test(osm[0].url), JSON.stringify(osm.map(p => p.q)));
+    ok('…y OSRM una vez: la conversación guarda el lugar con sus km', t.pedidos.filter(p => p.host === 'router.project-osrm.org').length === 1 && t.M.get('conv:whatsapp:524421800003').lugar?.km > 0); }
+  { /* cambia de zona: se recalcula el lugar, los km y el precio (antes los km de la primera zona se quedaban pegados) */
+    const vio = [];
+    const t = hacer({ pensar: (a, i) => { vio.push(a.cotizacion && { lugar: paraLaIA(a.cotizacion).lugar, desde: a.cotizacion.desde });
+      return { bien: true, respuesta: a.cotizacion ? 'Te saldría aproximadamente en {precio}.' : 'Va', necesita_dueno: false, motivo: '', razon: 'x', datos: { plaga: 'cucaracha', m2: 120, zona: i <= 2 ? 'Centro' : 'Juriquilla', tipo: 'casa' } }; } });
+    t.M.set('tarifas', TX); t.M.set('salida', { direccion: 'Bodega de prueba', lat: 20.593, lon: -100.3916 });
+    await t.of.atender(msj('tengo cucarachas en mi casa del centro, 120 m2', '524421800004'));
+    const c1 = t.M.get('conv:whatsapp:524421800004').cotizacion;
+    await t.of.atender(msj('perdón, me equivoqué: es en juriquilla', '524421800004'));
+    const conv = t.M.get('conv:whatsapp:524421800004'), c2 = conv.cotizacion;
+    ok('cambia de zona: el lugar, los km y el precio se recalculan', c1.lugar.nombre === 'Centro Histórico' && c2.lugar.nombre === 'Juriquilla' && c2.distancia.km > c1.distancia.km && c2.desde > c1.desde && conv.lugar.nombre === 'Juriquilla', JSON.stringify([c1.distancia, c2.distancia]));
+    ok('…la IA recibe el nuevo lugar con el nuevo precio, y el km ya no se guarda en los datos (no se queda pegado)', vio.at(-1)?.lugar === 'Juriquilla, en el norte de Querétaro' && vio.at(-1).desde === c2.desde && conv.datos.km === undefined, JSON.stringify(vio)); }
+  { /* fuera de la ciudad, sin salida: rigen las reglas de fuera de zona aunque los km típicos sean pocos */
+    const tf = (tipo, m2) => { const t = hacer({ pensar: (a) => ({ bien: true, respuesta: a.cotizacion ? 'Te saldría aproximadamente en {precio}.' : 'Va', necesita_dueno: false, motivo: '', razon: 'x', datos: { plaga: 'cucaracha', m2, zona: 'San Miguel de Allende', tipo } }) }); t.M.set('tarifas', TX); return t; };
+    const casa = tf('casa', 90); await casa.of.atender(msj('tengo cucarachas en mi casa de san miguel de allende, 90 m2', '524421800005'));
+    const cc = casa.M.get('conv:whatsapp:524421800005').cotizacion, dicho = casa.salidas.filter(x => x.chat === '524421800005').map(x => x.texto).join(' | ');
+    ok('San Miguel, casa chica, sin salida: fuera de zona, no se cubre y no sale precio', cc.lugar.rumbo === 'fuera de la ciudad' && cc.fueraDeRadio && cc.atiende === 'no' && !/\$\d/.test(dicho), dicho);
+    const ind = tf('industria', 900); await ind.of.atender(msj('es una planta de alimentos en san miguel de allende, 900 m2, cucarachas', '524421800006'));
+    const ci = ind.M.get('conv:whatsapp:524421800006').cotizacion;
+    ok('San Miguel, industria: sí, con visita para confirmar', ci.fueraDeRadio && ci.atiende === 'si' && ci.visita);
+    const conRadio = hacer({ pensar: (a) => ({ bien: true, respuesta: a.cotizacion ? 'Te saldría aproximadamente en {precio}.' : 'Va', necesita_dueno: false, motivo: '', razon: 'x', datos: { plaga: 'cucaracha', m2: 260, zona: 'Pedro Escobedo', tipo: 'casa' } }) });
+    conRadio.M.set('tarifas', { ...TX, radio_km: 60 }); conRadio.M.set('salida', { direccion: 'Bodega de prueba', lat: 20.593, lon: -100.3916 });
+    await conRadio.of.atender(msj('cucarachas en pedro escobedo, casa de 260 m2', '524421800007'));
+    const cr = conRadio.M.get('conv:whatsapp:524421800007').cotizacion;
+    ok('con salida y radio_km, manda su radio: Pedro Escobedo a menos de 60 km por carretera sí se atiende', cr.lugar.rumbo === 'fuera de la ciudad' && !cr.fueraDeRadio && cr.atiende === 'si', JSON.stringify({ km: cr.distancia, atiende: cr.atiende })); }
+}
 
 console.log(`\n${bien} pasan · ${mal} fallan`);
 process.exit(mal ? 1 : 0);

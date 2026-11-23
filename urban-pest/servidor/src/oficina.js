@@ -9,7 +9,10 @@
      3. ¿el dueño está contestando él mismo en ese chat? → callados
      4. ¿pasó del tope de mensajes por hora? → callados y se le avisa
      5. REFLEJO: respuesta ya hecha si la hay
-     6. CEREBRO: la IA, con la cotización si ya hay datos; queda en el manual
+     6. CEREBRO: la IA, con la cotización si ya hay datos; queda en el manual.
+        Antes de cotizar se ubica la colonia (distancia.js): el lugar y su rumbo van
+        en la cotización y, si ya está de dónde sale la camioneta, los km de ida
+        por carretera. A OpenStreetMap sólo se le manda la colonia.
      7. si hace falta el dueño → aviso (y llamada, cuando se conecte)
    ═══════════════════════════════════════════════════════════════════════════ */
 import { reflejo, llenar } from './reflejo.js';
@@ -17,6 +20,7 @@ import { cotizar, aPlaga } from './cotizador.js';
 import { estimarM2, MEDIDAS } from './medidor.js';
 import { pesos } from './cerebro.js';
 import { cotizacionDelBot } from './cotizacion.js';
+import { ubicar, kmPorCarretera, comoDecirlo, notaDistancia, normal as normalLugar } from './distancia.js';
 
 const URL_COTIZACION = 'https://mazi-central.palomazi9111.workers.dev/urban-pest/cotizacion/?c=';
 
@@ -25,8 +29,9 @@ const DUENO_CALLA_MS = 30 * 60 * 1000;
 const ahora = () => Date.now();
 
 export class Oficina {
-  constructor({ almacen, env = {}, enviar, pensar, reloj = ahora }){
-    Object.assign(this, { A: almacen, env, enviar, pensar, reloj });
+  /** `traer`: el fetch para OpenStreetMap y OSRM (las pruebas le pasan uno de mentiras: nunca salen a internet) */
+  constructor({ almacen, env = {}, enviar, pensar, reloj = ahora, traer = (...a) => fetch(...a) }){
+    Object.assign(this, { A: almacen, env, enviar, pensar, reloj, traer });
   }
 
   async config(){
@@ -36,6 +41,8 @@ export class Oficina {
       tarifas: (await this.A.get('tarifas')) || null,
       medidas: (await this.A.get('medidas')) || null,
       personales: new Set((await this.A.get('personales')) || []),
+      /* de dónde sale la camioneta (POST /api/salida). FALTA del cliente: sin ella, km típicos marcados estimados */
+      salida: (await this.A.get('salida')) || null,
     };
   }
 
@@ -85,6 +92,7 @@ export class Oficina {
        hoja nueva cada vez; a «¿por qué no pediste metros?» le contestó con el precio. Ya dicho el precio, no se mueve si el
        cliente no da un dato nuevo, y a la IA se le dice que ya se lo dijo: que conteste lo que le preguntan. */
     const datoNuevo = traeDatos(m.texto) || /\b(chic|median|grand|recamar|cuart|bano|pati|jardin|sala|comedor|plant|pis|coloni|zona|depa|casa|negocio|industria)/.test(normal(m.texto));
+    if(cfg.tarifas && (conv.precioDicho == null || !conv.cotizacion || datoNuevo)) await this.ubica(conv, cfg);
     let cot = cfg.tarifas ? (conv.precioDicho != null && conv.cotizacion && !datoNuevo ? conv.cotizacion : this.cotiza(conv, cfg.tarifas, cfg.medidas)) : null;
     /* con un dato nuevo que casi no lo mueve («chica» → «2 cuartos 1 baño»: $778.80 → $752.89) se queda el que ya se le dijo:
        al cliente no se le cambia el precio por centavos de una estimación. Si cambia 5 % o más, sí se le da el nuevo. */
@@ -94,7 +102,13 @@ export class Oficina {
     const antes = { ...conv.datos };
     if(p.bien){
       conv.datos = mezclar(conv.datos, p.datos);
-      const nueva = cfg.tarifas && !cot ? this.cotiza(conv, cfg.tarifas, cfg.medidas) : null;
+      /* si cambió de colonia («perdón, es en Juriquilla, no en el Centro»), el lugar y los km se vuelven a sacar y la
+         cotización también: antes los km de la primera zona se quedaban pegados */
+      const otraZona = !!cot && !!conv.datos.zona && normal(antes.zona || '') !== normal(conv.datos.zona);
+      if(cfg.tarifas && (!cot || otraZona)) await this.ubica(conv, cfg);
+      let nueva = cfg.tarifas && (!cot || otraZona) ? this.cotiza(conv, cfg.tarifas, cfg.medidas) : null;
+      /* «centro» → «el centro»: la misma zona escrita distinto no es motivo para preguntarle otra vez a la IA */
+      if(nueva && cot && nueva.desde === cot.desde && nueva.lugar?.nombre === cot.lugar?.nombre) nueva = null;
       /* con lo que acaba de decir ya se puede cotizar: se le pregunta otra vez, ya con el precio */
       if(nueva){ cot = nueva; const p2 = await this.pensar({ env: this.env, negocio: cfg.negocio, casos: cfg.casos, historial: conv.mensajes, cotizacion: paraIA(cot) }); if(p2.bien) p = { ...p2, datos: p.datos }; }
       /* acaba de decir una plaga que no tiene precio automático (ratas, termitas…): que no siga pidiendo el tamaño */
@@ -121,7 +135,7 @@ export class Oficina {
     const seVa = noQuiere(m.texto);
     if(texto && seVa && cotP && texto.includes(pesos(cotP.desde))) texto = 'Sin problema. Aquí estamos para cuando lo necesites.';
     if(texto && !seVa && cot && cot.atiende === 'si' && !p.necesita_dueno && conv.precioDicho !== cot.desde && !texto.includes(pesos(cot.desde)) && pideLoQueYaHay(texto))
-      texto = ponerPrecio('Te saldría aproximadamente en {precio}. Si los datos que nos diste están bien, ése es el costo; el técnico te lo confirma al ver el lugar.', cot);
+      texto = ponerPrecio((cot.lugar ? `Para ${comoDecirlo(cot.lugar)}, te saldría` : 'Te saldría') + ' aproximadamente en {precio}. Si los datos que nos diste están bien, ése es el costo; el técnico te lo confirma al ver el lugar.', cot);
     /* La IA quiso dar un precio sin cotización (Carlos preguntó «¿Cuánto?» sin que se supiera la plaga): en vez de
        «te contesta el encargado», se le pide lo que falta para cotizar. */
     if(!texto && !cotP && /\{\s*precio\s*\}/i.test(p.respuesta)){
@@ -169,17 +183,50 @@ export class Oficina {
     }
     await this.A.put(`manual:${m.id}`, { pregunta: m.texto, respuesta: p.respuesta, razon: p.razon, canal: m.canal, chat: m.chat, cuando: this.reloj(), estado: 'por revisar' });
     if(p.necesita_dueno) await this.aviso(conv, p.motivo || 'La IA pide que lo veas tú.');
-    else if(cot?.atiende === 'caso-por-caso') await this.aviso(conv, 'Casa grande fuera de la zona: decide si se atiende y cuánto cobrar de traslado.');
+    else if(cot?.atiende === 'caso-por-caso') await this.aviso(conv, 'Casa grande fuera de la zona: decide si se atiende y cuánto cobrar de traslado.' + (cot.lugar ? ` (${notaDistancia(cot.lugar, cot.distancia?.km, cot.distancia?.por)})` : ''));
     await guarda(); return { hecho: 'cerebro', dueno: !!p.necesita_dueno };
+  }
+
+  /** Ubica la colonia que dijo y la guarda en la conversación (conv.lugar), con los km desde la salida si ya está.
+      Se guarda por el texto de la zona: si el cliente no la cambia, no se le vuelve a preguntar a OpenStreetMap; si la
+      cambia, se recalcula. Si cambia la salida, se recalculan sólo los km. Nunca lanza. */
+  async ubica(conv, cfg){
+    const zona = String(conv.datos?.zona || '').trim();
+    if(!zona){ delete conv.lugar; return null; }
+    const clave = normalLugar(zona).slice(0, 120), s = cfg.salida, desde = s?.lat != null ? `${s.lat},${s.lon}` : null;
+    let L = conv.lugar?.zona === clave ? conv.lugar : null;
+    if(!L){
+      const u = await ubicar(this.A, zona, this.traer);
+      /* no lo encontró o no hubo red: no se apunta nada (la red se reintenta; lo que no existe ya lo guardó ubicar) */
+      if(!u){ delete conv.lugar; return null; }
+      L = { zona: clave, nombre: u.nombre, municipio: u.municipio, lat: u.lat, lon: u.lon, rumbo: u.rumbo, de: u.por };
+    }
+    if(desde && L.desde !== desde){ const k = await kmPorCarretera(s, L, this.traer); L = { ...L, km: k.km, kmPor: k.por, desde }; }
+    if(!desde && L.desde){ const { km, kmPor, desde: _, ...sin } = L; L = sin; }
+    conv.lugar = L;
+    return L;
   }
 
   cotiza(conv, tarifas, medidas){
     const d = conv.datos || {};
-    if(d.km == null && d.zona) d.km = (tarifas.zonas || {})[normal(d.zona)] ?? null;
-    /* sin la distancia de esa zona: los km típicos de SU Excel (la mediana de sus últimas cotizaciones),
-       marcado como estimado. Sin esto el bot no daba precio a nadie que no estuviera en la lista de zonas. */
-    let kmEstimado = false;
-    if(d.km == null && tarifas.km_tipico > 0){ kmEstimado = true; }
+    /* La distancia, de lo más cierto a lo menos (y SIN guardarla en los datos: antes `d.km` se quedaba pegado aunque el
+       cliente cambiara de zona):
+         1. ya está de dónde sale la camioneta: los km de ida por carretera al lugar (por: carretera, o aprox si OSRM no contestó)
+         2. su tabla de zonas (tarifas.zonas), si la tiene
+         3. los km típicos de SU Excel (la mediana de sus últimas cotizaciones), marcado como estimado. Sin esto el bot no
+            daba precio a nadie que no estuviera en la lista de zonas. */
+    const L = d.zona && conv.lugar?.zona === normalLugar(d.zona).slice(0, 120) ? conv.lugar : null;
+    const zonas = tarifas.zonas || {}, deTabla = d.zona ? zonas[normal(d.zona)] ?? (L ? zonas[normal(L.nombre)] : undefined) : undefined;
+    let km = null, kmPor = null, kmEstimado = false;
+    if(L?.km != null){ km = L.km; kmPor = L.kmPor; kmEstimado = L.kmPor !== 'carretera'; }
+    else if(deTabla != null){ km = deTabla; kmPor = 'zonas'; }
+    else if(tarifas.km_tipico > 0){ km = tarifas.km_tipico; kmPor = 'tipico'; kmEstimado = true; }
+    /* «fuera de la ciudad» (San Miguel, Celaya, San Juan del Río…) cuenta como fuera de zona cuando no hay km reales que
+       medir contra su radio_km (o no tiene radio): así rigen las reglas de siempre (industria con visita, casa grande
+       caso por caso, casa chica no). Con km reales y radio, manda su radio. */
+    const kmReal = kmPor === 'carretera' || kmPor === 'aprox' || kmPor === 'zonas';
+    const fuera = L?.rumbo === 'fuera de la ciudad' && (!kmReal || tarifas.radio_km == null);
+    const lugar = L ? { nombre: L.nombre, municipio: L.municipio, rumbo: L.rumbo } : null;
     let m2 = d.m2, m2Estimado = false;
     /* si la IA no apuntó los metros pero el cliente sí los escribió («mide 2500 m2»), se toman de su mensaje */
     if(!(m2 > 0)) for(const msj of [...(conv.mensajes || [])].reverse().filter(x => x.de === 'cliente')){
@@ -198,7 +245,7 @@ export class Oficina {
       const e = completo || conv.cuestionario ? estimarM2(d, medidas || MEDIDAS) : { bien: false };
       if(e.bien){ m2 = e.m2; m2Estimado = true; conv.estimacion = e; }
     }
-    const c = cotizar({ plaga: d.plaga && normal(d.plaga), m2, m2Estimado, km: kmEstimado ? tarifas.km_tipico : d.km, kmEstimado, tipo: d.tipo || 'casa' }, tarifas);
+    const c = cotizar({ plaga: d.plaga && normal(d.plaga), m2, m2Estimado, km, kmEstimado, kmPor, fuera, lugar, tipo: d.tipo || 'casa' }, tarifas);
     return c.bien ? c : null;
   }
 

@@ -99,7 +99,8 @@ export function cotizar(p, t){
       /* lo que hay que poner en su Excel (o en «Cotizar») para que dé este mismo precio */
       corrida: { horas, km: p.km, producto: plaga.producto || null, material: plaga.material || null, columna: plaga.columna || null, cantidad: litros } };
   }
-  const fueraDeRadio = t.radio_km != null && p.km > t.radio_km;
+  /* `p.fuera`: el lugar quedó «fuera de la ciudad» (distancia.js) y no hay km reales contra su radio para decidirlo */
+  const fueraDeRadio = !!p.fuera || (t.radio_km != null && p.km > t.radio_km);
   /* Fuera de la zona (Carlos, 11 nov): industria sí, con visita para confirmar; casa NO, salvo
      que sea un proyecto grande, y ése se ve caso por caso con el dueño. Siempre cuesta más por
      el traslado, y se le avisa al cliente con tacto. */
@@ -119,9 +120,11 @@ export function cotizar(p, t){
     visita: !!tipo.visita || enorme || (t.umbral_visita_m2 != null && p.m2 >= t.umbral_visita_m2), ...(enorme ? { enorme: true } : {}),
     fueraDeRadio, atiende,
     ...(p.m2Estimado ? { m2: p.m2, m2Estimado: true } : {}), ...(p.kmEstimado ? { kmEstimado: true } : {}),
+    /* dónde es (para que la IA lo diga una vez) y con qué km se cotizó (SÓLO del dueño: la IA y la hoja no lo ven) */
+    ...(p.lugar ? { lugar: p.lugar } : {}), ...(p.kmPor ? { distancia: { km: p.km, por: p.kmPor } } : {}),
     nota: 'Precio aproximado: si los datos que dio son correctos, ése es más o menos el costo. El técnico lo confirma al ver el lugar.'
       + (p.m2Estimado ? ' Los metros son estimados por lo que contó.' : '')
-      + (p.kmEstimado ? ' La distancia también es estimada: falta la zona exacta.' : ''),
+      + (p.kmEstimado ? (p.lugar ? ' La distancia también es estimada.' : ' La distancia también es estimada: falta la zona exacta.') : ''),
   };
 }
 

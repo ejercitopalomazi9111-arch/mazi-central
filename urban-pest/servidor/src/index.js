@@ -20,6 +20,7 @@ import { cotizar } from './cotizador.js';
 import { estimarM2, MEDIDAS } from './medidor.js';
 import { crearPlanta, listarPlantas, ponerEstaciones, ponerDocumentos, registrarServicio, carpetaPublica, plantaEjemplo, quitarServicio } from './carpeta.js';
 import { juntarCasos } from './reflejo.js';
+import { ponerSalida, distanciaA } from './distancia.js';
 import CASOS_FABRICA from '../../bot/casos.json' with { type: 'json' };
 
 /* Para PROBAR mientras llega el Excel: precios DE EJEMPLO, sólo en el canal «prueba» y
@@ -206,6 +207,10 @@ export class Despacho {
       }
       case 'POST /api/probar/borrar': { await A.del(`conv:prueba:${String(b.chat || 'prueba').replace(/[^a-z0-9-]/gi, '')}`); return { bien: true }; }
       case 'POST /api/cotizar': return { bien: true, ...cotizar(b, await A.get('tarifas')) };
+      /* ── la distancia (23 nov): de dónde sale la camioneta y cuántos km hay a la colonia del cliente ── */
+      case 'GET /api/salida': return { bien: true, salida: (await A.get('salida')) || null };
+      case 'POST /api/salida': return ponerSalida(A, b);
+      case 'GET /api/distancia': return distanciaA(A, q.donde);
       default: return { bien: false, error: 'No existe esa ruta.', estado: 404 };
     }
   }
