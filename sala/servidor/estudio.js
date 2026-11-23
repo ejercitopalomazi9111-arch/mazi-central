@@ -24,6 +24,7 @@
 
    Sin `cloudflare:workers`: las pruebas cargan esto en Node.
    ═════════════════════════════════════════════════════════════════════════ */
+import { LIGAS, conLiga, cerrarSemana, filasDeLiga, cortes } from './ligas.js';
 import { conEconomia, premiar, premiarUnaVez, cobrarNivel, estudioAnima, comprar, cuidar, PREMIOS, TIENDA, nivelDe, animoDe } from './palomium.js';
 export const MAX_PLAN = 1_500_000;
 const kPerfil = (c) => `est:perfil:${c}`;
@@ -71,8 +72,13 @@ export function avanzarRacha(p, dia){
   return eventos;
 }
 
-async function ranking(storage, semana, nombres = {}){
+async function ranking(storage, semana, nombres = {}, liga = null){
   const tabla = (await storage.get(kSem(semana))) || {};
+  /* con liga: sólo los de tu liga, como Duolingo (ligas.js); sin liga (pruebas viejas), todos */
+  if(liga != null){
+    const filas = filasDeLiga(tabla, liga).map((f) => ({ ...f, nombre: nombres[f.cuenta] || f.nombre }));
+    return { semana, liga, nombreLiga: LIGAS[liga].nombre, ...cortes(filas.length), filas };
+  }
   return { semana, filas: Object.entries(tabla).map(([cuenta, f]) => ({ cuenta, nombre: nombres[cuenta] || f.nombre || cuenta, xp: f.xp || 0 }))
     .sort((a, b) => b.xp - a.xp || a.nombre.localeCompare(b.nombre)) };
 }
@@ -263,7 +269,16 @@ async function atenderSesion(storage, c, cuenta, perfil, ahora){
 export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.now()){
   cuenta = limpio(cuenta || 'invitado', 40).toLowerCase() || 'invitado';
   const hoy = diaMexico(ahora);
-  const perfil = conEconomia((await storage.get(kPerfil(cuenta))) || perfilNuevo(cuenta), ahora);
+  const perfil = conLiga(conEconomia((await storage.get(kPerfil(cuenta))) || perfilNuevo(cuenta), ahora));
+  /* la semana se cierra sola la primera vez que la cuenta aparece en una semana nueva (ligas.js) */
+  { const semHoy = semanaDe(hoy);
+    if(perfil.ligaSemana && perfil.ligaSemana !== semHoy){
+      const r = cerrarSemana(perfil, cuenta, await storage.get(kSem(perfil.ligaSemana)), perfil.ligaSemana);
+      if(r.a > r.de) premiar(perfil, 'liga', hoy);
+      perfil.ligaAviso = r; perfil.ligaSemana = semHoy; perfil.t = ahora; await storage.put(kPerfil(cuenta), perfil);
+    } else if(!perfil.ligaSemana && (await storage.get(kPerfil(cuenta)))){ perfil.ligaSemana = semHoy; await storage.put(kPerfil(cuenta), perfil); }
+  }
+  const rankingDe = () => ranking(storage, semanaDe(hoy), { [cuenta]: perfil.nombre }, perfil.liga);
   const indice = (await storage.get(kPlanes(cuenta))) || {};
 
   if(pedido.method === 'GET'){
@@ -274,7 +289,7 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
       return Response.json({ bien: true, plan });
     }
     if(url.searchParams.get('tienda')) return Response.json({ bien: true, tienda: TIENDA, premios: PREMIOS, perfil: publico(perfil) });
-    return Response.json({ bien: true, hoy, perfil: publico(perfil), planes: Object.values(indice), ranking: await ranking(storage, semanaDe(hoy), { [cuenta]: perfil.nombre }), hora: ahora });
+    return Response.json({ bien: true, hoy, perfil: publico(perfil), planes: Object.values(indice), ranking: await rankingDe(), hora: ahora });
   }
   if(pedido.method !== 'POST') return Response.json({ error: 'Usa GET o POST.' }, { status: 405 });
 
@@ -348,7 +363,8 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
       if(['leccion', 'grado', 'plan'].includes(e.motivo)) dar(e.motivo, premiar(perfil, e.motivo, dia));
       estudioAnima(perfil, xp);
       const sem = semanaDe(dia), tabla = (await storage.get(kSem(sem))) || {};
-      tabla[cuenta] = { xp: (tabla[cuenta]?.xp || 0) + xp, nombre: perfil.nombre };
+      tabla[cuenta] = { xp: (tabla[cuenta]?.xp || 0) + xp, nombre: perfil.nombre, liga: perfil.liga };
+      if(!perfil.ligaSemana) perfil.ligaSemana = sem;
       await storage.put(kSem(sem), tabla);
     }
     if(c.nombre) perfil.nombre = limpio(c.nombre, 30) || perfil.nombre;
@@ -357,7 +373,7 @@ export async function atenderEstudio(storage, pedido, url, cuenta, ahora = Date.
     if(suma > 0){ const x = await sesionDe(storage, cuenta, ahora); if(x && x.estado === 'activa'){ x.xp[cuenta] = (x.xp[cuenta] || 0) + suma; await storage.put(kSes(x.id), x); dar('juntos', premiarUnaVez(perfil, 'juntos', 'juntos:' + x.id, hoy)); } }
     perfil.t = ahora;
     await storage.put(kPerfil(cuenta), perfil);
-    return Response.json({ bien: true, sumado: suma, premios, eventos: [...new Set(dijo)], perfil: publico(perfil), ranking: await ranking(storage, semanaDe(hoy), { [cuenta]: perfil.nombre }) });
+    return Response.json({ bien: true, sumado: suma, premios, eventos: [...new Set(dijo)], perfil: publico(perfil), ranking: await rankingDe() });
   }
 
   /* ── COMPARTIR UN PLAN (Carlos, 13 nov) ──

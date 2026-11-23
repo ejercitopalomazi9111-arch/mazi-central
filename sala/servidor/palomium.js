@@ -33,6 +33,7 @@ export const PREMIOS = {
   semana: { cubos: 3, tope: 3, que: 'Siete días seguidos' },
   nivel: { cubos: 5, tope: 15, que: 'Subiste de nivel' },
   juntos: { cubos: 2, tope: 4, que: 'Estudiaste con un amigo' },
+  liga: { cubos: 5, tope: 5, que: 'Subiste de liga' },
 };
 export const REGALO_INICIAL = 5;
 
