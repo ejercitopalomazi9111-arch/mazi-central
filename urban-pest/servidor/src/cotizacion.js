@@ -31,7 +31,10 @@ async function nuevoFolio(A){ const f = ((await A.get('cotfolio')) || 0) + 1; aw
 /** La que arma el bot: sale de la cotización del sistema, nunca de lo que escribió la IA. */
 export async function cotizacionDelBot(A, conv, cot, ahora = Date.now()){
   const d = conv.datos || {};
-  const codigo = azar(12), folio = await nuevoFolio(A);
+  /* Las del canal de prueba (el chat de pruebas del centro y las pruebas en vivo) no gastan folio ni cuentan en
+     Números: si no, el primer cliente de verdad recibía la «Cotización 0047» y el mes salía inflado (Godines, 23 nov). */
+  const prueba = conv.canal === 'prueba';
+  const codigo = azar(12), folio = prueba ? 0 : await nuevoFolio(A);
   const plaga = NOMBRES[d.plaga] || texto(d.plaga, 40) || 'plagas';
   const doc = {
     codigo, folio, origen: 'bot', fecha: dia(ahora), vence: dia(ahora + VIGENCIA_DIAS * 864e5),
@@ -40,7 +43,7 @@ export async function cotizacionDelBot(A, conv, cot, ahora = Date.now()){
     lugar: LUGAR[d.tipo || 'casa'] || 'Casa', zona: texto(d.zona, 60) || null,
     m2: cot.m2 || d.m2 || null, m2Estimado: !!cot.m2Estimado,
     precio: cot.desde, moneda: 'MXN', visita: !!cot.visita,
-    nota: cot.nota, ...(cot.ejemplo ? { ejemplo: true } : {}),
+    nota: cot.nota, ...(cot.ejemplo ? { ejemplo: true } : {}), ...(prueba ? { prueba: true } : {}),
     /* SÓLO para el dueño (centro → Números): de dónde sale el precio, cuánto cuesta y cuánto queda, y a qué chat
        contestarle. cotizacionPublica lo quita: el cliente nunca lo ve. */
     interno: { desglose: cot.desglose || null, km: d.km ?? null, plaga: d.plaga || null, canal: conv.canal, chat: conv.chat },

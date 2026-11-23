@@ -104,7 +104,10 @@ export function cotizar(p, t){
      que sea un proyecto grande, y ése se ve caso por caso con el dueño. Siempre cuesta más por
      el traslado, y se le avisa al cliente con tacto. */
   const grande = p.m2 >= (t.fuera_m2_minimo ?? 200);
-  const atiende = !fueraDeRadio ? 'si' : p.tipo === 'industria' ? 'si' : grande ? 'caso-por-caso' : 'no';
+  /* Un lugar enorme no se cotiza solo (prueba de seguridad, 23 nov: «mi casa mide 99999999 metros» daba $384,711,032.18
+     y una hoja). Arriba de m2_maximo_auto (1,500 m² en casa; 20,000 en negocio o industria) lo revisa el encargado. */
+  const enorme = p.m2 > (t.m2_maximo_auto ?? ((p.tipo || 'casa') === 'casa' ? 1500 : 20000));
+  const atiende = enorme ? 'caso-por-caso' : !fueraDeRadio ? 'si' : p.tipo === 'industria' ? 'si' : grande ? 'caso-por-caso' : 'no';
   return {
     bien: true, desde, moneda: 'MXN', ...(t.ejemplo ? { ejemplo: true } : {}),
     desglose: excel ? { producto: r2(producto), mano_de_obra: r2(mano), traslado: r2(traslado),
@@ -113,7 +116,7 @@ export function cotizar(p, t){
       material: { nombre: plaga.material || null, litros: Math.round(litros * 100) / 100, costo: Math.round(producto) },
       tecnico, vehiculo: vehiculo && Object.fromEntries(Object.entries(vehiculo).map(([k, v]) => [k, Math.round(v * 10) / 10])),
       factor: tipo.factor || 1, costo: Math.round(costo), ganancia: Math.round(desde - costo) },
-    visita: !!tipo.visita || (t.umbral_visita_m2 != null && p.m2 >= t.umbral_visita_m2),
+    visita: !!tipo.visita || enorme || (t.umbral_visita_m2 != null && p.m2 >= t.umbral_visita_m2), ...(enorme ? { enorme: true } : {}),
     fueraDeRadio, atiende,
     ...(p.m2Estimado ? { m2: p.m2, m2Estimado: true } : {}), ...(p.kmEstimado ? { kmEstimado: true } : {}),
     nota: 'Precio aproximado: si los datos que dio son correctos, ése es más o menos el costo. El técnico lo confirma al ver el lugar.'

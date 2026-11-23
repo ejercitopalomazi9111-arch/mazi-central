@@ -41,6 +41,9 @@ export class Oficina {
 
   /** `op.tarifas` sólo para el canal de prueba: tarifas de ejemplo sin tocar las guardadas. */
   async atender(m, op = {}){
+    /* un mensaje larguísimo no se le pasa entero a nadie: ni a la conversación, ni al reflejo, ni a la IA (seguridad, 23 nov) */
+    if(typeof m.texto === 'string' && m.texto.length > LARGO_MAX) m = { ...m, texto: m.texto.slice(0, LARGO_MAX) };
+    if(typeof m.nombre === 'string') m = { ...m, nombre: m.nombre.slice(0, 80) };
     const k = `conv:${m.canal}:${m.chat}`;
     const cfg = await this.config();
     if(op.tarifas && !cfg.tarifas) cfg.tarifas = op.tarifas;
@@ -104,26 +107,32 @@ export class Oficina {
     }
     /* el precio lo pone el código, nunca la IA (12 nov: escribió «$X» al cliente). Si la IA copió de la plática el precio
        que se dijo ANTES y con el dato nuevo cambió, se pone el de ahora (17 nov: «2 cuartos 1 baño» → la IA repitió $778.80) */
+    /* Sólo con atiende «si» hay precio para el cliente. En «caso-por-caso» (lugar enorme, casa grande fuera de zona) o «no»
+       el precio no se puede poner aunque la IA escriba {precio}: lo da el encargado. */
+    const cotP = cot?.atiende === 'si' ? cot : null;
     let resp = p.respuesta;
-    if(cot && conv.precioDicho != null && conv.precioDicho !== cot.desde) resp = String(resp).split(pesos(conv.precioDicho)).join('{precio}');
-    let texto = ponerPrecio(resp, cot);
+    if(cotP && conv.precioDicho != null && conv.precioDicho !== cotP.desde) resp = String(resp).split(pesos(conv.precioDicho)).join('{precio}');
+    let texto = ponerPrecio(resp, cotP);
     /* Prueba en vivo, 17 nov: con la cotización YA calculada, la IA seguía preguntando el tamaño o la colonia («es como de
        3 cuartos» → «¿cuántas recámaras tiene?» → …) y el cliente nunca veía el precio. Si el sistema ya lo tiene y la IA
        pide lo que ya está, se le da el precio. */
     /* Carlos, 17 nov («Toda chafa»): el cliente dijo «No quiero nada, escribes raro» y el bot le volvió a soltar el precio y
        le mandó OTRA hoja. Si dice que ya no quiere, se despide y ya: sin precio, sin hoja y sin tarjeta de cotización. */
     const seVa = noQuiere(m.texto);
-    if(texto && seVa && cot && texto.includes(pesos(cot.desde))) texto = 'Sin problema. Aquí estamos para cuando lo necesites.';
+    if(texto && seVa && cotP && texto.includes(pesos(cotP.desde))) texto = 'Sin problema. Aquí estamos para cuando lo necesites.';
     if(texto && !seVa && cot && cot.atiende === 'si' && !p.necesita_dueno && conv.precioDicho !== cot.desde && !texto.includes(pesos(cot.desde)) && pideLoQueYaHay(texto))
       texto = ponerPrecio('Te saldría aproximadamente en {precio}. Si los datos que nos diste están bien, ése es el costo; el técnico te lo confirma al ver el lugar.', cot);
     /* La IA quiso dar un precio sin cotización (Carlos preguntó «¿Cuánto?» sin que se supiera la plaga): en vez de
        «te contesta el encargado», se le pide lo que falta para cotizar. */
-    if(!texto && !cot && /\{\s*precio\s*\}/i.test(p.respuesta)){
+    if(!texto && !cotP && /\{\s*precio\s*\}/i.test(p.respuesta)){
       const d = conv.datos || {}, sp = sinPrecioAuto(d, cfg.tarifas);
-      texto = !d.plaga ? 'Para darte el precio dime qué plaga es. Si no sabes el nombre, cuéntame cómo es: tamaño, color y dónde la ves.'
+      texto = cot && cot.atiende !== 'si' ? (cot.enorme ? 'Por el tamaño del lugar, el precio te lo da el encargado después de revisar tu caso. Ya le aviso.'
+          : 'Para tu zona el encargado revisa tu caso y te avisa. Ya le paso tus datos.')
+        : !d.plaga ? 'Para darte el precio dime qué plaga es. Si no sabes el nombre, cuéntame cómo es: tamaño, color y dónde la ves.'
         : sp ? `${sp[0].toUpperCase() + sp.slice(1)} sí las atendemos; el precio te lo da el encargado. Ya le aviso.`
         : PREGUNTA_TAMANO;
       if(sp) p.necesita_dueno = true, p.motivo = p.motivo || `Pide precio de ${sp}`;
+      if(cot && cot.atiende !== 'si') p.necesita_dueno = true, p.motivo = p.motivo || (cot.enorme ? 'Lugar muy grande: dale tú el precio.' : 'Fuera de la zona: decide tú.');
     }
     if(!texto){
       await this.decir(conv, 'Gracias por escribir. En un momento te contesta el encargado.', { via: 'respaldo', error: 'La IA escribió un precio que el sistema no calculó: ' + p.respuesta.slice(0, 160) });
@@ -136,7 +145,16 @@ export class Oficina {
        pregunta de la casa: primero los metros y, si no los sabe, el cuestionario. */
     if(!cot && !conv.pidioMetros && !(conv.datos?.m2 > 0) && (conv.datos?.tipo || 'casa') === 'casa' && hizoCuestionario(texto) && !/metros/i.test(texto)) texto = PREGUNTA_TAMANO;
     if(!cot && /metros/i.test(texto)) conv.pidioMetros = true;
-    const dioPrecio = !!(cot && texto.includes(pesos(cot.desde)));
+    /* La última compuerta antes de salir (seguridad, 23 nov): lo que escribió la IA no puede prometer descuentos ni cosas gratis
+       ni hablar de cómo funciona por dentro, por mucho que el cliente la haya empujado. Si lo intenta, sale el aviso al
+       encargado y al dueño le llega qué iba a decir. Lo del reflejo ya está aprobado por el dueño y no pasa por aquí. */
+    const peligro = respuestaInsegura(texto);
+    if(peligro){
+      await this.aviso(conv, `El bot iba a contestar algo que no debe (${peligro}); se cambió por «ya le aviso al encargado». Iba a decir: «${String(texto).slice(0, 200)}»`);
+      texto = 'Eso lo ve directamente el encargado; ya le aviso para que te conteste.';
+    }
+    if(texto.length > RESPUESTA_MAX){ const corte = texto.slice(0, RESPUESTA_MAX), punto = Math.max(corte.lastIndexOf('. '), corte.lastIndexOf('? ')); texto = punto > 200 ? corte.slice(0, punto + 1) : corte.trimEnd() + '…'; }
+    const dioPrecio = !!(cotP && texto.includes(pesos(cotP.desde)));
     if(!dioPrecio && hizoCuestionario(texto)) conv.cuestionario = (conv.cuestionario || 0) + 1;
     await this.decir(conv, texto, { via: 'cerebro', razon: p.razon, modelo: p.modelo, cotizacion: dioPrecio ? cot : undefined });
     if(cot) conv.cotizacion = cot;
@@ -287,6 +305,16 @@ export const noQuiere = (t) => /\b(no quiero( nada)?(?! (que|q|k|a|al|el|la|los|
 export const PREGUNTA_TAMANO = 'Para darte el precio, ¿sabes cuántos metros mide tu casa? Si no, dime cuántas recámaras y baños tiene, si la considerarías chica, mediana o grande, y en qué colonia está.';
 /** el bot ya le preguntó las recámaras o el tamaño (la IA o la pregunta de arriba) */
 export const hizoCuestionario = (t) => /rec[aá]maras|chic[ao],? median[ao] o grande/i.test(String(t || ''));
+
+const LARGO_MAX = 1500, RESPUESTA_MAX = 700;
+/** Lo que la IA NO puede decir, se lo pida quien se lo pida: descuentos, cosas gratis, y cómo funciona por dentro.
+    Regresa el motivo, o null si la respuesta está bien. La garantía de su página («regresamos sin costo adicional») sí vale. */
+export function respuestaInsegura(t){
+  const n = normal(t), sinGarantia = n.replace(/sin costo adicional/g, '');
+  if(/\bdescuento|\d{1,3}\s*%\s*(de\s+)?(descuento|menos|off)|\bgratis\b|\bgratuit|\bregal(o|amos|arte)|\bpromo(cion|ciones)?\b|\b2x1\b|\bcupon|\bbonificacion|te lo dejo en|\bsin costo\b|no te cobramos|\bcortesia\b|\brebaja/.test(sinGarantia)) return 'prometía un descuento, una promoción o algo gratis';
+  if(/necesita_dueno|precio_aproximado|ya_se_lo_dijiste|\{\s*precio\s*\}|reglas que no se rompen|respuestas ya aprobadas|system prompt|prompt del sistema|mis instrucciones|modelo de lenguaje|\b(openai|groq|gemini|llama|qwen|gpt)\b/.test(n)) return 'iba a hablar de cómo funciona por dentro';
+  return null;
+}
 
 export const pideLoQueYaHay = (t) => /chic[ao], median[ao] o grande|cu[aá]ntas rec[aá]maras|qu[eé] colonia|cu[aá]ntos metros|el tama[ñn]o/i.test(String(t || ''));
 

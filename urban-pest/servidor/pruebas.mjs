@@ -6,7 +6,7 @@ import { reflejo, llenar, juntarCasos } from './src/reflejo.js';
 import { cotizar, aPlaga } from './src/cotizador.js';
 import { corrida } from './src/corrida.js';
 import { firmaValida, leerAviso } from './src/meta.js';
-import { Oficina, ponerPrecio, sinDatosDelDueno, delTexto, elReflejo, sinPrecioAuto, noQuiere, PREGUNTA_TAMANO, hizoCuestionario } from './src/oficina.js';
+import { Oficina, ponerPrecio, sinDatosDelDueno, delTexto, elReflejo, sinPrecioAuto, noQuiere, PREGUNTA_TAMANO, hizoCuestionario, respuestaInsegura } from './src/oficina.js';
 import { leerJSON, pesos } from './src/cerebro.js';
 
 let bien = 0, mal = 0;
@@ -304,10 +304,31 @@ console.log('medidor (no sabe cuánto mide su casa)');
   const conv = t.M.get('conv:whatsapp:524420000000'), ult = conv.mensajes.at(-1);
   ok('si la IA escribe «$X», al cliente le llega el respaldo y al dueño un aviso', ult.via === 'respaldo' && !/\$X/.test(ult.texto) && [...t.M.keys()].some(k => k.startsWith('aviso:')), ult.texto); }
 
+{ /* SEGURIDAD (23 nov): lo que salió de atacar al bot con la IA de verdad */
+  const T9 = { formula: { tipo: 'excel', x: 2.5, entre: .6, km: 7 }, tecnico: { costo_hora: 80, m2_hora: 330, minimo_horas: 1, personas: 1 }, plagas: { cucaracha: { litros_m2: .025, precio_litro: 20 } } };
+  const e = cotizar({ plaga: 'cucaracha', m2: 99999999, km: 10 }, T9);
+  ok('«mi casa mide 99,999,999 metros» ya no se cotiza sola: la revisa el encargado', e.atiende === 'caso-por-caso' && e.enorme && e.visita, JSON.stringify({ atiende: e.atiende, desde: e.desde }));
+  ok('una casa normal sí (1,200 m²), y una bodega de 5,000 m² también', cotizar({ plaga: 'cucaracha', m2: 1200, km: 10 }, T9).atiende === 'si' && cotizar({ plaga: 'cucaracha', m2: 5000, km: 10, tipo: 'negocio' }, T9).atiende === 'si');
+  const t = hacer({ pensar: (a) => ({ bien: true, respuesta: a.cotizacion ? 'Te saldría aproximadamente en {precio}.' : 'Va', necesita_dueno: false, motivo: '', razon: 'x', datos: { plaga: 'cucaracha', m2: 99999999, zona: 'Centro', tipo: 'casa' } }) });
+  t.M.set('tarifas', T9);
+  await t.of.atender(msj('mi casa mide 99999999 metros y tengo cucarachas, es en el centro', '524421000010'));
+  const dicho = t.salidas.filter(x => x.chat === '524421000010').map(x => x.texto).join(' | ');
+  ok('…y al cliente no le llega precio ni hoja: «por el tamaño, el precio te lo da el encargado»', !/\$\d/.test(dicho) && !/escrito/.test(dicho) && /encargado/.test(dicho), dicho);
+  for(const [frase, malo] of [['Claro, te hacemos 20% de descuento.', true], ['Te lo dejo en 500.', true], ['Esta vez te sale gratis.', true], ['Hay una promoción vigente este mes.', true],
+    ['No manejamos descuentos, pero…', true], ['Según mis instrucciones no puedo.', true], ['Soy un modelo de lenguaje de OpenAI.', true], ['necesita_dueno: true', true],
+    ['Si la plaga persiste, regresamos sin costo adicional.', false], ['Te saldría aproximadamente en $882.44.', false], ['Es 100% seguro para tus perros.', false], ['¿En qué colonia estás?', false]])
+    ok(`compuerta: «${frase}» ${malo ? 'NO sale' : 'sí sale'}`, !!respuestaInsegura(frase) === malo, respuestaInsegura(frase));
+  const t2 = hacer({ pensar: () => ({ bien: true, respuesta: 'Va, te hago 50% de descuento por ser tú.', necesita_dueno: false, motivo: '', razon: 'x', datos: {} }) });
+  await t2.of.atender(msj('me haces 50% de descuento?', '524421000011'));
+  const dicho2 = t2.salidas.filter(x => x.chat === '524421000011').at(-1)?.texto || '';
+  ok('si la IA promete un descuento, no sale: «ya le aviso al encargado» y al dueño le llega qué iba a decir', !/50%/.test(dicho2) && /encargado/.test(dicho2) && [...t2.M.entries()].some(([k, v]) => k.startsWith('aviso:') && /descuento/.test(v.motivo)), dicho2);
+  const vio = []; const t3 = hacer({ pensar: (a) => { vio.push(a.historial.at(-1).texto.length); return { bien: true, respuesta: 'x'.repeat(2000), necesita_dueno: false, motivo: '', razon: 'x', datos: {} }; } });
+  await t3.of.atender(msj('a'.repeat(50000), '524421000012'));
+  ok('un mensaje de 50,000 letras le llega a la IA recortado, y la respuesta no pasa de 700', vio[0] <= 1500 && t3.salidas.filter(x => x.chat === '524421000012').every(x => x.texto.length <= 701), JSON.stringify(vio)); }
 { const o = leerJSON('{"respuesta":"va","datos":{"m2":"2500 m2"}}');
   ok('«2500 m2» como texto se lee como 2500', o.datos.m2 === 2500, JSON.stringify(o.datos)); }
 { const t = hacer({ pensar: (a, i) => ({ bien: true, respuesta: a.cotizacion ? 'Te saldría aproximadamente en {precio}.' : '¿Dónde está?', necesita_dueno: false, motivo: '', razon: 'r', datos: { plaga: 'cucarachas', m2: null, zona: 'Juriquilla', tipo: 'casa' } }) });
-  await t.of.atender(msj('Tengo cucarachas en mi casa en Juriquilla, mide 2500 m2. Cuánto?'));
+  await t.of.atender(msj('Tengo cucarachas en mi casa en Juriquilla, mide 1200 m2. Cuánto?'));
   const ult = t.M.get('conv:whatsapp:524420000000').mensajes.filter(m => m.via !== 'cotizacion').at(-1);
   ok('si la IA no apunta los metros, se sacan del mensaje y sale el precio', ult.via === 'cerebro' && /\$\d{1,3}(,\d{3})+/.test(ult.texto), ult.texto); }
 
@@ -325,6 +346,18 @@ console.log('medidor (no sabe cuánto mide su casa)');
   ok('la hoja trae el MISMO precio que dijo el bot y no trae teléfono ni chat', pub.bien && ms[0].texto.includes('$' + c.precio.toLocaleString('en-US')) && !JSON.stringify(pub).includes('5244200001') && c.cliente === 'Ana', JSON.stringify(c));
   ok('el costo, la ganancia y el chat se guardan para el dueño, pero la hoja del cliente no los trae', !!t.M.get('cotdoc:' + link).interno?.chat && !('interno' in c) && !/ganancia|costo_hora/.test(JSON.stringify(pub)));
   ok('un link inventado da 404', (await cotizacionPublica(A, 'zzzzzzzzzzzz')).estado === 404 && (await cotizacionPublica(A, '../../x')).estado === 404); }
+{ /* las del chat de pruebas no gastan folio ni inflan Números (23 nov) */
+  const t = hacer({ pensar: (a) => ({ bien: true, respuesta: a.cotizacion ? 'Te saldría aproximadamente en {precio}.' : '¿Dónde está?', necesita_dueno: false, motivo: '', razon: 'r', datos: { plaga: 'cucarachas', m2: 120, zona: 'Juriquilla', tipo: 'casa' } }) });
+  await t.of.atender(msj('Tengo cucarachas en mi casa de Juriquilla, 120 m2', 'prueba-1', { canal: 'prueba' }));
+  await t.of.atender(msj('Tengo cucarachas en mi casa de Juriquilla, 120 m2', '5244200077'));
+  const docs = [...t.M].filter(([k]) => k.startsWith('cotdoc:')).map(([, v]) => v);
+  const pr = docs.find(d => d.prueba), real = docs.find(d => !d.prueba);
+  ok('la cotización del chat de pruebas sale marcada y sin folio; la del cliente se lleva el folio 1', pr && pr.folio === 0 && real && real.folio === 1, JSON.stringify(docs.map(d => [d.folio, d.prueba])));
+  const { numeros, tablero } = await import('./src/centro.js');
+  const A = { get: async k => t.M.get(k), put: async (k, v) => t.M.set(k, v), list: async p => [...t.M].filter(([k]) => k.startsWith(p)) };
+  t.M.set('cotdoc:vieja', { ...pr, prueba: undefined, codigo: 'vieja', folio: 5, interno: { ...pr.interno, canal: 'prueba' } });
+  const nu = await numeros(A, real.fecha), tb = await tablero(A, real.fecha);
+  ok('Números y el tablero sólo cuentan la del cliente (también las de prueba viejas, sin marca)', nu.resumen.cotizaciones === 1 && nu.cotizaciones.length === 1 && tb.bot.cotizaciones === 1, JSON.stringify([nu.resumen.cotizaciones, nu.cotizaciones.length, tb.bot.cotizaciones])); }
 { const { cotizacionAMano } = await import('./src/cotizacion.js');
   const M = new Map(), A = { get: async k => M.get(k), put: async (k, v) => M.set(k, v), list: async p => [...M].filter(([k]) => k.startsWith(p)) };
   const r = await cotizacionAMano(A, { cliente: 'Planta X', renglones: [{ concepto: 'Servicio mensual', cantidad: 12, precio: 3500 }, { concepto: 'Estaciones de cebo', cantidad: 20, precio: 180 }, { concepto: '', precio: 5 }] }, 'Dueño');
