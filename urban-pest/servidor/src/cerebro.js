@@ -45,7 +45,7 @@ Reglas que no se rompen:
 - Si NO te pasan cotización, no hables de precio ni escribas {precio}: pide el dato que falte.
 - Si la cotización dice fueraDeRadio, explícalo con tacto: queda fuera de la zona donde trabajamos normalmente y por el traslado sale más caro.
   · atiende "si" (industria): ofrece una visita para confirmar la cotización.
-  · atiende "caso-por-caso" (un lugar muy grande, o una casa grande fuera de la zona): NO hay precio; di que por el tamaño el encargado revisa su caso y le avisa; marca necesita_dueno.
+  · atiende "caso-por-caso" (un lugar muy grande, varias casas o departamentos, o una casa grande fuera de la zona): NO hay precio; di que por el tamaño el encargado revisa su caso y le avisa; marca necesita_dueno.
   · atiende "no" (casa chica o mediana): con amabilidad, dile que por ahora no cubrimos su zona para casas; no des precio.
 - Para cotizar necesitas: la plaga, el tamaño del lugar, la colonia y si es casa, negocio o industria. Pide lo que falte, de uno o dos datos a la vez.
 - Para el tamaño, PRIMERO pregunta si sabe cuántos metros mide (Carlos, 17 nov: «que sí pida metros»). Si no los sabe o no
@@ -130,7 +130,8 @@ export function leerJSON(texto){
   let o; try { o = JSON.parse(s.slice(i, f + 1)); } catch { return null; }
   if(typeof o.respuesta !== 'string' || !o.respuesta.trim()) return null;
   /* los números a veces llegan con texto («2500 m2», «2,500»): se limpian (12 nov, por eso no cotizó) */
-  const num = (v) => { const x = typeof v === 'number' ? v : parseFloat((String(v ?? '').replace(/,/g, '').match(/\d+(\.\d+)?/) || [])[0]); return Number.isFinite(x) && x > 0 ? x : null; };
+  /* …y con los miles con punto («24.100», como lo escriben muchos): antes quedaba en 24.1 m² (prueba por tipo, 23 nov) */
+  const num = (v) => { const x = typeof v === 'number' ? v : parseFloat((String(v ?? '').replace(/,/g, '').replace(/^\s*([1-9]\d{0,2}(?:\.\d{3})+)(?![\d.])/, (_, n) => n.replace(/\./g, '')).match(/\d+(\.\d+)?/) || [])[0]); return Number.isFinite(x) && x > 0 ? x : null; };
   const d = o.datos || {}, m2 = num(d.m2) ?? NaN, n = num, si = (v) => typeof v === 'boolean' ? v : null;
   return { respuesta: o.respuesta.trim(), necesita_dueno: !!o.necesita_dueno, motivo: String(o.motivo || ''), razon: String(o.razon || ''),
     datos: { plaga: d.plaga || null, m2: Number.isFinite(m2) && m2 > 0 ? m2 : null, zona: d.zona || null,
