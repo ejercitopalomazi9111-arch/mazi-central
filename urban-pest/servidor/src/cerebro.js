@@ -19,6 +19,8 @@
    qué contestó así, que va al panel escondido.
    ═══════════════════════════════════════════════════════════════════════════ */
 
+import { comoDecirlo } from './distancia.js';
+
 const FORMA = `Contesta SÓLO con un objeto JSON, sin texto alrededor, con esta forma exacta:
 {"respuesta": "lo que le dices al cliente", "necesita_dueno": true|false, "motivo": "por qué necesita al dueño, o vacío",
  "razon": "una línea para el equipo: por qué contestaste así",
@@ -40,6 +42,8 @@ Reglas que no se rompen:
 - NUNCA des un precio que no venga en lo que te pasan.
 - Si te pasan una cotización, dilo corto y sin asustar, así: «Te saldría aproximadamente en {precio}. Si los datos que nos diste están bien, ése es el costo; el técnico te lo confirma al ver tu casa.» Escribe {precio} TAL CUAL, con las llaves: el sistema pone la cantidad. NUNCA escribas una cantidad con número tú. NUNCA digas «desde» ni «a partir de»: suena a que va a subir.
 - Si te pasan una cotización, da el precio EN ESA MISMA respuesta: ya no pidas tamaño, recámaras, metros ni colonia (el sistema ya los tiene).
+- Si la cotización trae "lugar", menciónalo UNA sola vez, en la respuesta que da el precio, así: «Para Juriquilla, en el norte de Querétaro,
+  te saldría aproximadamente en {precio}…» (copia el lugar como viene). No lo repitas en los demás mensajes. NUNCA digas cuántos kilómetros hay ni cuánto cuesta el traslado.
 - Si la cotización dice ya_se_lo_dijiste: true, NO repitas el precio: contesta lo que te preguntan. Si pregunta por qué no le pediste
   los metros: casi nadie los sabe; con lo que contó el sistema los calcula y el técnico los confirma al ver el lugar.
 - Si NO te pasan cotización, no hables de precio ni escribas {precio}: pide el dato que falte.
@@ -47,6 +51,8 @@ Reglas que no se rompen:
   · atiende "si" (industria): ofrece una visita para confirmar la cotización.
   · atiende "caso-por-caso" (un lugar muy grande, o una casa grande fuera de la zona): NO hay precio; di que por el tamaño el encargado revisa su caso y le avisa; marca necesita_dueno.
   · atiende "no" (casa chica o mediana): con amabilidad, dile que por ahora no cubrimos su zona para casas; no des precio.
+- Si la cotización dice lejos_de_la_ciudad: true, NO hay precio todavía: di con tacto que sí vamos y que, por la distancia, el precio
+  se lo confirma el encargado; marca necesita_dueno. NO digas que no cubrimos su zona ni que es por el tamaño.
 - Para cotizar necesitas: la plaga, el tamaño del lugar, la colonia y si es casa, negocio o industria. Pide lo que falte, de uno o dos datos a la vez.
 - Para el tamaño, PRIMERO pregunta si sabe cuántos metros mide (Carlos, 17 nov: «que sí pida metros»). Si no los sabe o no
   da un número, NO insistas: hazle el cuestionario corto, en UNA sola pregunta: «¿Cuántas recámaras y baños tiene, y tu casa
@@ -86,8 +92,11 @@ export const pesos = (n) => { const [e, d] = (Math.round(n * 100) / 100).toFixed
 /* A la IA no le llega «desde» (la regla le prohíbe decirlo y con eso copió el «$X» del ejemplo, 12 nov): le llega el
    precio ya escrito y lo que necesita para explicarlo. */
 /* sólo con atiende «si» hay precio para el cliente; en caso-por-caso o «no» la IA ni lo ve (no lo puede soltar) */
-const paraLaIA = (c) => ({ precio_aproximado: c.atiende === 'si' ? pesos(c.desde) : null, ya_se_lo_dijiste: !!c.yaDicho, visita_del_tecnico: !!c.visita, fuera_de_zona: !!c.fueraDeRadio,
-  atiende: c.atiende, m2: c.m2 ?? null, m2_estimado: !!c.m2Estimado, nota: c.nota });
+/* el lugar va ya dicho como persona («Juriquilla, en el norte de Querétaro») y sólo mientras no se le haya dado el precio
+   (se dice UNA vez); los km NO: son del dueño */
+export const paraLaIA = (c) => ({ precio_aproximado: c.atiende === 'si' ? pesos(c.desde) : null, ya_se_lo_dijiste: !!c.yaDicho, visita_del_tecnico: !!c.visita, fuera_de_zona: !!c.fueraDeRadio,
+  ...(c.lejos ? { lejos_de_la_ciudad: true } : {}),
+  atiende: c.atiende, ...(c.lugar && !c.yaDicho ? { lugar: comoDecirlo(c.lugar) } : {}), m2: c.m2 ?? null, m2_estimado: !!c.m2Estimado, nota: c.nota });
 
 /* Los modelos son los que La Sala ya usa y verificó (30 sep); se cambian por variable. */
 const MOTORES = {
