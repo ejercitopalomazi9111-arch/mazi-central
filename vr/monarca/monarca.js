@@ -1,68 +1,57 @@
-/* MONARCH XR · primera versión (MVP) de la experiencia educativa de la mariposa monarca, con el MISMO motor de Mazi VR.
-   Proyecto de Ética y STEAM de Carlos, antes de diciembre de 2026. Plan y datos verificados: are/Documentation/MONARCH_XR.md.
-     · Ocho escenas: Bienvenida → La monarca → Migración → Santuario → Amenazas (2) → Decisión → Cuestionario → Final.
-     · Cada escena: una foto 360° de fondo (Poly Haven, CC0) o el cielo del motor, un cartel con su texto y botones.
-     · NARRADOR (narrador.js): uno con ironía que explica cada escena (Orus) y reacciona con la voz grave (Charon) a lo
-       que haces: adelantarte mientras habla, regresar, mirar a otro lado, quedarte quieto, plantar, decidir, contestar.
-       Audios hechos de antemano (medios/narrador/), suenan sin internet. Se apaga con «Voz».
-     · SÓLO DATOS VERIFICADOS: cada cifra sale de la tabla de MONARCH_XR.md, con su fuente y año. Nada inventado.
-     · MODO EXPOSICIÓN: con ?monarca en la dirección (el QR), entra directo y los botones que sacan no sacan. El docente sale
-       apretando Opciones (o PS) 5 veces seguidas; en pantalla, tocando 5 veces la esquina de arriba a la izquierda.
-       Bloquear el botón de inicio del teléfono no lo puede hacer una página: Acceso guiado (iPhone) o Fijar pantalla
-       (Android), ver vr/monarca/DOCENTE.md. */
+/* MONARCH XR · la experiencia educativa de la mariposa monarca, con el MISMO motor de Mazi VR.
+   Proyecto de Ética y STEAM de Carlos. Plan y datos verificados: are/Documentation/MONARCH_XR.md y vr/monarca/CIENCIA.md.
+     · ARRANQUE (Carlos, 25 nov): el OPERADOR elige el idioma (español o inglés), sale una cuenta de 5 s para entregar el
+       visor, y empieza el TUTORIAL (vr/tutorial.js: mirar, manos, apuntar, elegir). El gesto de atrás (palma arriba o
+       Círculo) lo salta.
+     · SIN CARTELES (Carlos, 25 nov): lo cuenta el narrador con subtítulos; en el aire sólo flotan el título y las cifras
+       clave, cuando el narrador las dice (rotulos.js).
+     · NARRADOR (narrador.js / narrador-en.js): explica (Orus) y reacciona a lo que haces (Charon), recuerda lo que hiciste
+       y te lo saca después (memoria.js), y no le pasa una (travesuras.js). Amable y chistoso; nunca grosero.
+     · ECOSISTEMA (ecosistema.js): mariposas de ambiente, una guía que se posa donde hay que actuar, todas hacia el sur en
+       la migración y racimos colgados en el santuario. Se alejan de tu mano.
+     · MATERIAS: cada escena dice de qué materia es; «¿Y si fueras tú?» (educación física y matemáticas) y los botones del
+       final (materias, mantenimiento de cómputo, expresión y comunicación).
+     · SÓLO DATOS VERIFICADOS: cada cifra de guion.js está en MONARCH_XR.md (la prueba lo revisa).
+     · MODO EXPOSICIÓN: con ?monarca entra directo y los botones que sacan no sacan. El docente sale con Opciones (o PS) 5
+       veces seguidas, o 5 toques en la esquina de arriba a la izquierda. */
 import { GLTFLoader } from '../vendor/loaders/GLTFLoader.js';
 import { crearNarrador } from './narrador.js';
 import { crearTravesuras } from './travesuras.js';
+import { crearMemoria } from './memoria.js';
+import { crearEcosistema } from './ecosistema.js';
+import { crearRotulos } from './rotulos.js';
+import { crearTutorial } from '../tutorial.js';
+import { t as tr, UI, ESCENAS, PREGUNTAS, MATERIAS, NOMBRE_MATERIA, FUNCIONA, CONTAMOS, CREDITOS } from './guion.js';
 
 const AQUI = (f) => new URL(f, import.meta.url).href;
-const MORADO = '#AC27FF', VINO = '#7E1735', NARANJA = '#F28C1B';
-
-/* el guion: lo que dice cada cartel (y lo que lee la voz) */
-const ESCENAS = [
-  { id: 'bienvenida', cielo: 'alps_field', titulo: 'MONARCH XR', texto: ['Viaja con la mariposa monarca.', 'Mira a tu alrededor. Elige con la mirada, la mano, el control o tocando.'], boton: 'Empezar', monarca: 'vuela' },
-  { id: 'mariposa', cielo: 'alps_field', titulo: 'La monarca', texto: ['La hembra pone sus huevos sólo en el algodoncillo (asclepia).', 'Es lo único que comen sus orugas. Ya adulta, toma néctar de muchas flores.'], fuente: 'National Park Service', monarca: 'cerca' },
-  { id: 'ciclo', cielo: 'alps_field', titulo: 'Su ciclo de vida', texto: ['Del huevo sale una oruga que sólo come algodoncillo y muda de piel 5 veces para crecer. Luego se vuelve crisálida y de ahí sale la mariposa.', 'En verano, de huevo a adulta tarda menos de 30 días; con frío, más.'], fuente: 'U.S. Forest Service · USFWS', etapas: [['Huevo', '~4 días'], ['Oruga', '9 a 14 días'], ['Crisálida', '9 a 15 días'], ['Adulta', 'vuela']], monarca: 'cerca' },
-  { id: 'flores', cielo: 'alps_field', titulo: 'Flores en el camino', texto: ['Ya adulta, la monarca toma néctar de muchas flores.', 'Planta cinco flores: elige dónde y mira cómo llega.'], fuente: 'National Park Service', juego: 'flores', monarca: 'vuela' },
-  { id: 'migracion', cielo: null, titulo: 'La migración', texto: ['Cada otoño viajan más de 3,000 km hasta el centro de México; desde Canadá, unos 4,500.', 'Ninguna hace sola la ida y la vuelta: es un viaje de varias generaciones. La que viaja al sur vive hasta unos 9 meses; las de verano, semanas.'], fuente: 'U.S. Fish & Wildlife Service, 2024', mapa: true },
-  { id: 'santuario', cielo: 'misty_pines', titulo: 'El santuario', texto: ['Pasan el invierno en 11 o 12 montañas de Michoacán y el Estado de México, de octubre a finales de marzo, en bosques de oyamel.', 'La Reserva de la Biosfera Mariposa Monarca mide 56,259 ha y es Patrimonio Mundial desde 2008.'], fuente: 'U.S. Forest Service · UNESCO', monarca: 'colonia' },
-  { id: 'tala', cielo: 'barnaslingan_02', titulo: 'Amenaza: el bosque', texto: ['Entre febrero de 2024 y febrero de 2025 se degradaron 2.55 ha del corazón de la reserva:', 'tala ilegal 1.85 ha, incendios 0.58 ha y sequía 0.11 ha.'], fuente: 'WWF México y UNAM, 2026' },
-  { id: 'campo', cielo: 'misty_farm_road', titulo: 'Amenaza: sin algodoncillo', texto: ['Sin algodoncillo no hay orugas, y sin orugas no hay migración.', 'En 2022 la UICN la puso En Peligro; en 2023, Vulnerable.'], fuente: 'National Park Service · UICN' },
-  { id: 'decision', cielo: 'misty_pines', titulo: 'Tú decides', texto: ['Tu familia tiene un terreno con oyameles junto al santuario.', 'Una empresa ofrece pagar por talarlo. ¿Qué haces?'], opciones: [
-    ['Talar', 'Hay dinero ahora, pero el bosque tarda décadas en volver y las mariposas pierden su refugio de invierno.'],
-    ['Conservar', 'El bosque queda, pero tu familia no recibe nada por cuidarlo. ¿Quién debería pagar por conservar?'],
-    ['Turismo', 'Visitas guiadas pueden dar ingresos sin talar, si se respetan los límites para no molestar a las colonias.']] },
-  { id: 'cuestionario', cielo: 'alps_field', titulo: 'Cuestionario' },
-  { id: 'final', cielo: 'misty_pines', titulo: 'Final', texto: ['Temporada 2025-2026: 2.93 ha de colonias, 64 % más que el año anterior.', 'Pero una temporada buena no es una tendencia: el máximo fue 18.19 ha (1996-97) y el mínimo 0.67 ha (2013-14).'], fuente: 'WWF México y CONANP, 2026', monarca: 'vuela' },
-];
-/* el cuestionario: sólo lo que se contó */
-const PREGUNTAS = [
-  ['¿Dónde pone sus huevos la monarca?', ['En cualquier flor', 'En el algodoncillo', 'En el oyamel'], 1],
-  ['¿En qué orden cambia la monarca?', ['Oruga, huevo, mariposa', 'Huevo, oruga, crisálida, mariposa', 'Crisálida, oruga, mariposa'], 1],
-  ['¿Una sola mariposa hace la ida y la vuelta?', ['Sí, cada año', 'No: son varias generaciones', 'Sólo las de verano'], 1],
-  ['¿Qué árbol domina en su santuario?', ['El oyamel', 'El pino de playa', 'La palmera'], 0],
-  ['¿Qué degradó más bosque en 2024-2025?', ['La sequía', 'Los incendios', 'La tala ilegal'], 2],
-];
-const CREDITOS = 'Monarca escaneada: Virginia Tech University Libraries (CC BY 4.0). Flores: Poly Haven, Rico Cilliers y Jenelle van Heerden (CC0). Fotos 360°: Poly Haven (CC0). Mapa: Natural Earth. Datos: USFWS, US Forest Service, UNESCO, WWF México, CONANP, UNAM, UICN, NPS.';
+const MORADO = '#AC27FF', NARANJA = '#F28C1B';
+/* las fotos del ciclo (Flickr, CC BY 2.0; créditos en medios/ciclo/CREDITOS.json) */
+const FOTO_ETAPA = ['huevo.jpg', 'sidpix-06.jpg', 'sidpix-11.jpg', 'sidpix-16.jpg'];
 
 export function montarMonarca(V){
   const { THREE } = V;
-  const m = { grupo: new THREE.Group(), estado: { escena: 0, puntos: 0, pregunta: 0, eleccion: null, voz: true, cargados: 0 } };
+  const m = { grupo: new THREE.Group(), estado: { escena: 0, puntos: 0, pregunta: 0, eleccion: null, voz: true, cargados: 0, fase: 'idioma', idioma: 'es', cuerpo: null } };
   const st = m.estado;
-  /* si un audio falla, se dice UNA vez en el visor con su causa (para saber qué pasó en el teléfono) */
+  const L = (x) => tr(x, st.idioma);
   let avisoVoz = false;
-  const narr = crearNarrador({ actx: V.audio, base: (id) => AQUI(`medios/narrador/${id}.mp3`), sinVoz: () => !st.voz,
-    alFallar: (m) => { if(avisoVoz) return; avisoVoz = true; V.hud('Voz: ' + m.slice(0, 40), 4); } });
+  const narr = crearNarrador({ actx: V.audio, idioma: () => st.idioma,
+    base: (id, l) => AQUI(`medios/narrador/${l === 'en' ? 'en/' : ''}${id}.mp3`), sinVoz: () => !st.voz,
+    /* un audio que todavía no se genera (404) lo lee la voz del teléfono, sin avisar: no es una falla */
+    alFallar: (x) => { if(avisoVoz || /HTTP 404/.test(x)) return; avisoVoz = true; V.hud('Voz: ' + x.slice(0, 40), 4); } });
   m.narrador = narr;
-  /* lo que hace la persona, para que el narrador se dé cuenta */
+  /* decir y avisar al terminar (el tutorial espera a que se acabe de explicar) */
+  let alCallar = null;
+  const decirY = (ids, fin) => { narr.decir(ids); alCallar = fin || null; if(!st.voz || !ids.length){ const f = alCallar; alCallar = null; f && setTimeout(f, 300); } };
   const ahora = () => performance.now() / 1000;
   const vez = { prisa: 0, bien: 0 };
   let florHablo = false, atrasEn = -99, avanzarSolo = false;
-  /* TODO lo demás que se le ocurra al jugador (travesuras.js): cabeza, cuerpo, manos, control, teléfono, ritmo */
   const trav = crearTravesuras(); m.travesuras = trav;
+  const memo = crearMemoria({ orden: ESCENAS.map((e) => e.id) }); m.memoria = memo;
   const ev = (tipo, d = {}) => trav.evento(tipo, { t: ahora(), ...d });
   /* decir una reacción: si está explicando, la pausa y luego sigue donde iba; quieto-5 además avanza solo al terminar */
   function reaccionar(id){
-    if(!id || !st.voz) return;
+    if(!id || !st.voz || st.fase !== 'escenas') return;
+    memo.apuntar(id, ESCENAS[st.escena]?.id, ahora());
     if(id === 'r-quieto-5') avanzarSolo = true;
     if(narr.actual && narr.actual.startsWith('e-')) narr.interrumpir(id); else narr.decir([id]);
   }
@@ -73,64 +62,64 @@ export function montarMonarca(V){
   const cielo = new THREE.Mesh(new THREE.SphereGeometry(30, 48, 24), new THREE.MeshBasicMaterial({ side: THREE.BackSide, depthWrite: false, toneMapped: false }));
   cielo.renderOrder = -5; cielo.visible = false; m.grupo.add(cielo);
   const textura = (nombre) => texs[nombre] || (texs[nombre] = new Promise((ok) => cargador.load(AQUI(`medios/cielos/${nombre}.webp`), (t) => { t.colorSpace = THREE.SRGBColorSpace; t.mapping = THREE.EquirectangularReflectionMapping; st.cargados++; ok(t); }, undefined, () => ok(null))));
+  let cieloPedido = null;
   async function ponerCielo(nombre){
+    cieloPedido = nombre;
     if(!nombre){ cielo.visible = false; return; }
-    const t = await textura(nombre); if(ESCENAS[st.escena].cielo !== nombre) return;
+    const t = await textura(nombre); if(cieloPedido !== nombre) return;
     cielo.material.map = t; cielo.material.needsUpdate = true; cielo.visible = !!t;
   }
 
-  /* ── el cartel: título, texto en renglones y la fuente ── */
-  const cartel = new V.Panel(1.8, 1.05, 560); cartel.malla.position.set(0, .42, -2.2); m.grupo.add(cartel.malla);
-  function renglones(x, texto, ancho){ const out = []; let r = ''; for(const p of texto.split(' ')){ const n = r ? r + ' ' + p : p; if(x.measureText(n).width > ancho && r){ out.push(r); r = p; } else r = n; } if(r) out.push(r); return out; }
-  function pintarCartel(titulo, texto = [], fuente = ''){
-    const { x, cv } = cartel, w = cv.width, h = cv.height; x.clearRect(0, 0, w, h);
-    V.redondo(x, 6, 6, w - 12, h - 12, 40); x.fillStyle = 'rgba(23,10,38,.92)'; x.fill(); x.lineWidth = 4; x.strokeStyle = MORADO; x.stroke();
-    x.textAlign = 'left'; x.textBaseline = 'alphabetic'; x.fillStyle = NARANJA; x.font = '900 58px system-ui, -apple-system, sans-serif'; x.fillText(titulo, 50, 92);
-    /* la letra más grande que quepa (de 46 a 28 px): así el texto largo nunca se sale y el corto se lee de lejos */
-    let tam = 46, lineas;
-    for(; tam >= 28; tam -= 2){ x.font = `600 ${tam}px system-ui, -apple-system, sans-serif`; lineas = texto.map((p) => renglones(x, p, w - 100));
-      const alto = lineas.reduce((s, l) => s + l.length * tam * 1.3 + tam * .4, 0); if(150 + alto < h - 60) break; }
-    let y = 150 + tam; x.fillStyle = '#F4EEF2';
-    for(const ls of lineas){ for(const r of ls){ x.fillText(r, 50, y); y += tam * 1.3; } y += tam * .4; }
-    if(fuente){ x.fillStyle = '#C9B6DA'; x.font = '500 24px system-ui, -apple-system, sans-serif'; x.fillText('Fuente: ' + fuente, 50, h - 36); }
-    cartel.listo();
-  }
+  /* ── el ancla de lo que se cuenta (antes era el cartel; ya no se ve, pero las travesuras miden contra ella) ── */
+  const ancla = new THREE.Object3D(); ancla.position.set(0, .42, -2.2); m.grupo.add(ancla);
+  const rot = crearRotulos({ THREE, V, grupo: m.grupo }); m.rotulos = rot;
+  const materiasDe = (E) => (E.materias || []).map((k) => L(NOMBRE_MATERIA[k]));
+  const fuenteDe = (f) => (f ? `${L(UI.fuente)}: ${L(f)}` : '');
 
-  /* ── los botones: fila debajo del cartel ── */
+  /* ── los botones: píldoras flotantes; al recibir el foco se encienden (y avisan al tutorial) ── */
   let botones = [];
   function boton(texto, accion, ancho = .5){
-    /* «Voz» se vuelve a pintar sola, sin volver a armar la escena (si no, las flores plantadas se borraban) */
     const p = new V.Panel(ancho, .16, 520); p.titulo = texto;
     const pintar = (f) => { const { x, cv } = p, w = cv.width, h = cv.height; x.clearRect(0, 0, w, h); V.redondo(x, 4, 4, w - 8, h - 8, (h - 8) / 2);
       x.fillStyle = f ? '#3A1A5C' : '#24123A'; x.fill(); x.lineWidth = f ? 7 : 3; x.strokeStyle = f ? MORADO : '#3C2652'; x.stroke();
       x.fillStyle = '#F4EEF2'; x.font = `800 ${texto.length > 22 ? 28 : 36}px system-ui, -apple-system, sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(texto, w / 2, h / 2 + 2); p.listo(); };
-    p.foco = (f) => { if(p._f === f) return; p._f = f; pintar(f); }; p._f = false; pintar(false);
+    p.foco = (f) => { if(p._f === f) return; p._f = f; pintar(f); if(f) p.malla.userData.alFoco?.(); }; p._f = false; pintar(false);
     p.malla.userData.accion = () => { V.sonar('toque', .3); ev('boton'); accion(); };
     p.malla.userData.retitular = (t) => { texto = t; p.titulo = t; pintar(p._f); };
     return p.malla;
   }
-  function ponerBotones(lista, y = -.38){
+  function ponerBotones(lista, y = -.42){
     botones.forEach((b) => m.grupo.remove(b)); botones = lista;
-    const ancho = lista.reduce((s, b) => s + b.geometry.parameters.width + .06, -.06);
-    let x = -ancho / 2; for(const b of lista){ const w = b.geometry.parameters.width; b.position.set(x + w / 2, y, -2.1); x += w + .06; m.grupo.add(b); }
+    /* si no caben en 1.9 m (lo que se ve cómodo de frente), se parten en filas de arriba hacia abajo */
+    const filas = [[]]; let an = 0;
+    for(const b of lista){ const w = b.geometry.parameters.width + .06; if(an + w > 1.96 && filas.at(-1).length){ filas.push([]); an = 0; } filas.at(-1).push(b); an += w; }
+    filas.forEach((fila, k) => { const ancho = fila.reduce((s, b) => s + b.geometry.parameters.width + .06, -.06);
+      let x = -ancho / 2; for(const b of fila){ const w = b.geometry.parameters.width; b.position.set(x + w / 2, y - k * .2, -2.1); x += w + .06; m.grupo.add(b); } });
   }
 
-  /* ── la monarca: el ejemplar escaneado, y una colonia de copias en el santuario ── */
+  /* ── la monarca: el ejemplar escaneado, y una colonia de copias si el ecosistema no pudiera armarse ── */
   const mariposa = new THREE.Group(), colonia = new THREE.Group(); m.grupo.add(mariposa, colonia); mariposa.visible = colonia.visible = false;
   let modelo = null;
+  /* EL ECOSISTEMA (ecosistema.js) */
+  const eco = crearEcosistema({ THREE, render: V.render, grupo: m.grupo, cabeza: V.cabeza }); m.eco = eco;
+  const PAPEL = { bienvenida: ['ambiente', 8], mariposa: ['ambiente', 4], ciclo: ['ambiente', 4], flores: ['ambiente', 5], migracion: ['rumbo', 12],
+    cuerpo: ['ambiente', 6], santuario: ['racimo'], tala: ['ambiente', 1], campo: ['ambiente', 2], decision: ['ambiente', 3], cuestionario: ['nada'], final: ['ambiente', 14] };
+  function papelDe(E){ const [p, n] = PAPEL[E.id] || ['nada']; eco.poner(p, { cuantas: n }); eco.guiar(null); if(eco.listo && E.monarca === 'colonia') colonia.visible = false; }
+  let tocoEco = false;
+  eco.alTocar = () => { memo.apuntar('mariposa', ESCENAS[st.escena]?.id, ahora()); if(!tocoEco){ tocoEco = true; reaccionar('r-tocar-mariposa'); } };
   m.armado = new GLTFLoader().loadAsync(AQUI('medios/monarca.glb')).then((g) => {
     const s = g.scene, caja = new THREE.Box3().setFromObject(s), tam = caja.getSize(new THREE.Vector3()), c = caja.getCenter(new THREE.Vector3());
     const piv = new THREE.Group(); s.position.sub(c); piv.add(s); piv.scale.setScalar(.32 / Math.max(tam.x, tam.y, tam.z));
     s.traverse((o) => { if(o.isMesh){ const v = o.material; o.material = new THREE.MeshBasicMaterial({ map: v.map || null, color: v.map ? 0xffffff : v.color, side: THREE.DoubleSide, transparent: v.transparent, alphaTest: .3 }); } });
     modelo = piv; mariposa.add(piv);
-    /* la colonia: 18 copias (la escaneada pesa 24 mil triángulos; más copias tiran los cuadros en el teléfono) */
     let k = 3; const az = () => (k = (k * 16807) % 2147483647) / 2147483647;
-    for(let i = 0; i < 18; i++){ const c2 = piv.clone(); const a = (az() - .5) * 2.4, r = 1.3 + az() * 2;   /* sobre todo enfrente (±70°) */
+    for(let i = 0; i < 18; i++){ const c2 = piv.clone(); const a = (az() - .5) * 2.4, r = 1.3 + az() * 2;
       c2.userData.base = new THREE.Vector3(Math.sin(a) * r, -.3 + az() * 1.6, -Math.cos(a) * r); c2.userData.fase = az() * 6; c2.scale.multiplyScalar(.6 + az() * .5); colonia.add(c2); }
+    if(eco.desdeModelo(piv)){ colonia.visible = false; if(st.fase === 'escenas') papelDe(ESCENAS[st.escena]); else eco.poner('ambiente', { cuantas: 5 }); }
   }).catch((e) => { V.fallo?.('E-MONARCA', 'cargar monarca.glb', e); });
 
-  /* ── el minijuego «Flores en el camino»: cinco lugares en el pasto; al elegir uno crece una flor (Poly Haven, cinco
-     variedades de Empodium) y la monarca vuela a tomar néctar ── */
+  /* ── el minijuego «Flores en el camino»: cinco lugares en el pasto; al elegir uno crece una flor (Poly Haven) y la
+     monarca vuela a tomar néctar. La guía se posa en el siguiente lugar libre ── */
   const flores = new THREE.Group(); m.grupo.add(flores); let variedades = [], lugares = [], plantadas = 0, objetivo = null;
   m.armadoFlores = new GLTFLoader().loadAsync(AQUI('medios/flores.glb')).then((g) => {
     g.scene.updateMatrixWorld(true);
@@ -139,131 +128,177 @@ export function montarMonarca(V){
       geo.translate(-c.x, -b.min.y, -c.z); const alto = b.max.y - b.min.y || 1; geo.scale(.6 / alto, .6 / alto, .6 / alto);
       variedades.push(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: o.material.map || null, side: THREE.DoubleSide, alphaTest: .4 }))); });
   }).catch((e) => V.fallo?.('E-MONARCA', 'cargar flores.glb', e));
-  /* cerca y a la vista (más abajo y más a los lados se salían de lo que se ve con el visor) */
   const PASTO = [-38, -19, 0, 19, 38].map((g, i) => { const a = g * Math.PI / 180, d = i % 2 ? 1.35 : 1.7; return new THREE.Vector3(Math.sin(a) * d, -.95, -Math.cos(a) * d); });
+  const guiarFlor = () => { const b = lugares[0]; if(!b){ eco.guiar(null); return; } eco.guiar(b.position.clone().add(new THREE.Vector3(0, .14, 0))); };
   function juegoFlores(){
     flores.clear(); plantadas = 0; objetivo = null;
-    lugares = PASTO.map((p, i) => { const b = boton('Plantar', () => plantar(i, b), .34); b.position.copy(p).add(new THREE.Vector3(0, .3, 0)); b.lookAt(0, b.position.y * .3, 0); m.grupo.add(b); return b; });
+    lugares = PASTO.map((p, i) => { const b = boton(L(UI.plantar), () => plantar(i, b), .34); b.position.copy(p).add(new THREE.Vector3(0, .3, 0)); b.lookAt(0, b.position.y * .3, 0); m.grupo.add(b); return b; });
+    guiarFlor();
   }
   function plantar(i, b){
     m.grupo.remove(b); lugares = lugares.filter((x) => x !== b);
     const v = variedades[i % Math.max(1, variedades.length)]; if(v){ const f = v.clone(); f.position.copy(PASTO[i]); f.scale.setScalar(.01); f.userData.nace = performance.now() / 1000; flores.add(f); }
-    objetivo = PASTO[i].clone().add(new THREE.Vector3(0, .5, 0)); plantadas++; V.sonar('ding', .3);
+    objetivo = PASTO[i].clone().add(new THREE.Vector3(0, .5, 0)); plantadas++; V.sonar('ding', .3); guiarFlor();
     const rapido = ev('planta');
     if(plantadas < PASTO.length){
       if(narr.actual === 'e-flores' && narr.falta() > 2 && !florHablo){ florHablo = true; narr.interrumpir('r-flor-hablando'); }
       else if(plantadas === 1 && !narr.actual) narr.decir(['r-flor-1']);
     }
-    if(plantadas >= PASTO.length){ objetivo = null; const E = ESCENAS[st.escena];
-      pintarCartel('¡Listo!', ['Cinco flores en su camino: cinco lugares para tomar néctar.'], E.fuente); narr.decir([rapido || 'r-flores-todas']);
-      ponerBotones([boton('Siguiente', () => mostrar(st.escena + 1)), vozBoton()]); }
+    if(plantadas >= PASTO.length){ objetivo = null;
+      rot.mensaje(L(UI.listo), [st.idioma === 'en' ? 'Five flowers on her way: five places to drink nectar.' : 'Cinco flores en su camino: cinco lugares para tomar néctar.']);
+      narr.decir([rapido || 'r-flores-todas']);
+      ponerBotones([boton(L(UI.siguiente), () => mostrar(st.escena + 1)), vozBoton()]); }
   }
   const quitarLugares = () => { lugares.forEach((b) => m.grupo.remove(b)); lugares = []; };
 
   /* ── el mapa de la migración: Norteamérica de Natural Earth y la ruta que se dibuja sola ── */
-  const mapaP = new V.Panel(1.3, 1.0, 500); mapaP.malla.position.set(0, .42, -2.25); mapaP.malla.visible = false; m.grupo.add(mapaP.malla);
+  const mapaP = new V.Panel(1.3, 1.0, 500); mapaP.malla.position.set(0, .3, -2.3); mapaP.malla.visible = false; m.grupo.add(mapaP.malla);
   let mapa = null; fetch(AQUI('medios/mapa.json')).then((r) => r.json()).then((j) => { mapa = j; }).catch((e) => V.fallo?.('E-MONARCA', 'cargar mapa.json', e));
-  /* la ruta oriental, aproximada: del sur de Canadá a las montañas de Michoacán (lon, lat) */
   const RUTA = [[-79.5, 46], [-84, 42], [-90, 37.5], [-97, 32.5], [-99.5, 27], [-100.2, 19.6]];
   function pintarMapa(k){
     const { x, cv } = mapaP, w = cv.width, h = cv.height; x.clearRect(0, 0, w, h);
-    V.redondo(x, 6, 6, w - 12, h - 12, 34); x.fillStyle = 'rgba(23,10,38,.94)'; x.fill(); x.lineWidth = 4; x.strokeStyle = MORADO; x.stroke();
+    V.redondo(x, 6, 6, w - 12, h - 12, 34); x.fillStyle = 'rgba(23,10,38,.82)'; x.fill();
     if(!mapa){ mapaP.listo(); return; }
     const c = mapa.caja, px = (lon) => 30 + (lon - c.x0) / (c.x1 - c.x0) * (w - 60), py = (lat) => 30 + (c.y1 - lat) / (c.y1 - c.y0) * (h - 60);
     x.lineWidth = 2; x.strokeStyle = '#7E6A96'; x.fillStyle = 'rgba(172,39,255,.12)';
     for(const anillos of Object.values(mapa.paises)) for(const a of anillos){ x.beginPath(); a.forEach(([lo, la], i) => i ? x.lineTo(px(lo), py(la)) : x.moveTo(px(lo), py(la))); x.closePath(); x.fill(); x.stroke(); }
-    /* la ruta hasta donde va (k de 0 a 1) */
     const n = (RUTA.length - 1) * Math.min(1, k); x.strokeStyle = NARANJA; x.lineWidth = 7; x.lineCap = 'round'; x.beginPath();
     for(let i = 0; i <= Math.floor(n); i++) i ? x.lineTo(px(RUTA[i][0]), py(RUTA[i][1])) : x.moveTo(px(RUTA[i][0]), py(RUTA[i][1]));
     const f = n - Math.floor(n), i0 = Math.floor(n); if(i0 < RUTA.length - 1){ const a = RUTA[i0], b = RUTA[i0 + 1]; x.lineTo(px(a[0] + (b[0] - a[0]) * f), py(a[1] + (b[1] - a[1]) * f)); }
     x.stroke();
     const fin = RUTA[RUTA.length - 1]; x.fillStyle = k >= 1 ? NARANJA : '#7E6A96'; x.beginPath(); x.arc(px(fin[0]), py(fin[1]), 10, 0, Math.PI * 2); x.fill();
-    x.fillStyle = '#F4EEF2'; x.font = '700 24px system-ui, -apple-system, sans-serif'; x.fillText('Canadá', px(-84), py(52)); x.fillText('Michoacán y Edomex', px(-108), py(16.5));
+    x.fillStyle = '#F4EEF2'; x.font = '700 24px system-ui, -apple-system, sans-serif';
+    x.fillText(st.idioma === 'en' ? 'Canada' : 'Canadá', px(-84), py(52)); x.fillText(st.idioma === 'en' ? 'Michoacán and State of Mexico' : 'Michoacán y Edomex', px(-112), py(16.5));
     mapaP.listo();
   }
 
-  /* ── las etapas del ciclo: cuatro tarjetitas debajo del cartel; se enciende una tras otra ── */
+  /* ── las etapas del ciclo: la FOTO real de cada etapa (Flickr, CC BY), se encienden una tras otra ── */
   const etapas = new THREE.Group(); m.grupo.add(etapas); let etapasP = [];
+  const fotos = {}; const foto = (f) => fotos[f] || (fotos[f] = new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = AQUI('medios/ciclo/' + f); }));
   function ponerEtapas(lista){
     etapas.clear(); etapasP = [];
     if(!lista) return;
-    const w = .4, sep = .05, total = lista.length * w + (lista.length - 1) * sep;
-    lista.forEach(([nombre, dias], k) => { const p = new V.Panel(w, .2, 520); p.malla.position.set(-total / 2 + w / 2 + k * (w + sep), -.2, -2.15); etapas.add(p.malla); etapasP.push({ p, nombre, dias, on: null }); });
+    const w = .42, sep = .06, total = lista.length * w + (lista.length - 1) * sep;
+    lista.forEach(([nombre, dias], k) => { const p = new V.Panel(w, .5, 520); p.malla.position.set(-total / 2 + w / 2 + k * (w + sep), .02, -2.15); etapas.add(p.malla);
+      const e = { p, nombre: L(nombre), dias: L(dias), on: null, img: null }; etapasP.push(e); foto(FOTO_ETAPA[k]).then((i) => { e.img = i; e.on = null; }); });
   }
   function pintarEtapas(activa){
     etapasP.forEach((e, k) => { const on = k === activa; if(e.on === on) return; e.on = on;
-      const { x, cv } = e.p, w = cv.width, h = cv.height; x.clearRect(0, 0, w, h); V.redondo(x, 4, 4, w - 8, h - 8, 26);
-      x.fillStyle = on ? '#3A1A5C' : 'rgba(23,10,38,.9)'; x.fill(); x.lineWidth = on ? 6 : 3; x.strokeStyle = on ? NARANJA : '#3C2652'; x.stroke();
-      x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = on ? NARANJA : '#F4EEF2'; x.font = '800 34px system-ui, -apple-system, sans-serif'; x.fillText(e.nombre, w / 2, h * .38);
-      x.fillStyle = '#C9B6DA'; x.font = '600 24px system-ui, -apple-system, sans-serif'; x.fillText(e.dias, w / 2, h * .72); e.p.listo(); });
+      const { x, cv } = e.p, w = cv.width, h = cv.height; x.clearRect(0, 0, w, h);
+      x.save(); V.redondo(x, 6, 6, w - 12, h * .7, 24); x.clip();
+      if(e.img){ const s = Math.max((w - 12) / e.img.width, (h * .7) / e.img.height); x.globalAlpha = on ? 1 : .5; x.drawImage(e.img, 6 + (w - 12 - e.img.width * s) / 2, 6 + (h * .7 - e.img.height * s) / 2, e.img.width * s, e.img.height * s); }
+      x.restore(); x.globalAlpha = 1;
+      if(on){ V.redondo(x, 6, 6, w - 12, h * .7, 24); x.lineWidth = 7; x.strokeStyle = NARANJA; x.stroke(); }
+      x.textAlign = 'center'; x.textBaseline = 'middle'; x.lineJoin = 'round';
+      x.font = '800 40px system-ui, -apple-system, sans-serif'; x.lineWidth = 8; x.strokeStyle = 'rgba(12,5,20,.9)'; x.strokeText(e.nombre, w / 2, h * .8); x.fillStyle = on ? NARANJA : '#F4EEF2'; x.fillText(e.nombre, w / 2, h * .8);
+      x.font = '700 28px system-ui, -apple-system, sans-serif'; x.strokeText(e.dias, w / 2, h * .92); x.fillStyle = '#E8DCF2'; x.fillText(e.dias, w / 2, h * .92); e.p.listo(); });
   }
 
-  /* ── la voz: el narrador ── */
-  const vozBoton = () => { const b = boton(st.voz ? 'Voz: Sí' : 'Voz: No', () => {
+  /* ── la voz ── */
+  const vozBoton = () => { const b = boton(L(st.voz ? UI.vozSi : UI.vozNo), () => {
     const juega = ev('voz', { prendida: !st.voz });
-    if(st.voz){ narr.decir(['r-voz-off']); st.voz = false; }   /* se despide y se calla (lo que ya pidió sí suena) */
+    if(st.voz){ narr.decir(['r-voz-off']); st.voz = false; }
     else { st.voz = true; narr.decir([juega || 'r-voz-on']); }
-    b.userData.retitular(st.voz ? 'Voz: Sí' : 'Voz: No'); }, .36); return b; };
+    b.userData.retitular(L(st.voz ? UI.vozSi : UI.vozNo)); }, .4); return b; };
+
+  /* ── EL ARRANQUE: idioma (operador) → 5 s para entregar el visor → tutorial → la historia ── */
+  let cuentaT0 = 0, cuentaN = -1;
+  function pedirIdioma(){
+    st.fase = 'idioma'; narr.callar(); limpiarEscena(); ponerCielo('alps_field'); V.cuarto.visible = false;
+    rot.mensaje('MONARCH', ['Idioma · Language']);
+    ponerBotones([boton('Español', () => elegirIdioma('es'), .6), boton('English', () => elegirIdioma('en'), .6)], -.2);
+  }
+  function elegirIdioma(l){ st.idioma = l; st.fase = 'cuenta'; cuentaT0 = ahora(); cuentaN = -1; ponerBotones([]); narr.precargar(); }
+  const tut = crearTutorial({ THREE, V, grupo: m.grupo,
+    decir: (ids, fin) => decirY(ids, fin),
+    boton: (txt, acc, an) => boton(L(UI.aqui), acc, an),
+    guia: (p) => eco.guiar(p, { posarse: false }),
+    alTerminar: () => { V.extra.palmaPermitida = false; empezarHistoria(); } });
+  m.tutorial = tut;
+  function empezarTutorial(){
+    st.fase = 'tutorial'; V.extra.palmaPermitida = true;   /* manos.js: aquí la palma arriba sí cuenta como «atrás» */
+    rot.mensaje(L(UI.tutorial), [L(UI.saltar)], { chico: true });
+    setTimeout(() => { if(st.fase === 'tutorial') rot.limpiar(); }, 4500);
+    tut.empezar();
+  }
+  function empezarHistoria(){ st.fase = 'escenas'; st.escena = 0; mostrar(0); }
+  /* para las pruebas y para el docente: entrar directo a la historia (o al tutorial) */
+  m.arrancar = ({ idioma = 'es', tutorial = false } = {}) => { st.idioma = idioma; if(tutorial) empezarTutorial(); else { V.extra.palmaPermitida = false; empezarHistoria(); } };
 
   /* ── las escenas ── */
   let t0 = 0;
+  function limpiarEscena(){ rot.limpiar(); ponerEtapas(null); quitarLugares(); flores.visible = false; objetivo = null; mapaP.malla.visible = false; mariposa.visible = colonia.visible = false; eco.guiar(null); }
   function mostrar(i, pre = []){
-    /* ¿se adelantó mientras explicaba? ¿regresó? el narrador lo dice antes de seguir */
     const ant = st.escena, explicando = narr.actual && narr.actual.startsWith('e-') && narr.falta() > 2.5;
-    const pp = i === ant + 1 ? ev('siguiente') : i === ant - 1 ? ev('atras') : null;   /* adelante-atrás-adelante */
+    const pp = i === ant + 1 ? ev('siguiente') : i === ant - 1 ? ev('atras') : null;
     if(!pre.length && pp) pre = [pp];
     else if(!pre.length && i === ant + 1 && explicando) pre = [turno('r-prisa', 3)];
     else if(!pre.length && i === ant - 1 && ahora() - atrasEn > 40){ pre = ['r-atras']; atrasEn = ahora(); }
     ev('escena', { id: ESCENAS[i]?.id, saltada: i === ant + 1 && explicando });
     florHablo = false; avanzarSolo = false;
-    st.escena = i; const E = ESCENAS[i]; t0 = performance.now() / 1000;
-    const decir = () => narr.decir([...pre, 'e-' + E.id]);
-    /* sin foto 360°, el cielo del motor (si no, se ve negro) */
-    ponerCielo(E.cielo); V.cuarto.visible = !E.cielo; mapaP.malla.visible = !!E.mapa; cartel.malla.position.set(E.mapa ? -.92 : 0, .42, E.mapa ? -2.3 : -2.2); cartel.malla.lookAt(0, .42 * .3, 0);
-    mariposa.visible = E.monarca === 'vuela' || E.monarca === 'cerca'; colonia.visible = E.monarca === 'colonia';
-    if(E.mapa){ mapaP.malla.position.set(.72, .42, -2.3); mapaP.malla.lookAt(0, .42 * .3, 0); }
+    st.escena = i; const E = ESCENAS[i]; t0 = ahora();
+    pre.forEach((x) => memo.apuntar(x, ESCENAS[ant]?.id, ahora()));
+    const recuerdo = i !== ant ? memo.alEntrar(E.id) : null;
+    const decir = () => narr.decir([...pre, 'e-' + E.id, ...(recuerdo ? [recuerdo] : [])]);
+    limpiarEscena();
+    ponerCielo(E.cielo); V.cuarto.visible = !E.cielo; mapaP.malla.visible = !!E.mapa;
+    mariposa.visible = E.monarca === 'vuela' || E.monarca === 'cerca'; colonia.visible = E.monarca === 'colonia'; tocoEco = false; papelDe(E);
+    rot.titulo(L(E.titulo), materiasDe(E)); rot.claves((E.claves || []).map((c) => ({ ...c, grande: L(c.grande), chico: L(c.chico) }))); rot.fuente(fuenteDe(E.fuente)); rot.avanzar(0);
     const siguiente = () => mostrar(i + 1);
     ponerEtapas(E.etapas); if(E.etapas) pintarEtapas(0);
-    quitarLugares(); flores.visible = E.juego === 'flores'; if(E.juego !== 'flores') objetivo = null;
-    if(E.juego === 'flores'){ cartel.malla.position.set(0, .62, -2.3); juegoFlores(); pintarCartel(E.titulo, E.texto, E.fuente); decir(); ponerBotones([boton('Atrás', () => mostrar(i - 1), .36), vozBoton()], -.2); return; }
+    flores.visible = E.juego === 'flores';
+    if(E.juego === 'flores'){ juegoFlores(); decir(); ponerBotones([boton(L(UI.atras), () => mostrar(i - 1), .36), vozBoton()], -.2); return; }
     if(E.id === 'cuestionario') return preguntar([...pre, 'e-cuestionario']);
-    if(E.id === 'decision' && st.eleccion == null){
-      pintarCartel(E.titulo, E.texto); decir();
-      ponerBotones(E.opciones.map(([t, que], k) => boton(t, () => { st.eleccion = k; pintarCartel(t, [que]); narr.decir([['r-talar', 'r-conservar', 'r-turismo'][k]]); ponerBotones([boton('Siguiente', () => { mostrar(i + 1); }), vozBoton()]); }, .44)));
+    if(E.id === 'cuerpo'){
+      decir();
+      const elegir = (k) => { st.cuerpo = k; ev('cuerpo');
+        rot.claves(E.opciones[k][1].map((c, j) => ({ grande: L(c.grande), chico: L(c.chico), en: 0, pos: [[-1, .55], [0, .85], [1, .55]][j] }))); rot.mostrarTodo();
+        narr.decir([['r-cuerpo-camina', 'r-cuerpo-corre'][k]]);
+        ponerBotones([boton(L(E.opciones[1 - k][0]), () => elegir(1 - k), .44), boton(L(UI.siguiente), siguiente), vozBoton()]); };
+      ponerBotones([...E.opciones.map(([op], k) => boton(L(op), () => elegir(k), .44)), vozBoton()]);
       return;
     }
-    pintarCartel(E.titulo, E.texto, E.fuente);
+    if(E.id === 'decision' && st.eleccion == null){
+      decir();
+      ponerBotones(E.opciones.map(([op, que], k) => boton(L(op), () => { st.eleccion = k; rot.mensaje(L(op), [L(que)]); narr.decir([['r-talar', 'r-conservar', 'r-turismo'][k]]); ponerBotones([boton(L(UI.siguiente), () => { mostrar(i + 1); }), vozBoton()]); }, .44)));
+      return;
+    }
     if(E.id === 'final'){ const extra = ev('final', { puntos: st.puntos, total: PREGUNTAS.length });
       narr.decir([...pre, 'e-final', st.puntos === PREGUNTAS.length ? 'r-perfecto' : st.puntos === 0 ? 'r-cero' : 'r-medio', ...(extra ? [extra] : [])]);
-      ponerBotones([boton(`${st.puntos} de ${PREGUNTAS.length}`, () => reaccionar(ev('puntaje')), .4), boton('Créditos', () => { pintarCartel('Créditos', [CREDITOS]); narr.decir([ev('creditos') || 'r-creditos']); }, .4), boton('Otra vez', () => reiniciar(), .4)]); return; }
+      ponerBotones([boton(`${st.puntos} ${L(UI.de)} ${PREGUNTAS.length}`, () => reaccionar(ev('puntaje')), .36),
+        boton(L(UI.materias), () => { rot.mensaje(L(UI.materias), MATERIAS.map(([k, d]) => `${L(NOMBRE_MATERIA[k])}: ${L(d)}`), { chico: true }); narr.decir(['r-materias']); }, .4),
+        boton(L(UI.funciona), () => { rot.mensaje(L(UI.funciona), L(FUNCIONA), { chico: true }); narr.decir(['r-como-funciona']); }, .46),
+        boton(L(UI.contamos), () => { rot.mensaje(L(UI.contamos), L(CONTAMOS), { chico: true }); narr.decir(['r-como-contamos']); }, .58),
+        boton(L(UI.creditos), () => { rot.mensaje(L(UI.creditos), L(CREDITOS), { chico: true }); narr.decir([ev('creditos') || 'r-creditos']); }, .4),
+        boton(L(UI.otraVez), () => reiniciar(), .36)]); return; }
     decir();
-    ponerBotones([...(i > 0 ? [boton('Atrás', () => mostrar(i - 1), .36)] : []), boton(E.boton || 'Siguiente', siguiente), vozBoton()], E.etapas ? -.44 : -.38);
+    ponerBotones([...(i > 0 ? [boton(L(UI.atras), () => mostrar(i - 1), .36)] : []), boton(L(E.boton || UI.siguiente), siguiente), vozBoton()], E.etapas ? -.46 : -.42);
   }
   function preguntar(pre = []){
     const E = ESCENAS[st.escena], q = PREGUNTAS[st.pregunta], n = st.pregunta + 1;
     if(!q){ mostrar(st.escena + 1); return; }
-    pintarCartel(`${E.titulo} · ${n} de ${PREGUNTAS.length}`, [q[0]]); narr.decir([...pre, 'q-' + n]); ev('pregunta');
-    ponerBotones(q[1].map((t, k) => boton(t, () => {
+    rot.mensaje(`${L(E.titulo)} · ${n} ${L(UI.de)} ${PREGUNTAS.length}`, [L(q[0])]); narr.decir([...pre, 'q-' + n]); ev('pregunta');
+    ponerBotones(q[1].map((op, k) => boton(L(op), () => {
       const bien = k === q[2]; if(bien) st.puntos++; V.sonar(bien ? 'ding' : 'toque', .35);
       const sinLeer = ev('respuesta');
-      pintarCartel(bien ? 'Correcto' : 'Casi', [bien ? q[1][k] : `Era: ${q[1][q[2]]}`]); narr.decir([bien ? turno('r-bien', 4) : `q-${n}-mal`, ...(sinLeer ? [sinLeer] : [])]);
-      ponerBotones([boton('Siguiente', () => { st.pregunta++; preguntar(); })]);
-    }, .62)), -.38);
+      rot.mensaje(L(bien ? UI.correcto : UI.casi), [bien ? L(q[1][k]) : `${L(UI.era)}: ${L(q[1][q[2]])}`]); narr.decir([bien ? turno('r-bien', 4) : `q-${n}-mal`, ...(sinLeer ? [sinLeer] : [])]);
+      ponerBotones([boton(L(UI.siguiente), () => { st.pregunta++; preguntar(); })]);
+    }, .7)), -.3);
   }
-  function reiniciar(){ const otra = st.escena ? (ev('otraVez') || 'r-otra-vez') : null; st.puntos = 0; st.pregunta = 0; st.eleccion = null; mostrar(0, otra ? [otra] : []); }
+  /* «Otra vez»: para la siguiente persona, el operador vuelve a elegir idioma */
+  function reiniciar(){ const otra = st.escena ? ev('otraVez') : null; m.ultimoOtraVez = otra; st.puntos = 0; st.pregunta = 0; st.eleccion = null; st.cuerpo = null; st.escena = 0; memo.reiniciar(); pedirIdioma(); }
 
-  /* ── SUBTÍTULOS QUE SIGUEN TU VISTA (Carlos, 19 nov): abajo de lo que ves, se acercan con suavidad a donde miras (no
-     pegados de golpe), y van escribiendo lo que el narrador dice EN ESE MOMENTO, también cuando reacciona a lo que haces.
-     Sólo se repinta cuando cambia una palabra (regla 13: nada de repintar por cuadro). ── */
+  /* ── SUBTÍTULOS QUE SIGUEN TU VISTA (Carlos, 19 nov): ahora son LA forma de leer lo que se cuenta ── */
   const subt = new V.Panel(1.5, .3, 560); subt.malla.material.depthTest = false; subt.malla.material.depthWrite = false;
   subt.malla.renderOrder = 30; subt.malla.visible = false; V.escena.add(subt.malla);
   const subQ = new THREE.Quaternion(), subP = new THREE.Vector3(), subC = new THREE.Vector3(), subD = new THREE.Vector3(), subUp = new THREE.Vector3(0, 1, 0);
   let subPuesto = '', subNuevo = true;
+  function renglones(x, texto, ancho){ const out = []; let r = ''; for(const p of texto.split(' ')){ const n = r ? r + ' ' + p : p; if(x.measureText(n).width > ancho && r){ out.push(r); r = p; } else r = n; } if(r) out.push(r); return out; }
   function pintarSub(texto, n){
     const { x, cv } = subt, w = cv.width, h = cv.height; x.clearRect(0, 0, w, h);
     x.font = '700 40px system-ui, -apple-system, sans-serif';
     const palabras = texto.split(' '), dicho = palabras.slice(0, n).join(' ');
-    let ls = renglones(x, dicho, w - 80); ls = ls.slice(-2);   /* los dos últimos renglones: va corriendo como subtítulo */
+    let ls = renglones(x, dicho, w - 80); ls = ls.slice(-2);
     if(!ls.length || !dicho){ subt.listo(); return; }
     const alto = ls.length * 52 + 36, y0 = h - alto;
     V.redondo(x, 10, y0, w - 20, alto - 6, 28); x.fillStyle = 'rgba(11,5,19,.78)'; x.fill();
@@ -276,7 +311,6 @@ export function montarMonarca(V){
     subt.malla.visible = ver; if(!ver){ subPuesto = ''; subNuevo = true; return; }
     const palabras = pr.texto.split(' '), n = Math.min(palabras.length, Math.ceil(palabras.length * Math.min(1, pr.f * 1.08 + .04)));
     const clave = pr.id + '|' + n; if(clave !== subPuesto){ subPuesto = clave; pintarSub(pr.texto, n); }
-    /* a dónde va: 1.6 m enfrente de tu vista, un poco abajo, siempre de frente a ti */
     V.cabeza.getWorldPosition(subC); V.cabeza.getWorldQuaternion(subQ);
     subD.set(0, -.32, -1.6).applyQuaternion(subQ); subP.copy(subC).add(subD);
     const k = subNuevo ? 1 : 1 - Math.exp(-(dt || 1 / 60) * 3.5); subNuevo = false;
@@ -284,17 +318,28 @@ export function montarMonarca(V){
     subt.malla.up.copy(subUp); subt.malla.lookAt(subC);
   }
 
-  /* ── cada cuadro: la mariposa vuela, la colonia aletea, la ruta se dibuja ── */
-  let rutaK = -1;
-  let tSub = 0;
+  /* ── cada cuadro ── */
+  let rutaK = -1, tSub = 0;
   m.cuadro = () => {
-    const t = performance.now() / 1000, E = ESCENAS[st.escena];
+    const t = ahora(), E = ESCENAS[st.escena];
     subtitulos(tSub ? Math.min(.1, t - tSub) : 1 / 60); tSub = t;
+    rot.cuadro(t); eco.cuadro(t, V.extra.manos || []);
+    if(alCallar && !narr.ocupado){ const f = alCallar; alCallar = null; f(); }
+    if(st.fase === 'cuenta'){
+      const n = 5 - Math.floor(t - cuentaT0);
+      if(n !== cuentaN && n >= 1){ cuentaN = n; rot.mensaje(String(n), [L(UI.entrega)]); V.sonar('toque', .12); }
+      if(n < 1){ rot.limpiar(); empezarTutorial(); }
+      return;
+    }
+    if(st.fase === 'tutorial'){ tut.cuadro(); return; }
+    if(st.fase !== 'escenas') return;
     if(modelo && mariposa.visible){
       if(E.monarca === 'cerca'){ mariposa.position.set(.95, .1, -1.3); mariposa.rotation.set(.3, t * .6, Math.sin(t * 9) * .12); mariposa.scale.setScalar(1.6); }
       else if(objetivo){ mariposa.position.lerp(new THREE.Vector3(objetivo.x + Math.sin(t * 2) * .12, objetivo.y + Math.sin(t * 3.1) * .06, objetivo.z + Math.cos(t * 2) * .12), .04); mariposa.rotation.set(0, t * 2, Math.sin(t * 12) * .25); mariposa.scale.setScalar(.8); }
       else { const a = t * .5; mariposa.position.set(Math.sin(a) * 1.1, .9 + Math.sin(t * 1.3) * .15, -1.8 + Math.cos(a) * .6); mariposa.rotation.set(0, a + Math.PI / 2, Math.sin(t * 12) * .25); mariposa.scale.setScalar(1); }
     }
+    /* las cifras salen cuando el narrador las dice; con la voz apagada, una cada pocos segundos */
+    const pr = narr.progreso(); if(pr && pr.id === 'e-' + E.id) rot.avanzar(pr.f); else if(!st.voz) rot.avanzar((t - t0) / 14); else if(!narr.ocupado && t - t0 > 2) rot.avanzar(1);
     if(E.etapas) pintarEtapas(Math.floor((t - t0) / 1.6) % E.etapas.length);
     for(const f of flores.children){ const k = Math.min(1, (t - f.userData.nace) / .8); f.scale.setScalar(Math.max(.01, 1 - Math.pow(1 - k, 3))); }
     if(colonia.visible) for(const c of colonia.children){ const b = c.userData.base, f = c.userData.fase;
@@ -305,7 +350,6 @@ export function montarMonarca(V){
 
   /* ── el narrador se da cuenta (travesuras.js): una «foto» del jugador por cuadro ── */
   const dirCabeza = new THREE.Vector3(), dirCartel = new THREE.Vector3(), ojo = new THREE.Vector3(), lado = new THREE.Vector3(), pm = new THREE.Vector3(), mm = new THREE.Vector3();
-  /* la luz de la cámara, una vez por segundo, en una imagen de 8×6 (para «me tapaste los ojos») */
   const cvLuz = document.createElement('canvas'); cvLuz.width = 8; cvLuz.height = 6; const xLuz = cvLuz.getContext('2d', { willReadFrequently: true });
   let luz = null, luzEn = 0, sacudida = 0;
   addEventListener('devicemotion', (e) => { const a = e.acceleration; if(a && a.x != null) sacudida = Math.max(sacudida * .9, Math.hypot(a.x, a.y, a.z)); });
@@ -319,10 +363,9 @@ export function montarMonarca(V){
   }
   function vigilar(t, E){
     if(!m.grupo.visible) return;
-    /* quieto-5: al terminar de decirlo, avanza solo (menos donde hay que elegir algo) */
     if(avanzarSolo && !narr.ocupado){ avanzarSolo = false; if(!['decision', 'cuestionario', 'final'].includes(E.id)) mostrar(st.escena + 1); }
     if(!st.voz) return;
-    V.cabeza.getWorldPosition(ojo); V.cabeza.getWorldDirection(dirCabeza); cartel.malla.getWorldPosition(dirCartel).sub(ojo);
+    V.cabeza.getWorldPosition(ojo); V.cabeza.getWorldDirection(dirCabeza); ancla.getWorldPosition(dirCartel).sub(ojo);
     const pitch = Math.asin(Math.max(-1, Math.min(1, dirCabeza.y)));
     lado.set(1, 0, 0).applyQuaternion(V.cabeza.getWorldQuaternion(new THREE.Quaternion())); const roll = Math.asin(Math.max(-1, Math.min(1, lado.y)));
     const yaw = Math.atan2(dirCabeza.x * dirCartel.z - dirCabeza.z * dirCartel.x, dirCabeza.x * dirCartel.x + dirCabeza.z * dirCartel.z);
@@ -346,17 +389,20 @@ export function montarMonarca(V){
   m.entrar = () => {
     antes = { cuarto: V.cuarto.visible, tem: window.__temshop?.grupo.visible, mixta: V.AJ.mixta };
     if(V.AJ.mixta) V.ponerMixta(false); V.cuarto.visible = false; if(window.__temshop) window.__temshop.grupo.visible = false;
-    mostrar(st.escena); narr.precargar(); reaccionar(ev('entrar'));
+    if(st.fase === 'escenas') mostrar(st.escena); else pedirIdioma();
+    reaccionar(ev('entrar'));
   };
   m.salir = () => {
-    narr.callar(); ev('salir'); subt.malla.visible = false;
+    narr.callar(); ev('salir'); subt.malla.visible = false; V.extra.palmaPermitida = false; if(tut.activo){ tut.activo = false; }
+    if(st.fase !== 'escenas') st.fase = 'idioma';
     if(antes){ V.cuarto.visible = antes.cuarto; if(window.__temshop) window.__temshop.grupo.visible = !!antes.tem; if(antes.mixta) V.ponerMixta(true); }
   };
-  m.elegibles = () => [...botones, ...lugares];
-  /* en exposición no hay «Atrás» (ni el botón ni el Círculo): sólo la salida del docente */
-  Object.defineProperty(m, 'atras', { get: () => (V.kiosco.activo ? undefined : () => V.ir('juegos')), configurable: true });
+  m.elegibles = () => [...botones, ...lugares, ...tut.elegibles()];
+  /* ATRÁS: en el tutorial, el gesto de atrás (palma arriba o Círculo) lo SALTA (Carlos, 25 nov). Fuera de él, en
+     exposición no hay «Atrás»: sólo la salida del docente */
+  Object.defineProperty(m, 'atras', { get: () => (st.fase === 'tutorial' ? () => tut.saltar() : V.kiosco.activo ? undefined : () => V.ir('juegos')), configurable: true });
   m.atrasEn = [0, -1.25, -1.7];
-  m.mostrar = mostrar; m.reiniciar = reiniciar; m.ESCENAS = ESCENAS; m.PREGUNTAS = PREGUNTAS;
+  m.mostrar = mostrar; m.reiniciar = reiniciar; m.ESCENAS = ESCENAS; m.PREGUNTAS = PREGUNTAS; m.MATERIAS = MATERIAS; m.elegirIdioma = elegirIdioma;
 
   /* ── modo exposición: el docente sale con Opciones/PS 5 veces seguidas, o 5 toques en la esquina ── */
   let toques = [];

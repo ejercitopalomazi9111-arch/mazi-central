@@ -211,7 +211,8 @@ export async function iniciarManos(V){
            · no cuenta donde las manos se usan para jugar (Sables, MONARCH, el Taller): ahí se sale con el control o el menú;
            · hay que sostenerla 1.5 s y QUIETA (si la muñeca se mueve más de 4 % de la imagen, se vuelve a empezar);
            · a la mitad sale «Atrás…» en el HUD: si no era tu intención, bajas la mano y no pasa nada. */
-      const palmaVale = G.palma && !m.pellizco && !PALMA_NO.includes(V.ahora?.());
+      /* en el TUTORIAL de una experiencia (vr/tutorial.js) sí vale: ahí la palma arriba salta el tutorial (Carlos, 25 nov) */
+      const palmaVale = G.palma && !m.pellizco && (!PALMA_NO.includes(V.ahora?.()) || V.extra.palmaPermitida);
       if(palmaVale){
         if(!m.palmaDesde || Math.hypot(muneca.x - m.palmaEn.x, muneca.y - m.palmaEn.y) > .04){ m.palmaDesde = ahora; m.palmaEn = { x: muneca.x, y: muneca.y }; m.palmaAviso = false; }
         if(!m.palmaAviso && ahora - m.palmaDesde > 750){ m.palmaAviso = true; V.hud('Atrás…', .9); }

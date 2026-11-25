@@ -27,6 +27,7 @@ sí(!/v\.cuadro = \(t, dt\) => \{ poner\(\); agarrar\(\)/.test(idx), 'el menú p
 
 /* MONARCH: subtítulos */
 await p.evaluate(() => __vr.ir('monarca')); await p.evaluate(() => window.__monarca.armado);
+await p.evaluate(() => __monarca.arrancar({ idioma: 'es' }));   /* sin idioma ni tutorial: directo a la historia */
 await p.waitForFunction(() => __monarca.narrador.actual === 'e-bienvenida', null, { timeout: 15000 }).catch(() => {});
 await p.waitForTimeout(1800);
 const s1 = await p.evaluate(() => ({ vis: __monarca.subt.malla.visible, pr: __monarca.narrador.progreso() }));

@@ -104,13 +104,15 @@ export function crearPantallaWeb(V){
   /* ── control ── */
   const tiempo = () => modo === 'youtube' ? (yts[0]?.getCurrentTime?.() || 0) : videos[0].currentTime;
   function pausa(){
-    if(modo === 'youtube'){ const p = yts[0]?.getPlayerState?.() === 1; yts.forEach((y) => p ? y.pauseVideo() : y.playVideo()); return !p; }
+    if(modo === 'youtube'){ const p = yts[0]?.getPlayerState?.() === 1; yts.forEach((y) => p ? y.pauseVideo?.() : y.playVideo?.()); return !p; }
     if(modo === 'video'){ const p = !videos[0].paused; videos.forEach((v) => p ? v.pause() : v.play().catch(() => {})); return !p; }
     return true;
   }
+  /* el reproductor de YouTube no trae sus funciones hasta que está listo (onReady): un brinco con el control antes de
+     eso tronaba «y.seekTo is not a function» (captura de Carlos, v40, 25 nov). Antes de listo, no hace nada */
   function brincar(s){
     const t = Math.max(0, tiempo() + s);
-    if(modo === 'youtube') yts.forEach((y) => y.seekTo(t, true));
+    if(modo === 'youtube') yts.forEach((y) => y.seekTo?.(t, true));
     if(modo === 'video') videos.forEach((v) => { v.currentTime = t; });
   }
   /* el derecho persigue al izquierdo: en el visor, dos ojos con cuadros distintos se ven dobles */
