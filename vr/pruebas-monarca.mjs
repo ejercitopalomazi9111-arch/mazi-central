@@ -57,6 +57,9 @@ const fl = await p.evaluate(() => ({ flores: window.__monarca.grupo.children.fin
 const df = await dichos(); sí(df.includes('r-flor-hablando') && df.includes('r-flores-rapido'), `plantar mientras explica: «Me gusta tu iniciativa»; y las cinco de golpe: «Eso no es jardinería: es una carrera» (${df.slice(-6).join(' → ')})`);
 sí(fl.flores === 5 && fl.lugares === 0, `crecen las cinco flores y ya no quedan lugares (${fl.flores} flores)`); await cap('2c-flores');
 await tocar('Siguiente'); sí(await escena() === 'migracion', '«¡Listo!» → La migración'); await p.waitForTimeout(6500); await cap('3-migracion');
+await tocar('Siguiente'); sí(await escena() === 'cuerpo', '→ ¿Y si fueras tú? (educación física)'); await p.waitForTimeout(400);
+await tocar('Caminando'); await p.waitForTimeout(200); sí((await dichos()).at(-1) === 'r-cuerpo-camina', 'Caminando: 600 h y 136,800 kcal'); await cap('3b-cuerpo');
+await tocar('Corriendo'); await p.waitForTimeout(200); sí((await dichos()).at(-1) === 'r-cuerpo-corre' && (await p.evaluate(() => __monarca.estado.cuerpo)) === 1, 'y luego Corriendo: más energía en total');
 await tocar('Siguiente'); sí(await escena() === 'santuario', '→ El santuario'); await p.waitForTimeout(1500); await cap('4-santuario');
 const cielo = await p.evaluate(() => { const c = __monarca.grupo.children.find((x) => x.geometry?.type === 'SphereGeometry'); return { vis: c.visible, mapa: !!c.material.map }; });
 sí(cielo.vis && cielo.mapa, 'el santuario tiene su foto 360° de fondo');
@@ -67,7 +70,7 @@ sí(await escena() === 'cuestionario', '→ Cuestionario'); await cap('8-cuestio
 /* contesta bien las cuatro */
 const NP = await p.evaluate(() => __monarca.PREGUNTAS.length);
 for(let i = 0; i < NP; i++){ const r = await p.evaluate((i) => __monarca.PREGUNTAS[i][1][__monarca.PREGUNTAS[i][2]], i); await tocar(r); await p.waitForTimeout(150); await tocar('Siguiente'); await p.waitForTimeout(150); }
-const dq = await dichos(); sí(dq.includes('e-cuestionario') && [1, 2, 3, 4, 5].every((n) => dq.includes('q-' + n)) && dq.filter((x) => x.startsWith('r-bien')).length >= 4, 'el cuestionario: lee cada pregunta y celebra cada acierto');
+const dq = await dichos(); sí(dq.includes('e-cuestionario') && Array.from({ length: NP }, (_, k) => k + 1).every((n) => dq.includes('q-' + n)) && dq.filter((x) => x.startsWith('r-bien')).length >= 4, 'el cuestionario: lee cada pregunta y celebra cada acierto');
 sí(await escena() === 'final' && (await p.evaluate(() => __monarca.estado.puntos)) === NP, `${NP} de ${NP} y llega al final`); await cap('9-final');
 /* LAS TRAVESURAS con los sensores de verdad (travesuras.js tiene su propia prueba con 41 casos) */
 await p.waitForTimeout(7500);   /* el narrador habla cada 7 s como mucho: el cuestionario rápido ya se ganó su «¿contestaste sin leer?» */
@@ -76,9 +79,11 @@ sí((await dichos()).includes('r-agitar'), 'agitar el teléfono: «No es una bol
 await p.waitForTimeout(7300);
 await p.evaluate(() => { __vr.extra.manos = [{ puno: true, x: .3 }, { puno: true, x: .7 }]; }); await p.waitForTimeout(2500);
 await p.evaluate(() => { __vr.extra.manos = []; });
-sí((await dichos()).includes('r-punos'), 'dos puños frente a la cámara: «¿Me vas a pegar?»');
+sí((await dichos()).includes('r-punos'), 'dos puños frente a la cámara: «¿Puños arriba?»');
 for(let i = 0; i < 3; i++){ await tocar(`${NP} de ${NP}`); await p.waitForTimeout(120); }
 sí((await dichos()).slice(-1)[0] === 'r-puntaje-2', 'tocar el puntaje tres veces: «Lo sigues tocando…»');
+for(const [b, r] of [['Materias', 'r-materias'], ['Cómo funciona', 'r-como-funciona'], ['Cómo te lo contamos', 'r-como-contamos']]){ await tocar(b); await p.waitForTimeout(150); sí((await dichos()).at(-1) === r, `«${b}» en el final (${r})`); }
+await cap('9c-materias');
 await tocar('Créditos'); await cap('9b-creditos');
 const vz = await p.evaluate(async () => { const b = __monarca.elegibles().find((m) => /^Voz/.test(m.userData.panel.titulo)); return !!b; });
 await tocar('Otra vez'); await p.waitForTimeout(200);
