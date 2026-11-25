@@ -58,7 +58,7 @@ sí(await p.evaluate(() => __monarca.narrador.actual === 'e-mariposa'), 'y luego
 const vis = await p.evaluate(() => ({ mariposa: __monarca.grupo.children.some((c) => c.visible && c.children.length && c.children[0].isGroup) }));
 sí(vis.mariposa, 'se ve el ejemplar escaneado de monarca');
 await tocar('Siguiente'); sí(await escena() === 'ciclo', 'Siguiente → Su ciclo de vida'); await p.waitForTimeout(2000); await cap('2a-ciclo');
-sí((await p.evaluate(() => window.__monarca.grupo.children.find((g) => g.isGroup && g.children.length === 4)?.children.length)) === 4, 'las cuatro etapas: huevo, oruga, crisálida y adulta');
+await p.waitForTimeout(6500); sí(await p.evaluate(() => __monarca.ciclo.activo && __monarca.ciclo.capa.visible && __monarca.ciclo.etapa >= 2 && __monarca.ciclo.dia >= 0), 'el ciclo de 16 etapas corre solo, con fotos reales y los días contados');
 await tocar('Siguiente'); sí(await escena() === 'flores', '→ Flores en el camino');
 await p.evaluate(() => window.__monarca.armadoFlores); await p.waitForTimeout(300);
 await p.waitForFunction(() => __monarca.narrador.actual === 'e-flores' && __monarca.narrador.falta() > 3, null, { timeout: 10000 }).catch(() => {});
@@ -66,7 +66,14 @@ for(let i = 0; i < 5; i++){ sí(await tocar('Plantar'), `planta la flor ${i + 1}
 const fl = await p.evaluate(() => ({ flores: window.__monarca.grupo.children.find((g) => g.isGroup && g.children.length === 5 && g.children.every((c) => c.isMesh))?.children.length || 0, lugares: window.__monarca.elegibles().filter((b) => b.userData.panel.titulo === 'Plantar').length }));
 const df = await dichos(); sí(df.includes('r-flor-hablando') && df.includes('r-flores-rapido'), `plantar mientras explica: «Me gusta tu iniciativa»; y las cinco de golpe: «Eso no es jardinería: es una carrera» (${df.slice(-6).join(' → ')})`);
 sí(fl.flores === 5 && fl.lugares === 0, `crecen las cinco flores y ya no quedan lugares (${fl.flores} flores)`); await cap('2c-flores');
-await tocar('Siguiente'); sí(await escena() === 'migracion', '«¡Listo!» → La migración'); await p.waitForTimeout(6500); await cap('3-migracion');
+await tocar('Siguiente'); sí(await escena() === 'maceta', '«¡Listo!» → Tu maceta');
+/* LA MACETA (maceta.js): tierra → hoyo → semilla → cubrir → regar → crece; con la herramienta equivocada, el narrador lo dice */
+await p.evaluate(() => __monarca.maceta.armado); await p.waitForTimeout(300);
+await tocar('Pala'); sí(await p.evaluate(() => __monarca.maceta.paso === 'tierra' && !__monarca.maceta.mano) && (await dichos()).includes('k-primero'), 'la maceta: la herramienta que no va no se toma («primero lo primero»)');
+for(const [h, w] of [['Tierra', 900], ['Maceta', 3600], ['Pala', 900], ['Maceta', 3600], ['Semillas', 900], ['Maceta', 3600], ['Pala', 900], ['Maceta', 3600], ['Regadera', 900], ['Maceta', 3600]]){ await tocar(h); await p.waitForTimeout(w); }
+await p.waitForFunction(() => __monarca.maceta.listo, null, { timeout: 12000 }).catch(() => {});
+sí(await p.evaluate(() => __monarca.maceta.listo && ['k-hoyo', 'k-semilla', 'k-cubrir', 'k-regar', 'k-crece', 'k-lista'].every((x) => __monarca.narrador.pedidos.includes(x))), 'la maceta completa: tierra, hoyo, semilla, cubrir, regar y la planta crece'); await cap('2d-maceta');
+await tocar('Siguiente'); sí(await escena() === 'migracion', 'la planta lista → La migración'); await p.waitForTimeout(6500); await cap('3-migracion');
 await tocar('Siguiente'); sí(await escena() === 'cuerpo', '→ ¿Y si fueras tú? (educación física)'); await p.waitForTimeout(400);
 await tocar('Caminando'); await p.waitForTimeout(200); sí((await dichos()).at(-1) === 'r-cuerpo-camina', 'Caminando: 600 h y 136,800 kcal'); await cap('3b-cuerpo');
 await tocar('Corriendo'); await p.waitForTimeout(200); sí((await dichos()).at(-1) === 'r-cuerpo-corre' && (await p.evaluate(() => __monarca.estado.cuerpo)) === 1, 'y luego Corriendo: más energía en total');

@@ -155,6 +155,17 @@ export const LINEAS = {
   'm-vueltas-1': ['s', 'Ya no estás dando vueltas. Se agradece. El narrador también se marea.'],
   'm-cielo-santuario': ['s', 'Ahora sí, mira hacia arriba, como hace rato. Pero esta vez hay algo que ver.'],
   'm-piso-flores': ['s', 'Hace rato buscabas algo en el piso. Buenas noticias: ahora el piso es lo importante.'],
+  /* ── la maceta (maceta.js) ── */
+  'e-maceta': ['n', 'Ahora, jardinería de precisión. Vas a sembrar una planta para las mariposas. Primero, toma la bolsa de tierra y llévala a la maceta.'],
+  'k-primero': ['s', 'Eso todavía no. Primero lo primero. La mariposa te está señalando qué sigue.'],
+  'k-otra': ['s', 'Ésa no. Mira dónde se posó la mariposa: ésa es la que sigue.'],
+  'k-hoyo': ['s', 'Tierra lista. Ahora toma la pala y haz un hoyo.'],
+  'k-semilla': ['s', 'Perfecto. Toma una semilla del semillero y ponla en el hoyo.'],
+  'k-cubrir': ['s', 'Ahora cúbrela con tierra. Con la pala otra vez.'],
+  'k-regar': ['s', 'Falta el agua. La regadera, por favor.'],
+  'k-crece': ['s', 'Y ahora, paciencia. Mucha paciencia. Bueno, la vamos a acelerar un poquito.'],
+  'k-lista': ['s', 'Una planta nueva para el ecosistema. Y mira quién llegó a visitarla.'],
+  'r-tarda-maceta': ['s', 'No hay ninguna prisa. La naturaleza tardó millones de años en desarrollar estos mecanismos. Aunque, sinceramente, esperaba que llenar una maceta nos llevara un poquito menos.'],
   'r-regresa-exp': ['s', 'Regresaste. Sabía que volverías.'],
 };
 export const VOCES = { n: 'google:Orus', s: 'google:Charon' };

@@ -21,6 +21,8 @@ import { crearMemoria } from './memoria.js';
 import { crearEcosistema } from './ecosistema.js';
 import { crearRotulos } from './rotulos.js';
 import { crearTutorial } from '../tutorial.js';
+import { crearCiclo } from './ciclo.js';
+import { crearMaceta } from './maceta.js';
 import { t as tr, UI, ESCENAS, PREGUNTAS, MATERIAS, NOMBRE_MATERIA, FUNCIONA, CONTAMOS, CREDITOS } from './guion.js';
 
 const AQUI = (f) => new URL(f, import.meta.url).href;
@@ -103,7 +105,7 @@ export function montarMonarca(V){
   /* EL ECOSISTEMA (ecosistema.js) */
   const eco = crearEcosistema({ THREE, render: V.render, grupo: m.grupo, cabeza: V.cabeza }); m.eco = eco;
   const PAPEL = { bienvenida: ['ambiente', 8], mariposa: ['ambiente', 4], ciclo: ['ambiente', 4], flores: ['ambiente', 5], migracion: ['rumbo', 12],
-    cuerpo: ['ambiente', 6], santuario: ['racimo'], tala: ['ambiente', 1], campo: ['ambiente', 2], decision: ['ambiente', 3], cuestionario: ['nada'], final: ['ambiente', 14] };
+    cuerpo: ['ambiente', 6], maceta: ['ambiente', 2], santuario: ['racimo'], tala: ['ambiente', 1], campo: ['ambiente', 2], decision: ['ambiente', 3], cuestionario: ['nada'], final: ['ambiente', 14] };
   function papelDe(E){ const [p, n] = PAPEL[E.id] || ['nada']; eco.poner(p, { cuantas: n }); eco.guiar(null); if(eco.listo && E.monarca === 'colonia') colonia.visible = false; }
   let tocoEco = false;
   eco.alTocar = () => { memo.apuntar('mariposa', ESCENAS[st.escena]?.id, ahora()); if(!tocoEco){ tocoEco = true; reaccionar('r-tocar-mariposa'); } };
@@ -194,6 +196,18 @@ export function montarMonarca(V){
       x.font = '700 28px system-ui, -apple-system, sans-serif'; x.strokeText(e.dias, w / 2, h * .92); x.fillStyle = '#E8DCF2'; x.fillText(e.dias, w / 2, h * .92); e.p.listo(); });
   }
 
+  /* ── el ciclo completo: 16 etapas con fotos reales y día y noche (ciclo.js) ── */
+  const ciclo = crearCiclo({ THREE, V, grupo: m.grupo, eco, aqui: AQUI, idioma: () => st.idioma, cielo }); m.ciclo = ciclo;
+
+  /* ── la maceta: sembrar con tus manos (maceta.js) ── */
+  const maceta = crearMaceta({ THREE, V, grupo: m.grupo, aqui: AQUI, eco, idioma: () => st.idioma,
+    cargar: (u) => new GLTFLoader().loadAsync(u),
+    decir: (id) => { if(st.voz) { if(narr.actual && narr.actual.startsWith('e-')) narr.interrumpir(id); else narr.decir([id]); } },
+    /* la planta que crece: la variedad más llena de las flores (la que tiene más vértices) */
+    flor: () => { const v = [...variedades].sort((a, b) => b.geometry.attributes.position.count - a.geometry.attributes.position.count)[0]; if(!v) return null; const f = new THREE.Group(); const c = v.clone(); c.scale.setScalar(1.25); f.add(c); return f; },
+    alTerminar: () => { if(ESCENAS[st.escena]?.id === 'maceta') ponerBotones([boton(L(UI.siguiente), () => mostrar(st.escena + 1)), vozBoton()], -.2); } });
+  m.maceta = maceta;
+
   /* ── la voz ── */
   const vozBoton = () => { const b = boton(L(st.voz ? UI.vozSi : UI.vozNo), () => {
     const juega = ev('voz', { prendida: !st.voz });
@@ -227,7 +241,7 @@ export function montarMonarca(V){
 
   /* ── las escenas ── */
   let t0 = 0;
-  function limpiarEscena(){ rot.limpiar(); ponerEtapas(null); quitarLugares(); flores.visible = false; objetivo = null; mapaP.malla.visible = false; mariposa.visible = colonia.visible = false; eco.guiar(null); }
+  function limpiarEscena(){ rot.limpiar(); ponerEtapas(null); ciclo.parar(); maceta.parar(); quitarLugares(); flores.visible = false; objetivo = null; mapaP.malla.visible = false; mariposa.visible = colonia.visible = false; eco.guiar(null); }
   function mostrar(i, pre = []){
     const ant = st.escena, explicando = narr.actual && narr.actual.startsWith('e-') && narr.falta() > 2.5;
     const pp = i === ant + 1 ? ev('siguiente') : i === ant - 1 ? ev('atras') : null;
@@ -245,9 +259,10 @@ export function montarMonarca(V){
     mariposa.visible = E.monarca === 'vuela' || E.monarca === 'cerca'; colonia.visible = E.monarca === 'colonia'; tocoEco = false; papelDe(E);
     rot.titulo(L(E.titulo), materiasDe(E)); rot.claves((E.claves || []).map((c) => ({ ...c, grande: L(c.grande), chico: L(c.chico) }))); rot.fuente(fuenteDe(E.fuente)); rot.avanzar(0);
     const siguiente = () => mostrar(i + 1);
-    ponerEtapas(E.etapas); if(E.etapas) pintarEtapas(0);
+    if(E.id === 'ciclo') ciclo.empezar();
     flores.visible = E.juego === 'flores';
     if(E.juego === 'flores'){ juegoFlores(); decir(); ponerBotones([boton(L(UI.atras), () => mostrar(i - 1), .36), vozBoton()], -.2); return; }
+    if(E.juego === 'maceta'){ maceta.empezar(); decir(); ponerBotones([boton(L(UI.atras), () => mostrar(i - 1), .36), vozBoton()], .62); return; }
     if(E.id === 'cuestionario') return preguntar([...pre, 'e-cuestionario']);
     if(E.id === 'cuerpo'){
       decir();
@@ -272,7 +287,7 @@ export function montarMonarca(V){
         boton(L(UI.creditos), () => { rot.mensaje(L(UI.creditos), L(CREDITOS), { chico: true }); narr.decir([ev('creditos') || 'r-creditos']); }, .4),
         boton(L(UI.otraVez), () => reiniciar(), .36)]); return; }
     decir();
-    ponerBotones([...(i > 0 ? [boton(L(UI.atras), () => mostrar(i - 1), .36)] : []), boton(L(E.boton || UI.siguiente), siguiente), vozBoton()], E.etapas ? -.46 : -.42);
+    ponerBotones([...(i > 0 ? [boton(L(UI.atras), () => mostrar(i - 1), .36)] : []), boton(L(E.boton || UI.siguiente), siguiente), vozBoton()], E.id === 'ciclo' ? -.76 : -.42);
   }
   function preguntar(pre = []){
     const E = ESCENAS[st.escena], q = PREGUNTAS[st.pregunta], n = st.pregunta + 1;
@@ -323,7 +338,7 @@ export function montarMonarca(V){
   m.cuadro = () => {
     const t = ahora(), E = ESCENAS[st.escena];
     subtitulos(tSub ? Math.min(.1, t - tSub) : 1 / 60); tSub = t;
-    rot.cuadro(t); eco.cuadro(t, V.extra.manos || []);
+    rot.cuadro(t); eco.cuadro(t, V.extra.manos || []); V.extra.narrando = narr.ocupado;   /* los tonos bajan cuando habla */
     if(alCallar && !narr.ocupado){ const f = alCallar; alCallar = null; f(); }
     if(st.fase === 'cuenta'){
       const n = 5 - Math.floor(t - cuentaT0);
@@ -340,7 +355,7 @@ export function montarMonarca(V){
     }
     /* las cifras salen cuando el narrador las dice; con la voz apagada, una cada pocos segundos */
     const pr = narr.progreso(); if(pr && pr.id === 'e-' + E.id) rot.avanzar(pr.f); else if(!st.voz) rot.avanzar((t - t0) / 14); else if(!narr.ocupado && t - t0 > 2) rot.avanzar(1);
-    if(E.etapas) pintarEtapas(Math.floor((t - t0) / 1.6) % E.etapas.length);
+    ciclo.cuadro(t); maceta.cuadro(t, V.extra.manos || []);
     for(const f of flores.children){ const k = Math.min(1, (t - f.userData.nace) / .8); f.scale.setScalar(Math.max(.01, 1 - Math.pow(1 - k, 3))); }
     if(colonia.visible) for(const c of colonia.children){ const b = c.userData.base, f = c.userData.fase;
       c.position.set(b.x + Math.sin(t * .4 + f) * .25, b.y + Math.sin(t * .9 + f) * .12, b.z + Math.cos(t * .4 + f) * .25); c.rotation.set(0, t * .4 + f, Math.sin(t * 11 + f) * .3); }
@@ -397,7 +412,7 @@ export function montarMonarca(V){
     if(st.fase !== 'escenas') st.fase = 'idioma';
     if(antes){ V.cuarto.visible = antes.cuarto; if(window.__temshop) window.__temshop.grupo.visible = !!antes.tem; if(antes.mixta) V.ponerMixta(true); }
   };
-  m.elegibles = () => [...botones, ...lugares, ...tut.elegibles()];
+  m.elegibles = () => [...botones, ...lugares, ...tut.elegibles(), ...maceta.elegibles()];
   /* ATRÁS: en el tutorial, el gesto de atrás (palma arriba o Círculo) lo SALTA (Carlos, 25 nov). Fuera de él, en
      exposición no hay «Atrás»: sólo la salida del docente */
   Object.defineProperty(m, 'atras', { get: () => (st.fase === 'tutorial' ? () => tut.saltar() : V.kiosco.activo ? undefined : () => V.ir('juegos')), configurable: true });
