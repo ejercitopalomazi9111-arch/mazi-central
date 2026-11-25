@@ -105,7 +105,14 @@ jobs:
         if: steps.toca.outputs.va == 'si'
         working-directory: ${{ matrix.carpeta }}
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        # el sitio corre su propio `node build.mjs` (lo manda wrangler.jsonc)
-        run: npx --yes wrangler@4 deploy
+          FICHA: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          # el número de la cuenta de Carlos (no es secreto: sale en cada dirección del panel)
+          CLOUDFLARE_ACCOUNT_ID: faa3f1c20e5962a4e225cc9015b6d78c
+        # La llave se limpia antes de usarla (25 nov: Cloudflare la daba por buena desde fuera y aquí decía «Invalid
+        # access token»: se había guardado con un espacio, un salto de línea, comillas o «Bearer» pegados).
+        # El sitio corre su propio `node build.mjs` (lo manda wrangler.jsonc).
+        run: |
+          limpia=$(printf '%s' "$FICHA" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^Bearer[[:space:]]*//' -e 's/^"//' -e 's/"$//' | tr -d '\r\n ')
+          echo "::add-mask::$limpia"
+          echo "La llave mide ${#limpia} caracteres (la guardada medía ${#FICHA})."
+          CLOUDFLARE_API_TOKEN="$limpia" npx --yes wrangler@4 deploy
