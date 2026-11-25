@@ -63,6 +63,7 @@ import { montarObjetos } from './objetos.js';
 import { montarMusica } from './musica.js';
 import { montarTemShop } from './temshop.js';
 import { montarMonarca } from './monarca/monarca.js';
+import { montarFisica } from './fisica/fisica.js';
 import { crearPantallaWeb } from './pantalla.js';
 import { crearAgarre, crearMoverConControl } from './agarre.js';
 const { THREE, B } = V;
@@ -88,7 +89,7 @@ try{ const L = JSON.parse(localStorage.getItem('mazivr.errores') || '[]'), u = L
 /* LA VERSIÓN (Carlos, 19 nov: «un mensajito que diga la versión en la que estás y que se actualizó»). Va igual que la
    de sw.js (pruebas-sinred.mjs lo revisa). La primera vez que se abre una versión nueva dice «actualizada»; y si el
    trabajador de fondo ya trae una más nueva que esta página, recarga sola (sólo en la entrada, una vez) */
-const VERSION = 42;
+const VERSION = 43;
 { let antes = 0; try{ antes = +localStorage.getItem('mazivr.version') || 0; if(antes !== VERSION) localStorage.setItem('mazivr.version', VERSION); }catch{}
   const el = $('#version'); el.textContent = antes < VERSION ? `v${VERSION} · actualizada` : `v${VERSION}`; el.classList.toggle('nueva', antes < VERSION); }
 const versionSW = (n) => { if(!(n > VERSION) || document.body.classList.contains('dentro')) return;
@@ -209,7 +210,7 @@ async function montar(){
   V.registrar('inicio', inicio);
 
   /* JUEGOS y LA SALA: lo que viene (fase 2 y 3 en PLAN.md) */
-  for(const [nombre, items] of [['juegos', [['Sables', 'swords', '', () => V.ir('sables')], ['Objetos', 'box', '', () => V.ir('objetos')], ['Monarca', 'compass', '', () => V.ir('monarca')], ['VS Tiles', 'music', 'Pronto']]], ['sala', [['La Sala', 'users', 'Pronto']]]]){
+  for(const [nombre, items] of [['juegos', [['Sables', 'swords', '', () => V.ir('sables')], ['Objetos', 'box', '', () => V.ir('objetos')], ['Monarca', 'compass', '', () => V.ir('monarca')], ['Física', 'atom', '', () => V.ir('fisica')], ['VS Tiles', 'music', 'Pronto']]], ['sala', [['La Sala', 'users', 'Pronto']]]]){
     const v = { grupo: new THREE.Group() }; const L = [];
     for(const [i, [t, ic, sub, fn]] of items.entries()){
       const p = await V.tarjeta({ titulo: t, icono: ic, sub, apagada: !fn }); const a = (i - (items.length - 1) / 2) * 20 * Math.PI / 180;
@@ -236,6 +237,7 @@ async function montar(){
 
   /* MONARCH XR: la experiencia de la mariposa monarca (monarca/monarca.js); con ?monarca entra directo en modo exposición */
   montarMonarca(V);
+  montarFisica(V);
 
   /* MÚSICA: buscar canciones, radio de México y las del teléfono; sigue sonando en todo el visor (musica.js) */
   window.__musica = montarMusica(V, { pedirTexto, CANCIONES });
