@@ -36,7 +36,8 @@ export function montarMonarca(V){
   let avisoVoz = false;
   const narr = crearNarrador({ actx: V.audio, idioma: () => st.idioma,
     base: (id, l) => AQUI(`medios/narrador/${l === 'en' ? 'en/' : ''}${id}.mp3`), sinVoz: () => !st.voz,
-    alFallar: (x) => { if(avisoVoz) return; avisoVoz = true; V.hud('Voz: ' + x.slice(0, 40), 4); } });
+    /* un audio que todavía no se genera (404) lo lee la voz del teléfono, sin avisar: no es una falla */
+    alFallar: (x) => { if(avisoVoz || /HTTP 404/.test(x)) return; avisoVoz = true; V.hud('Voz: ' + x.slice(0, 40), 4); } });
   m.narrador = narr;
   /* decir y avisar al terminar (el tutorial espera a que se acabe de explicar) */
   let alCallar = null;

@@ -655,6 +655,8 @@ dependemos.
 
    | un trabajador de fondo «lo guardado primero y se actualiza por detrás» deja la app al día en la siguiente visita | lo actualiza ARCHIVO POR ARCHIVO, conforme se piden: el teléfono junta la página de una versión con módulos de otra, y un `import { x }` que la otra no exporta en Safari truena como «Importing a module script failed» | el iPhone de Carlos se quedó en la v38 de Mazi VR con ese error, con producción en la v39. Ahora cada versión se guarda ENTERA al instalar (`?v=N`, sin caché, y la página tiene que traer `VERSION = N` o no se instala), lo de la app sale sólo de su versión y, si un módulo no carga, se tira lo guardado y se recarga una vez (`vr/pruebas-version.mjs`) |
 
+   | si existe el objeto `YT.Player`, ya se le pueden pedir `seekTo`, `pauseVideo` o `playVideo` | sus funciones no existen hasta su `onReady`: brincar ±10 s con el control mientras el video carga tronaba «y.seekTo is not a function» | lo reportó Carlos con captura (Mazi VR v40, cine). Las llamadas al reproductor van con `?.()` (`brincar` y `pausa` en `vr/pantalla.js`) |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 13. **CERO PARPADEO. Nunca, jamás, de los jamases** (Carlos, 14 nov, por el ajedrez de CARYMO). Tocar algo o que
