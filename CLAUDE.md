@@ -261,6 +261,10 @@ márgenes de 2.54 cm, Times New Roman 12 o Calibri 11, interlineado doble, citas
 formato, manda el encargo. **Al terminar cada tarea se apunta en el documento de
 recapitulación** (Claude Docs «Tareas de Lorena · recapitulación»), por materia y número de actividad.
 El nombre de la alumna y sus datos NO van en este repo: es público.
+**Los datos de la matrícula NO SE OLVIDAN** (Carlos, 23 nov: «me caga que olvides los detalles de mi matrícula»):
+están en el CLAUDE.md **privado** de `palomazi`, sección «La matrícula y los datos de la escuela». Ahí vienen la
+alumna, la matrícula, la carrera, el grupo, el cuatrimestre, y cada materia con su docente. Se lee **antes** de
+cualquier tarea. Si sale un dato nuevo, se agrega allá en el momento. Aquí no se copia nunca.
 
 **Subdivisiones · dicho por Carlos el 16 de octubre:** **All's fashion · clothes & more** es
 **de Grupo Mazi y de Carlos**, no un cliente de fuera: *«all's fashion es una subdivisión que forma
