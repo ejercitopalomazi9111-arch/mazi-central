@@ -197,7 +197,11 @@ export function crearNarrador({ actx, base, sinVoz = () => false, alFallar = () 
   const precargar = (ids) => Promise.all((ids || Object.keys(LIN())).map(bajar));
   function parar(){ if(fuente){ fuente.onended = null; try{ fuente.stop(); }catch{} fuente = null; } try{ speechSynthesis.cancel(); }catch{} }
   /* sin audio (archivo que falta o no se pudo leer): la voz del teléfono con el mismo texto */
-  function porTelefono(id, fin){
+  function porTelefono(id, fin0){
+    /* si el teléfono nunca avisa que terminó (sin voces instaladas, o Safari que se calla), se sigue solo al tiempo que
+       tardaría en leerlo: el narrador nunca se queda atorado */
+    let listo = false; const fin = () => { if(listo) return; listo = true; clearTimeout(tope); fin0(); };
+    const tope = setTimeout(fin, (Math.max(1.5, (linea(id)?.[1] || '').length / 14) + 1.5) * 1000);
     try{ const L = linea(id); const u = new SpeechSynthesisUtterance(L[1]); u.lang = idioma() === 'en' ? 'en-US' : 'es-MX'; u.rate = 1;
       const en = idioma() === 'en', v = speechSynthesis.getVoices().find((x) => (en ? /en[-_]US/i : /es[-_]MX/i).test(x.lang)) || speechSynthesis.getVoices().find((x) => (en ? /^en/i : /^es/i).test(x.lang)); if(v) u.voice = v;
       u.pitch = L[0] === 's' ? .7 : 1; u.onend = u.onerror = fin; speechSynthesis.speak(u); }catch{ fin(); }
