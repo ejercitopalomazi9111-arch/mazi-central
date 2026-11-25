@@ -1,0 +1,14 @@
+{
+  "titulo": "Grupo Mazi · Alas nuevas (cambio de imagen, noviembre 2026)",
+  "voces": { "Narrador": "google:Charon" },
+  "lento": { "Narrador": 1.04 },
+  "voz_de_la_casa": "Voz de Google por La Sala porque Chris (ElevenLabs) no tiene saldo; cuando haya, va con Chris y se vuelve a armar.",
+  "lineas": [
+    { "id": "01", "voz": "Narrador", "en": 0.7, "txt": "Grupo Mazi empezó con *una paloma.*" },
+    { "id": "02", "voz": "Narrador", "pausa": 0.7, "txt": "Luego aprendimos a construir, *pieza por pieza.*" },
+    { "id": "03", "voz": "Narrador", "pausa": 0.9, "txt": "Hoy, la paloma regresa." },
+    { "id": "04", "voz": "Narrador", "pausa": 1.3, "txt": "*Completa.*", "sinSub": true },
+    { "id": "05", "voz": "Narrador", "pausa": 1.1, "txt": "Mismo equipo. Mismas ganas. *Alas nuevas.*", "sinSub": true },
+    { "id": "06", "voz": "Narrador", "pausa": 0.6, "txt": "Grupo Mazi. Si no existe la herramienta, *se construye la herramienta.*", "sinSub": true }
+  ]
+}

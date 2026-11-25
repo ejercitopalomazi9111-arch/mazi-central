@@ -112,6 +112,9 @@ const VA = [
      MP3 y portada, todo en el teléfono. Carlos lo pidió para un podcast de
      la escuela. Trae el codificador LAME (vendor/, LGPL) con su licencia. */
   'podcast',
+  /* Mazi VR (18 nov): el «Quest» propio de Carlos, un iPhone en un visor y un control de PlayStation.
+     Usa la cámara (realidad mixta): su regla va en _headers. */
+  'vr',
   /* La Sociedad de Alumnos del Rembrandt (Carlos, 15 de octubre): buzón,
      votaciones, eventos, chats, muro revisado, material, torneos, el panel de
      la sociedad y el reloj de clases. Habla con el servidor de Fadori y usa
@@ -122,6 +125,11 @@ const VA = [
   'secretaria',
   /* El cielo de Sylcred: la página de quién soy y cómo me ven las demás IAs. */
   'sylcred',
+  /* Alba: la app del ciclo que Luis le hizo a su novia (Godines, 16 nov). La
+     versión web y el APK de Android, para que Carlos la revise. Todo se guarda
+     en el teléfono de quien la usa: aquí no viaja ningún dato. La llave de firma
+     del APK NO está en el repo ni debe entrar. */
+  'alba',
 ];
 
 /* ARCHIVOS SUELTOS (Carlos, 5 nov: «pon ABSOLUTAMENTE TODO lo que hayamos hecho en la Central para
@@ -316,11 +324,15 @@ async function copiar(desde, hasta){
   }
 }
 
+/* SE PUBLICA CON OTRO NOMBRE (Carlos, 15 nov: Smiley's no ha pagado, «cámbiasela de ubicación para que no la
+   puedan estar usando»): /smileys/ deja de existir y la página vive en una dirección que el cliente no conoce.
+   Cuando paguen, se borra el renglón y vuelve a /smileys/. */
+const PUBLICA_COMO = { smileys: 'm-41ea842b' };
 for(const cosa of VA){
   const desde = join(RAIZ, cosa);
   if(!existsSync(desde)){ console.warn('· falta y se salta: ' + cosa); continue; }
   if(NO_VA(desde)){ saltados++; continue; }
-  await copiar(desde, join(DIST, cosa));
+  await copiar(desde, join(DIST, PUBLICA_COMO[cosa] || cosa));
 }
 
 /* Que nadie indexe lo que todavía no está para el público. Cuando el sitio

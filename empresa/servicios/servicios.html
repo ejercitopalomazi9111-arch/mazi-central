@@ -40,9 +40,11 @@ h2{ font-family:var(--s); font-size:25px; font-weight:700; letter-spacing:-.03em
    y el visor del iPhone las pinta como RECUADROS SÓLIDOS (Carlos, 23 oct: «este recuadro morado
    está feísimo», era la sombra de la Recomendada). Los brillos van en colores opacos. */
 .marca{ display:flex; align-items:center; gap:12px }
-.marca img{ display:block; height:44px; margin:-8px 0 -8px -10px }
-.marca span{ margin-left:auto; font-size:11px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:#B9AEC6 }
-.cabeza h1{ margin-top:22px; font-family:var(--s); font-size:43px; line-height:.98; font-weight:700; letter-spacing:-.045em; max-width:560px }
+/* el logo nuevo (paloma 2026) es vertical: va a la derecha de la portada, sin su capa de brillo (logo-plano.svg) para
+   que el PDF no traiga máscaras */
+.logo-nuevo{ position:absolute; right:46px; top:18px; height:172px; z-index:1 }
+.marca span{ font-size:11px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:#B9AEC6 }
+.cabeza h1{ margin-top:22px; font-family:var(--s); font-size:43px; line-height:.98; font-weight:700; letter-spacing:-.045em; max-width:500px }
 .cabeza h1 em{ font-style:normal; color:#C77DFF }
 .cabeza .bajada{ margin-top:14px; font-size:15px; color:#CFC6DA; max-width:520px; line-height:1.4 }
 .sellos{ display:flex; gap:10px; margin-top:16px; flex-wrap:wrap }
@@ -168,9 +170,10 @@ h2{ font-family:var(--s); font-size:25px; font-weight:700; letter-spacing:-.03em
 <!-- ═════════════════ HOJA 1 ═════════════════ -->
 <section class="hoja">
   <header class="cabeza">
-    <div class="marca"><img src="../../marca/logo/original-claro.svg" alt="Grupo Mazi"><span>Servicios y precios · 2026</span></div>
+    <img class="logo-nuevo" src="../../marca/paloma-2026/logo-plano.svg" alt="Grupo Mazi">
+    <div class="marca"><span>Grupo Mazi · Servicios y precios 2026</span></div>
     <h1>Tu negocio, <em>en internet</em> y trabajando por ti.</h1>
-    <p class="bajada">Páginas web, apps, video y marca hechos a la medida. Entregamos rápido y nos quedamos contigo después de entregar.</p>
+    <p class="bajada">Herramientas para tu negocio, apps, páginas web, video y marca, hechos a la medida. Entregamos rápido y nos quedamos contigo después de entregar.</p>
     <div class="sellos"><span>Precios claros, sin letras chiquitas</span><span>Tu página es tuya</span><span>Sin comisiones por venta</span><span>Avances que puedes ver</span></div>
   </header>
 

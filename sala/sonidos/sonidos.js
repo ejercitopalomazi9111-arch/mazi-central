@@ -10,7 +10,8 @@
    · `encender(false)` los apaga (el ajuste de cada app).
    ═════════════════════════════════════════════════════════════════════════ */
 const BASE = new URL('./', import.meta.url);
-export const TODOS = ['toque', 'pop', 'whoosh', 'golpe', 'bien', 'mal', 'logro', 'moneda', 'combo', 'hielo', 'voltear', 'subir'];
+export const TODOS = ['toque', 'pop', 'whoosh', 'golpe', 'bien', 'mal', 'logro', 'moneda', 'combo', 'hielo', 'voltear', 'subir',
+  'comer', 'burbujas', 'rebote', 'compra', 'racha', 'nivel', 'mensaje', 'invita', 'descanso', 'perdio'];
 let ctx = null, encendido = true, maestro = null;
 const buffers = new Map(), pidiendo = new Map();
 const ultimo = new Map();

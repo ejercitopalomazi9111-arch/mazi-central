@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>CARYMO · Mascotas</title>
+<!-- CARYMO 3 · MASCOTAS Y PERSONAJE (paquete del inversionista). La app de verdad: el cuarto de la mascota, las
+     caricias y la pelota, el vestidor y el jefe del tema estudiando juntos. Voz de la casa (Charon).
+     Música: «Brightly Fancy», Kevin MacLeod (incompetech.com), CC BY 4.0. -->
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+</head><body>
+<script type="module">
+import { montar, fx } from '../32-carymo/serie.js';
+window.listo = montar({
+  dur: 33,
+  musica: { archivo: '/tmp/claude-0/musica/Brightly_Fancy.mp3', desde: 0, vol: .26, entrada: .2, fin: 2.4 },
+  gancho: { a: 0, b: 3.3, html: 'Estudiar solo<br>da <em>flojera</em>.' },
+  logo: { a: 3.2, b: 6.5 },
+  escenas: [
+    { a: 6.4, b: 9.6, toma: 'cuarto', desde: 'cuarto-0.6', hasta: 'caricia', tit: 'Tu mascota,<br><em>en tu cuarto</em>' },
+    { a: 9.6, b: 13.4, toma: 'cuarto', desde: 'caricia', hasta: 'atrapa+0.8', tit: 'La cuidas<br>y <em>juegas</em> con ella' },
+    { a: 13.4, b: 18.2, toma: 'cuarto', desde: 'cambia-0.4', hasta: 'vestir', tit: 'Crece<br><em>contigo</em>', chip: 'Más estudias, <b>más crece</b>' },
+    { a: 18.2, b: 22.0, toma: 'cuarto', desde: 'vestir', hasta: 'fin', tit: 'Viste a tu<br><em>personaje</em>' },
+    { a: 22.0, b: 26.5, toma: 'juntos', desde: 'jefe-0.6', hasta: 'vencido+1.3', tit: 'Contra el jefe,<br><em>juntos</em>' },
+  ],
+  cierre: { a: 26.5, frase: 'Nunca vuelves a<br>estudiar <em>solo</em>.' },
+  sonidos: [[fx('golpe'), 3.3, .4]],
+});
+</script></body></html>

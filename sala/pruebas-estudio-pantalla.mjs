@@ -81,7 +81,8 @@ export async function correr({ ok, almacen, atenderEstudio }){
       res.writeHead(r.status, { 'content-type': 'application/json' }); res.end(Buffer.from(await r.arrayBuffer())); return;
     }
     if(u.pathname.endsWith('/ia-texto')){
-      iaVeces++;
+      /* las cátedras que CARYMO prepara sola en segundo plano no cuentan: aquí se mide lo que pide la LECCIÓN */
+      if(!/CLASE que se DIBUJA/.test(cuerpo)) iaVeces++;
       if(iaLenta) await new Promise((r) => setTimeout(r, iaLenta));
       res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(contestarIA(JSON.parse(cuerpo)))); return;
     }
@@ -98,6 +99,8 @@ export async function correr({ ok, almacen, atenderEstudio }){
   /* Wikipedia de mentiras (aquí no hay internet): la foto del corazón es una del repo */
   await ctx.route(/wikipedia\.org/, (r) => r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ title: 'Corazón humano', thumbnail: { source: `${base}/urban-pest/web/img/planta.webp` } }) }));
   const pagina = await ctx.newPage();
+  /* cuando tu mascota crece sale su fiesta (carymo/companero.js · crecio): aquí se cierra sola para seguir el recorrido */
+  await pagina.addLocatorHandler(pagina.locator('.fiesta-crece button'), async (b) => { await b.click(); });
   const errores = [];
   pagina.on('pageerror', (e) => errores.push(e.message));
   pagina.on('console', (m) => { if(m.type() === 'error' && !/favicon|404/.test(m.text())) errores.push(m.text()); });
@@ -111,6 +114,16 @@ export async function correr({ ok, almacen, atenderEstudio }){
     await pagina.click('.siguiente [data-nodo]');
     await pagina.waitForSelector('.capa.pizarra iframe');
     const src = decodeURIComponent((await pagina.getAttribute('.capa.pizarra iframe', 'src')).replace(/\+/g, ' '));
+    /* la cabecera de «Ya la vi» se dobla sola para dejarle la pantalla al pizarrón, y se vuelve a abrir (Carlos, 13 nov) */
+    if(!catedra.revisada){
+      catedra.revisada = true;
+      await espera(4400);
+      ok(await pagina.evaluate(() => document.querySelector('.capa.pizarra').classList.contains('plegada')) && await pagina.isVisible('.piz-abrir') && await pagina.isHidden('[data-vista]'),
+        'a los 4 s la cabecera de la clase se dobla en una flechita y el pizarrón usa la pantalla');
+      if(process.env.FOTOS) await pagina.screenshot({ path: process.env.FOTOS + '/clase-plegada.png' });
+      await pagina.click('.piz-abrir'); await espera(200);
+      ok(await pagina.isVisible('[data-vista]'), 'la flechita la vuelve a abrir con «Ya la vi»');
+    }
     await pagina.click('[data-vista]'); await pagina.waitForSelector('.camino'); await espera(250);
     return src;
   }
@@ -118,11 +131,10 @@ export async function correr({ ok, almacen, atenderEstudio }){
   async function contestar(d, bien = true){
     const tipo = await pagina.getAttribute('#qCuerpo', 'data-tipo');
     const de = (t) => d.preguntas.filter((x) => x.tipo === t);
-    if(tipo === 'opcion'){ const preg = (await pagina.textContent('.habla .dice')).trim(); const q = de('opcion').find((x) => x.pregunta === preg); await pagina.click(`.opc:text-is("${q.opciones[bien ? q.correcta : (q.correcta + 1) % q.opciones.length]}")`); }
+    if(tipo === 'opcion'){ const preg = (await pagina.textContent('.habla .dice')).trim(); const q = [...de('opcion'), ...de('imagen').map((x) => ({ pregunta: x.pregunta, opciones: x.opciones.map((o) => o.texto), correcta: x.correcta }))].find((x) => x.pregunta === preg); await pagina.click(`.opc:text-is("${q.opciones[bien ? q.correcta : (q.correcta + 1) % q.opciones.length]}")`); }
     else if(tipo === 'hueco'){ const frase = (await pagina.textContent('.hueco-frase')).trim(); const q = de('hueco').find((x) => frase.startsWith(x.frase.split('___')[0].trim())); await pagina.click(`.ficha:text-is("${bien ? q.respuesta : q.distractores[0]}")`); }
     else if(tipo === 'escribir'){ const q = de('escribir')[0]; await pagina.fill('#escribe', bien ? q.respuesta.replace(/ó/g, 'o').replace(/z/, 's') : 'riñón izquierdo'); }
     else if(tipo === 'unir'){ const q = de('unir')[0]; if(!bien){ await pagina.click('[data-u="i0"]'); await pagina.click('[data-u="d1"]'); } for(let k = 0; k < q.pares.length; k++){ await pagina.click(`[data-u="i${k}"]`); await pagina.click(`[data-u="d${k}"]`); } }
-    else if(tipo === 'imagen'){ const q = de('imagen')[0]; await pagina.click(`[data-img="${bien ? q.correcta : (q.correcta + 1) % q.opciones.length}"]`); }
     else if(tipo === 'error'){ const q = de('error')[0]; await pagina.click(`[data-err="${bien ? q.error : (q.error + 1) % q.pasos.length}"]`); }
     else if(tipo === 'ordenar'){ const q = de('ordenar')[0]; const orden = bien ? q.pasos : [q.pasos[1], q.pasos[0], ...q.pasos.slice(2)]; for(const p of orden) await pagina.click(`.fichas.sueltas .ficha:text-is("${p}")`); }
     else if(tipo === 'clasificar'){ const q = de('clasificar')[0]; for(const [gi, g] of q.grupos.entries()) for(const it of g.items){ await pagina.click(`.ficha:text-is("${it}")`); await pagina.click(`[data-grupo="${bien ? gi : (gi + 1) % q.grupos.length}"]`); } }
@@ -203,7 +215,9 @@ export async function correr({ ok, almacen, atenderEstudio }){
     ok(pedidosIA.some((c) => /UNA lección/.test(c.sistema) && /Sistema circulatorio/.test(c.mensajes[0].texto)), 'el primer nivel se prepara solo mientras ves las cátedras');
 
     await pagina.evaluate(() => document.querySelectorAll('.nodo.cerrado')[2].click());
-    ok(await pagina.isVisible('text=Primero termina el que está brillando'), 'un nodo cerrado avisa en vez de abrirse');
+    ok(await pagina.isVisible('text=¿Saltar hasta aquí?') && /Te saltas 3 temas/.test(await pagina.textContent('#hoja')), 'tocar uno bloqueado pregunta si quieres saltar hasta ahí, y cuántos te saltas');
+    await pagina.click('[data-quedarme]'); await espera(250);
+    ok(!(await pagina.$('#hoja')) && (await pagina.$$('.nodo.cerrado')).length === 17 && !(await pagina.$('.nodo.saltado')), '«Mejor sigo en orden» no mueve nada');
 
     /* 1 · panorama de la unidad */
     ok(await siguienteEs() === 'Panorama de la unidad', 'lo primero es el panorama de la unidad');
@@ -240,6 +254,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
     await pagina.click('[data-empezar]');
     const datos = leccionDe('Sistema circulatorio');
     let vistas = 0, falle = false, vioPista = false, maxComboVisto = 0;
+    const reaccionesPj = [];
     const tiposVistos = new Set(), fotosTipo = new Set();
     for(let vuelta = 0; vuelta < 14; vuelta++){
       if(await pagina.isVisible('.resultado')) break;
@@ -252,6 +267,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
       ok(await pagina.isEnabled('[data-verificar]'), `«${tipo}»: Verificar se prende al contestar`);
       await pagina.click('[data-verificar]');
       await pagina.waitForSelector('.hoja-res');
+      reaccionesPj.push(await pagina.$eval('.pv-quiz .pv', (e) => e.dataset.reaccion || '').catch(() => 'sin personaje'));
       const estaLaFalle = !falle;
       if(!falle){
         falle = true;
@@ -264,16 +280,19 @@ export async function correr({ ok, almacen, atenderEstudio }){
       await pagina.click('[data-continuar]');
       await espera(150);
     }
-    ok(['opcion', 'hueco', 'escribir', 'unir', 'imagen', 'error', 'ordenar', 'clasificar'].every((t) => tiposVistos.has(t)), `salen los 8 tipos de ejercicio (${[...tiposVistos].join(', ')})`);
+    ok(['opcion', 'hueco', 'escribir', 'unir', 'error', 'ordenar', 'clasificar'].every((t) => tiposVistos.has(t)), `salen los 7 tipos de ejercicio (${[...tiposVistos].join(', ')})`);
+    ok(!tiposVistos.has('imagen'), 'ya no sale «elige la imagen correcta»: la que venía así se pregunta como opción normal');
     ok(vioPista, 'la pista sale al pedirla');
     ok(maxComboVisto >= 6, `el combo sale en CADA acierto seguido, con sus efectos (llegó a x${maxComboVisto})`);
     ok(vistas === 9, `la que fallé regresó al final (${vistas} ejercicios para 8)`);
+    ok(reaccionesPj[0] === 'mal' && reaccionesPj.slice(1).every((x) => x === 'bien' || x === 'combo') && reaccionesPj.includes('combo'), `tu personaje, arriba, reacciona a cada respuesta: se apura con la mala, sonríe con las buenas y se enamora en el combo (${reaccionesPj.join(', ')})`);
     await pagina.waitForSelector('.resultado');
     ok(await pagina.isVisible('text=XP') && /\d+ %/.test(await pagina.textContent('.medallas')), 'el resultado trae XP, aciertos y tiempo');
     await pagina.click('[data-estrella="5"]');
     ok((await pagina.$$('.estrellas .on')).length === 5, 'se califica con estrellas');
     await foto('09-resultado');
     ok(await pagina.$eval('#mascFin .masc svg', () => true).catch(() => false), 'al terminar, la mascota reacciona al resultado');
+    ok(await pagina.$eval('#pjFin .pv svg', () => true).catch(() => false), 'y tu personaje también, junto a ella');
     await pagina.click('[data-continuar]');
     await pagina.waitForSelector('.camino'); await espera(1200);
     ok(await hechos() === 3, 'el nivel hecho se vuelve moneda');
@@ -301,10 +320,11 @@ export async function correr({ ok, almacen, atenderEstudio }){
     await pagina.click('[data-continuar]'); await pagina.waitForSelector('.camino');
 
     /* 5 · tarjetas de la unidad 1 (salen de las preguntas: no gastan IA) */
-    const antesIA = pedidosIA.length;
+    const deLecciones = () => pedidosIA.filter((c) => !/CLASE que se DIBUJA/.test(c.sistema || '')).length;
+    const antesIA = deLecciones();
     await pagina.click('.siguiente [data-nodo]');
     await pagina.waitForSelector('#tarjeta');
-    ok(pedidosIA.length === antesIA, 'las tarjetas no le piden nada a la IA');
+    ok(deLecciones() === antesIA, 'las tarjetas no le piden nada a la IA');
     ok(await pagina.isDisabled('[data-se]'), '«Me la sé» espera a que voltees la tarjeta');
     await pagina.click('#tarjeta'); await espera(600);
     await foto('10-tarjeta');
@@ -341,12 +361,12 @@ export async function correr({ ok, almacen, atenderEstudio }){
     ok((await pagina.textContent('#planNombre')) === 'Biología bloque 2', 'editar cambia el nombre del plan');
 
     /* horario pegado de Excel */
-    await pagina.click('[data-ir="horario"]');
+    await pagina.click('#nav [data-ir="yo"]').then(() => pagina.click('#vYo [data-ir="horario"]'));
     await pagina.click('#bPegarHorario');
     await pagina.fill('#pTxt', 'Hora\tLunes\tMartes\tMiércoles\tJueves\tViernes\n7:00-7:50\tFísica\tInglés\tFísica\tQuímica y Biología III\tTEC III\n7:50-8:40\tProgramación y BD\tReceso\tInglés\tFísica\tGeometría Analítica');
     await pagina.click('#pListo'); await espera(300);
     ok((await pagina.$$('.clase-h')).length === 9, 'el horario pegado de Excel sale por día (sin el receso)');
-    ok((await pagina.textContent('#vHorario')).includes('Próximos exámenes'), 'el horario enseña el examen que viene');
+    ok((await pagina.textContent('#vHorario')).includes('Cuánto falta para tus exámenes') && (await pagina.$$('.cuenta-ex')).length >= 1, 'el horario enseña el examen que viene, con su línea de cuánto falta');
     ok(await desborde() <= 0, 'el horario no se sale de lado');
     await espera(300);
     ok((s.m.get('est:perfil:carlos').horario || {}).clases?.length === 9, 'el horario se guarda en La Sala');
@@ -367,7 +387,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
     await pagina.click('[data-ir="ranking"]'); await espera(300);
     const filas = await pagina.$$eval('.fila-rank', (fs) => fs.map((f) => f.textContent));
     ok(filas.length === 2 && /Luis/.test(filas[0]) && /\(tú\)/.test(filas[1]), 'el ranking junta las cuentas de La Sala y marca la tuya');
-    ok(await pagina.isVisible('text=para llegar a la cima'), 'dice cuántos lugares faltan');
+    ok(/Te faltan [0-9,.]+ (k |M )?XP para pasar a Luis/.test(await pagina.textContent('.rank-frase')), 'dice cuántos XP te faltan para pasar al de arriba');
     await foto('13-ranking');
 
     /* amigos: Luis tiene la app abierta, lo agrego, me invita a estudiar juntos, y al final «¿cómo te fue?» */
@@ -397,6 +417,9 @@ export async function correr({ ok, almacen, atenderEstudio }){
       await pagina.evaluate(() => window.__estudio.amigos().latido()); await espera(1200);
       ok(/Luis 12/.test(await pagina.textContent('#barraSesion')), 'el marcador muestra lo que va juntando el otro');
       await foto('16-sesion');
+      ok(await pagina.$eval('#barraSesion', (b) => b.classList.contains('mini') && b.getBoundingClientRect().width < 260), 'la barra es una pastilla chica que no estorba');
+      await pagina.click('#barraSesion'); await espera(250);
+      ok(await pagina.isVisible('[data-salir-ses]'), 'al tocarla se abre con el marcador y el botón de salir');
       await pagina.click('[data-salir-ses]'); await pagina.click('[data-salir-ses]'); await espera(500);
       ok(/Ganó Luis/.test(await pagina.textContent('#hoja')) && await pagina.isVisible('#sesFelicita'), 'al salir sale quién ganó y el botón de felicitarlo');
       await pagina.click('#sesFelicita'); await espera(400);
@@ -418,7 +441,7 @@ export async function correr({ ok, almacen, atenderEstudio }){
     }
 
     /* perfil */
-    await pagina.click('[data-ir="perfil"]');
+    await pagina.click('#nav [data-ir="yo"]').then(() => pagina.click('#vYo [data-ir="perfil"]'));
     ok(/CARYMO/.test(await pagina.textContent('#vPerfil .version')), 'el perfil dice la versión de CARYMO');
     await pagina.fill('#pNombre', 'Palomazi'); await pagina.press('#pNombre', 'Tab'); await espera(400);
     ok(s.m.get('est:perfil:carlos').nombre === 'Palomazi', 'el nombre del perfil se guarda en La Sala');
@@ -504,6 +527,6 @@ export async function correr({ ok, almacen, atenderEstudio }){
     ok(await desborde() <= 0, 'a 320 px el camino no se sale de lado');
 
     ok(!errores.length, 'sin errores en la consola' + (errores.length ? ': ' + errores.slice(0, 3).join(' | ') : ''));
-  }catch(e){ ok(false, 'la prueba tronó: ' + e.message.split('\n')[0]); if(process.env.FOTOS) await foto('99-error'); }
+  }catch(e){ ok(false, 'la prueba tronó: ' + e.message.split('\n')[0]); if(process.env.PILA) console.log(e.message); if(process.env.FOTOS) await foto('99-error'); }
   finally{ await nav.close(); servidor.close(); }
 }

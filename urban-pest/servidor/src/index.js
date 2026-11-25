@@ -20,6 +20,7 @@ import { cotizar } from './cotizador.js';
 import { estimarM2, MEDIDAS } from './medidor.js';
 import { crearPlanta, listarPlantas, ponerEstaciones, ponerDocumentos, registrarServicio, carpetaPublica, plantaEjemplo, quitarServicio } from './carpeta.js';
 import { juntarCasos } from './reflejo.js';
+import { ponerSalida, distanciaA } from './distancia.js';
 import CASOS_FABRICA from '../../bot/casos.json' with { type: 'json' };
 
 /* Para PROBAR mientras llega el Excel: precios DE EJEMPLO, sólo en el canal «prueba» y
@@ -192,7 +193,9 @@ export class Despacho {
       case 'GET /api/medidas': return { bien: true, medidas: (await A.get('medidas')) || MEDIDAS };
       case 'POST /api/medidas': await A.put('medidas', b.medidas); return { bien: true };
       case 'POST /api/estimar': return estimarM2(b, (await A.get('medidas')) || MEDIDAS);
-      case 'POST /api/tarifas': await A.put('tarifas', b.tarifas); return { bien: true };
+      /* el centro (pestaña «Cotizar») las lee para cotizar con su Excel; las guarda al cargar el Excel */
+      case 'GET /api/tarifas': return { bien: true, tarifas: (await A.get('tarifas')) || null };
+      case 'POST /api/tarifas': if(!b.tarifas || typeof b.tarifas !== 'object') return { bien: false, error: 'Faltan las tarifas.', estado: 400 }; await A.put('tarifas', b.tarifas); return { bien: true };
       case 'POST /api/negocio': if(!b.negocio || typeof b.negocio !== 'object') return { bien: false, error: 'Falta el negocio.', estado: 400 }; await A.put('negocio', { ...((await A.get('negocio')) || {}), ...b.negocio }); return { bien: true };
       case 'POST /api/personales': await A.put('personales', b.numeros || []); return { bien: true };
       case 'POST /api/probar': {
@@ -204,6 +207,10 @@ export class Despacho {
       }
       case 'POST /api/probar/borrar': { await A.del(`conv:prueba:${String(b.chat || 'prueba').replace(/[^a-z0-9-]/gi, '')}`); return { bien: true }; }
       case 'POST /api/cotizar': return { bien: true, ...cotizar(b, await A.get('tarifas')) };
+      /* ── la distancia (23 nov): de dónde sale la camioneta y cuántos km hay a la colonia del cliente ── */
+      case 'GET /api/salida': return { bien: true, salida: (await A.get('salida')) || null };
+      case 'POST /api/salida': return ponerSalida(A, b);
+      case 'GET /api/distancia': return distanciaA(A, q.donde);
       default: return { bien: false, error: 'No existe esa ruta.', estado: 404 };
     }
   }

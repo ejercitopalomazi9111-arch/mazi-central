@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Mazi VR</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mazi VR">
+<meta name="theme-color" content="#0B0513">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="../marca/paloma-2026/icono-512.png">
+<!-- MAZI VR (Carlos, 18 nov): su propio «Quest» con un iPhone 13 dentro de un visor sin pantalla y un control
+     de PlayStation. Fase 1: dos ojos con lente, giroscopio, realidad mixta con la cámara, el inicio, el cine con
+     sus videos y los ajustes, todo con el control. El plan entero y lo que el iPhone no deja: PLAN.md -->
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+<style>
+  :root{ --fondo:#0B0513; --sup:#1E1428; --acento:#AC27FF; --rosa:#C77DFF; --texto:#F4EEF2; --suave:#C9B6DA }
+  *{ box-sizing:border-box; margin:0 }
+  html, body{ height:100%; background:#000; color:var(--texto); font-family:system-ui, -apple-system, sans-serif; overflow:hidden; overscroll-behavior:none; touch-action:none; -webkit-user-select:none; user-select:none }
+  #gl{ position:fixed; inset:0; width:100%; height:100%; display:block }
+  #entrada{ position:fixed; inset:0; z-index:5; display:grid; place-items:center; padding:24px; text-align:center;
+    background:radial-gradient(120% 90% at 50% 30%, #2A1142, #170A26 55%, #0B0513) }
+  #entrada .caja{ display:grid; gap:18px; justify-items:center; max-width:420px; width:100% }
+  #entrada img{ width:96px; height:96px }
+  #entrada h1{ font-size:40px; font-weight:900; letter-spacing:-.03em }
+  #entrada h1 em{ font-style:normal; color:var(--rosa) }
+  .boton{ appearance:none; border:0; border-radius:99px; font:inherit; font-weight:800; font-size:20px; min-height:56px; padding:0 34px; cursor:pointer; color:#fff; background:var(--acento) }
+  .boton.sec{ background:var(--sup); box-shadow:inset 0 0 0 2px #4A2A6E; font-size:17px; min-height:48px }
+  .estado{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center }
+  .estado span{ padding:8px 14px; border-radius:99px; background:var(--sup); box-shadow:inset 0 0 0 2px #3C2652; font-size:15px; font-weight:700; color:var(--suave) }
+  .estado span.si{ color:#fff; box-shadow:inset 0 0 0 2px var(--acento) }
+  #version{ margin-top:-10px; font-size:14px; font-weight:700; color:var(--suave) }
+  #version.nueva{ color:#fff }
+  #gira{ position:fixed; inset:0; z-index:6; display:none; place-items:center; background:#0B0513; font-size:22px; font-weight:800; text-align:center; padding:30px }
+  @media (orientation: portrait){ body.dentro #gira{ display:grid } }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="entrada">
+  <div class="caja">
+    <img src="../marca/paloma-2026/logo-icono.svg" alt="">
+    <h1>Mazi <em>VR</em></h1>
+    <p id="version"></p>
+    <div class="estado"><span id="eControl">Control</span><span id="eVideos">Archivos</span><span id="eGuardado">Sin internet</span></div>
+    <button class="boton" id="bEntrar" type="button">Entrar</button>
+    <button class="boton sec" id="bPantalla" type="button">Sin visor</button>
+    <p id="ultimoError" hidden style="font-size:13px; color:#C9B6DA; max-width:420px; overflow-wrap:anywhere"></p>
+    <label class="boton sec" style="display:inline-grid; place-items:center">Archivos<input id="iVideos" type="file" accept="video/*,audio/*" multiple hidden></label>
+  </div>
+</div>
+<div id="gira">Gira el teléfono</div>
+<script type="module">
+import * as V from './vr.js';
+import ICONOS from './iconos.js';
+import { montarTeclado } from './teclado.js';
+import { montarCine } from './cine.js';
+import { montarLector } from './lector.js';
+import { montarSables } from './sables.js';
+import { montarObjetos } from './objetos.js';
+import { montarMusica } from './musica.js';
+import { montarTemShop } from './temshop.js';
+import { montarMonarca } from './monarca/monarca.js';
+import { crearPantallaWeb } from './pantalla.js';
+import { crearAgarre, crearMoverConControl } from './agarre.js';
+const { THREE, B } = V;
+V.iconos(ICONOS);
+const web = crearPantallaWeb(V); window.__web = web;
+const $ = (s) => document.querySelector(s);
+
+/* ── la entrada: un toque antes de meter el teléfono al visor (el iPhone exige un toque para giroscopio, cámara y sonido) ── */
+const VIDEOS = [], CANCIONES = [];
+/* videos para el Cine y canciones para Música, del mismo botón */
+$('#iVideos').addEventListener('change', (e) => { for(const f of e.target.files){ const it = { nombre: f.name.replace(/\.[^.]+$/, ''), url: URL.createObjectURL(f) }; (/^audio\//.test(f.type) || /\.(mp3|m4a|aac|wav|ogg|flac)$/i.test(f.name) ? CANCIONES : VIDEOS).push(it); }
+  $('#eVideos').textContent = [VIDEOS.length && `${VIDEOS.length} ${VIDEOS.length === 1 ? 'video' : 'videos'}`, CANCIONES.length && `${CANCIONES.length} ${CANCIONES.length === 1 ? 'canción' : 'canciones'}`].filter(Boolean).join(' · ') || 'Archivos';
+  $('#eVideos').classList.toggle('si', VIDEOS.length + CANCIONES.length > 0); });
+/* en la entrada, CUALQUIER botón del control es «Entrar»: con el visor puesto no hay cómo tocar la pantalla */
+let botonAntes = true;
+(function vigilarControl(){ if(!$('#eControl')) return; const p = V.elegirPad();
+  const alguno = !!p && p.buttons.some((b) => b.pressed); if(alguno && !botonAntes && $('#bEntrar') && !$('#bEntrar').disabled) $('#bEntrar').click(); botonAntes = alguno; $('#eControl').classList.toggle('si', !!p); $('#eControl').textContent = p ? V.nombrePad(p) : 'Control: pica un botón'; if(!document.body.classList.contains('dentro')) requestAnimationFrame(vigilarControl); })();
+/* el visor se arma MIENTRAS se ve esta pantalla: al tocar Entrar ya está listo (antes se armaba después del toque) */
+const armado = montar();
+/* el último error de la vez pasada, con su código, dónde y cuándo (vr.js, fallo) */
+try{ const L = JSON.parse(localStorage.getItem('mazivr.errores') || '[]'), u = L[L.length - 1];
+  if(u){ const el = $('#ultimoError'); el.textContent = `Último error: ${u.codigo} · ${u.donde} · ${u.msg}${u.linea ? ' · ' + u.linea : ''} · en «${u.vista}» a las ${u.hora}`; el.hidden = false; } }catch{}
+/* LA VERSIÓN (Carlos, 19 nov: «un mensajito que diga la versión en la que estás y que se actualizó»). Va igual que la
+   de sw.js (pruebas-sinred.mjs lo revisa). La primera vez que se abre una versión nueva dice «actualizada»; y si el
+   trabajador de fondo ya trae una más nueva que esta página, recarga sola (sólo en la entrada, una vez) */
+const VERSION = 40;
+{ let antes = 0; try{ antes = +localStorage.getItem('mazivr.version') || 0; if(antes !== VERSION) localStorage.setItem('mazivr.version', VERSION); }catch{}
+  const el = $('#version'); el.textContent = antes < VERSION ? `v${VERSION} · actualizada` : `v${VERSION}`; el.classList.toggle('nueva', antes < VERSION); }
+const versionSW = (n) => { if(!(n > VERSION) || document.body.classList.contains('dentro')) return;
+  try{ if(sessionStorage.getItem('mazivr.recargo') === String(n)) return; sessionStorage.setItem('mazivr.recargo', String(n)); }catch{ return; }
+  $('#version').textContent = `v${n} · cargando`; location.reload(); };
+/* «Sin internet» se prende cuando todo quedó guardado en el teléfono (sw.js) */
+if('serviceWorker' in navigator && !navigator.webdriver || 'serviceWorker' in navigator && new URLSearchParams(location.search).has('sw')){
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+  const preguntar = () => navigator.serviceWorker.controller?.postMessage('listo?');
+  navigator.serviceWorker.addEventListener('message', (e) => { if(e.data?.listo != null) $('#eGuardado')?.classList.toggle('si', !!e.data.listo); versionSW(e.data?.version); if(e.data && !e.data.listo) setTimeout(preguntar, 3000); });
+  navigator.serviceWorker.ready.then(() => setTimeout(preguntar, 500));
+  navigator.serviceWorker.addEventListener('controllerchange', () => setTimeout(preguntar, 500));
+}
+/* si la página se recargó sola por falta de memoria (hace menos de 1 minuto), entra sin esperar el toque */
+try{ const v = +sessionStorage.getItem('mazivr.volver'); if(v && Date.now() - v < 60000){ sessionStorage.removeItem('mazivr.volver'); setTimeout(() => $('#bEntrar')?.click(), 600); } }catch{}
+/* ya adentro, un botón del control vuelve a pedir pantalla completa si se perdió (Android) */
+setInterval(() => { if(!document.body.classList.contains('dentro') || document.fullscreenElement) return; const p = V.elegirPad();
+  if(p?.buttons.some((b) => b.pressed)) try{ document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }).catch(() => {}); }catch{} }, 250);
+/* sin visor: una sola vista y se toca la pantalla para elegir (el mismo motor) */
+$('#bPantalla').addEventListener('click', () => { V.ponerPantalla(true); $('#bEntrar').click(); });
+$('#bEntrar').addEventListener('click', async () => {
+  $('#bEntrar').disabled = true;
+  /* lo que exige el toque va primero y sin esperar a nada más */
+  /* Android: a pantalla completa y acostado (si no, se queda la barra del navegador y la vista sale como «pantalla
+     individual»). En el iPhone no existe para páginas: ahí se usa «Agregar a inicio» */
+  try{ const p = document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); p?.then(() => screen.orientation?.lock?.('landscape')).catch(() => {}); }catch{}
+  /* la voz del teléfono (respaldo del narrador) sólo habla después de hablar una vez dentro de un toque */
+  try{ const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); }catch{}
+  web.desbloquear(); window.__musica?.desbloquear?.();      /* los videos de la web sólo suenan si ya sonaron una vez con un toque */
+  V.despertarAudio();
+  try{ if(typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) await DeviceOrientationEvent.requestPermission(); }catch{}
+  /* la cámara se abre por detrás: el visor no la espera (la realidad mixta y las manos se prenden cuando llega) */
+  const camara = V.abrirCamara();
+  try{ navigator.wakeLock?.request('screen').catch(() => {}); }catch{}
+  document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') try{ navigator.wakeLock?.request('screen').catch(() => {}); }catch{} });
+  $('#bEntrar').textContent = 'Un momento…';
+  await armado;
+  $('#entrada').remove(); document.body.classList.add('dentro');
+  V.arrancar(); V.ir('inicio'); V.recentrar(); V.mirarAlEntrar(); V.hud('Bienvenido', 2);
+  /* el QR de MONARCH XR trae ?monarca: directo a la experiencia y en modo exposición */
+  if(new URLSearchParams(location.search).has('monarca')){ window.__monarca.exposicion(true); V.ir('monarca'); }
+  /* las manos cargan después (el modelo pesa ~8 MB): el visor ya se puede usar mientras */
+  /* 6DoF guardado en Ajustes: se prende en cuanto hay cámara */
+  if(V.AJ.seis) camara.then((ok) => ok && V.ponerSeis(true));
+  /* prueba sin teléfono: ?demo6 mete la caminata grabada de un iPhone al 6DoF del motor (vr/pruebas-seis-motor.mjs) */
+  const q6 = new URLSearchParams(location.search).get('demo6');
+  if(q6){ const vd = document.createElement('video'); vd.muted = true; vd.playsInline = true; vd.src = `espacial/demo/${q6}.mp4`; vd.style.cssText = 'position:fixed;width:2px;height:2px;opacity:.01;left:0;top:0'; document.body.appendChild(vd);
+    fetch(`espacial/demo/${q6}.json`).then((r) => r.json()).then(async (demo) => { demo.next = 0; await vd.play(); window.__demo6 = await V.ponerSeis(true, { demo, videoDemo: vd }); }); }
+  camara.then((ok) => { if(ok && V.hayCamara()) import('./manos.js').then(async ({ iniciarManos }) => { const m = await iniciarManos(V); window.__manos = m; if(m.listo){ V.alCuadro.push(m.cuadro, m.dibujar); V.hud('Manos listas'); } }); });
+});
+
+/* ── las vistas ── */
+/* EL MENÚ SE AGRANDA, SE ALEJA Y SE MUEVE (Carlos, 18 nov: «permite escalar y alejar los elementos del menú principal»).
+   Igual que las pantallas: con las dos manos pellizcando se lleva a donde quieras y se agranda o achica; con el control,
+   mantén L2: stick derecho lo mueve, stick izquierdo cambia el tamaño, flechas arriba/abajo lo acercan o alejan.
+   El tamaño y la distancia se guardan; Cuadro (recentrar) sólo lo regresa enfrente. */
+function menuAjustable(v, piezas){
+  /* lo que el gesto dejó agrandado sin querer, de regreso a como venía (una sola vez) */
+  if(!V.AJ.menuSinGesto){ V.AJ.menuTam = 1; V.AJ.menuDist = 1; V.AJ.menuSinGesto = true; V.guardar(); }
+  const tam = () => V.AJ.menuTam || 1, dist = () => V.AJ.menuDist || 1;
+  let puesto = '';
+  /* más grandes, más separadas (si no, se enciman): cada pieza guarda su ángulo y su radio de origen y se abre el arco */
+  const poner = () => { const k = tam() + '|' + dist(); if(k === puesto) return; puesto = k;
+    const abre = Math.max(.75, Math.min(2.2, tam() / dist()));
+    v.grupo.scale.setScalar(dist());
+    for(const p of piezas()){
+      if(!p.userData.base) p.userData.base = { a: Math.atan2(p.position.x, -p.position.z), r: Math.hypot(p.position.x, p.position.z), y: p.position.y };
+      const { a, r, y } = p.userData.base, aa = a * abre;
+      p.position.set(Math.sin(aa) * r, y * Math.max(1, abre * .9), -Math.cos(aa) * r); p.lookAt(v.grupo.localToWorld(new THREE.Vector3(0, p.position.y, 0)));
+      p.scale.setScalar(tam() / dist()); } };
+  let guardarEn = 0; const guardarLuego = () => { clearTimeout(guardarEn); guardarEn = setTimeout(V.guardar, 600); };
+  const setTam = (e) => { V.AJ.menuTam = +e.toFixed(3); poner(); guardarLuego(); };
+  const mover = crearMoverConControl(V, { soporte: v.grupo, getEscala: tam, setEscala: setTam, min: .5, max: 2.2 });
+  const cuadroAntes = v.cuadro, controlAntes = v.control;
+  /* SIN GESTO DE MANOS PARA EL MENÚ (Carlos, 19 nov: «no sé cuál es y a cada rato se está re-escalando sin razón»): dos
+     pellizcos falsos a la vez lo agrandaban. Ahora sólo con el control (L2). */
+  v.cuadro = (t, dt) => { poner(); cuadroAntes?.(t, dt); };
+  v.control = (c, dt) => {
+    if(mover(c, dt)){
+      const d = (c.apretado(V.B.ARRIBA) ? -1 : 0) + (c.apretado(V.B.ABAJO) ? 1 : 0);
+      if(d){ V.AJ.menuDist = Math.max(.6, Math.min(2.2, dist() * Math.exp(d * .9 * (dt || 1 / 60)))); poner(); guardarLuego(); }
+      return { x: true, flechas: true };
+    }
+    return controlAntes?.(c, dt) || {};
+  };
+  Object.defineProperty(v, 'ocupaStick', { get: () => V.control.apretado(V.B.L2), configurable: true });
+  Object.defineProperty(v, 'ocupaGiro', { get: () => V.control.apretado(V.B.L2), configurable: true });
+  v.alRecentrar = () => v.grupo.quaternion.identity();
+  poner();
+}
+
+async function montar(){
+  /* INICIO: siete tarjetas en arco, con «Leer» justo enfrente (la mira nunca cae en un hueco) */
+  const inicio = { grupo: new THREE.Group() };
+  const titulo = new V.Panel(1.6, .22, 400); titulo.malla.position.set(0, .6, -1.95); inicio.grupo.add(titulo.malla);
+  const pintarTitulo = () => { const { x, cv } = titulo; x.clearRect(0, 0, cv.width, cv.height); x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.font = '900 52px system-ui, -apple-system, sans-serif'; x.fillStyle = '#F4EEF2'; x.fillText('Mazi', cv.width / 2 - 60, 44); x.fillStyle = '#C77DFF'; x.fillText('VR', cv.width / 2 + 70, 44);
+    x.font = '700 30px system-ui, -apple-system, sans-serif'; x.fillStyle = '#C9B6DA'; x.fillText(new Date().toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' }), cv.width / 2, 82); titulo.listo(); };
+  pintarTitulo(); setInterval(pintarTitulo, 15000);
+  const T = [
+    ['Música', 'music', () => V.ir('musica')],
+    ['Juegos', 'gamepad-2', () => V.ir('juegos')],
+    ['Cine', 'clapperboard', () => V.ir('cine')],
+    ['Leer', 'book-open', () => V.ir('leer')],
+    ['La Sala', 'users', () => V.hud('Pronto'), 'Pronto'],
+    ['Mixta', 'scan-eye', () => { if(!V.hayCamara()){ V.hud('Sin cámara'); return; } V.ponerMixta(!V.AJ.mixta); V.hud(V.AJ.mixta ? 'Realidad mixta' : 'Realidad virtual'); }],
+    ['Ajustes', 'settings', () => V.ir('ajustes')],
+  ];
+  /* lo que todavía no existe sale apagado y dice «Pronto»: ya no mete a una pantalla vacía */
+  const tarjetas = await Promise.all(T.map(async ([t, ic, fn, sub], i) => {
+    const p = await V.tarjeta({ titulo: t, icono: ic, sub: sub || '', apagada: !!sub }); const a = (i - 3) * 21 * Math.PI / 180;
+    p.malla.position.set(Math.sin(a) * 1.9, 0, -Math.cos(a) * 1.9); p.malla.lookAt(0, 0, 0); p.malla.userData.accion = fn;
+    inicio.grupo.add(p.malla); return p.malla;
+  }));
+  inicio.elegibles = () => tarjetas;
+  inicio.atras = () => {};
+  menuAjustable(inicio, () => [titulo.malla, ...tarjetas]);
+  V.registrar('inicio', inicio);
+
+  /* JUEGOS y LA SALA: lo que viene (fase 2 y 3 en PLAN.md) */
+  for(const [nombre, items] of [['juegos', [['Sables', 'swords', '', () => V.ir('sables')], ['Objetos', 'box', '', () => V.ir('objetos')], ['Monarca', 'compass', '', () => V.ir('monarca')], ['VS Tiles', 'music', 'Pronto']]], ['sala', [['La Sala', 'users', 'Pronto']]]]){
+    const v = { grupo: new THREE.Group() }; const L = [];
+    for(const [i, [t, ic, sub, fn]] of items.entries()){
+      const p = await V.tarjeta({ titulo: t, icono: ic, sub, apagada: !fn }); const a = (i - (items.length - 1) / 2) * 20 * Math.PI / 180;
+      p.malla.position.set(Math.sin(a) * 2.2, 0, -Math.cos(a) * 2.2); p.malla.lookAt(0, 0, 0); p.malla.userData.accion = fn || (() => V.hud('Pronto'));
+      v.grupo.add(p.malla); L.push(p.malla);
+    }
+    v.elegibles = () => L; v.atras = () => V.ir('inicio'); menuAjustable(v, () => L); V.registrar(nombre, v);
+  }
+
+  /* CINE: YouTube, películas libres, enlaces y tus videos (cine.js); lo de otros sitios va en la pantalla de la web */
+  const pedirTexto = montarTeclado(V);
+  window.__cine = await montarCine(V, { VIDEOS, pedirTexto, web });
+  V.trasCuadro.push((...a) => { web.colocar(...a); V.encima.activa = web.activa; });
+
+  /* LEER: INKWELL (Tiras y Libros) con lo que ya está bajado en este teléfono (lector.js) */
+  window.__lector = await montarLector(V, { pedirTexto });
+
+  /* SABLES: la demo de ritmo con las manos (sables.js) */
+  window.__sables = montarSables(V);
+
+  /* OBJETOS: agarrar cajas y figuras, y una pistola que dispara doblando el índice (objetos.js) */
+  window.__objetos = montarObjetos(V);
+  montarTemShop(V);
+
+  /* MONARCH XR: la experiencia de la mariposa monarca (monarca/monarca.js); con ?monarca entra directo en modo exposición */
+  montarMonarca(V);
+
+  /* MÚSICA: buscar canciones, radio de México y las del teléfono; sigue sonando en todo el visor (musica.js) */
+  window.__musica = montarMusica(V, { pedirTexto, CANCIONES });
+  /* con todo armado (y los modelos de Objetos cargados), se preparan los gráficos de una vez: así entrar y salir no traba */
+  Promise.all([window.__objetos.armado, window.__musica.armado]).catch(() => {}).then(() => setTimeout(() => V.precalentar(), 300));
+
+  /* AJUSTES: un panel; flechas arriba/abajo eligen, izquierda/derecha cambian.
+     Y SIN CONTROL (Carlos, 19 nov: «que ajustes se pueda configurar solo con mirar y manos, a veces no tenemos manos o
+     control»): cada renglón tiene sus zonas tocables (‹ y › en los números; el renglón entero en Sí/No y en las acciones)
+     que se eligen mirándolas o pellizcándolas. Las flechas se repiten si las sigues viendo (`repetir`), cada 0.9 s. */
+  const aj = { grupo: new THREE.Group() };
+  const FILAS = [
+    ['Lente', 'k1', 0, .6, .02, (v) => v.toFixed(2)],
+    ['Ojos', 'sep', 50, 75, 1, (v) => `${v} mm`],
+    ['Campo', 'campo', 60, 110, 2, (v) => `${v}°`],
+    ['Tamaño', 'escala', .7, 1.3, .02, (v) => v.toFixed(2)],
+    ['Cámara', 'camCampo', 40, 120, 1, () => `${Math.round(V.campoCamara())}°`],
+    ['Voltear cámara', 'camVoltear', 0, 1, 1, (v) => v ? 'Sí' : 'No'],
+    ['Manos', 'manos', 0, 1, 1, (v) => v ? 'Sí' : 'No'],
+    ['Mano 3D', 'manoModelo', 0, 1, 1, (v) => v !== false ? 'Sí' : 'No'],
+    ['Fondo', 'fondo', 0, 1, 1, (v) => v ? 'Espacio' : 'Tem Shop'],
+    ['6DoF', 'seis', 0, 1, 1, (v) => v ? 'Sí' : 'No'],
+    ['Puntos', 'puntos', 0, 1, 1, (v) => v ? 'Sí' : 'No'],
+    ['Límites', 'limites', 0, 1, 1, (v) => v ? 'Sí' : 'No'],
+    ['Zona', 'zona', .5, 3, .25, (v) => `${(+v).toFixed(2)} m`],
+    ['Borrar mapa', null],
+    ['De fábrica', null],
+  ];
+  const SIONO = new Set(['camVoltear', 'manos', 'manoModelo', 'fondo', 'seis', 'puntos', 'limites']);
+  let fila = 0;
+  const PX = 420, ALTO = 2.1, hoja = new V.Panel(1.5, ALTO, PX); hoja.malla.position.set(0, .05, -2.0); aj.grupo.add(hoja.malla);
+  const yFila = (i) => 136 + i * 52;
+  const pintarHoja = () => { const { x, cv } = hoja, w = cv.width; x.clearRect(0, 0, w, cv.height); V.redondo(x, 6, 6, w - 12, cv.height - 12, 40); x.fillStyle = '#1E1428'; x.fill(); x.strokeStyle = '#3C2652'; x.lineWidth = 4; x.stroke();
+    x.textBaseline = 'middle'; x.font = '900 46px system-ui, -apple-system, sans-serif'; x.fillStyle = '#F4EEF2'; x.textAlign = 'left'; x.fillText('Ajustes', 50, 64);
+    FILAS.forEach(([t, k, , , , f], i) => { const y = yFila(i), sel = i === fila;
+      if(sel){ V.redondo(x, 30, y - 24, w - 60, 48, 24); x.fillStyle = '#3A1A5C'; x.fill(); x.strokeStyle = '#AC27FF'; x.lineWidth = 3; x.stroke(); }
+      x.font = '700 32px system-ui, -apple-system, sans-serif'; x.fillStyle = sel ? '#fff' : '#C9B6DA'; x.textAlign = 'left'; x.fillText(t, 56, y);
+      if(!k) return;
+      if(SIONO.has(k)){ x.textAlign = 'right'; x.fillStyle = sel ? '#C77DFF' : '#F4EEF2'; x.fillText(f(V.AJ[k]), w - 56, y); return; }
+      /* número: ‹ valor › en lugares fijos, para que se puedan tocar */
+      x.textAlign = 'center'; x.fillStyle = sel ? '#C77DFF' : '#7E6A96'; x.fillText('‹', w - 300, y); x.fillText('›', w - 56, y);
+      x.fillStyle = sel ? '#fff' : '#F4EEF2'; x.fillText(f(V.AJ[k]), w - 178, y); });
+    hoja.listo(); };
+  /* cambiar un renglón: d = −1 / +1 (en Sí/No cualquiera voltea) */
+  function cambiar(i, d){
+    const [, k, a, b, paso] = FILAS[i]; if(!k || !d) return;
+    if(k === 'seis'){ V.ponerSeis(!V.AJ.seis).then(pintarHoja); V.AJ.seis = !V.AJ.seis; pintarHoja(); return; }
+    const actual = k === 'camCampo' ? V.campoCamara() : V.AJ[k];
+    const v = SIONO.has(k) ? (k === 'manoModelo' ? V.AJ[k] === false : !V.AJ[k]) : Math.round(Math.min(b, Math.max(a, actual + d * paso)) * 100) / 100;
+    V.AJ[k] = v; V.guardar(); V.aplicarAjustes(); if(k === 'manos') V.ponerMixta(V.AJ.mixta); if(k === 'zona' && V.limites.st.zona) V.limites.st.zona.radio = v;
+    pintarHoja();
+  }
+  function accion(i){
+    if(FILAS[i][0] === 'Borrar mapa'){ V.nube.borrar(); V.limites.olvidar(); V.hud('Mapa borrado'); }
+    else if(FILAS[i][0] === 'De fábrica'){ Object.assign(V.AJ, V.FABRICA, { mixta: V.AJ.mixta }); V.guardar(); V.aplicarAjustes(); V.hud('De fábrica'); pintarHoja(); }
+  }
+  /* las zonas tocables: planos transparentes encima de la hoja (px de la hoja → metros) */
+  const zonas = [], w = hoja.cv.width;
+  const zona = (i, x0, x1, hacer, repetir) => {
+    const ancho = (x1 - x0) / PX, alto = 48 / PX, m = new THREE.Mesh(new THREE.PlaneGeometry(ancho, alto), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
+    m.position.set(((x0 + x1) / 2 - w / 2) / PX, ALTO / 2 - yFila(i) / PX, .004); hoja.malla.add(m);
+    m.userData.accion = hacer; m.userData.repetir = !!repetir; m.userData.pegajoso = .035;   /* el renglón no se suelta por un temblor (vr.js, cercaDe) */
+    m.userData.panel = { titulo: FILAS[i][0], foco: (f) => { if(f && fila !== i){ fila = i; pintarHoja(); } } };
+    zonas.push(m); };
+  FILAS.forEach(([, k], i) => {
+    if(!k) zona(i, 30, w - 30, () => accion(i));
+    else if(SIONO.has(k)) zona(i, 30, w - 30, () => cambiar(i, 1));
+    else { zona(i, w - 350, w - 250, () => cambiar(i, -1), true); zona(i, w - 106, w - 6, () => cambiar(i, 1), true); }
+  });
+  aj.entrar = pintarHoja;
+  aj.control = (c) => {
+    if(c.oprimido[B.ARRIBA]) fila = (fila + FILAS.length - 1) % FILAS.length;
+    if(c.oprimido[B.ABAJO]) fila = (fila + 1) % FILAS.length;
+    const d = (c.oprimido[B.DER] ? 1 : 0) - (c.oprimido[B.IZQ] ? 1 : 0);
+    if(d) cambiar(fila, d);
+    if(c.oprimidoPad[B.X]) accion(fila);   /* sólo la X del control: el pellizco elige la zona que apunta la mano */
+    if(c.oprimido[B.ARRIBA] || c.oprimido[B.ABAJO]) pintarHoja();
+    return { flechas: true, x: !!c.oprimidoPad[B.X] };
+  };
+  aj.elegibles = () => zonas;
+  window.__ajustes = aj;
+  aj.atras = () => V.ir('inicio');
+  V.registrar('ajustes', aj);
+}
+window.__vr = V;
+</script>
+</body>
+</html>

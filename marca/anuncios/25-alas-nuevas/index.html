@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Grupo Mazi · Alas nuevas</title>
+<!-- ANUNCIO 25 · ~24 s · 9:16 · el cambio de imagen de noviembre 2026. Carlos, 14 nov: «súmale a la lista hacer el
+     video del cambio de logo… el nuevo está muy bonito, me encantó… publica, pues, que cambiamos de imagen».
+     La paloma vieja se deshace; las piezas de la paloma nueva (marca/paloma-2026, cada una un polígono del dibujo
+     de Carlos) aparecen una por una, vuelan y se arman; al completarse se enciende el brillo y la estrella.
+     Voz: Google (Charon) por La Sala, porque Chris no tiene saldo; con saldo se rehace con Chris.
+     Música: «Inspired», Kevin MacLeod (incompetech.com), CC BY 4.0.
+     node herramientas/video/armar.mjs marca/anuncios/25-alas-nuevas/index.html marca/anuncios/salida/25-alas-nuevas.mp4 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&family=Inter+Tight:wght@500;600;800;900&display=block">
+<link rel="stylesheet" href="../comun.css">
+<script>window.listo = new Promise(r => window._listo = r);</script>
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+#vieja{ position:absolute; left:50%; top:560px; width:700px; margin-left:-350px; opacity:0 }
+#logo{ position:absolute; left:120px; top:320px; width:840px; transform-origin:50% 0; z-index:4 }
+#logo svg{ display:block; width:100%; height:auto; overflow:visible }
+#logo svg .pz{ transform-box:fill-box; transform-origin:center }
+#titulo{ position:absolute; left:80px; right:80px; top:930px; text-align:center; font:700 104px/0.98 var(--t); letter-spacing:-.045em; text-transform:uppercase; z-index:5 }
+#titulo span{ display:block; opacity:0; will-change:transform }
+#titulo .v{ color:#C77DFF }
+#lema{ position:absolute; left:90px; right:90px; top:930px; text-align:center; font:600 54px/1.12 var(--s); letter-spacing:-.02em; color:#F4EEF2; opacity:0; z-index:5 }
+#lema b{ display:block; margin-top:8px; font:700 74px/1 var(--t); letter-spacing:-.04em; color:#C77DFF; text-transform:uppercase }
+#cierre{ top:1190px; z-index:5 }
+#destello{ position:absolute; inset:0; background:radial-gradient(60% 40% at 50% 30%, #F6ECFF, #C77DFF00 70%); opacity:0; z-index:6; pointer-events:none }
+</style>
+</head>
+<body>
+<div id="fondo" class="capa"></div>
+<canvas id="c2" class="capa" width="1080" height="1920"></canvas>
+<div id="ui" class="capa">
+  <img id="vieja" src="../../logo/paloma.svg" alt="">
+  <div id="logo"></div>
+  <div id="titulo"><span>Mismo equipo.</span><span>Mismas ganas.</span><span class="v">Alas nuevas.</span></div>
+  <div id="lema">Si no existe la herramienta,<b>se construye la herramienta.</b></div>
+  <div id="cierre"><div class="wa">WhatsApp <b>442 883 3786</b></div><div class="sub">grupomazi.oficial@gmail.com</div></div>
+  <div id="destello"></div>
+</div>
+<div id="subs"></div>
+<div id="grano"></div>
+<script type="module">
+import { PAL, W, H, cl, tramo, suave, sale, entra, mezcla, vida, azar, guion, sonidosVoz, subtitulos, grano } from '../motor.js';
+const $ = (s) => document.querySelector(s);
+const G = await guion('.'), l = Object.fromEntries(G.lineas.map(z => [z.id, z]));
+
+/* ── el reloj: todo cuelga de la voz ── */
+const T = {
+  rompe: l['02'].t0,                          // la paloma vieja se deshace
+  piezas: l['02'].t0 + .25,                    // aparecen las piezas nuevas, una por una
+  vuelan: l['03'].t0 + .35,                    // vuelan a su lugar
+  completa: l['04'].t0 - .05,                  // se enciende
+  sube: l['05'].t0 - .45,                      // el logo sube y llegan las tres frases
+  cierre: l['06'].t0 - .25,
+};
+const FIN = l['06'].t1 + 2.8;
+const fx = (n) => `../../../herramientas/video/efectos/${n}.wav`;
+
+/* ── el logo nuevo, pieza por pieza ── */
+$('#logo').innerHTML = await (await fetch('../../paloma-2026/logo-transparente.svg')).text();
+const svg = $('#logo svg'), brillo = svg.querySelector('g[filter]');
+const piezas = [];
+for(const el of [...svg.children]){
+  if(el.tagName === 'defs' || el === brillo) continue;
+  for(const p of el.tagName === 'g' ? [...el.children] : [el]) piezas.push(p);
+}
+const VB = svg.viewBox.baseVal, centro = { x: VB.x + VB.width / 2, y: VB.y + VB.height * .42 };
+azar(25);
+for(const p of piezas){
+  p.classList.add('pz');
+  const b = p.getBBox(); p._c = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+  p._d = Math.hypot(p._c.x - centro.x, p._c.y - centro.y); p._dir = { x: (p._c.x - centro.x) / (p._d || 1), y: (p._c.y - centro.y) / (p._d || 1) };
+  /* la cabeza y la estrella mandan (Carlos, 14 nov): nunca vuelan como pluma; aparecen primero en el centro */
+  p._manda = piezas.indexOf(p) < 3 || (p.tagName === 'polygon' && (p.getAttribute('fill') === '#F6ECFF' || (b.x < 565 && 565 < b.x + b.width && b.width > 200 && b.y < centro.y && centro.y < b.y + b.height)));
+  p._a = azar() * Math.PI * 2; p._r = 620 + azar() * 520; p._giro = (azar() - .5) * 720; p._esc = .55 + azar() * .3; p._orbita = (azar() < .5 ? -1 : 1) * (.12 + azar() * .12);
+}
+/* aparecen al azar; vuelan del centro hacia afuera (el cuerpo primero, las alas al último) */
+const alAzar = [...piezas].sort(() => azar() - .5); alAzar.forEach((p, i) => p._aparece = T.piezas + i * (l['02'].t1 + .35 - T.piezas) / piezas.length);
+const porDist = [...piezas].sort((a, b) => a._d - b._d); porDist.forEach((p, i) => p._vuela = T.vuelan + i * 1.55 / piezas.length);
+const DUR_VUELO = .95;
+
+window.VIDEO = { w: W, h: H, fps: 30, dur: FIN,
+  musica: { archivo: '/tmp/claude-0/musica/Inspired.mp3', desde: 0, vol: .32, entrada: .2, fin: 2.4 },
+  sonidos: [...sonidosVoz(G, 1.05), [fx('whoosh'), T.rompe - .05, .45],
+    ...Array.from({ length: 12 }, (_, i) => [fx('toque'), T.piezas + i * (l['02'].t1 - T.piezas) / 12, .22]),
+    [fx('subida'), T.vuelan - .2, .45], [fx('whoosh'), T.vuelan + .1, .4], [fx('whoosh'), T.vuelan + .9, .35],
+    [fx('golpe'), T.completa, .9], [fx('ding'), T.completa + .12, .45], [fx('whoosh'), T.sube, .35],
+    [fx('toque'), T.sube + .5, .35], [fx('toque'), T.sube + 1.75, .35], [fx('golpe'), T.sube + 3.0, .55], [fx('ding'), T.cierre + .3, .3]] };
+
+await Promise.all(['700 80px "Space Grotesk"', '600 54px "Inter Tight"', '800 58px "Inter Tight"'].map(f => document.fonts.load(f)));
+await $('#vieja').decode();
+
+/* la paloma vieja, hecha motas para que se deshaga */
+const motas = []; { const c = document.createElement('canvas'), im = $('#vieja'), an = 700, al = Math.round(an * im.naturalHeight / im.naturalWidth); c.width = an; c.height = al;
+  const cx = c.getContext('2d'); cx.drawImage(im, 0, 0, an, al); const d = cx.getImageData(0, 0, an, al).data; azar(11);
+  for(let yy = 0; yy < al; yy += 8) for(let xx = 0; xx < an; xx += 8){ const k = (yy * an + xx) * 4; if(d[k + 3] > 120) motas.push({ x: 190 + xx, y: 560 + yy, c: `rgb(${d[k]},${d[k + 1]},${d[k + 2]})`, a: azar() * Math.PI * 2, v: 250 + azar() * 800 }); } }
+/* chispas que suben cuando se completa */
+azar(3); const chispas = Array.from({ length: 46 }, () => ({ x: 120 + azar() * 840, y: 500 + azar() * 900, v: 60 + azar() * 160, s: 4 + azar() * 9, f: azar() * 6 }));
+const ESTRELLA = { x: (563 - VB.x) / VB.width, y: (340 - VB.y) / VB.width };   /* en fracción del ancho del logo */
+
+const sub = subtitulos($('#subs'), G), gr = grano($('#grano'), .045), x = $('#c2').getContext('2d');
+
+window.pintar = (t) => {
+  x.clearRect(0, 0, W, H);
+  /* el fondo: estudio oscuro que se aclara un poco al completarse */
+  const luz = vida(t, T.completa - .1, FIN + 1, .25, .1) * (.55 + .45 * (1 - tramo(t, T.completa, T.completa + 2.5)));
+  $('#fondo').style.background = `radial-gradient(70% 45% at 50% 34%, ${luz > .02 ? `rgba(126,23,53,${(.35 + .5 * luz).toFixed(3)})` : '#2A1240'}, ${PAL.oscuro} 72%), ${PAL.oscuro}`;
+
+  /* 1 · la paloma vieja flota y se deshace */
+  const vv = vida(t, .15, T.rompe + .05, .7, .05);
+  $('#vieja').style.opacity = vv; $('#vieja').style.transform = `translateY(${-14 * Math.sin(t * 1.4)}px) scale(${.94 + .06 * sale(tramo(t, .15, 2.2))})`;
+  const ur = tramo(t, T.rompe, T.rompe + 1.6);
+  if(ur > 0 && ur < 1) for(const m of motas){ const u = sale(ur); const px = m.x + Math.cos(m.a) * m.v * u, py = m.y + Math.sin(m.a) * m.v * u - 140 * u;
+    x.globalAlpha = (1 - ur) * .9; x.fillStyle = m.c; const s = 7 * (1 - ur * .6); x.fillRect(px - s / 2, py - s / 2, s, s); }
+  x.globalAlpha = 1;
+
+  /* 2 · las piezas: aparecen en órbita, vuelan a su lugar */
+  for(const p of piezas){
+    if(p._manda){ const um = sale(tramo(t, T.rompe + .35, T.rompe + 1.4)), late = 1 + .05 * Math.sin(t * 3) * (1 - tramo(t, T.vuelan, T.completa));
+      p.style.opacity = um.toFixed(3); p.style.transform = `translateY(${((1 - um) * 40).toFixed(1)}px) scale(${(late * (.85 + .15 * um)).toFixed(3)})`; continue; }
+    const ua = sale(tramo(t, p._aparece, p._aparece + .35));
+    if(ua <= 0){ p.style.opacity = 0; continue; }
+    const ang = p._a + p._orbita * (Math.min(t, p._vuela) - p._aparece);
+    const ox = Math.cos(ang) * p._r + (centro.x - p._c.x), oy = Math.sin(ang) * p._r * .82 + (centro.y - p._c.y);
+    const uv = tramo(t, p._vuela, p._vuela + DUR_VUELO), e = sale(uv);
+    /* ya armada, respira como la paloma viva (marca/paloma-2026/vivo.js): los cristales se alejan y vuelven en ola */
+    const resp = suave(tramo(t, T.completa + .7, T.completa + 2.2)) * 13 * (.5 + .5 * Math.sin(t * 1.15 - p._d * .0045 - Math.atan2(p._dir.y, p._dir.x) * .5));
+    const dx = mezcla(ox, 0, e) + p._dir.x * resp, dy = mezcla(oy, 0, e) - Math.sin(Math.PI * uv) * 60 + p._dir.y * resp;
+    const giro = mezcla(p._giro + 40 * Math.sin(t * .8 + p._a), 0, e);
+    const golpe = uv >= 1 ? 1 + .1 * Math.exp(-(t - p._vuela - DUR_VUELO) * 9) * Math.sin((t - p._vuela - DUR_VUELO) * 30) : 1;
+    const esc = mezcla(p._esc * (.6 + .4 * ua), 1, e) * golpe;
+    p.style.opacity = uv > 0 ? 1 : .35 + .55 * ua;
+    p.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) rotate(${giro.toFixed(1)}deg) scale(${esc.toFixed(3)})`;
+  }
+  brillo.style.opacity = (.55 * sale(tramo(t, T.completa, T.completa + .6))).toFixed(3);
+
+  /* 3 · se completa: destello, rayos desde la estrella y chispas */
+  $('#destello').style.opacity = (.55 * (1 - tramo(t, T.completa, T.completa + .7)) * (t >= T.completa ? 1 : 0)).toFixed(3);
+  const ur2 = tramo(t, T.completa, T.completa + 2.2);
+  if(ur2 > 0 && ur2 < 1){
+    const lg = $('#logo').getBoundingClientRect();
+    const sx = lg.left + ESTRELLA.x * lg.width, sy = lg.top + ESTRELLA.y * lg.width;
+    x.save(); x.translate(sx, sy); x.rotate(t * .25); x.globalCompositeOperation = 'lighter';
+    for(let i = 0; i < 16; i++){ const a = i / 16 * Math.PI * 2, largo = 1400 * sale(Math.min(1, ur2 * 2.2)), ancho = i % 2 ? 10 : 22;
+      const g = x.createLinearGradient(0, 0, Math.cos(a) * largo, Math.sin(a) * largo); g.addColorStop(0, `rgba(246,236,255,${.55 * (1 - ur2)})`); g.addColorStop(1, 'rgba(199,125,255,0)');
+      x.fillStyle = g; x.beginPath(); x.moveTo(0, 0); x.lineTo(Math.cos(a - .02) * largo - Math.sin(a) * ancho, Math.sin(a - .02) * largo + Math.cos(a) * ancho); x.lineTo(Math.cos(a + .02) * largo + Math.sin(a) * ancho, Math.sin(a + .02) * largo - Math.cos(a) * ancho); x.fill(); }
+    x.restore();
+  }
+  if(t > T.completa){ const uc = t - T.completa; x.save(); x.globalCompositeOperation = 'lighter';
+    for(const c of chispas){ const y = c.y - c.v * uc, a = vida(t, T.completa + c.f * .08, T.completa + 3 + c.f * .6, .2, .8) * (.5 + .5 * Math.sin(uc * 6 + c.f * 3));
+      if(a <= 0) continue; x.globalAlpha = a; x.fillStyle = '#E2B8FF'; x.save(); x.translate(c.x + Math.sin(uc + c.f) * 20, y); x.rotate(Math.PI / 4); x.fillRect(-c.s / 2, -c.s / 2, c.s, c.s); x.restore(); }
+    x.restore(); }
+
+  /* 4 · el logo respira, y sube para las frases */
+  const us = suave(tramo(t, T.sube, T.sube + .9));
+  const empuje = 1 + .035 * suave(tramo(t, T.vuelan, T.completa)) - .035 * suave(tramo(t, T.completa + .3, T.completa + 1.6));
+  $('#logo').style.transform = `translateY(${(-60 * us).toFixed(1)}px) scale(${(mezcla(1, .6, us) * empuje).toFixed(4)})`;
+  const partes = [0, .33, .66].map(f => l['05'].t0 + f * l['05'].dur - .12);
+  [...$('#titulo').children].forEach((s, i) => { const u = sale(tramo(t, partes[i], partes[i] + .45)), fuera = tramo(t, T.cierre - .3, T.cierre);
+    s.style.opacity = (u * (1 - fuera)).toFixed(3); s.style.transform = `translateY(${((1 - u) * 70 - fuera * 40).toFixed(1)}px) scale(${(1.25 - .25 * u).toFixed(3)})`; s.style.filter = `blur(${((1 - u) * 10).toFixed(1)}px)`; });
+
+  /* 5 · el cierre */
+  const ul = sale(tramo(t, T.cierre, T.cierre + .6));
+  $('#lema').style.opacity = ul.toFixed(3); $('#lema').style.transform = `translateY(${((1 - ul) * 50).toFixed(1)}px)`;
+  const uw = sale(tramo(t, T.cierre + .9, T.cierre + 1.5));
+  $('#cierre').style.opacity = uw.toFixed(3); $('#cierre').style.transform = `translateY(${((1 - uw) * 40).toFixed(1)}px)`;
+
+  sub(t); gr(t);
+};
+window.pintar(0);
+window._listo();
+</script>
+</body>
+</html>

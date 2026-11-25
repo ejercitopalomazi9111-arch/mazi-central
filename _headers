@@ -72,3 +72,8 @@
 /mosca/*
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Embedder-Policy: require-corp
+
+# MAZI VR usa la cámara de atrás para la realidad mixta (y el micrófono vendrá con los comandos de voz).
+/vr/*
+  ! Permissions-Policy
+  Permissions-Policy: camera=(self), microphone=(self), geolocation=(), payment=()

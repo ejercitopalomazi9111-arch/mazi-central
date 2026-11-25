@@ -378,11 +378,12 @@ const revuelto = (t) => {
    búsqueda copiada es el defecto `renombrar-de-un-lado` esperando a pasar. */
 import { buscar as buscarNeuronas, vecinas, CAMPOS, claseDe } from '../../cerebro/buscador.mjs';
 import { generarVapid, empujarATodos } from './push.mjs';
-import { atenderBanco } from './banco.js';
+import { atenderBanco, atenderBancoEscuela } from './banco.js';
 import { atenderElementos } from './elementos.js';
 import { atenderPizarron } from './pizarron.js';
 import { RESPALDOS, ORDEN_RESPALDO, respaldosVivos, respaldosApagados, preguntarRespaldo, probarLlaveRespaldo } from './respaldos.js';
 import { atenderEstudio, diaMexico } from './estudio.js';
+import { revisarAvisos } from './avisos-estudio.js';
 import { atenderSecre } from './secre.js';
 import { MOTORES, preguntar, motoresVivos, motoresApagados, motorDe,
          PAPEL_SILLA, PAPEL_RESUMEN, PAPEL_LIGUE, generarImagen, generarVoz } from './modelos.js';
@@ -730,6 +731,14 @@ export class Sala {
     if(letras.length > 120) texto = letras.slice(0, 119).join('') + '…';
     else texto = letras.join('');
     return JSON.stringify({ titulo: quien, texto, sala: this._codigo || '' });
+  }
+
+  /* los de CARYMO: mismo par de llaves y mismo envío que los del chat, con 12 h de vida
+     (un «estudia» que llega tarde sigue sirviendo; uno de chat de hace media hora, no) */
+  async empujarEstudio(suscripciones, mensaje){
+    const vapid = await this.llavesDeAviso();
+    const enviar = this._enviarPush || empujarATodos;
+    return enviar(suscripciones, vapid, { mensaje, ttl: 12 * 3600 });
   }
 
   async avisarCerrados(evento){
@@ -1775,6 +1784,12 @@ export class Sala {
     if(new URL(pedido.url).hostname === 'interno' && new URL(pedido.url).pathname === '/llaves-ia-crudas'){
       return Response.json(Object.fromEntries(NOMBRES_LLAVE_IA.map(n => [n, (this.env && this.env[n]) || null])));
     }
+    /* Los avisos de CARYMO (avisos-estudio.js): la tarea programada del worker pide esto cada 15 min.
+       Mismo candado que arriba: sólo con el host «interno», que de fuera nadie puede poner. */
+    if(new URL(pedido.url).hostname === 'interno' && new URL(pedido.url).pathname === '/carymo-avisos'){
+      const r = await revisarAvisos(this.ctx.storage, ahora(), (subs, mensaje) => this.empujarEstudio(subs, mensaje));
+      return Response.json({ bien: true, ...r });
+    }
     /* Antes de contestar nada: que las sillas con llave estén en el censo.
        Va aquí y no en el arranque porque el censo lo leen media docena de
        endpoints y ninguno debería tener que acordarse. */
@@ -1810,13 +1825,19 @@ export class Sala {
         await this.ctx.storage.put(kVinculo, suya);
         return Response.json({ bien: true, cuenta: suya });
       }
-      if(!['estudio', 'ia-texto', 'ia-voz'].includes(ruta)) return Response.json({ error: 'Eso no es de CARYMO.' }, { status: 403 });
+      if(!['estudio', 'ia-texto', 'ia-voz', 'banco-escuela'].includes(ruta)) return Response.json({ error: 'Eso no es de CARYMO.' }, { status: 403 });
       const vinculo = await this.ctx.storage.get(kVinculo);
+      /* «borrar mi cuenta» desde CARYMO: si ese usuario está VINCULADO a una cuenta de la sala (Carlos, Luis),
+         sólo se suelta el vínculo; el avance de la cuenta de siempre no se toca */
+      if(ruta === 'estudio' && vinculo && pedido.method === 'POST' && /"accion"\s*:\s*"borrarTodo"/.test(await pedido.clone().text().catch(() => ''))){
+        await this.ctx.storage.delete(kVinculo);
+        return Response.json({ bien: true, borrado: true, soloVinculo: true });
+      }
       /* nadie se queda con el avance de «carlos» por registrarse con ese nombre: los nombres de las
          cuentas de la sala se apartan (u_carlos) salvo que se vinculen con su llave */
       const deLaSala = new Set([...Object.values(this.llaves || {}), ...String(this.env.LLAVES || '').split(',').map((x) => x.split(':')[0].trim()).filter(Boolean)]);
       cuenta = vinculo || (deLaSala.has(usuario) ? 'u_' + usuario : usuario);
-      if(ruta !== 'estudio' && !vinculo){
+      if(ruta !== 'estudio' && ruta !== 'banco-escuela' && !vinculo){
         const k = `carymo:uso:${diaMexico(Date.now())}:${usuario}`, n = (await this.ctx.storage.get(k)) || 0, tope = ruta === 'ia-voz' ? 200 : 80;
         if(n >= tope) return Response.json({ error: ruta === 'ia-voz' ? 'Por hoy ya se acabó la voz de tu cuenta. Mañana vuelve.' : 'Por hoy ya usaste toda la IA de tu cuenta. Mañana vuelve, o sigue con lo que ya está preparado.' }, { status: 429 });
         await this.ctx.storage.put(k, n + 1);
@@ -2336,12 +2357,15 @@ export class Sala {
        desconocido no se gaste el saldo de Carlos. No publican nada en el hilo. */
     /* ── /banco · las imágenes de Carlos para sus presentaciones (banco.js) ── */
     if(ruta === 'banco') return atenderBanco(this.ctx.storage, pedido, url, cuenta);
+    if(ruta === 'banco-escuela') return atenderBancoEscuela(this.ctx.storage, pedido, url);
     /* ── /elementos · lo que Carlos arma y guarda para reusar (elementos.js) ── */
     if(ruta === 'elementos') return atenderElementos(this.ctx.storage, pedido, url, cuenta);
     /* ── /pizarron · los pendientes por proyecto (pizarron.js) ── */
     if(ruta === 'pizarron') return atenderPizarron(this.ctx.storage, pedido, url, cuenta);
     /* ── /estudio · planes de examen, XP, racha y ranking (estudio.js) ── */
-    if(ruta === 'estudio') return atenderEstudio(this.ctx.storage, pedido, url, cuenta);
+    if(ruta === 'estudio') return atenderEstudio(this.ctx.storage, pedido, url, cuenta, ahora(), { vapid: () => this.llavesDeAviso(), enviar: (subs, mensaje) => this.empujarEstudio(subs, mensaje),
+      /* la casa (quien entra con la llave de la sala, no con cuenta de CARYMO) puede poner títulos y regalos */
+      admin: !deCarymo && !!cuenta && cuenta !== 'invitado' });
     /* ── /secre · el cajón cifrado de Secre (secre.js). Sólo la cuenta dueña ── */
     if(ruta === 'secre'){
       if(cuenta !== (this.dueno || 'carlos')) return Response.json({ error: 'Esto es sólo de la cuenta dueña de la sala.' }, { status: 403 });
@@ -2601,7 +2625,11 @@ export class Sala {
           error:'Falta `suscripcion` con un `endpoint` https del navegador.' },
           { status:400 });
       }
-      this.avisos[quien.id] = { endpoint: sus.endpoint };
+      /* ⚠ CON SUS LLAVES. Antes se guardaba sólo `endpoint`, y sin `keys` el aviso no se puede cifrar:
+         todos llegaban «Escribieron en la sala», sin quién ni qué, aunque el cifrado ya existía. */
+      const llaves = sus.keys && typeof sus.keys.p256dh === 'string' && typeof sus.keys.auth === 'string'
+        ? { p256dh: sus.keys.p256dh.slice(0, 200), auth: sus.keys.auth.slice(0, 100) } : null;
+      this.avisos[quien.id] = llaves ? { endpoint: sus.endpoint, keys: llaves } : { endpoint: sus.endpoint };
       await this.ctx.storage.put({ avisos: this.avisos });
       return Response.json({ bien:true, apuntados: Object.keys(this.avisos).length });
     }

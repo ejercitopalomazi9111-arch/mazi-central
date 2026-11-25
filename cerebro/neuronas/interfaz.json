@@ -209,6 +209,154 @@
     "el botón no hace nada en el editor"
    ],
    "salioDe": "presentaciones/recorte.js · 30 de septiembre de 2026"
+  },
+  {
+   "id": "mirar-fijo-elige-lo-que-ya-tenias-enfrente",
+   "titulo": "En realidad virtual, «mirar fijo para elegir» no puede contar desde que se abre la pantalla",
+   "gravedad": "media",
+   "sintoma": "Mazi VR abría «La Sala» solo, 1.6 s después de entrar al inicio, sin que nadie tocara nada.",
+   "causa": "La tarjeta del centro queda justo bajo la mira al abrir el menú, y el contador de mirar fijo arrancaba en ese momento. Antes no se notaba porque el foco por flechas empezaba en 0 y daba 4 s de gracia por casualidad.",
+   "porque": "En una página normal nada se activa por estar quieto; en el visor la mira SIEMPRE apunta a algo.",
+   "arreglo": "Al abrir una vista el foco se borra y mirar fijo queda bloqueado hasta que la mira se mueva a otra cosa; y con el control conectado mirar fijo no elige: se elige con X (vr/vr.js, mirarBloqueado).",
+   "comoCazarlo": "Entrar y no tocar nada durante 3 s: la vista no puede cambiar sola (vr/pruebas.mjs lo hace sin querer: si cambia, todo lo demás sale rojo).",
+   "consejo": "Una acción por quedarse quieto necesita que antes haya habido un movimiento.",
+   "salioDe": "Fase 1 de Mazi VR, 18 nov.",
+   "vecinas": []
+  },
+  {
+   "id": "arco-par-deja-la-mira-en-un-hueco",
+   "titulo": "Un menú en arco con un número PAR de tarjetas centradas deja la mira en el hueco de en medio",
+   "gravedad": "media",
+   "sintoma": "Al pasar el inicio de Mazi VR de 5 a 6 tarjetas, al entrar ninguna tenía foco: las flechas no movían nada y el puntero de la mano apuntaba al vacío.",
+   "causa": "Centrar el arco con (i - (n-1)/2) pone el centro exacto ENTRE dos tarjetas cuando n es par; la mira y la mano empiezan justo ahí.",
+   "porque": "En el visor la mira siempre empieza al centro; en una página el ojo no tiene un punto fijo de arranque.",
+   "arreglo": "El arco se ancla a una tarjeta (i - 2): «Leer» queda enfrente y el arco se carga un poco a la derecha (vr/index.html).",
+   "comoCazarlo": "vr/pruebas.mjs y vr/pruebas-manos.mjs salen rojas: «X sobre Ajustes» y «el puntero da foco a una tarjeta (null)».",
+   "consejo": "Lo que el usuario ve al abrir siempre tiene que tener algo seleccionable justo enfrente.",
+   "salioDe": "Mazi VR, INKWELL dentro del visor, 18 nov.",
+   "vecinas": [
+    "mirar-fijo-elige-lo-que-ya-tenias-enfrente"
+   ]
+  },
+  {
+   "id": "entrar-tarda-por-esperar-lo-que-no-hace-falta",
+   "titulo": "«Toco Entrar y tarda años»: el botón esperaba la cámara abierta dos veces, los sonidos uno por uno y armar todo el visor",
+   "gravedad": "media",
+   "sintoma": "En el iPhone, Mazi VR tardaba mucho entre tocar Entrar y ver el inicio, y sin internet ni abría.",
+   "causa": "El toque hacía en fila: pedir la cámara normal, enumerar, cerrarla y abrir la gran angular; bajar tres sonidos uno tras otro; y hasta el final armar las ~60 tarjetas y paneles del visor. No había trabajador de fondo.",
+   "porque": "En la computadora todo eso dura poco y no se nota; en el teléfono cada apertura de cámara cuesta segundos.",
+   "arreglo": "El visor se arma mientras se ve la portada; los sonidos se bajan a la vez al abrir; la cámara se abre por detrás (la mixta y las manos se prenden cuando llega) y se recuerda cuál es la gran angular para abrirla de un jalón; y vr/sw.js guarda todo, también las manos (vr/index.html, vr/vr.js).",
+   "comoCazarlo": "node vr/pruebas-sinred.mjs apaga el servidor y mide de Entrar al inicio (debe ser menos de 3 s; da ~0.5 s).",
+   "consejo": "Lo que exige el toque va en el toque; todo lo demás, antes o después, nunca en fila detrás de él.",
+   "salioDe": "Carlos, 18 nov: «toco el botón de entrar y tarda años en cargar, hazlo que funcione offline».",
+   "vecinas": [
+    "arco-par-deja-la-mira-en-un-hueco"
+   ]
+  },
+  {
+   "id": "una-lectura-por-serie-con-el-visor-pintando",
+   "titulo": "Leer la base de IndexedDB serie por serie tardaba segundos mientras el visor pinta",
+   "gravedad": "baja",
+   "sintoma": "En Mazi VR el estante de Leer tardaba de 3 a 6 s en salir y la prueba lo daba por vacío.",
+   "causa": "obrasBajadas hacía una transacción por serie, una tras otra; cada respuesta espera su turno detrás de un cuadro del visor (dos ojos y el lente), y en el navegador de pruebas un cuadro tarda cientos de ms.",
+   "porque": "Una página normal no tiene un bucle pesado ocupando el hilo; en una escena 3D cada await de IndexedDB cuesta un cuadro.",
+   "arreglo": "Todo de un jalón: series, llaves de capítulos y libros en tres lecturas a la vez (vr/lector.js, obrasBajadas).",
+   "comoCazarlo": "vr/pruebas-lector.mjs: el estante tiene que salir en menos de 6 s.",
+   "consejo": "Con un bucle de render corriendo, junta las lecturas en paralelo; no encadenes awaits.",
+   "salioDe": "Mazi VR, 18 nov.",
+   "vecinas": []
+  },
+  {
+   "id": "lo-agarrado-se-pierde-si-la-mano-brinca",
+   "titulo": "Lo que traes en la mano se queda flotando si el rastreo pierde la mano y la encuentra en otro lado",
+   "gravedad": "media",
+   "sintoma": "En Objetos de Mazi VR la pistola seguía «agarrada» pero ya no seguía a la mano ni disparaba al doblar el índice.",
+   "causa": "Cada cuadro se buscaba qué trae cada mano comparando su dirección con la del cuadro anterior (menos de 26°). Si la mano brinca (se pierde un instante, o cambia de golpe a dónde apunta), ninguna mano «trae» la pistola: queda colgada.",
+   "porque": "El rastreo de MediaPipe no da identidad de mano entre cuadros; la continuidad se adivina por cercanía, y un brinco la rompe.",
+   "arreglo": "Lo agarrado se le asigna a la mano más cercana sin repetir, y con una sola mano y una sola cosa agarrada es suya aunque haya brincado (vr/objetos.js, manosCuadro).",
+   "comoCazarlo": "vr/pruebas-objetos.mjs: agarra la pistola apuntándole y en el siguiente paso la mano ya apunta a la diana; tiene que disparar.",
+   "consejo": "Todo lo que una mano «posee» se reasigna cada cuadro con un respaldo para el caso fácil; nunca depende sólo de que la mano no se haya movido mucho.",
+   "salioDe": "Mazi VR, 18 nov.",
+   "vecinas": []
+  },
+  {
+   "id": "botones-con-huecos",
+   "clase": "error",
+   "titulo": "Un botón que sólo funciona la primera vez",
+   "gravedad": "alta",
+   "sintoma": "Sin control conectado, la palma que abre el menú o una tecla de Mazi VR funcionan una vez y luego nunca.",
+   "causa": "El arreglo de botones del cuadro se llenaba sólo con lo apretado (ahora[i] = true) y quedaba con huecos.",
+   "porque": "map y forEach se saltan los huecos: el estado anterior nunca regresaba a falso, así que «recién apretado» ya no se cumplía.",
+   "arreglo": "El arreglo nace lleno: new Array(17).fill(false) (vr/vr.js, leerControl).",
+   "comoCazarlo": "Apretar el mismo botón DOS veces en la prueba, no una. Lo cazó vr/pruebas-seis-motor.mjs.",
+   "senales": [
+    "el gesto funciona una vez",
+    "la tecla ya no responde",
+    "el botón sólo jala la primera vez",
+    "sin control no funciona el menú"
+   ],
+   "salioDe": "Motor de MAZI XR, 19 nov 2026."
+  },
+  {
+   "id": "seis-dof-se-desliza",
+   "clase": "decision",
+   "titulo": "El 6DoF que se desliza estando parado",
+   "gravedad": "media",
+   "sintoma": "En el iPhone, el cubo anclado a veces se va lejos solo, sobre todo en una zona con poca textura.",
+   "que": "El motor toma del VIO sólo la posición, por pedazos, y tira los que son imposibles: brincos de más de 30 cm, deslizarse a más de 35 cm/s sin pasos en el acelerómetro, y más de 0.3 s sin puntos de cámara. El giro sigue del giroscopio.",
+   "porque": "Así una falla del VIO nunca congela ni voltea la vista, y el caso que vio Carlos (desliz sin caminar) se frena.",
+   "alternativas": "Usar la pose completa del VIO (si se cae, la vista se cae); integrar el acelerómetro (deriva en segundos); mapa con relocalización (es la cura de fondo, etapa aparte).",
+   "ojo": "El freno es una regla: una deriva lenta o mientras caminas todavía se nota.",
+   "senales": [
+    "el cubo se desliza",
+    "lo anclado se va solo",
+    "6dof deriva",
+    "se mueve el mundo estando quieto"
+   ],
+   "salioDe": "vr/seis.js y are/Documentation/ENGINEERING_LOG.md 006, 19 nov 2026."
+  },
+  {
+   "id": "sable-de-la-punta-del-dedo",
+   "clase": "error",
+   "titulo": "El sable que se voltea al cerrar la mano",
+   "gravedad": "media",
+   "sintoma": "En Sables con las manos, al agarrar el sable en puño la hoja da la vuelta o tiembla; y calibrar tarda distinto según el teléfono.",
+   "causa": "La hoja salía de la muñeca hacia la PUNTA del dedo medio, y en un puño la punta se dobla hacia la palma. Y la calibración contaba lecturas (24), no tiempo: en el teléfono a 60 cuadros duraba 0.4 s y en el navegador de pruebas casi 4 s.",
+   "porque": "Una dirección hecha con un punto que se mueve con el gesto cambia con el gesto. Contar cuadros es medir el teléfono, no a la persona.",
+   "arreglo": "Marco rígido de la palma (muñeca → nudillo del índice y nudillo del meñique → nudillo del índice), calibración por tiempo (0.8 s firme) y suavizado por tiempo (vr/sable-mano.js).",
+   "cazar": "node vr/pruebas-sable-mano.mjs y la parte de manos de vr/pruebas-sables.mjs",
+   "senales": [
+    "el sable se voltea",
+    "el sable tiembla",
+    "cerrar la mano mueve el sable",
+    "calibrar no termina",
+    "la calibración tarda"
+   ],
+   "vecinas": [
+    "seis-dof-se-desliza"
+   ],
+   "salioDe": "vr/sable-mano.js, 19 nov 2026."
+  },
+  {
+   "id": "piso-por-lo-mas-bajo",
+   "clase": "error",
+   "titulo": "El piso del mapa que sale a -3 m",
+   "gravedad": "media",
+   "sintoma": "Con la caminata real del iPhone, el piso de los límites de Mazi VR quedaba muy abajo y el piso de verdad habría contado como obstáculo.",
+   "causa": "Tomaba el piso como lo más bajo del mapa (el 5 % de abajo); el rastreo deja ruido muy por debajo del piso.",
+   "porque": "En una nube de puntos de rastreo los extremos son ruido; el plano grande es lo que se repite.",
+   "arreglo": "El piso es la capa de 5 cm con más puntos entre 0.7 y 2 m abajo de los ojos; un obstáculo pide 4 puntos y 12 cm de alto en su casilla (vr/limites.js).",
+   "cazar": "node vr/pruebas-limites.mjs (trae ruido muy abajo) y la parte de límites de vr/pruebas-seis-motor.mjs, que imprime el piso de la caminata real",
+   "senales": [
+    "avisa obstáculo todo el tiempo",
+    "cuidado sin nada cerca",
+    "el piso cuenta como obstáculo",
+    "límites del cuarto mal"
+   ],
+   "vecinas": [
+    "seis-dof-se-desliza"
+   ],
+   "salioDe": "vr/limites.js, 19 nov 2026."
   }
  ]
 }

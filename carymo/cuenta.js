@@ -7,6 +7,11 @@
  * sigue con su mismo avance de siempre. */
 import { cuenta, guardarSesion, cerrarSesion, usuarioCuenta, tokenCuenta, llave, SERVIDOR } from '../sala/acceso.js';
 
+/* QUÉ ESTUDIAS (Carlos, 14 nov: «que al crear tu cuenta te pida el dato de qué estás estudiando: kínder, primaria,
+   secundaria…»). Decide el nivel con el que explica la IA (kids / secu / prepa / uni). */
+export const ESCOLAR = [['kinder', 'Kínder'], ['primaria', 'Primaria'], ['secundaria', 'Secundaria'], ['prepa', 'Prepa'], ['uni', 'Universidad'], ['otro', 'Otro']];
+export const NIVEL_DE_ESCOLAR = { kinder: 'kids', primaria: 'kids', secundaria: 'secu', prepa: 'prepa', uni: 'uni', otro: 'uni' };
+
 export function iniciarCuenta(h){
   const { hoja, cerrarHoja, esc, ico, brindis, tono, SON, $ } = h;
 
@@ -20,7 +25,8 @@ export function iniciarCuenta(h){
     const nombre = (h.perfil().nombre && h.perfil().nombre !== 'Tú') ? h.perfil().nombre : '';
     hoja(titulo, `<form class="form-cuenta" id="fCuenta" novalidate>
       <p class="cuenta-txt">${modo === 'crear' ? 'Así se guarda tu avance en todos tus teléfonos y puedes competir con tus amigos. Es gratis.' : modo === 'entrar' ? 'Con tu usuario y tu contraseña.' : 'Con el código de recuperación que te dimos al crear tu cuenta.'}</p>
-      ${modo === 'crear' ? `<label>Tu nombre<input class="campo" id="cNombre" autocomplete="given-name" value="${esc(nombre)}" placeholder="Cómo quieres que te diga" maxlength="40"></label>` : ''}
+      ${modo === 'crear' ? `<label>Tu nombre<input class="campo" id="cNombre" autocomplete="given-name" value="${esc(nombre)}" placeholder="Cómo quieres que te diga" maxlength="40"></label>
+      <fieldset class="escolar"><legend>¿Qué estudias?</legend><div class="escolar-op">${ESCOLAR.map(([k, t]) => `<label><input type="radio" name="cEscolar" value="${k}"${(h.escolar?.() || '') === k ? ' checked' : ''}><span>${t}</span></label>`).join('')}</div></fieldset>` : ''}
       <label>Usuario<input class="campo" id="cUsuario" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="sin espacios ni acentos" maxlength="20"></label>
       ${modo === 'recuperar' ? '<label>Código de recuperación<input class="campo" id="cCodigo" autocapitalize="characters" autocomplete="off" placeholder="12 letras"></label>' : ''}
       <label>${modo === 'recuperar' ? 'Contraseña nueva' : 'Contraseña'}<input class="campo" id="cClave" type="password" autocomplete="${modo === 'entrar' ? 'current-password' : 'new-password'}" placeholder="al menos 8 caracteres"></label>
@@ -35,6 +41,8 @@ export function iniciarCuenta(h){
         const error = (t) => { const p = $('#cError', hj); p.textContent = t; p.hidden = !t; tono(SON.mal); };
         if(!/^[a-z0-9_]{3,20}$/.test(usuario)){ error('El usuario va de 3 a 20 letras sin acentos ni espacios (puede llevar números y guion bajo).'); $('#cUsuario', hj).focus(); return; }
         if(clave.length < 8){ error('La contraseña necesita al menos 8 caracteres.'); $('#cClave', hj).focus(); return; }
+        const escolar = modo === 'crear' ? hj.querySelector('[name="cEscolar"]:checked')?.value : null;
+        if(modo === 'crear' && !escolar){ error('Elige qué estudias.'); hj.querySelector('[name="cEscolar"]').focus(); return; }
         const b = $('#cListo', hj); b.disabled = true; b.textContent = 'Un momento…';
         try{
           let j;
@@ -42,6 +50,7 @@ export function iniciarCuenta(h){
           else if(modo === 'entrar') j = await cuenta('entrar', { usuario, clave });
           else j = await cuenta('recuperar', { usuario, clave, codigo: $('#cCodigo', hj).value });
           guardarSesion(j);
+          if(escolar) h.alEscolar?.(escolar);
           await vincular();
           tono(SON.fin);
           if(j.recuperacion) mostrarCodigo(j.recuperacion, j.yo);
@@ -62,5 +71,32 @@ export function iniciarCuenta(h){
     });
   }
   async function salir(){ try{ await cuenta('salir', {}); }catch{} cerrarSesion(); h.alSalir?.(); }
-  return { abrir, salir, usuario: usuarioCuenta, conCuenta: () => !!tokenCuenta() };
+
+  /* BORRAR LA CUENTA desde la app (App Store y Play Store lo exigen, 14 nov). Con la contraseña:
+     1) se comprueba entrando con ella, 2) se borra todo el avance (servidor de estudio), 3) se borra la cuenta.
+     En ese orden, para que una contraseña equivocada no se lleve el avance y deje la cuenta viva. */
+  function borrar(){
+    const usuario = usuarioCuenta();
+    hoja('Borrar cuenta', `<form class="form-cuenta" id="fBorrar" novalidate>
+      <p class="cuenta-txt">Se borran tu avance, tus planes, tus mascotas, tus amigos y la cuenta <b>@${esc(usuario)}</b>. No se puede deshacer.</p>
+      <label>Contraseña<input class="campo" id="bClave" type="password" autocomplete="current-password"></label>
+      <p class="cuenta-error" id="bErr" role="alert" hidden></p>
+      <button class="bt fuerte ancho peligro" id="bBorrar" type="submit">${ico('trash')}Borrar para siempre</button>
+    </form>`, (hj) => {
+      const err = (t) => { const e = $('#bErr', hj); e.textContent = t; e.hidden = !t; };
+      $('#fBorrar', hj).addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        const clave = $('#bClave', hj).value, b = $('#bBorrar', hj);
+        if(!clave) return err('Escribe tu contraseña.');
+        b.disabled = true; err('');
+        try{
+          await cuenta('entrar', { usuario, clave });
+          await h.borrarDatos();
+          await cuenta('borrarCuenta', { clave });
+          cerrarSesion(); h.alBorrar?.();
+        }catch(e){ err(e.message || 'No se pudo. Prueba otra vez.'); b.disabled = false; }
+      });
+    });
+  }
+  return { abrir, salir, borrar, usuario: usuarioCuenta, conCuenta: () => !!tokenCuenta() };
 }

@@ -13,7 +13,11 @@
 
 const VACIAS = new Set(('a al algo como con de del el en es esa ese eso esta este esto ha hay la las le lo los me mi mis ' +
   'muy no o para pero por que qué se si sí su sus te tu tus un una uno unos y ya yo oye hola buenas buenos dias tardes ' +
-  'noches quisiera quiero queria gustaria saber favor porfa pls usted ustedes ustedes').split(' '));
+  'noches quisiera quiero queria gustaria saber favor porfa pls usted ustedes ustedes ' +
+  /* la muletilla de WhatsApp (Godines, 17 nov, con 1,536 mensajes de prueba): «jefe», «disculpe», «plis», «qué onda», «x favor»,
+     «q», «tan» (están)… no dicen qué quiere y le bajaban la puntuación a la frase buena. Ver pruebas-coloquial.mjs */
+  'plis please porfavor xfa xfavor x q k pa jefe joven jefa disculpe disculpa oiga onda pregunta amigo amiga ' +
+  'senor senora senorita seno ey buen dia tarde noche saludos gracias estan tan ').trim().split(/\s+/));
 
 export const normalizar = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
   .replace(/[^a-z0-9ñ\s]/g, ' ').replace(/\s+/g, ' ').trim();

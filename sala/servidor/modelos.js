@@ -551,7 +551,10 @@ export async function generarImagen(env, pedido = {}, hacer = fetch){
    Igual que la imagen: se recorre la respuesta buscando el audio, y si un
    modelo o una ruta da 404 se prueba la siguiente — los nombres cambian. */
 export const MODELOS_VOZ = ['gemini-3.8-flash-tts', 'gemini-3.8-flash-lite-tts', 'gemini-3.1-flash-tts-preview', 'gemini-2.5-flash-preview-tts'];
-export const VOCES = ['Kore', 'Aoede', 'Leda', 'Puck', 'Charon', 'Fenrir', 'Orus', 'Zephyr', 'Callirrhoe', 'Autonoe', 'Despina', 'Sulafat'];
+/* las 30 voces de Gemini TTS (lista de memoria, 15 nov 2026: se comprueba contra la documentación al publicar la sala); antes sólo había 12 y cualquier otra caía callada en Kore */
+export const VOCES = ['Kore', 'Aoede', 'Leda', 'Puck', 'Charon', 'Fenrir', 'Orus', 'Zephyr', 'Callirrhoe', 'Autonoe', 'Despina', 'Sulafat',
+  'Enceladus', 'Iapetus', 'Umbriel', 'Algieba', 'Erinome', 'Algenib', 'Rasalgethi', 'Laomedeia', 'Achernar', 'Alnilam', 'Schedar', 'Gacrux',
+  'Pulcherrima', 'Achird', 'Zubenelgenubi', 'Vindemiatrix', 'Sadachbia', 'Sadaltager'];
 
 /** El último audio que haya en cualquier parte de una respuesta. */
 export function buscarAudio(j){
@@ -639,7 +642,9 @@ export async function generarVoz(env, pedido = {}, hacer = fetch){
       for(const [url, cuerpo] of rutas){
         const r = await hacer(url, { method: 'POST', signal: corta.signal, headers: cab, body: JSON.stringify(cuerpo) });
         if(r.status === 401 || r.status === 403) return { bien: false, error: `Google rechazó la llave (${r.status}). GEMINI_API_KEY está puesta pero no sirve.` };
-        if(r.status === 429) return { bien: false, error: 'Google dice que vamos muy seguido (429). Espera un momento.' };
+        /* cada modelo de voz tiene su propio cupo gratis: si uno ya se topó, se prueba el siguiente (antes se rendía aquí
+           y el anuncio 2 de CARYMO se quedó dos líneas sin voz con tres modelos más sin tocar) */
+        if(r.status === 429){ ultimo = { bien: false, error: 'Google dice que vamos muy seguido (429). Espera un momento.' }; break; }
         if(r.status === 404 || r.status === 400){ ultimo = { bien: false, error: `El modelo de voz ${modelo} contestó ${r.status}.` }; continue; }
         if(!r.ok){ ultimo = { bien: false, error: `Google contestó ${r.status}. ${(await r.text().catch(() => '')).slice(0, 200)}` }; continue; }
         const a = buscarAudio(await r.json().catch(() => ({})));

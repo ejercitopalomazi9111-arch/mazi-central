@@ -70,5 +70,65 @@
   "pico_dbfs": -3,
   "bytes": 8927,
   "receta": "subir"
+ },
+ "comer": {
+  "dur_ms": 390,
+  "pico_dbfs": -7,
+  "bytes": 4486,
+  "receta": "ñam: tres mordidas crujientes (ruido que se cierra) sobre un «mm» grave."
+ },
+ "burbujas": {
+  "dur_ms": 518,
+  "pico_dbfs": -8,
+  "bytes": 5792,
+  "receta": "burbujas del baño: pops chiquitos y agudos a destiempo, que suben."
+ },
+ "rebote": {
+  "dur_ms": 410,
+  "pico_dbfs": -6,
+  "bytes": 4747,
+  "receta": "la pelota: dos botes que se acortan, como de goma."
+ },
+ "compra": {
+  "dur_ms": 900,
+  "pico_dbfs": -5,
+  "bytes": 9710,
+  "receta": "compraste: los cubitos caen (tres monedas cristalinas) y cierra un acorde."
+ },
+ "racha": {
+  "dur_ms": 1180,
+  "pico_dbfs": -4,
+  "bytes": 12584,
+  "receta": "la racha creció: un fogonazo (ruido que sube) y una campana cálida."
+ },
+ "nivel": {
+  "dur_ms": 1780,
+  "pico_dbfs": -3,
+  "bytes": 18592,
+  "receta": "subiste de nivel de cuenta: fanfarria corta (arpegio que sube y un acorde que se queda)."
+ },
+ "mensaje": {
+  "dur_ms": 600,
+  "pico_dbfs": -7,
+  "bytes": 6576,
+  "receta": "te escribió un amigo: dos notas suaves que suben, como «¿eh?»."
+ },
+ "invita": {
+  "dur_ms": 860,
+  "pico_dbfs": -6,
+  "bytes": 9188,
+  "receta": "te invitan a estudiar: un timbrecito de tres que se repite dos veces."
+ },
+ "descanso": {
+  "dur_ms": 2212,
+  "pico_dbfs": -5,
+  "bytes": 22772,
+  "receta": "acabó un bloque del pomodoro: campana de mesa, grave y larga, que invita a pararse."
+ },
+ "perdio": {
+  "dur_ms": 860,
+  "pico_dbfs": -8,
+  "bytes": 9188,
+  "receta": "se perdió la racha: dos notas que bajan, suaves, sin regañar."
  }
 }

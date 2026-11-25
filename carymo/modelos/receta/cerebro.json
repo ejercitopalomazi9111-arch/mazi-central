@@ -1,0 +1,11 @@
+{ "caras": 9000, "partes": [
+  { "id": "frontal", "conceptos": ["left frontal lobe", "right frontal lobe"], "color": "#C77DFF" },
+  { "id": "parietal", "conceptos": ["left parietal lobe", "right parietal lobe"], "color": "#5BB8F5" },
+  { "id": "temporal", "conceptos": ["left temporal lobe", "right temporal lobe"], "color": "#F2B544" },
+  { "id": "occipital", "conceptos": ["left occipital lobe", "right occipital lobe"], "color": "#F06C8B" },
+  { "id": "insula", "conceptos": ["left insula", "right insula"], "color": "#7FD6A8", "caras": 2500 },
+  { "id": "limbico", "conceptos": ["left limbic lobe", "right limbic lobe"], "color": "#FF9A62", "caras": 5000 },
+  { "id": "cerebelo", "conceptos": ["cerebellum"], "color": "#8C7CF0" },
+  { "id": "tronco", "conceptos": ["brainstem"], "color": "#E6D3B8", "caras": 4000 },
+  { "id": "diencefalo", "conceptos": ["diencephalon"], "color": "#62D2D2", "caras": 3000 }
+] }

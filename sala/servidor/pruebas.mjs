@@ -2100,6 +2100,14 @@ console.log('\n· Avisar con la sala cerrada');
   ok('dos aparatos de la misma persona no se pisan',
      Object.keys(await s.ctx.storage.get('avisos')).length === 3);
 
+  /* ⚠ LAS LLAVES SE GUARDAN. Se tiraban: se guardaba sólo `endpoint`, y sin `keys` el aviso no se
+     puede cifrar, así que llegaba «Escribieron en la sala» sin quién ni qué (13 nov). */
+  await pedir(s, 'POST', 'suscribir',
+    { de:'ana-telefono', suscripcion:{ endpoint:'https://push.test/ana2', keys:{ p256dh:'BPxyz', auth:'auth1' } } });
+  const conLlaves = (await s.ctx.storage.get('avisos'))['ana-telefono'];
+  ok('la suscripción guarda sus llaves, para que el aviso lleve el texto',
+     !!conLlaves.keys && conLlaves.keys.p256dh === 'BPxyz' && conLlaves.keys.auth === 'auth1');
+
   /* A QUIÉN SE LE AVISA. Se sustituye el que envía para no salir a internet. */
   let aQuienes = null;
   s._enviarPush = async (subs) => { aQuienes = subs.map(x => x.endpoint); return { enviados: subs.length, muertas: [] }; };
@@ -2725,6 +2733,20 @@ console.log('\n· El recado que se lee en la pantalla de bloqueo');
 
   const justo = recado({ de:{nombre:'X'}, texto:'a'.repeat(120) }).texto;
   ok('uno que cabe justo no se toca', justo === 'a'.repeat(120));
+}
+
+
+console.log('\nla voz de Google: si un modelo ya se topó (429), prueba el siguiente');
+{
+  const { generarVoz, MODELOS_VOZ } = await import('./modelos.js');
+  const pedidos = [];
+  const falso = async (url) => { pedidos.push(url);
+    if(url.includes(MODELOS_VOZ[0]) || (url.endsWith('/interactions') && pedidos.length <= 1)) return new Response('{}', { status: 429 });
+    return Response.json({ candidates: [{ content: { parts: [{ inlineData: { mimeType: 'audio/L16;rate=24000', data: 'A'.repeat(200) } }] } }] }); };
+  const r = await generarVoz({ GEMINI_API_KEY: 'x' }, { texto: 'hola', voz: 'google:Puck' }, falso);
+  ok('el primer modelo sin cupo no tumba la voz: contesta el siguiente', r.bien && r.modelo === MODELOS_VOZ[1]);
+  const todos = await generarVoz({ GEMINI_API_KEY: 'x' }, { texto: 'hola' }, async () => new Response('{}', { status: 429 }));
+  ok('y si todos están topados, lo dice', !todos.bien && /429/.test(todos.error));
 }
 
 console.log(`\n${mal ? '✗' : '✓'}  ${bien} pasan · ${mal} fallan\n`);

@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>TARUMI Smart Bottle</title>
+<!-- ANUNCIO 27 · TARUMI SMART BOTTLE (Carlos, 15 nov: «arma una publicidad para esto: no menciones a Grupo Mazi, al final
+     abajo a la derecha el logo y "publicidad hecha por: Grupo Mazi" y ya»). Datos del cliente: botella inteligente que
+     analiza, trata y verifica la calidad del agua; público: hogares, estudiantes, viajeros; lema «Tecnología que
+     transforma cada gota». La foto y la mascota son las que mandó el cliente (img/). Gancho en el primer segundo (la gota
+     que cae y la lupa con lo que trae el agua), cámara quieta, todo entra con anticipación y rebote (ESTUDIO.md). -->
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+  html,body{ margin:0; background:#031722 }
+  #v{ position:relative; width:1080px; height:1920px; overflow:hidden; color:#fff; font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+    background:radial-gradient(110% 70% at 50% 34%, #0B4A5E 0%, #062C3B 52%, #031722 100%) }
+  .luz{ position:absolute; border-radius:50%; filter:blur(100px); opacity:.5 }
+  #l1{ width:760px; height:760px; background:#0FA3B8; left:-260px; top:1050px }
+  #l2{ width:620px; height:620px; background:#1D6FD1; right:-220px; top:180px; opacity:.35 }
+  canvas{ position:absolute; left:0; top:0 }
+  #agua{ z-index:1 } #ondas{ z-index:6; pointer-events:none }
+  #tit{ position:absolute; left:60px; right:60px; top:130px; height:300px; z-index:7 }
+  .t{ position:absolute; left:0; right:0; top:0; font-weight:800; font-size:92px; line-height:1.02; letter-spacing:-.035em; text-align:center; visibility:hidden }
+  .t .p{ display:inline-block; opacity:0 } .t em{ font-style:normal; color:#5EE6F5 }
+  .t small{ display:block; font-size:40px; font-weight:700; letter-spacing:.32em; text-transform:uppercase; color:#A8F2FA; margin-top:16px }
+  #gota{ position:absolute; left:50%; top:0; width:120px; margin-left:-60px; z-index:8; visibility:hidden }
+  #lupa{ position:absolute; left:50%; top:1060px; width:620px; height:620px; margin:-310px 0 0 -310px; border-radius:50%; z-index:5; overflow:hidden;
+    background:radial-gradient(circle at 40% 35%, #2AA9BF 0%, #0B5E73 60%, #06394A 100%);
+    box-shadow:0 0 0 10px rgba(168,242,250,.9), 0 0 0 22px rgba(168,242,250,.18), 0 40px 120px rgba(0,0,0,.5); visibility:hidden }
+  #lupa canvas{ position:absolute; inset:0 }
+  #brillo{ position:absolute; left:50%; top:912px; width:980px; height:980px; margin:-490px 0 0 -450px; border-radius:50%; z-index:2;
+    background:radial-gradient(circle, rgba(94,230,245,.55) 0%, rgba(94,230,245,.12) 40%, transparent 68%); visibility:hidden }
+  #tarjeta{ position:absolute; left:240px; top:470px; width:600px; height:885px; border-radius:48px; overflow:hidden; z-index:4; visibility:hidden;
+    box-shadow:0 0 0 4px rgba(168,242,250,.55), 0 50px 120px rgba(0,0,0,.55) }
+  #tarjeta img{ width:100%; height:100%; object-fit:cover; display:block }
+  #tarjeta i{ position:absolute; left:0; right:0; top:0; height:6px; background:linear-gradient(90deg, transparent, #7FF3FF, transparent); opacity:0 }
+  .fila{ position:absolute; left:670px; width:380px; z-index:7; visibility:hidden }
+  .fila b{ display:block; font-size:74px; font-weight:800; letter-spacing:-.03em; line-height:1 }
+  .fila span{ display:block; font-size:32px; font-weight:600; color:#A8F2FA; margin-top:10px }
+  .fila u{ text-decoration:none; position:absolute; left:-2px; top:-46px; font-size:26px; font-weight:800; letter-spacing:.2em; color:#5EE6F5 }
+  svg#lineas{ position:absolute; inset:0; z-index:6; pointer-events:none }
+  svg#lineas path{ fill:none; stroke:#7FF3FF; stroke-width:5; stroke-linecap:round }
+  svg#lineas circle{ fill:#7FF3FF }
+  #masc{ position:absolute; left:50%; top:0; width:560px; margin-left:-280px; z-index:5; visibility:hidden; transform-origin:50% 100% }
+  #masc img{ width:100%; display:block; filter:drop-shadow(0 30px 50px rgba(0,0,0,.45)) }
+  .chip{ position:absolute; z-index:7; padding:20px 36px; border-radius:999px; background:#fff; color:#063447; font-weight:800; font-size:44px;
+    box-shadow:0 16px 40px rgba(0,0,0,.35); white-space:nowrap; visibility:hidden }
+  #marca{ position:absolute; left:60px; right:60px; top:1180px; text-align:center; z-index:7; visibility:hidden }
+  #marca b{ display:block; font-size:168px; font-weight:900; letter-spacing:-.02em; line-height:1; color:#5EE6F5;
+    text-shadow:0 0 40px rgba(94,230,245,.45) }
+  #marca span{ display:block; font-size:54px; font-weight:700; line-height:1.15; margin-top:30px; letter-spacing:-.01em }
+  #firma{ position:absolute; right:40px; bottom:44px; z-index:9; display:flex; align-items:center; gap:16px; visibility:hidden }
+  #firma .ic{ width:124px; height:124px }
+  #firma p{ margin:0; font-size:27px; line-height:1.25; color:#BFE9F0; text-align:right }
+  #firma p b{ display:block; font-size:38px; color:#fff; font-weight:800 }
+</style></head>
+<body><div id="v">
+  <div class="luz" id="l1"></div><div class="luz" id="l2"></div>
+  <canvas id="agua" width="1080" height="1920"></canvas>
+  <div id="brillo"></div>
+  <div id="tit">
+    <div class="t" id="t1"><span class="p">¿Sabes</span> <span class="p">qué</span> <span class="p">hay</span> <span class="p">en</span> <span class="p">tu</span> <span class="p"><em>agua?</em></span></div>
+    <div class="t" id="t2"><span class="p"><em>TARUMI</em></span><small><span class="p">Smart Bottle</span></small></div>
+  </div>
+  <svg id="gota" viewBox="0 0 120 170"><defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C9FBFF"/><stop offset="1" stop-color="#18B6CC"/></linearGradient></defs>
+    <path d="M60 4 C60 4 112 74 112 112 A52 52 0 0 1 8 112 C8 74 60 4 60 4Z" fill="url(#gg)"/><ellipse cx="40" cy="108" rx="11" ry="20" fill="#fff" opacity=".6"/></svg>
+  <div id="lupa"><canvas id="bichos" width="620" height="620"></canvas></div>
+  <div id="tarjeta"><img src="img/botella.jpg"><i></i></div>
+  <svg id="lineas" viewBox="0 0 1080 1920"></svg>
+  <div class="fila" id="f1"><u>01</u><b>Analiza</b><span>tu agua</span></div>
+  <div class="fila" id="f2"><u>02</u><b>Trata</b><span>cada gota</span></div>
+  <div class="fila" id="f3"><u>03</u><b>Verifica</b><span>que esté lista</span></div>
+  <div id="masc"><img src="img/mascota.png"></div>
+  <div class="chip" id="c1">En casa</div>
+  <div class="chip" id="c2">En la escuela</div>
+  <div class="chip" id="c3">De viaje</div>
+  <div id="marca"><b>TARUMI</b><span>Tecnología que transforma<br>cada gota.</span></div>
+  <div id="firma"><p>Publicidad hecha por<b>Grupo Mazi</b></p><div class="ic" id="ic"></div></div>
+  <canvas id="ondas" width="1080" height="1920"></canvas>
+</div>
+<script type="module">
+import { guion, sonidosVoz, cl, tramo, sale, entra, resorte, mezcla, vida, azar } from '../motor.js';
+import { crearPaloma } from '../../paloma-2026/vivo.js';
+const $ = (s) => document.querySelector(s);
+const ver = (el, a) => { el.style.visibility = a > .001 ? 'visible' : 'hidden'; el.style.opacity = a; };
+const fx = (n) => `../../../herramientas/video/efectos/${n}.wav`;
+const FIN = 23.2;
+
+/* el gancho: lo que trae el agua, visto de cerca (puntitos que se mueven, de tamaños y tonos distintos) */
+azar(7);
+const BICHOS = Array.from({ length: 70 }, () => ({ x: azar() * 620, y: azar() * 620, r: 2 + azar() * 9, f: azar() * 6.28, c: azar() < .3 ? '#C7B98A' : azar() < .5 ? '#9FD4DD' : '#5C8F99', v: .4 + azar() }));
+const bc = $('#bichos').getContext('2d');
+function pintarBichos(t, limpio){
+  bc.clearRect(0, 0, 620, 620);
+  for(const b of BICHOS){
+    const x = (b.x + Math.sin(t * b.v + b.f) * 26 + t * 18 * b.v) % 640 - 10, y = (b.y + Math.cos(t * .8 * b.v + b.f) * 20) % 640 - 10;
+    bc.globalAlpha = 1 - limpio; bc.fillStyle = b.c; bc.beginPath(); bc.arc(x, y, b.r, 0, 6.28); bc.fill();
+    if(b.r > 7){ bc.strokeStyle = b.c; bc.lineWidth = 2; bc.beginPath(); for(let k = 0; k < 5; k++){ const a = k * 1.256 + t * b.v; bc.moveTo(x + Math.cos(a) * b.r, y + Math.sin(a) * b.r); bc.lineTo(x + Math.cos(a) * (b.r + 6), y + Math.sin(a) * (b.r + 6)); } bc.stroke(); }
+  }
+  bc.globalAlpha = 1;
+}
+
+/* agua de abajo: dos olas que respiran; al final suben */
+const ac = $('#agua').getContext('2d');
+function pintarAgua(t){
+  ac.clearRect(0, 0, 1080, 1920);
+  const sube = sale(tramo(t, 18.0, 19.2)) * 120;
+  for(const [a, amp, k, vel, col] of [[1700, 26, .006, 1.2, 'rgba(24,182,204,.30)'], [1745, 20, .009, -1.6, 'rgba(94,230,245,.22)']]){
+    ac.fillStyle = col; ac.beginPath(); ac.moveTo(0, 1920);
+    for(let x = 0; x <= 1080; x += 12) ac.lineTo(x, a - sube + Math.sin(x * k + t * vel) * amp + Math.sin(x * k * 2.3 - t) * amp * .3);
+    ac.lineTo(1080, 1920); ac.fill();
+  }
+}
+
+/* ondas del golpe de la gota */
+const oc = $('#ondas').getContext('2d');
+function pintarOndas(t){
+  oc.clearRect(0, 0, 1080, 1920);
+  const u = t - .82; if(u < 0 || u > 2) return;
+  for(let k = 0; k < 4; k++){
+    const r = u * 520 - k * 70; if(r < 0) continue;
+    oc.globalAlpha = Math.max(0, 1 - u / 1.6) * (1 - k * .2); oc.strokeStyle = '#A8F2FA'; oc.lineWidth = 6 - k;
+    oc.beginPath(); oc.ellipse(540, 1060, r, r * .32, 0, 0, 6.28); oc.stroke();
+  }
+  oc.globalAlpha = 1;
+}
+
+function palabras(el, t, a, paso = .09){
+  [...el.querySelectorAll('.p')].forEach((p, i) => { const u = tramo(t, a + i * paso, a + i * paso + .35);
+    p.style.opacity = sale(u); p.style.transform = `translateY(${(1 - resorte(u)) * 50}px) scale(${.85 + .15 * resorte(u)})`; });
+}
+
+/* las tres filas: cada una llega con una línea que termina en la pantalla de la botella */
+const FILAS = [{ el: '#f1', a: 7.2, y: 620 }, { el: '#f2', a: 9.2, y: 900 }, { el: '#f3', a: 11.0, y: 1180 }];
+const PANT = { x: 0, y: 0 };   // se calcula cada cuadro: centro de la pantallita de la botella
+const lineas = $('#lineas');
+lineas.innerHTML = FILAS.map(() => '<path/><circle r="9"/>').join('');
+
+window.listo = (async () => {
+  window.G = await guion('.');
+  const P = await crearPaloma($('#ic'), { reloj: 'manual', puntero: false, brillo: false, svg: await (await fetch('../../paloma-2026/logo-icono.svg')).text() }).catch(() => null);
+  if(P){ P.abrir(1); P.paso(0); }
+  await Promise.all([...document.images].map((i) => i.decode().catch(() => {})));
+  await document.fonts.ready;
+
+  window.pintar = (t) => {
+    pintarAgua(t); pintarOndas(t);
+    $('#l1').style.transform = `translate(${Math.sin(t * .3) * 40}px, ${Math.cos(t * .25) * 30}px)`;
+
+    /* 1 · la gota cae (acelera) y se mete al agua */
+    const g = tramo(t, 0, .82); ver($('#gota'), t < .86 ? 1 : 0);
+    $('#gota').style.transform = `translateY(${-180 + entra(g) * 1060}px) scaleY(${1 + g * .25})`;
+
+    /* 2 · la lupa: lo que hay en el agua */
+    const lu = sale(tramo(t, .85, 1.35)), sal = tramo(t, 2.75, 3.25);
+    ver($('#lupa'), lu * (1 - sale(sal)));
+    $('#lupa').style.transform = `scale(${(.4 + .6 * resorte(tramo(t, .85, 1.6))) * (1 + entra(sal) * 2.2)})`;
+    if(t < 3.3) pintarBichos(t, 0);
+
+    /* títulos */
+    ver($('#t1'), t < 3.0 ? 1 : 0); palabras($('#t1'), t, .25);
+    if(t > 2.6 && t < 3.0) $('#t1').style.opacity = 1 - sale(tramo(t, 2.6, 2.95));
+    const t2v = t >= 3.4 && t < 14.0; ver($('#t2'), t2v ? 1 - sale(tramo(t, 13.6, 14.0)) : 0); palabras($('#t2'), t, 3.45, .25);
+
+    /* 3 · la botella sube con rebote; luego se hace a un lado para las tres filas */
+    const sube = resorte(tramo(t, 3.1, 4.1)), lado = sale(tramo(t, 6.7, 7.3)), fuera = entra(tramo(t, 13.7, 14.3));
+    const tx = -210 * lado - 900 * fuera, ty = (1 - sube) * 1100 + lado * 40;
+    const esc = .95 + .05 * sube;
+    ver($('#tarjeta'), t > 3.1 && t < 14.4 ? 1 : 0);
+    $('#tarjeta').style.transform = `translate(${tx}px, ${ty}px) rotate(${(1 - sube) * -6 + Math.sin(t * .9) * .6}deg) scale(${esc})`;
+    ver($('#brillo'), t > 3.2 && t < 14.4 ? sale(tramo(t, 3.4, 4.2)) * (1 - fuera) * (.85 + .15 * Math.sin(t * 2)) : 0);
+    $('#brillo').style.transform = `translate(${tx}px, ${ty + 40}px)`;
+    /* un barrido de luz que recorre la botella cuando «analiza» */
+    const bar = $('#tarjeta i'), bu = tramo(t, 7.3, 8.4);
+    bar.style.opacity = bu > 0 && bu < 1 ? Math.sin(bu * Math.PI) : 0; bar.style.transform = `translateY(${bu * 880}px)`;
+
+    /* centro de la pantallita: en la foto está a (120, 197) de 240×354 */
+    PANT.x = 240 + tx + 600 * (120 / 240); PANT.y = 470 + ty + 885 * (200 / 354);
+    FILAS.forEach((f, i) => {
+      const el = $(f.el), e = tramo(t, f.a, f.a + .5), s = entra(tramo(t, 13.6, 14.1));
+      ver(el, sale(e) * (1 - s));
+      el.style.top = f.y + 'px'; el.style.transform = `translateX(${(1 - resorte(e)) * 160 + s * 500}px)`;
+      /* la línea nace de la fila y llega a la pantalla; la bolita marca dónde */
+      const L = tramo(t, f.a + .15, f.a + .75), x0 = 650, y0 = f.y + 40, x1 = PANT.x + 30, y1 = PANT.y - 60 + i * 60;
+      const path = lineas.children[i * 2], dot = lineas.children[i * 2 + 1];
+      const cx = (x0 + x1) / 2, cy = Math.min(y0, y1) - 60;
+      path.setAttribute('d', `M${x0} ${y0} Q${cx} ${cy} ${x1} ${y1}`);
+      const len = path.getTotalLength(); path.style.strokeDasharray = len; path.style.strokeDashoffset = len * (1 - sale(L));
+      path.style.opacity = dot.style.opacity = (L > 0 ? 1 : 0) * (1 - s);
+      dot.setAttribute('cx', x1); dot.setAttribute('cy', y1); dot.setAttribute('r', 9 * resorte(tramo(t, f.a + .7, f.a + 1.1)));
+    });
+
+    /* 4 · la mascota brinca adentro: se estira al subir, se aplasta al caer, y saluda meneándose */
+    const m = tramo(t, 14.2, 15.0), cae = tramo(t, 14.75, 15.1);
+    let my = 1920 - (1 - Math.pow(1 - m * 2, 2)) * 1300; if(m >= .5) my = 620 + entra((m - .5) * 2) * 0;
+    const fin = sale(tramo(t, 18.0, 18.9));
+    const sy = m < .5 ? 1.12 : 1 - Math.sin(cae * Math.PI) * .14, sx = 2 - sy;
+    const mene = Math.sin(t * 6) * 4 * tramo(t, 15.1, 15.4);
+    ver($('#masc'), t > 14.2 ? 1 : 0);
+    $('#masc').style.top = mezcla(m < .5 ? my : 620, 300, fin) + 'px';
+    $('#masc').style.transform = `scale(${sx * mezcla(1, .66, fin)}, ${sy * mezcla(1, .66, fin)}) rotate(${mene + Math.sin(t * 1.7) * 1.5}deg) translateY(${Math.sin(t * 2.4) * 10}px)`;
+    /* sus tres lugares: casa, escuela, viaje (llegan con la voz) */
+    [['#c1', 14.7, 90, 520], ['#c2', 15.5, 600, 360], ['#c3', 16.4, 560, 1560]].forEach(([id, a, x, y]) => {
+      const el = $(id), e = tramo(t, a, a + .45), s = entra(tramo(t, 17.7, 18.1));
+      ver(el, sale(e) * (1 - s)); el.style.left = x + 'px'; el.style.top = y + 'px';
+      el.style.transform = `scale(${resorte(e) * (1 - s * .3)}) translateY(${Math.sin(t * 1.8 + x) * 8}px)`;
+    });
+
+    /* 5 · el cierre: nombre grande y el lema */
+    const n = tramo(t, 18.2, 18.8), lema = tramo(t, 18.9, 19.5);
+    ver($('#marca'), sale(n));
+    $('#marca b').style.transform = `scale(${.7 + .3 * resorte(n)})`;
+    $('#marca span').style.opacity = sale(lema); $('#marca span').style.transform = `translateY(${(1 - sale(lema)) * 30}px)`;
+
+    /* la firma chica, abajo a la derecha */
+    const fr = tramo(t, 19.6, 20.2); ver($('#firma'), sale(fr)); $('#firma').style.transform = `translateY(${(1 - sale(fr)) * 20}px)`;
+    if(P){ if(t > 19.75) P.abrir(0); P.paso(t); }
+  };
+})();
+window.VIDEO = { w: 1080, h: 1920, fps: 30, dur: FIN,
+  musica: { archivo: '/tmp/claude-0/mus/173.mp3', desde: 8, vol: .4, entrada: .3, fin: 2 },
+  get sonidos(){ return [...sonidosVoz(window.G, 1.05),
+    [fx('toque'), .82, .5], [fx('whoosh'), 2.8, .35], [fx('golpe'), 3.75, .35],
+    ...FILAS.map((f) => [fx('ding'), f.a + .7, .22]), [fx('whoosh'), 13.7, .3],
+    [fx('toque'), 14.95, .45], [fx('toque'), 14.7, .25], [fx('toque'), 15.5, .25], [fx('toque'), 16.4, .25],
+    [fx('subida'), 17.4, .25], [fx('golpe'), 18.25, .45], [fx('ding'), 19.65, .2]]; } };
+</script></body></html>

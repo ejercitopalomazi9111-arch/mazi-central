@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>CARYMO · Modelos 3D</title>
+<style>
+  @font-face{ font-family:Titulo; src:url(../../sala/letra/montserrat.woff2) format("woff2"); font-weight:100 900; font-display:swap }
+  @font-face{ font-family:Texto; src:url(../../sala/letra/nunito-700.woff2) format("woff2"); font-weight:700; font-display:swap }
+  :root{ --fondo:#170A26; --sup:#2A1640; --sup-2:#351C4F; --borde:#ffffff1f; --hueso:#F1ECF4; --suave:#B9A9C9; --morado:#AC27FF; --lila:#C77DFF; --vino:#7E1735; --bien:#3FCB8A; --mal:#F0566E }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent }
+  html,body{ margin:0; height:100%; background:var(--fondo); color:var(--hueso); font:700 16px/1.4 Texto, -apple-system, system-ui, sans-serif; overflow:hidden; touch-action:manipulation }
+  button{ font:inherit; color:inherit; cursor:pointer }
+  .i{ width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none }
+  #lienzo{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none }
+  .arriba{ position:fixed; left:0; right:0; top:0; padding:calc(env(safe-area-inset-top) + 12px) 16px 12px; display:flex; align-items:center; gap:12px; pointer-events:none }
+  .arriba > *{ pointer-events:auto }
+  .redondo{ width:44px; height:44px; border-radius:50%; border:1px solid var(--borde); background:#170A26cc; display:grid; place-items:center; backdrop-filter:blur(8px) }
+  .arriba h1{ font:800 20px/1.1 Titulo, sans-serif; margin:0; flex:1; min-width:0 }
+  .arriba h1 small{ display:block; font:700 13px Texto, sans-serif; color:var(--suave); margin-top:2px }
+  .modo{ display:flex; background:#170A26cc; border:1px solid var(--borde); border-radius:999px; padding:3px; backdrop-filter:blur(8px) }
+  .modo button{ border:0; background:none; padding:8px 12px; border-radius:999px; font-size:14px; color:var(--suave); min-height:38px }
+  .modo button[aria-pressed="true"]{ background:var(--morado); color:#fff }
+  .abajo{ position:fixed; left:0; right:0; bottom:0; padding:0 16px calc(env(safe-area-inset-bottom) + 14px); display:grid; gap:10px; pointer-events:none }
+  .abajo > *{ pointer-events:auto }
+  .chips{ display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; padding:2px 0; margin:0 -16px; padding-inline:16px }
+  .chips::-webkit-scrollbar{ display:none }
+  .chip{ flex:none; border:1px solid var(--borde); background:#170A26d9; border-radius:999px; padding:8px 14px 8px 10px; display:flex; align-items:center; gap:8px; font-size:14px; min-height:40px; white-space:nowrap }
+  .chip i{ width:12px; height:12px; border-radius:50%; background:var(--c) }
+  .chip[aria-pressed="true"]{ background:var(--sup-2); border-color:var(--lila) }
+  .ficha{ background:#1F1031f2; border:1px solid var(--borde); border-radius:20px; padding:16px; backdrop-filter:blur(10px); box-shadow:0 10px 30px #0008; animation:sube .25s ease-out }
+  .ficha h2{ font:800 20px/1.15 Titulo, sans-serif; margin:0 0 6px; display:flex; align-items:center; gap:10px }
+  .ficha h2 i{ width:14px; height:14px; border-radius:50%; background:var(--c); flex:none }
+  .ficha p{ margin:0; color:#E6DDEE; font-size:15px }
+  .ficha .dato{ margin-top:10px; padding:10px 12px; border-radius:12px; background:#AC27FF22; color:#fff; font-size:14px; display:flex; gap:8px }
+  .ficha .dato .i{ width:18px; height:18px; color:var(--lila) }
+  .reto{ text-align:center }
+  .reto small{ color:var(--suave); font-size:13px }
+  .reto h2{ justify-content:center; font-size:22px }
+  .reto .barra{ height:6px; border-radius:6px; background:#ffffff1a; overflow:hidden; margin-top:10px }
+  .reto .barra b{ display:block; height:100%; background:var(--morado); transition:width .3s }
+  .reto.bien{ border-color:var(--bien) } .reto.mal{ border-color:var(--mal) }
+  .bt{ border:0; border-radius:14px; min-height:48px; padding:0 18px; font-weight:800; background:#fff; color:#1F1031; width:100%; margin-top:12px }
+  .carga{ position:fixed; inset:0; display:grid; place-items:center; color:var(--suave); pointer-events:none }
+  .credito{ font-size:11px; color:#B9A9C980; text-align:center }
+  @keyframes sube{ from{ transform:translateY(12px); opacity:0 } }
+  @media (prefers-reduced-motion: reduce){ .ficha{ animation:none } }
+</style>
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+</head>
+<body>
+<canvas id="lienzo" aria-label="Modelo en 3D: arrastra para girar, pellizca para acercar, toca una parte"></canvas>
+<div class="carga" id="carga">Cargando…</div>
+<div class="arriba">
+  <button class="redondo" id="bCerrar" aria-label="Cerrar"></button>
+  <h1 id="titulo"></h1>
+  <div class="modo" role="group" aria-label="Modo"><button id="mExplora" aria-pressed="true">Explorar</button><button id="mReto" aria-pressed="false">Reto</button></div>
+</div>
+<div class="abajo" id="abajo"></div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from './vendor/loaders/GLTFLoader.js';
+import { OrbitControls } from './vendor/controls/OrbitControls.js';
+import { RoomEnvironment } from './vendor/environments/RoomEnvironment.js';
+import { MODELOS, CREDITO } from './modelos.js';
+import { ico } from '../iconos.js';
+
+const $ = (s) => document.querySelector(s);
+const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const q = new URLSearchParams(location.search);
+const M = MODELOS.find((x) => x.id === q.get('m')) || MODELOS[0];
+const avisa = (m) => { try{ parent !== window && parent.postMessage({ deModelos: true, ...m }, location.origin); }catch{} };
+$('#bCerrar').innerHTML = ico('x');
+$('#bCerrar').addEventListener('click', () => { if(parent !== window) avisa({ tipo: 'cerrar' }); else history.back(); });
+$('#titulo').innerHTML = `${esc(M.titulo)}<small>${esc(M.frase)}</small>`;
+
+/* ── escena ── */
+const lienzo = $('#lienzo');
+const r = new THREE.WebGLRenderer({ canvas: lienzo, antialias: true, alpha: true });
+r.setPixelRatio(Math.min(devicePixelRatio, 2));
+r.toneMapping = THREE.ACESFilmicToneMapping; r.outputColorSpace = THREE.SRGBColorSpace;
+const escena = new THREE.Scene();
+escena.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), .04).texture;
+escena.add(new THREE.HemisphereLight(0xf3e8ff, 0x2a1640, .6));
+const sol = new THREE.DirectionalLight(0xffffff, 1.4); sol.position.set(2, 3, 4); escena.add(sol);
+const cam = new THREE.PerspectiveCamera(35, 1, .01, 100);
+const control = new OrbitControls(cam, lienzo);
+control.enableDamping = true; control.enablePan = false; control.autoRotate = !matchMedia('(prefers-reduced-motion: reduce)').matches; control.autoRotateSpeed = 1.2;
+control.addEventListener('start', () => { control.autoRotate = false; });
+
+const piezas = new Map(); /* id → { malla, mat, color } */
+let raiz = null;
+function medir(){
+  const w = innerWidth, h = innerHeight;
+  r.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix();
+}
+addEventListener('resize', medir); medir();
+
+new GLTFLoader().load(M.archivo, (g) => {
+  raiz = g.scene; raiz.rotation.set(-Math.PI / 2 + M.giro[0], M.giro[1], M.giro[2]); /* el atlas trae la cabeza hacia +z */
+  raiz.traverse((o) => {
+    if(!o.isMesh) return;
+    const id = o.name.replace(/_\d+$/, '').replace(/\.\d+$/, '');
+    const datos = M.partes[id]; if(!datos) return;
+    o.material = o.material.clone(); o.material.transparent = true;
+    o.userData.id = id;
+    const p = piezas.get(id) || { mallas: [], color: '#' + o.material.color.getHexString(THREE.SRGBColorSpace) };
+    p.mallas.push(o); piezas.set(id, p);
+  });
+  escena.add(raiz);
+  /* centrar y encuadrar: que quepa entero con aire para los botones de arriba y abajo */
+  /* el atlas viene en milímetros: se lleva a unas 2 unidades de alto y al centro */
+  let caja = new THREE.Box3().setFromObject(raiz);
+  raiz.scale.setScalar(2 / Math.max(...caja.getSize(new THREE.Vector3()).toArray()));
+  caja = new THREE.Box3().setFromObject(raiz);
+  const centro = caja.getCenter(new THREE.Vector3()), tam = caja.getSize(new THREE.Vector3());
+  raiz.position.sub(centro);
+  /* que quepa a lo alto y a lo ancho, con lo de arriba y lo de abajo libres (los botones tapan ~30 % del alto) */
+  const tv = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)), th = tv * cam.aspect, hondo = Math.max(tam.x, tam.z) / 2;
+  const d = Math.max(tam.y / 2 / (tv * .68), Math.max(tam.x, tam.z) / 2 / (th * .85)) + hondo;
+  const radio = tam.length() / 2;
+  cam.position.set(0, -tam.y * .06, d); control.target.set(0, -tam.y * .06, 0);
+  control.minDistance = d * .35; control.maxDistance = d * 2.2; control.update();
+  $('#carga').remove();
+  pintarAbajo();
+}, undefined, () => { $('#carga').textContent = 'No se pudo cargar el modelo.'; });
+
+/* ── tocar ── */
+const rayo = new THREE.Raycaster(), punto = new THREE.Vector2();
+let abajoEn = null;
+lienzo.addEventListener('pointerdown', (e) => { abajoEn = [e.clientX, e.clientY]; });
+lienzo.addEventListener('pointerup', (e) => {
+  if(!abajoEn || Math.hypot(e.clientX - abajoEn[0], e.clientY - abajoEn[1]) > 8) return;
+  punto.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  rayo.setFromCamera(punto, cam);
+  const visibles = [...piezas.values()].flatMap((p) => p.mallas).filter((m) => m.material.opacity > .5 || !elegida);
+  const hit = rayo.intersectObjects(visibles.length ? visibles : [...piezas.values()].flatMap((p) => p.mallas), false)[0];
+  tocar(hit ? hit.object.userData.id : null);
+});
+
+let modo = 'explora', elegida = null, reto = null;
+function resaltar(id, tinte){
+  for(const [k, p] of piezas){
+    for(const m of p.mallas){
+      const sola = !id || k === id;
+      m.material.opacity = sola ? 1 : .12; m.material.depthWrite = sola;
+      m.material.emissive.set(k === id && tinte ? tinte : 0x000000); m.material.emissiveIntensity = k === id && tinte ? .35 : 0;
+      m.renderOrder = sola ? 0 : 1;
+    }
+  }
+}
+function tocar(id){
+  if(modo === 'explora'){
+    elegida = id && id !== elegida ? id : null;
+    resaltar(elegida, elegida ? 0x5a1aa0 : null); pintarAbajo();
+    if(elegida) avisa({ tipo: 'toque', parte: elegida });
+    return;
+  }
+  if(!reto || reto.fin || !id || reto.bloqueado) return;
+  const bien = id === reto.orden[reto.i];
+  reto.bloqueado = true;
+  if(bien){ reto.puntos++; resaltar(id, 0x1f9d63); }
+  else { resaltar(reto.orden[reto.i], 0x9c1d34); }
+  reto.ultimo = { bien, toco: id };
+  pintarAbajo();
+  setTimeout(() => { reto.i++; reto.bloqueado = false; reto.ultimo = null; if(reto.i >= reto.orden.length){ reto.fin = true; avisa({ tipo: 'reto', puntos: reto.puntos, total: reto.orden.length }); } resaltar(null); pintarAbajo(); }, bien ? 900 : 1700);
+}
+
+function pintarAbajo(){
+  const a = $('#abajo');
+  const chips = `<div class="chips">${[...piezas.keys()].map((k) => `<button class="chip" data-p="${k}" style="--c:${piezas.get(k).color}" aria-pressed="${k === elegida}"><i></i>${esc(M.partes[k].nombre)}</button>`).join('')}</div>`;
+  if(modo === 'explora'){
+    const d = elegida && M.partes[elegida];
+    a.innerHTML = (d ? `<div class="ficha" style="--c:${piezas.get(elegida).color}"><h2><i></i>${esc(d.nombre)}</h2><p>${esc(d.texto)}</p>${d.dato ? `<div class="dato">${ico('lightbulb')}<span>${esc(d.dato)}</span></div>` : ''}</div>` : '') + chips + `<div class="credito">${esc(CREDITO)}</div>`;
+    return;
+  }
+  if(reto.fin){
+    a.innerHTML = `<div class="ficha reto"><small>Reto terminado</small><h2>${reto.puntos} de ${reto.orden.length}</h2><p>${reto.puntos === reto.orden.length ? 'Perfecto.' : reto.puntos >= reto.orden.length / 2 ? 'Bien. Otra vez y sale perfecto.' : 'Explora un poco más y vuelve.'}</p><button class="bt" id="bOtra">Otra vez</button></div>`;
+    return;
+  }
+  const meta = M.partes[reto.orden[reto.i]];
+  const u = reto.ultimo;
+  a.innerHTML = `<div class="ficha reto ${u ? (u.bien ? 'bien' : 'mal') : ''}"><small>${reto.i + 1} de ${reto.orden.length} · Toca</small><h2>${esc(meta.nombre)}</h2>
+    ${u ? `<p>${u.bien ? '¡Esa es!' : `Esa es ${esc(M.partes[u.toco].nombre)}. Mírala ahora.`}</p>` : ''}
+    <div class="barra"><b style="width:${reto.i / reto.orden.length * 100}%"></b></div></div>`;
+}
+function empezarReto(){
+  const ids = [...piezas.keys()].sort(() => Math.random() - .5).slice(0, Math.min(6, piezas.size));
+  reto = { orden: ids, i: 0, puntos: 0, fin: false };
+  elegida = null; resaltar(null); pintarAbajo();
+}
+$('#abajo').addEventListener('click', (e) => {
+  const c = e.target.closest('[data-p]'); if(c){ modo === 'explora' ? tocar(c.dataset.p) : null; return; }
+  if(e.target.closest('#bOtra')) empezarReto();
+});
+function ponerModo(m){
+  modo = m; $('#mExplora').setAttribute('aria-pressed', m === 'explora'); $('#mReto').setAttribute('aria-pressed', m === 'reto');
+  if(m === 'reto') empezarReto(); else { elegida = null; resaltar(null); pintarAbajo(); }
+}
+$('#mExplora').addEventListener('click', () => ponerModo('explora'));
+$('#mReto').addEventListener('click', () => ponerModo('reto'));
+if(q.get('modo') === 'reto') addEventListener('load', () => setTimeout(() => piezas.size && ponerModo('reto'), 600));
+
+(function cuadro(){ control.update(); r.render(escena, cam); requestAnimationFrame(cuadro); })();
+window.__modelos = { piezas: () => [...piezas.keys()], tocar, ponerModo, estado: () => ({ modo, elegida, reto }) };
+</script>
+</body>
+</html>

@@ -7,29 +7,39 @@
    "precio de fumigacion",
    "cuanto sale",
    "me das precio",
-   "cotizacion"
+   "cotizacion",
+   "me cotizan",
+   "me cotizan una fumigacion",
+   "cuanto me cobras por fumigar"
   ],
   "palabras": [
    "precio",
    "costo",
    "cotizacion",
-   "cotizar"
+   "cotizar",
+   "cotizan"
   ],
-  "respuesta": "Con gusto te cotizo. ¿Qué plaga tienes, tu casa la considerarías chica, mediana o grande, y en qué colonia estás?"
+  "respuesta": "Con gusto te cotizo. ¿Qué plaga tienes, tu casa la considerarías chica, mediana o grande, y en qué colonia estás?",
+  "conDatosALaIA": true
  },
  {
   "id": "factura",
   "frases": [
    "dan factura",
    "me pueden facturar",
-   "necesito factura"
+   "necesito factura",
+   "me facturan",
+   "manejan factura",
+   "ocupo factura"
   ],
   "palabras": [
    "factura",
-   "facturar"
+   "facturar",
+   "facturan"
   ],
   "respuesta": "Sí te ayudamos con eso. En un momento te contacta el encargado para tus datos de facturación.",
-  "dueno": true
+  "dueno": true,
+  "conDatosALaIA": true
  },
  {
   "id": "hablar-dueno",
@@ -37,14 +47,36 @@
    "quiero hablar con el dueno",
    "me puede llamar alguien",
    "pasame con el encargado",
-   "quiero hablar con una persona"
+   "quiero hablar con una persona",
+   "puedo hablar con alguien",
+   "me pasas con una persona",
+   "quiero hablar con el jefe",
+   "me comunicas con el encargado"
   ],
   "palabras": [
    "encargado",
    "dueno"
   ],
   "respuesta": "Claro, ya le aviso al encargado para que te contacte.",
-  "dueno": true
+  "dueno": true,
+  "fuente": "Luis, 17 nov: el bot NO da datos del dueño (ni nombre, ni teléfono). Sólo avisa al encargado"
+ },
+ {
+  "id": "pagina",
+  "frases": [
+   "tienen pagina",
+   "tienen pagina web",
+   "cual es su pagina",
+   "tienen facebook",
+   "como los encuentro en facebook",
+   "tienen redes sociales",
+   "tienen instagram",
+   "tienen face",
+   "tienen insta",
+   "cual es su face"
+  ],
+  "respuesta": "Te comparto nuestra página: urbanpest.mx. Ahí ves lo que hacemos y lo que dicen nuestros clientes.",
+  "fuente": "respuestas del cliente, 17 nov: su página es urbanpest.mx. FALTA el link de su página de Facebook (mandó una búsqueda, no la página) y su Instagram: cuando lleguen, se agregan aquí"
  },
  {
   "id": "palomas",
@@ -108,7 +140,8 @@
    "planta"
   ],
   "respuesta": "Sí, atendemos negocios e industria. Para eso vamos a ver el lugar antes de darte el precio final. ¿Qué giro es y en qué zona está?",
-  "dueno": true
+  "dueno": true,
+  "conDatosALaIA": true
  },
  {
   "id": "mascotas",
@@ -117,15 +150,26 @@
    "es peligroso para mi perro",
    "le hace dano a mis gatos",
    "es seguro para los ninos",
-   "es toxico"
+   "es toxico",
+   "es peligroso para los ninos",
+   "le hace dano a mi perro",
+   "es peligroso para mis mascotas",
+   "mi perrito se puede quedar en la casa",
+   "se puede quedar mi perro",
+   "mi perro se puede quedar",
+   "pueden estar mis mascotas",
+   "mis gatos se pueden quedar"
   ],
   "palabras": [
    "mascotas",
    "toxico",
-   "toxicos"
+   "toxicos",
+   "peligroso",
+   "mascota"
   ],
   "respuesta": "Sí. Trabajamos con productos de baja toxicidad, aplicados con protocolos que protegen a mascotas y niños en casa.",
-  "fuente": "urbanpest.mx, preguntas frecuentes"
+  "fuente": "urbanpest.mx, preguntas frecuentes",
+  "conDatosALaIA": true
  },
  {
   "id": "garantia",
@@ -134,7 +178,10 @@
    "y si vuelven a salir",
    "que pasa si no se van",
    "tienen garantia",
-   "si regresa la plaga"
+   "si regresa la plaga",
+   "y si regresan",
+   "si regresan las cucarachas",
+   "y si vuelven"
   ],
   "palabras": [
    "garantia",
@@ -228,7 +275,12 @@
    "cuanto tiempo fuera"
   ],
   "respuesta": "Depende del producto que se use en tu caso: el técnico te dice la hora exacta antes de empezar. Al regresar, abre puertas y ventanas unos minutos para ventilar.",
-  "fuente": "borrador de Luna (casos-borrador.json); sin horas inventadas (FALTA del dueño)"
+  "fuente": "borrador de Luna (casos-borrador.json); sin horas inventadas (FALTA del dueño)",
+  "palabras": [
+   "salirme",
+   "salirse",
+   "salirnos"
+  ]
  },
  {
   "id": "preparar",
@@ -262,7 +314,10 @@
    "cambiar la fecha",
    "reagendar",
    "no voy a poder ese dia",
-   "cancelar la cita"
+   "cancelar la cita",
+   "me cambias la cita",
+   "me mueves la cita",
+   "cambiar mi cita"
   ],
   "respuesta": "Sin problema. ¿Qué día y hora te quedan mejor? Le aviso al encargado para moverla.",
   "dueno": true,
@@ -422,10 +477,10 @@
   "frases": [
    "fumigan chinches o termitas"
   ],
-  "respuesta": "Chinches, termitas, pulgas, abejas y avispas no aparecen en la lista de su página: no afirmes que se atienden ni cómo. Di que lo confirma el encargado y avísale.",
+  "respuesta": "Chinches, termitas, pulgas, avispas (quitar panales) y serpientes: SÍ las atendemos (están en las cotizaciones del dueño), pero no tienen precio automático: di que sí las atendemos y que el encargado revisa su caso para darle precio; marca necesita_dueno. Abejas: no está confirmado; di que lo confirma el encargado. Nunca digas que no atendemos una plaga.",
   "dueno": true,
   "reflejo": false,
-  "fuente": "regla para la IA: no está en urbanpest.mx"
+  "fuente": "su Excel de cotizaciones (17 nov): trae servicios de chinches (7), termitas, pulgas, avispas y serpientes"
  },
  {
   "id": "lo-que-no-sabemos",

@@ -1,0 +1,18 @@
+{
+  "titulo": "CARYMO · Buscamos alfa testers",
+  "voces": { "Tigre": "google:Puck", "Paloma": "google:Kore" },
+  "lento": { "Tigre": 1.04, "Paloma": 1.04 },
+  "voz_de_la_casa": "Voces de Google por La Sala (Chris no tiene saldo en ElevenLabs).",
+  "lineas": [
+    { "id": "01", "voz": "Tigre", "txt": "¡Oye! ¿Te late probar algo *antes que nadie?*" },
+    { "id": "02", "voz": "Paloma", "txt": "Buscamos a los primeros *en probar CARYMO.*", "dice": "Buscamos a los primeros en probar Carimo." },
+    { "id": "03", "voz": "Tigre", "txt": "Te armas tu plan de estudio *en segundos…*" },
+    { "id": "04", "voz": "Paloma", "txt": "…yo te lo explico *en el pizarrón…*" },
+    { "id": "05", "voz": "Tigre", "txt": "…y practicas *como juego.*" },
+    { "id": "06", "voz": "Paloma", "txt": "Ya trae ajedrez, damas, *dominó y más.*" },
+    { "id": "07", "voz": "Tigre", "txt": "Tú nos dices *qué falla y qué le falta.*" },
+    { "id": "08", "voz": "Paloma", "txt": "Y te quedas con el título de *Alfa tester* en tu perfil." },
+    { "id": "09", "voz": "Tigre", "txt": "Y es *gratis.*" },
+    { "id": "10", "voz": "Paloma", "txt": "Mándanos tu correo *por WhatsApp* y entras." }
+  ]
+}

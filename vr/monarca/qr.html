@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MONARCH XR · QR</title>
+<style>
+  :root { --fondo: #170A26; --texto: #F4EEF2; --suave: #C9B6DA; --acento: #AC27FF; --naranja: #F28C1B; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100dvh; background: var(--fondo); color: var(--texto); font: 16px/1.5 system-ui, -apple-system, sans-serif;
+    display: grid; place-items: center; padding: 24px 16px; }
+  main { width: 100%; max-width: 420px; text-align: center; }
+  h1 { margin: 0 0 4px; font-size: 40px; line-height: 1.1; color: var(--naranja); letter-spacing: -.02em; }
+  p { margin: 0 0 24px; color: var(--suave); }
+  #qr { background: #fff; border-radius: 16px; padding: 16px; display: inline-block; }
+  #qr svg { display: block; width: min(72vw, 320px); height: auto; }
+  .liga { margin-top: 16px; font-size: 14px; color: var(--suave); overflow-wrap: anywhere; }
+  @media print { body { background: #fff; color: #000; } h1 { color: #000; } p, .liga { color: #333; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>MONARCH XR</h1>
+  <p>Escanea y ponte el visor</p>
+  <div id="qr" role="img" aria-label="Código QR de MONARCH XR"></div>
+  <div class="liga" id="liga"></div>
+</main>
+<script src="vendor/qrcode-1.4.4.min.js"></script>
+<script>
+  /* el QR lleva a la experiencia en modo exposición (?monarca), en la misma dirección donde está esta página */
+  const url = new URL('../?monarca', location.href).href;
+  const q = qrcode(0, 'M'); q.addData(url); q.make();
+  document.getElementById('qr').innerHTML = q.createSvgTag({ cellSize: 8, margin: 0, scalable: true });
+  document.getElementById('liga').textContent = url;
+</script>
+</body>
+</html>

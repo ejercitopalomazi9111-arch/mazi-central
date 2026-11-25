@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>La pared · Grupo Mazi</title>
+<!-- GM-4 · LA PARED (paquete del inversionista): filas como de catálogo de streaming con lo que hicimos —páginas,
+     apps y herramientas—, cortes que se aceleran con los 20 proyectos y la pared completa. Todas las pantallas son
+     capturas de los proyectos de verdad, en teléfono (capturas.mjs). Voz de la casa (Fenrir) y el logo vivo al final. -->
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+  html,body{ margin:0; background:#0E0618 }
+  #v{ position:relative; width:1080px; height:1920px; overflow:hidden; color:#fff; font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+    background:radial-gradient(110% 70% at 50% 30%, #2A1142 0%, #170A26 55%, #0B0513 100%) }
+  .luz{ position:absolute; border-radius:50%; filter:blur(100px); opacity:.5 }
+  #l1{ width:760px; height:760px; background:#7E1735; left:-260px; top:1080px }
+  #l2{ width:640px; height:640px; background:#5A1C9E; right:-220px; top:220px }
+  .t{ position:absolute; left:60px; right:60px; top:150px; z-index:8; font-weight:800; font-size:86px; line-height:1.04; letter-spacing:-.035em; visibility:hidden }
+  .t .p{ display:inline-block; opacity:0 } .t em{ font-style:normal; color:#C77DFF }
+  .t small{ display:block; margin-top:22px; font-size:34px; font-weight:700; letter-spacing:.08em; color:#C9B6DA; text-transform:uppercase; opacity:0 }
+  #t0{ top:760px; text-align:center; font-size:110px }
+  .fila{ position:absolute; left:0; top:520px; height:1000px; width:4000px; z-index:4; visibility:hidden }
+  .tarj{ position:absolute; top:0; width:440px; height:952px; border-radius:42px; overflow:hidden; background:#000;
+    box-shadow:0 0 0 2px rgba(226,184,255,.28), 0 40px 90px rgba(0,0,0,.55) }
+  .tarj img{ width:100%; height:100%; object-fit:cover; object-position:top; display:block }
+  #corte{ position:absolute; left:240px; top:420px; width:600px; height:1298px; border-radius:78px; background:#0c0c10; z-index:5;
+    box-shadow:0 0 0 3px #3a2a52, 0 50px 120px rgba(0,0,0,.55); visibility:hidden }
+  #corte .pant{ position:absolute; inset:16px; border-radius:64px; overflow:hidden; background:#000 }
+  #corte img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:top }
+  #corte .isla{ position:absolute; left:50%; top:30px; width:150px; height:42px; margin-left:-75px; border-radius:30px; background:#0c0c10; z-index:2 }
+  #flash{ position:absolute; inset:0; background:#fff; z-index:7; opacity:0; pointer-events:none }
+  #cuenta{ position:absolute; left:0; right:0; top:150px; z-index:8; text-align:center; font-weight:900; font-size:180px; letter-spacing:-.04em;
+    font-variant-numeric:tabular-nums; visibility:hidden }
+  #cuenta span{ display:block; font-size:40px; font-weight:700; letter-spacing:.12em; color:#C9B6DA; margin-top:4px }
+  #pared{ position:absolute; left:0; top:0; width:1080px; height:1920px; z-index:3; visibility:hidden }
+  #pared .tarj{ width:180px; height:390px; border-radius:20px }
+  #lema{ position:absolute; left:60px; right:60px; top:760px; z-index:8; text-align:center; visibility:hidden }
+  #lema b{ display:block; font-size:96px; font-weight:900; letter-spacing:-.04em; line-height:1.02 }
+  #lema b em{ font-style:normal; color:#C77DFF }
+  #lema span{ display:block; margin-top:40px; font-size:58px; font-weight:700; color:#E9E4E4 }
+  #gm{ position:absolute; inset:0; z-index:20; background:radial-gradient(120% 80% at 50% 38%, #2C1145 0%, #170A26 60%, #0E0618 100%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:44px; visibility:hidden }
+  #gmLogo{ width:760px } #gmTxt{ font-weight:800; font-size:64px; letter-spacing:.02em; color:#fff; text-align:center }
+  #gmLema{ font-size:34px; color:#C9B6DA }
+</style></head>
+<body><div id="v">
+  <div class="luz" id="l1"></div><div class="luz" id="l2"></div>
+  <div class="t" id="t0"><span class="p">¿Qué</span> <span class="p"><em>hacemos?</em></span></div>
+  <div class="t" id="t1"><span class="p">Páginas</span> <span class="p">que</span> <span class="p"><em>venden</em></span><small>7 títulos</small></div>
+  <div class="t" id="t2"><span class="p">Apps</span> <span class="p">para</span> <span class="p"><em>todo</em></span><small>6 títulos</small></div>
+  <div class="t" id="t3"><span class="p">Herramientas</span> <span class="p"><em>únicas</em></span><small>7 títulos</small></div>
+  <div class="fila" id="f1"></div><div class="fila" id="f2"></div><div class="fila" id="f3"></div>
+  <div id="cuenta"><b id="cuentaN">01</b><span>proyectos</span></div>
+  <div id="corte"><div class="isla"></div><div class="pant"><img id="corteImg"></div></div>
+  <div id="flash"></div>
+  <div id="pared"></div>
+  <div id="lema"><b>Lo hicimos <em>nosotros</em>.</b><span>Lo que sigue, contigo.</span></div>
+  <div id="gm"><div id="gmLogo"></div><div id="gmTxt">Grupo Mazi</div><div id="gmLema">Si no existe la herramienta, se construye.</div></div>
+</div>
+<script type="module">
+import { guion, sonidosVoz, tramo, sale, entra, resorte } from '../motor.js';
+import { crearPaloma } from '../../paloma-2026/vivo.js';
+const $ = (s) => document.querySelector(s);
+const ver = (el, a) => { el.style.visibility = a > .001 ? 'visible' : 'hidden'; el.style.opacity = a; };
+const fx = (n) => `../../../herramientas/video/efectos/${n}.wav`;
+const cap = (id, k = 0) => `cap/${id}-${k}.jpg`;
+
+const FILAS = [
+  ['district-roll', 'casa-brava', 'obsidiana', 'urban-pest', 'navaja', 'sencilla', 'sitio'],
+  ['carymo', 'tienda', 'fadori', 'sociedad', 'inkwell', 'podcast'],
+  ['presentaciones', 'recolor', 'fondos', 'reportes', 'carteles', 'limpiar', 'tiempo'],
+];
+const TODOS = FILAS.flat();
+/* tramos [entra, sale] de cada fila; los títulos van con su fila */
+const R = [[2.6, 6.5], [6.3, 11.1], [10.9, 15.4]];
+const CORTE = [15.3, 21.7], PARED = [21.6, 27.6], FIN_GM = 27.4, FIN = 34.0;
+
+/* filas: cada tarjeta lleva su portada; la fila corre a la izquierda como un catálogo */
+const filas = FILAS.map((ids, r) => { const f = $('#f' + (r + 1));
+  f.innerHTML = ids.map((id, i) => `<div class="tarj" style="left:${i * 480}px"><img src="${cap(id)}"></div>`).join(''); return f; });
+/* los cortes: los 20, de la portada y de más abajo, cada vez más rápido */
+const SECUENCIA = TODOS.flatMap((id, i) => [cap(id, i % 2)]);
+const pasos = []; { let t = CORTE[0] + .5, d = .42; for(let i = 0; t < CORTE[1] - .35; i++){ pasos.push([t, SECUENCIA[i % SECUENCIA.length], i]); t += d; d = Math.max(.12, d * .9); } }
+/* la pared: 5 columnas × 4 renglones */
+$('#pared').innerHTML = TODOS.map((id, k) => `<div class="tarj" style="left:${40 + (k % 5) * 204}px; top:${150 + Math.floor(k / 5) * 414}px"><img src="${cap(id, 0)}"></div>`).join('');
+const PT = [...$('#pared').children];
+
+function palabras(el, t, a, paso = .1){
+  [...el.querySelectorAll('.p')].forEach((p, i) => { const u = tramo(t, a + i * paso, a + i * paso + .38);
+    p.style.opacity = sale(u); p.style.transform = `translateY(${(1 - resorte(u)) * 56}px) scale(${.86 + .14 * resorte(u)})`; });
+  const s = el.querySelector('small'); if(s) s.style.opacity = sale(tramo(t, a + .5, a + .9));
+}
+
+window.listo = (async () => {
+  window.G = await guion('.');
+  const P = await crearPaloma($('#gmLogo'), { reloj: 'manual', puntero: false });
+  P.abrir(1); P.paso(0);
+  await Promise.all([...document.images].map((i) => i.decode().catch(() => {})));
+  await Promise.all(SECUENCIA.map((s) => { const i = new Image(); i.src = s; return i.decode().catch(() => {}); }));
+  await document.fonts.ready;
+
+  window.pintar = (t) => {
+    $('#l1').style.transform = `translate(${Math.sin(t * .3) * 40}px, ${Math.cos(t * .25) * 30}px)`;
+    $('#l2').style.transform = `translate(${Math.cos(t * .2) * 40}px, ${Math.sin(t * .3) * 30}px)`;
+
+    /* 0 · la pregunta */
+    { const a = t < 2.9 ? 1 - entra(tramo(t, 2.5, 2.9)) : 0; ver($('#t0'), a); if(a) palabras($('#t0'), t, .15, .18);
+      $('#t0').style.transform = `scale(${1 + entra(tramo(t, 2.5, 2.9)) * .3})`; }
+
+    /* 1 a 3 · las filas: entran de la derecha, corren a la izquierda, salen hacia arriba */
+    R.forEach(([a, b], r) => {
+      const dentro = t >= a && t < b, el = filas[r], tt = $('#t' + (r + 1));
+      const en = resorte(tramo(t, a, a + .9)), sal = entra(tramo(t, b - .45, b)), n = FILAS[r].length;
+      ver(el, dentro ? 1 - sal : 0); ver(tt, dentro ? 1 - sal : 0);
+      if(!dentro) return;
+      palabras(tt, t, a + .1); tt.style.transform = `translateY(${-sal * 40}px)`;
+      const corre = (t - a) / (b - a), lejos = n * 480 - 1080 + 120;
+      el.style.transform = `translate(${60 + (1 - en) * 1100 - corre * lejos}px, ${-sal * 300}px)`;
+      /* la tarjeta que pasa por el centro crece y brilla, como la elegida en un catálogo */
+      [...el.children].forEach((c, i) => { const x = 60 + (1 - en) * 1100 - corre * lejos + i * 480 + 220, d = Math.abs(x - 540) / 540;
+        const k = Math.max(0, 1 - d); c.style.transform = `scale(${.9 + .12 * k}) translateY(${(1 - k) * 30}px)`;
+        c.style.boxShadow = `0 0 0 ${2 + 3 * k}px rgba(226,184,255,${.28 + .6 * k}), 0 40px 90px rgba(0,0,0,.55), 0 0 ${60 * k}px rgba(199,125,255,${.5 * k})`; });
+    });
+
+    /* 4 · los cortes */
+    { const dentro = t >= CORTE[0] && t < CORTE[1], en = resorte(tramo(t, CORTE[0], CORTE[0] + .6)), sal = entra(tramo(t, CORTE[1] - .4, CORTE[1]));
+      ver($('#corte'), dentro ? 1 - sal : 0); ver($('#cuenta'), dentro ? sale(tramo(t, CORTE[0] + .3, CORTE[0] + .6)) * (1 - sal) : 0);
+      let paso = null; for(const p of pasos) if(t >= p[0]) paso = p;
+      const src = paso ? paso[1] : SECUENCIA[0], n = paso ? Math.min(20, paso[2] + 1) : 1;
+      if($('#corteImg').getAttribute('src') !== src) $('#corteImg').setAttribute('src', src);
+      $('#cuentaN').textContent = String(n).padStart(2, '0');
+      const golpe = paso ? Math.max(0, 1 - (t - paso[0]) / .12) : 0;
+      $('#corte').style.transform = `translateY(${(1 - en) * 1400 - sal * 200}px) scale(${(1 + golpe * .03) * (1 - sal * .4)})`;
+      $('#flash').style.opacity = dentro && paso ? golpe * .18 : 0;
+      $('#cuenta').style.transform = `scale(${1 + golpe * .06})`; }
+
+    /* 5 · la pared: llega desde lejos, se queda, se apaga y deja el lema */
+    { const dentro = t >= PARED[0] && t < PARED[1] + .2; ver($('#pared'), dentro ? 1 : 0);
+      if(dentro){ const z = sale(tramo(t, PARED[0], PARED[0] + 1.6)), osc = sale(tramo(t, PARED[0] + 1.4, PARED[0] + 2.0));
+        $('#pared').style.transform = `scale(${2.4 - 1.4 * z})`; $('#pared').style.transformOrigin = '50% 50%';
+        $('#pared').style.filter = `brightness(${1 - osc * .72}) blur(${osc * 3}px)`;
+        PT.forEach((c, k) => { const e = resorte(tramo(t, PARED[0] + k * .03, PARED[0] + .6 + k * .03)); c.style.opacity = e; c.style.transform = `translateY(${Math.sin(t * 1.1 + k) * 6}px) scale(${.8 + .2 * e})`; }); }
+      const a = sale(tramo(t, PARED[0] + 1.6, PARED[0] + 2.1)) * (1 - entra(tramo(t, PARED[1] - .3, PARED[1]))); ver($('#lema'), dentro ? a : 0);
+      $('#lema b').style.transform = `scale(${.85 + .15 * resorte(tramo(t, PARED[0] + 1.6, PARED[0] + 2.3))})`;
+      const s = tramo(t, PARED[0] + 2.9, PARED[0] + 3.4); $('#lema span').style.opacity = sale(s); $('#lema span').style.transform = `translateY(${(1 - resorte(s)) * 40}px)`; }
+
+    /* cierre: el logo completo, grande, que se arma y levita */
+    const g = sale(tramo(t, FIN_GM, FIN_GM + .5)); ver($('#gm'), g);
+    if(t > FIN_GM + .2) P.abrir(0); P.paso(Math.max(0, t - FIN_GM));
+    const tx = sale(tramo(t, FIN_GM + 1.0, FIN_GM + 1.6)), lm = sale(tramo(t, FIN_GM + 1.8, FIN_GM + 2.4));
+    $('#gmTxt').style.opacity = tx; $('#gmTxt').style.transform = `translateY(${(1 - tx) * 30}px)`; $('#gmLema').style.opacity = lm;
+  };
+})();
+window.VIDEO = { w: 1080, h: 1920, fps: 30, dur: FIN,
+  musica: { archivo: '/tmp/claude-0/mus/349.mp3', desde: 20, vol: .4, entrada: .3, fin: 2.2 },
+  get sonidos(){ return [...sonidosVoz(window.G, 1.05),
+    [fx('golpe'), .3, .35], ...R.map(([a]) => [fx('whoosh'), a, .35]),
+    ...pasos.map((p) => [fx('toque'), p[0], .22]), [fx('subida'), CORTE[1] - 1.6, .25],
+    [fx('whoosh'), PARED[0], .35], [fx('golpe'), PARED[0] + 1.7, .4], [fx('whoosh'), FIN_GM, .35], [fx('golpe'), FIN_GM + .55, .5]]; } };
+</script></body></html>

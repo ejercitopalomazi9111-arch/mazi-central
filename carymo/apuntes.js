@@ -12,6 +12,7 @@
  *     capas con modo, deshacer, cuentagotas, cubeta), con un editor de pinceles para crear los tuyos.
  * ===========================================================================*/
 import { crearLienzoDibujo, PINCELES, FORMAS, MODOS, FONDOS, muestra } from './trazo.js';
+import { SISTEMA_LIMPIO, revisarLimpio, htmlLimpio, fotoChica } from './limpio.js';
 
 /* ── la caja fuerte del teléfono (IndexedDB) ── */
 let bdP = null;
@@ -34,7 +35,9 @@ const COLORES = ['#2A1240', '#000000', '#7E1735', '#AC27FF', '#1E5BD8', '#1F8A5B
 
 export function iniciarApuntes(h){
   const { $, esc, ico, hoja, cerrarHoja, capa, cerrarCapa, brindis, tono, SON } = h;
-  let filtro = 'todos', busca = '', notas = [], miniaturas = new Map();
+  /* carpetas (Carlos, 13 nov: «que se dividan por categorías, y que esas categorías en sí mismas se dividan por materia»):
+     filtro = la carpeta de tipo ('todos' es la entrada), materia = la subcarpeta (null: todavía no eliges) */
+  let filtro = 'todos', materia = null, busca = '', notas = [], miniaturas = new Map();
 
   /* ── los automáticos ── */
   function deLecciones(){
@@ -68,28 +71,57 @@ export function iniciarApuntes(h){
   }
   const ORIGEN = { propio: ['pencil', 'Tuyo'], leccion: ['notebook-pen', 'De una lección'], pizarron: ['presentation', 'Del pizarrón'] };
 
+  const sinAcento = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const CARPETAS = [['propio', 'Tuyos', 'pencil', 'Los que escribes y dibujas'], ['leccion', 'De tus lecciones', 'notebook-pen', 'Lo importante de cada tema'], ['pizarron', 'Del pizarrón', 'presentation', 'De las clases que te dieron']];
+  const nomMateria = (m) => m || 'Sin materia';
+  function tarjeta(x){
+    return `<button class="ap-card" data-ap="${esc(x.id)}">
+        ${miniaturas.get(x.id) ? `<img src="${miniaturas.get(x.id)}" alt="" loading="lazy">` : `<span class="ap-ico">${ico(ORIGEN[x.origen][0])}</span>`}
+        <span class="ap-txt"><b>${esc(x.titulo || 'Sin título')}</b><small>${esc([ORIGEN[x.origen][1], x.materia, x.t ? new Date(x.t).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }) : ''].filter(Boolean).join(' · '))}</small>
+        <span class="ap-ext">${esc((x.texto || (x.puntos || []).join(' · ')).slice(0, 140))}</span></span></button>`;
+  }
+  const carpeta = (dato, valor, icono, titulo, sub, n) => `<button class="ap-carpeta" data-${dato}="${esc(valor)}"><span class="ap-c-ico">${ico(icono)}</span><span class="ap-txt"><b>${esc(titulo)}</b><small>${esc(sub)}</small></span><span class="ap-n">${n}</span>${ico('chevron-right')}</button>`;
+
   async function pintar(){
     const v = $('#vApuntes'); if(!v) return;
     try{ notas = await todas(); }catch{ notas = []; }
     const autos = [...deLecciones(), ...delPizarron()];
-    let lista = [...notas.map((n) => ({ ...n, origen: 'propio' })), ...autos].sort((a, b) => (b.t || 0) - (a.t || 0));
-    if(filtro !== 'todos') lista = lista.filter((x) => x.origen === filtro);
-    const q = busca.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-    if(q) lista = lista.filter((x) => [x.titulo, x.materia, x.texto, ...(x.puntos || [])].join(' ').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().includes(q));
+    const todos = [...notas.map((n) => ({ ...n, origen: 'propio' })), ...autos].sort((a, b) => (b.t || 0) - (a.t || 0));
     for(const n of notas) if(n.miniatura && !miniaturas.has(n.id)) miniaturas.set(n.id, URL.createObjectURL(n.miniatura));
-    v.innerHTML = `<h1 class="titulo-vista">Apuntes</h1><p class="sub-vista">Lo importante de lo que has visto, y los tuyos, con lápiz.</p>
-      <input class="campo" id="apBuscar" type="search" placeholder="Buscar en tus apuntes" value="${esc(busca)}" aria-label="Buscar en tus apuntes">
-      <div class="chips ap-filtro">${[['todos', 'Todos'], ['propio', 'Míos'], ['leccion', 'Lecciones'], ['pizarron', 'Pizarrón']].map(([k, t]) => `<button class="chip" data-apf="${k}" aria-pressed="${filtro === k}">${t}</button>`).join('')}</div>
-      <button class="bt fuerte ancho" id="apNuevo">${ico('plus')}Nuevo apunte</button>
-      <div class="ap-lista">${lista.map((x) => `<button class="ap-card" data-ap="${esc(x.id)}">
-        ${miniaturas.get(x.id) ? `<img src="${miniaturas.get(x.id)}" alt="" loading="lazy">` : `<span class="ap-ico">${ico(ORIGEN[x.origen][0])}</span>`}
-        <span class="ap-txt"><b>${esc(x.titulo || 'Sin título')}</b><small>${esc([ORIGEN[x.origen][1], x.materia, x.t ? new Date(x.t).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }) : ''].filter(Boolean).join(' · '))}</small>
-        <span class="ap-ext">${esc((x.texto || (x.puntos || []).join(' · ')).slice(0, 140))}</span></span></button>`).join('')
-        || `<p class="ap-vacio">${q ? 'Nada con eso.' : filtro === 'propio' ? 'Todavía no haces apuntes tuyos. Toca «Nuevo apunte».' : 'Aquí van a salir solos los puntos importantes de tus lecciones y de las clases del pizarrón.'}</p>`}</div>`;
+    const q = sinAcento(busca);
+    const cab = `<h1 class="titulo-vista">Apuntes</h1>
+      <div class="ap-arriba"><input class="campo" id="apBuscar" type="search" placeholder="Buscar en todos tus apuntes" value="${esc(busca)}" aria-label="Buscar en tus apuntes"><button class="bt fuerte redondo" id="apNuevo" aria-label="Nuevo apunte">${ico('plus')}</button></div>`;
+    let cuerpo = '';
+    if(q){
+      /* buscando: en TODO, sin carpetas */
+      const r = todos.filter((x) => sinAcento([x.titulo, x.materia, x.texto, ...(x.puntos || []), ...(x.bonito ? [x.bonito.resumen, ...x.bonito.secciones.flatMap((z) => [z.titulo, ...z.puntos]), ...x.bonito.clave.flatMap((k) => [k.termino, k.definicion])] : [])].join(' ')).includes(q));
+      cuerpo = `<div class="ap-lista">${r.map(tarjeta).join('') || '<p class="ap-vacio">Nada con eso.</p>'}</div>`;
+    } else if(filtro === 'todos'){
+      /* la entrada: las tres carpetas y lo más reciente */
+      cuerpo = `<div class="ap-carpetas">${CARPETAS.map(([k, t, i, sub]) => carpeta('apf', k, i, t, sub, todos.filter((x) => x.origen === k).length)).join('')}</div>
+        ${todos.length ? `<div class="seccion-t">Lo más reciente</div><div class="ap-lista">${todos.slice(0, 4).map(tarjeta).join('')}</div>`
+          : '<p class="ap-vacio">Aquí van a salir solos los puntos importantes de tus lecciones y de las clases del pizarrón. Los tuyos, con «+».</p>'}`;
+    } else {
+      const deTipo = todos.filter((x) => x.origen === filtro), nombreTipo = CARPETAS.find((c) => c[0] === filtro)[1];
+      const grupos = new Map(); for(const x of deTipo){ const m = nomMateria(x.materia); grupos.set(m, (grupos.get(m) || 0) + 1); }
+      const migas = materia !== null && grupos.size > 1
+        ? `<div class="ap-migas"><button class="sub-volver" data-apm-volver>${ico('chevron-left')}${esc(nombreTipo)}</button><b>${esc(materia)}</b></div>`
+        : `<div class="ap-migas"><button class="sub-volver" data-apf="todos">${ico('chevron-left')}Apuntes</button><b>${esc(nombreTipo)}</b></div>`;
+      if(materia === null && grupos.size > 1){
+        /* subcarpetas por materia */
+        cuerpo = migas + `<div class="ap-carpetas">${[...grupos].sort((a, b) => a[0].localeCompare(b[0], 'es')).map(([m, n]) => carpeta('apm', m, 'folder', m, n === 1 ? '1 apunte' : `${n} apuntes`, n)).join('')}</div>`;
+      } else {
+        const lista = materia !== null && grupos.size > 1 ? deTipo.filter((x) => nomMateria(x.materia) === materia) : deTipo;
+        cuerpo = migas + `<div class="ap-lista">${lista.map(tarjeta).join('') || `<p class="ap-vacio">${filtro === 'propio' ? 'Todavía no haces apuntes tuyos. Toca «+».' : 'Todavía no hay apuntes aquí: salen solos al estudiar.'}</p>`}</div>`;
+      }
+    }
+    v.innerHTML = cab + cuerpo;
     const bb = $('#apBuscar', v); bb.addEventListener('input', () => { busca = bb.value; clearTimeout(pintar.t); pintar.t = setTimeout(async () => { await pintar(); const b2 = $('#apBuscar'); b2?.focus(); b2?.setSelectionRange(b2.value.length, b2.value.length); }, 250); });
     $('#apNuevo', v).addEventListener('click', () => abrirPropio(null));
     v.onclick = (e) => {
-      const f = e.target.closest('[data-apf]'); if(f){ filtro = f.dataset.apf; tono(SON.toque); pintar(); return; }
+      const f = e.target.closest('[data-apf]'); if(f){ filtro = f.dataset.apf; materia = null; tono(SON.toque); pintar(); scrollTo({ top: 0 }); return; }
+      const m = e.target.closest('[data-apm]'); if(m){ materia = m.dataset.apm; tono(SON.toque); pintar(); scrollTo({ top: 0 }); return; }
+      if(e.target.closest('[data-apm-volver]')){ materia = null; tono(SON.toque); pintar(); return; }
       const c = e.target.closest('[data-ap]'); if(!c) return;
       const id = c.dataset.ap, propio = notas.find((n) => n.id === id);
       if(propio) abrirPropio(propio); else { const a = [...deLecciones(), ...delPizarron()].find((x) => x.id === id); if(a) abrirAuto(a); }
@@ -123,14 +155,41 @@ export function iniciarApuntes(h){
       <div class="cuerpo">
         <input class="campo" id="apMat" list="apMats" placeholder="Materia" value="${esc(n.materia)}" aria-label="Materia"><datalist id="apMats">${materias.map((m) => `<option value="${esc(m)}">`).join('')}</datalist>
         <textarea class="campo ap-texto" id="apTxt" placeholder="Escribe aquí lo importante…" aria-label="Texto del apunte">${esc(n.texto)}</textarea>
+        <div class="fila-bt ap-ia"><button class="bt" data-limpio>${ico('sparkles')}En limpio</button><label class="bt" id="apFotoBt">${ico('camera')}Desde foto<input type="file" accept="image/*" id="apFoto" hidden></label></div>
+        <div class="ap-limpio" id="apLimpio">${n.bonito ? htmlLimpio(n.bonito, esc) : ''}</div>
         <div class="ap-dibujo" id="apDib">${miniaturas.get(n.id) ? `<img src="${miniaturas.get(n.id)}" alt="Tu dibujo">` : ''}<button class="bt ${n.dibujo ? '' : 'fuerte'}" data-dibujar>${ico('brush')}${n.dibujo ? 'Editar el dibujo' : 'Dibujar con lápiz'}</button></div>
       </div>
       <div class="abajo"><button class="bt ancho peligro-suave" data-borrar>${ico('trash')}Borrar este apunte</button></div>`;
     const guardar = async () => { n.titulo = $('#apTit', c).value.trim(); n.materia = $('#apMat', c).value.trim(); n.texto = $('#apTxt', c).value; n.t = Date.now(); if(n.titulo || n.texto || n.dibujo) await ponerNota(n); };
     let t = 0; c.addEventListener('input', () => { clearTimeout(t); t = setTimeout(guardar, 500); });
     const txt = $('#apTxt', c), crecer = () => { txt.style.height = 'auto'; txt.style.height = Math.max(180, txt.scrollHeight) + 'px'; }; txt.addEventListener('input', crecer); setTimeout(crecer, 0);
+    /* EN LIMPIO (limpio.js): la IA ordena lo que escribiste o una foto del cuaderno; se guarda junto al apunte y sólo se
+       vuelve a pintar ese bloque (regla 13) */
+    let ocupado = false;
+    async function enLimpio(imagenes = []){
+      if(ocupado || !h.ia) return;
+      const texto = $('#apTxt', c).value.trim();
+      if(!imagenes.length && texto.length < 30){ brindis('Escribe un poco más primero', 'vino', 'x'); return; }
+      ocupado = true; const bts = [$('[data-limpio]', c), $('#apFotoBt', c)], antes = bts.map((b) => b.innerHTML);
+      bts.forEach((b) => b.classList.add('apagado')); bts[imagenes.length ? 1 : 0].textContent = 'Leyendo…';
+      try{
+        const r = await h.ia({ sistema: SISTEMA_LIMPIO(h.tutor ? h.tutor() : 'de preparatoria en México'), imagenes, tope: 5000, revisar: revisarLimpio,
+          texto: imagenes.length ? (texto ? `Lo que ya escribí:\n${texto}\n\nY esta foto de mi cuaderno.` : 'Mis apuntes están en la foto.') : `Mis apuntes:\n${texto}` });
+        if(imagenes.length && r.texto && !texto){ $('#apTxt', c).value = r.texto; crecer(); }
+        if(!$('#apTit', c).value.trim() && r.titulo) $('#apTit', c).value = r.titulo;
+        if(!$('#apMat', c).value.trim() && r.materia) $('#apMat', c).value = r.materia;
+        delete r.texto; n.bonito = r; await guardar();
+        $('#apLimpio', c).innerHTML = htmlLimpio(r, esc); tono(SON.ding); brindis('En limpio', '', 'sparkles');
+        $('#apLimpio', c).scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+      }catch(err){ brindis(err.message || 'La IA no contestó', 'vino', 'x'); }
+      finally{ ocupado = false; bts.forEach((b, i) => { if(b.isConnected){ b.innerHTML = antes[i]; b.classList.remove('apagado'); } });
+      }
+    }
+    const alFoto = async (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if(!f) return; const img = await fotoChica(f); if(!img){ brindis('No pude abrir esa foto', 'vino', 'x'); return; } enLimpio([img]); };
+    $('#apFoto', c).addEventListener('change', alFoto);
     c.addEventListener('click', async (e) => {
       if(e.target.closest('[data-cerrar]')){ await guardar(); cerrarCapa(); pintar(); return; }
+      if(e.target.closest('[data-limpio]')){ enLimpio(); return; }
       if(e.target.closest('[data-dibujar]')){ await guardar(); abrirDibujo(n); return; }
       const b = e.target.closest('[data-borrar]');
       if(b){ if(!b.dataset.seguro){ b.dataset.seguro = '1'; b.innerHTML = `${ico('trash')}Toca otra vez para borrarlo`; return; } await quitarNota(n.id); miniaturas.delete(n.id); cerrarCapa(); brindis('Apunte borrado', 'vino', 'trash'); pintar(); }
@@ -265,5 +324,7 @@ export function iniciarApuntes(h){
     }
   }
 
-  return { pintar };
+  /* cuántos hay (para el botón de «Tú»): los tuyos que ya se leyeron más los automáticos */
+  const cuantos = () => notas.length + deLecciones().length + delPizarron().length;
+  return { pintar, cuantos };
 }

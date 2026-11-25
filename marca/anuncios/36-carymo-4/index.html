@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>CARYMO · Idiomas y 3D</title>
+<!-- CARYMO 4 · IDIOMAS, 3D Y DIAGRAMAS (paquete del inversionista). La app de verdad: los cursos de idiomas, el
+     cerebro en 3D que se gira con el dedo (toma «explora» de carymo/anuncio/grabar.mjs; modelos de BodyParts3D,
+     © The Database Center for Life Science, CC BY-SA 2.1 JP) y el diagrama del pizarrón. Voz de la casa (Fenrir).
+     Música: «Infinite Perspective», Kevin MacLeod (incompetech.com), CC BY 4.0. -->
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+</head><body>
+<script type="module">
+import { montar, fx } from '../32-carymo/serie.js';
+window.listo = montar({
+  dur: 30,
+  musica: { archivo: '/tmp/claude-0/musica/Infinite_Perspective.mp3', desde: 0, vol: .3, entrada: .2, fin: 2.4 },
+  gancho: { a: 0, b: 3.4, html: 'No es sólo para<br>el <em>examen</em>.' },
+  escenas: [
+    { a: 3.3, b: 8.5, toma: 'explora', desde: 'idiomas-0.5', hasta: 'idiomas+3.3', tit: 'Idiomas<br><em>desde cero</em>', chip: 'Inglés · <b>francés</b>' },
+    { a: 8.5, b: 10.9, toma: 'explora', desde: 'modelos-0.3', hasta: 'modelos+1.7', tit: 'Modelos<br><em>en 3D</em>' },
+    { a: 10.9, b: 14.3, toma: 'explora', desde: 'modelo+0.5', hasta: 'modelo+5', tit: 'Modelos<br><em>en 3D</em>', chip: 'Gíralo y <b>tócalo</b>' },
+    { a: 14.3, b: 19.5, toma: 'pizarron', desde: 1.4, hasta: 3.4, tit: 'Diagramas que<br><em>se dibujan solos</em>' },
+    { a: 19.5, b: 24.0, toma: 'explora', desde: 'modelo+12', hasta: 'gira', tit: 'Entiéndelo<br><em>viéndolo</em>' },
+  ],
+  cierre: { a: 24.0, frase: 'Apréndelo<br><em>viéndolo</em>.' },
+  sonidos: [[fx('golpe'), .4, .3]],
+});
+</script></body></html>

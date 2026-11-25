@@ -1,0 +1,14 @@
+{
+ "titulo": "GM-3 · Danos tu problema (paquete del inversionista). Nos pidieron arreglar presentaciones y construimos la herramienta; el cliente no se nombra",
+ "voces": { "Narrador": "google:Orus" },
+ "lineas": [
+  { "id": "01", "voz": "Narrador", "en": 0.3,  "txt": "Una empresa nos pidió arreglar sus presentaciones." },
+  { "id": "02", "voz": "Narrador", "en": 4.2,  "txt": "No era una. Eran cientos de láminas." },
+  { "id": "03", "voz": "Narrador", "en": 8.4,  "txt": "Hacerlo a mano, una por una, eran semanas." },
+  { "id": "04", "voz": "Narrador", "en": 12.6, "txt": "Así que no las arreglamos a mano. Construimos una herramienta." },
+  { "id": "05", "voz": "Narrador", "en": 18.0, "txt": "Cambia el fondo, la letra y el color de todas las láminas, de un jalón." },
+  { "id": "06", "voz": "Narrador", "en": 23.6, "txt": "Lo que era una semana, ahora es un minuto. Y hoy la usan nuestros clientes." },
+  { "id": "07", "voz": "Narrador", "en": 30.0, "txt": "Ése es nuestro trabajo. Danos tu problema: nosotros hacemos la herramienta." },
+  { "id": "08", "voz": "Narrador", "en": 36.4, "txt": "Grupo Mazi. Si no existe la herramienta, se construye." }
+ ]
+}

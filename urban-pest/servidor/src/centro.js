@@ -137,6 +137,9 @@ export function proximas(v, hoy){
 export const listarVehiculos = async (A, hoy = new Date().toISOString().slice(0, 10)) =>
   ({ bien: true, vehiculos: (await A.list('vehiculo:')).map(([, v]) => ({ ...v, revisiones: v.revisiones.slice(-30), proximas: proximas(v, hoy) })) });
 
+/** Hecha en el chat de pruebas: no es de un cliente. Las viejas no traen la marca, pero sí el canal. */
+const dePrueba = (c) => !!c.prueba || c.interno?.canal === 'prueba';
+
 /* ── el tablero de hoy ── */
 export async function tablero(A, hoy = new Date().toISOString().slice(0, 10)){
   const citas = (await listarCitas(A)).citas, insumos = (await listarInsumos(A)).insumos, vehiculos = (await listarVehiculos(A, hoy)).vehiculos;
@@ -144,7 +147,7 @@ export async function tablero(A, hoy = new Date().toISOString().slice(0, 10)){
   const convs = (await A.list('conv:')).map(([, v]) => v).filter(c => c.canal !== 'prueba');
   const deHoy = convs.flatMap(c => c.mensajes.filter(m => m.cuando >= inicio));
   const avisos = (await A.list('aviso:')).map(([id, v]) => ({ id, ...v })).filter(a => a.estado === 'nuevo');
-  const cots = (await A.list('cotdoc:')).map(([, v]) => v).filter(c => c.fecha === hoy && !c.ejemplo);
+  const cots = (await A.list('cotdoc:')).map(([, v]) => v).filter(c => c.fecha === hoy && !c.ejemplo && !dePrueba(c));
   return { bien: true, hoy,
     servicios_hoy: citas.filter(c => c.fecha === hoy && c.estado === 'pendiente'),
     atrasados: citas.filter(c => c.fecha < hoy && c.estado === 'pendiente'),
@@ -161,7 +164,7 @@ export async function tablero(A, hoy = new Date().toISOString().slice(0, 10)){
 /* ── los números (Carlos, 12 nov): qué se cotizó, cuánto cuesta hacerlo, cuánto queda y por qué ── */
 export async function numeros(A, hoy = new Date().toISOString().slice(0, 10)){
   const mes = hoy.slice(0, 7);
-  const cots = (await A.list('cotdoc:')).map(([, v]) => v).sort((a, b) => b.folio - a.folio);
+  const cots = (await A.list('cotdoc:')).map(([, v]) => v).filter(c => !dePrueba(c)).sort((a, b) => b.folio - a.folio);
   const citas = (await A.list('cita:')).map(([, v]) => v);
   const deVerdad = cots.filter(c => !c.ejemplo && c.fecha.startsWith(mes));
   const suma = (xs, f) => Math.round(xs.reduce((s, x) => s + (f(x) || 0), 0));

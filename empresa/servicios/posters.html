@@ -24,8 +24,11 @@ body{ background:#000; font-family:var(--t); color:var(--claro); font-variant-nu
 .fly.claro{ color:var(--oscuro) } .fly.claro::before{ background:radial-gradient(70% 55% at var(--gx, 70%) var(--gy, 40%), #FFFFFF, #F4EEF2 50%, #E6D9E1 95%) }
 .fly.claro::after{ background-image:linear-gradient(#170A260c 1px, transparent 1px), linear-gradient(90deg, #170A260c 1px, transparent 1px) }
 .fly > *{ position:absolute; z-index:1 }
-.marca{ left:56px; top:40px; height:86px }
-.cat{ right:72px; top:66px; padding:11px 20px; border-radius:99px; background:#3A1530; box-shadow:inset 0 0 0 2px #8E2B55; font-weight:800; font-size:19px; letter-spacing:.14em; text-transform:uppercase; color:#EBD8FF }
+/* el logo completo va grande (Carlos, 15 nov): arriba es suyo (200 px de alto, antes 112) y todo lo demás
+   baja --baja (80 px por defecto); la etiqueta del servicio queda a media altura del logo */
+.marca{ left:52px; top:26px; height:200px }
+.fly > :not(.marca):not(.cat):not(.pie){ translate:0 var(--baja, 80px) }
+.cat{ right:72px; top:104px; padding:11px 20px; border-radius:99px; background:#3A1530; box-shadow:inset 0 0 0 2px #8E2B55; font-weight:800; font-size:19px; letter-spacing:.14em; text-transform:uppercase; color:#EBD8FF }
 .claro .cat{ background:#fff; box-shadow:inset 0 0 0 2px #E2C6D3; color:var(--vino) }
 .num{ right:72px; bottom:150px; font:700 22px/1 var(--s); letter-spacing:.2em; color:var(--suave) }
 h1{ left:68px; font-family:var(--s); font-size:94px; font-weight:700; letter-spacing:-.055em; line-height:.92 }
@@ -55,7 +58,7 @@ h1 em{ font-style:normal; color:var(--rosa) } .claro h1 em, .claro .grande em{ c
 .aviso b{ color:#fff }
 .regalo{ display:flex; align-items:center; gap:12px; padding:12px 22px 12px 14px; border-radius:99px; background:#4A1430; box-shadow:inset 0 0 0 2px var(--vino2); color:#F1E2FF; font-weight:800; font-size:24px; white-space:nowrap }
 .regalo svg{ width:34px; height:34px; flex:none }
-.pie{ left:72px; right:72px; bottom:56px; display:flex; align-items:center; gap:20px }
+.pie{ left:72px; right:72px; bottom:44px; display:flex; align-items:center; gap:20px }
 .pie .correo{ font-size:21px; font-weight:600; color:var(--suave); line-height:1.35 }
 .pie .correo b{ display:block; color:var(--claro); font-size:23px }
 .claro .pie .correo b{ color:var(--oscuro) } .claro .pie .correo{ color:#6E6276 }
@@ -71,13 +74,14 @@ h1 em{ font-style:normal; color:var(--rosa) } .claro h1 em, .claro .grande em{ c
 .reel .play::after{ content:""; position:absolute; left:33px; top:25px; border-left:28px solid var(--oscuro); border-top:17px solid transparent; border-bottom:17px solid transparent }
 .hoja{ border-radius:18px; overflow:hidden; box-shadow:0 40px 80px -20px #000, 0 0 0 2px #3C2652 }
 .hoja img{ display:block; width:100%; height:100%; object-fit:cover; object-position:top }
-.cubo{ width:330px; height:360px; background:url(../../marca/logo/paloma.svg) center/contain no-repeat }
+.cubo{ width:330px; height:360px; background:url(../../marca/paloma-2026/logo-plano.svg) center/contain no-repeat }
 .icono{ display:grid; place-items:center; width:150px; height:150px; border-radius:40px; background:#2E1236; box-shadow:inset 0 0 0 2px #6E2448 }
 .icono svg{ width:76px; height:76px }
 .tabla{ left:72px; right:72px; display:grid; grid-template-columns:1fr 1fr; gap:0 34px }
 .tabla .f{ display:flex; align-items:baseline; gap:10px; padding:13px 0; border-bottom:2px solid #3A2A4A; font-size:22px; font-weight:600 }
 .tabla .f b{ margin-left:auto; font-family:var(--s); font-size:28px; letter-spacing:-.02em; white-space:nowrap }
 .tabla .f small{ font-size:16px; color:var(--suave) }
+.tabla.holgada .f{ padding:18px 0 } .tabla.holgada h3{ margin-top:22px }
 .tabla h3{ grid-column:span 1; margin-top:16px; font-size:17px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--rosa) }
 </style>
 </head>
@@ -85,7 +89,7 @@ h1 em{ font-style:normal; color:var(--rosa) } .claro h1 em, .claro .grande em{ c
 
 <!-- 1 · WEB ESENCIAL -->
 <section class="fly" style="--gx:80%; --gy:35%">
-  <img class="marca" src="../../marca/logo/original-claro.svg" alt="Grupo Mazi"><div class="cat">Página web</div>
+  <img class="marca" src="../../marca/paloma-2026/logo-plano.svg" alt="Grupo Mazi"><div class="cat">Página web</div>
   <h1 style="top:190px; width:560px">Tu negocio en internet <em>esta semana.</em></h1>
   <div class="tel" style="left:700px; top:200px; transform:rotate(5deg) scale(.86)"><img src="img/district.webp" alt=""></div>
   <div class="grande" style="left:62px; top:560px"><small>$</small>2,000</div>
@@ -96,31 +100,31 @@ h1 em{ font-style:normal; color:var(--rosa) } .claro h1 em, .claro .grande em{ c
 
 <!-- 2 · WEB COMPLETA -->
 <section class="fly vino" style="--gx:30%; --gy:45%">
-  <img class="marca" src="../../marca/logo/original-claro.svg" alt="Grupo Mazi"><div class="cat">La más pedida</div>
-  <h1 style="top:175px; width:940px">Una página que <em style="color:#DDB3FF">vende sola.</em></h1>
-  <div class="tel" style="left:84px; top:355px; transform:rotate(-4deg) scale(.94)"><img src="img/smileys.webp" alt=""></div>
-  <div class="reel" style="left:470px; top:380px; width:250px; height:400px; transform:rotate(5deg)"><img src="img/v-queso.webp" alt=""><i class="play"></i></div>
-  <div class="reel" style="left:745px; top:420px; width:250px; height:400px; transform:rotate(-4deg)"><img src="img/v-caja.webp" alt=""><i class="play"></i></div>
-  <div class="regalo" style="left:500px; top:850px; background:#5E1028"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M3 12h18M12 8c-2-4-6-4-6-1.5S9 8 12 8zm0 0c2-4 6-4 6-1.5S15 8 12 8z"/></svg>De regalo: 2 videos para redes</div>
-  <div class="grande" style="left:62px; top:1010px"><small style="color:#E3C9F5">$</small>6,500</div>
-  <ul class="lista" style="left:620px; top:1000px; width:400px"><li>Pedidos que llegan armados</li><li>Diseño con animación</li><li>Lista para Google</li></ul>
+  <img class="marca" src="../../marca/paloma-2026/logo-plano.svg" alt="Grupo Mazi"><div class="cat">La más pedida</div>
+  <h1 style="top:175px; width:940px; font-size:84px">Una página que <em style="color:#DDB3FF">vende sola.</em></h1>
+  <div class="tel" style="left:84px; top:345px; transform:rotate(-4deg) scale(.94)"><img src="img/smileys.webp" alt=""></div>
+  <div class="reel" style="left:470px; top:365px; width:250px; height:400px; transform:rotate(5deg)"><img src="img/v-queso.webp" alt=""><i class="play"></i></div>
+  <div class="reel" style="left:745px; top:400px; width:250px; height:400px; transform:rotate(-4deg)"><img src="img/v-caja.webp" alt=""><i class="play"></i></div>
+  <div class="regalo" style="left:500px; top:830px; background:#5E1028"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M3 12h18M12 8c-2-4-6-4-6-1.5S9 8 12 8zm0 0c2-4 6-4 6-1.5S15 8 12 8z"/></svg>De regalo: 2 videos para redes</div>
+  <div class="grande" style="left:62px; top:965px"><small style="color:#E3C9F5">$</small>6,500</div>
+  <ul class="lista" style="left:620px; top:955px; width:400px"><li>Pedidos que llegan armados</li><li>Diseño con animación</li><li>Lista para Google</li></ul>
   <div class="pie"><div class="correo" style="color:#E3C9F5"><b>3 meses de mantenimiento incluidos</b>Lista en unas 1 a 2 semanas</div><div class="wa"><svg viewBox="0 0 24 24"><use href="#wa"/></svg>442 883 3786</div></div>
 </section>
 
 <!-- 3 · A LA MEDIDA -->
 <section class="fly" style="--gx:70%; --gy:50%">
-  <img class="marca" src="../../marca/logo/original-claro.svg" alt="Grupo Mazi"><div class="cat">Web a la medida</div>
+  <img class="marca" src="../../marca/paloma-2026/logo-plano.svg" alt="Grupo Mazi"><div class="cat">Web a la medida</div>
   <h1 style="top:180px; width:940px">Lo que tu competencia <em>no tiene.</em></h1>
   <div class="tel" style="left:730px; top:440px; transform:rotate(6deg) scale(.8)"><img src="img/arco.webp" alt=""></div>
   <div class="grande" style="left:62px; top:470px"><small>desde $</small>9,000</div>
   <ul class="lista" style="left:72px; top:660px; width:520px"><li>Animación 3D o interactiva</li><li>Carrito, cotizador o reservas</li><li>Panel para cambiar tus precios y fotos</li><li>Varios idiomas</li><li>Lo que necesites: se diseña contigo</li></ul>
-  <p class="sub" style="top:1060px; width:900px; font-size:25px"><b>3 meses de mantenimiento incluidos.</b> El tiempo de entrega te lo decimos antes de empezar.</p>
+  <p class="sub" style="top:1025px; width:900px; font-size:25px"><b>3 meses de mantenimiento incluidos.</b> El tiempo de entrega te lo decimos antes de empezar.</p>
   <div class="pie"><div class="correo"><b>Platiquemos tu idea</b>grupomazi.oficial@gmail.com</div><div class="wa"><svg viewBox="0 0 24 24"><use href="#wa"/></svg>442 883 3786</div></div>
 </section>
 
 <!-- 4 · TIENDA EN LÍNEA -->
 <section class="fly claro" style="--gx:70%; --gy:35%">
-  <img class="marca" src="../../marca/logo/original-tinta.svg" alt="Grupo Mazi"><div class="cat">Tienda en línea</div>
+  <img class="marca" src="../../marca/paloma-2026/logo-claro.svg" alt="Grupo Mazi"><div class="cat">Tienda en línea</div>
   <h1 style="top:190px; width:600px">Vende <em>las 24 horas.</em></h1>
   <div class="icono" style="left:780px; top:200px; background:var(--oscuro); box-shadow:none"><svg viewBox="0 0 24 24" fill="none" stroke="#C77DFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 10a4 4 0 0 1-8 0"/><path d="M3.103 6.034h17.794"/><path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"/></svg></div>
   <div class="grande" style="left:62px; top:440px"><small>desde $</small>12,000</div>
@@ -131,7 +135,7 @@ h1 em{ font-style:normal; color:var(--rosa) } .claro h1 em, .claro .grande em{ c
 
 <!-- 5 · MANTENIMIENTO -->
 <section class="fly" style="--gx:75%; --gy:30%">
-  <img class="marca" src="../../marca/logo/original-claro.svg" alt="Grupo Mazi"><div class="cat">Mantenimiento</div>
+  <img class="marca" src="../../marca/paloma-2026/logo-plano.svg" alt="Grupo Mazi"><div class="cat">Mantenimiento</div>
   <h1 style="top:190px; width:940px">Tu página siempre <em>al día.</em></h1>
   <p class="sub" style="top:400px; width:900px">Es como un seguro: alguien que responde y la mantiene funcionando. <b>Los primeros 3 meses van incluidos.</b></p>
   <div class="precios" style="top:560px">
@@ -144,12 +148,12 @@ h1 em{ font-style:normal; color:var(--rosa) } .claro h1 em, .claro .grande em{ c
 
 <!-- 6 · HERRAMIENTAS A LA MEDIDA -->
 <section class="fly" style="--gx:70%; --gy:50%">
-  <img class="marca" src="../../marca/logo/original-claro.svg" alt="Grupo Mazi"><div class="cat">Apps y sistemas</div>
+  <img class="marca" src="../../marca/paloma-2026/logo-plano.svg" alt="Grupo Mazi"><div class="cat">Apps y sistemas</div>
   <h1 style="top:175px; width:940px">Si la herramienta no existe, <em>la construimos.</em></h1>
   <div class="tel" style="left:90px; top:330px; transform:rotate(-6deg) scale(.74)"><img src="img/fadori-00700.webp" alt=""></div>
   <div class="tel" style="left:395px; top:310px; transform:scale(.8)"><img src="img/fadori-00950.webp" alt=""></div>
   <div class="tel" style="left:700px; top:330px; transform:rotate(6deg) scale(.74)"><img src="img/fadori-01200.webp" alt=""></div>
-  <div class="precios" style="top:960px; grid-template-columns:1fr 1fr 1fr; gap:12px">
+  <div class="precios" style="top:935px; grid-template-columns:1fr 1fr 1fr; gap:12px">
     <div class="p" style="flex-direction:column; align-items:flex-start; gap:4px"><div class="q">Sencillo<small>Una tarea bien resuelta</small></div><div class="v" style="margin:0; font-size:40px"><small>desde</small>$10k</div></div>
     <div class="p e" style="flex-direction:column; align-items:flex-start; gap:4px"><div class="q">Medio<small>Tu operación en un lugar</small></div><div class="v" style="margin:0; font-size:40px"><small>desde</small>$35k</div></div>
     <div class="p" style="flex-direction:column; align-items:flex-start; gap:4px"><div class="q">Avanzado<small>Un sistema para crecer</small></div><div class="v" style="margin:0; font-size:40px"><small>desde</small>$80k</div></div>
@@ -159,23 +163,23 @@ h1 em{ font-style:normal; color:var(--rosa) } .claro h1 em, .claro .grande em{ c
 
 <!-- 7 · VIDEO -->
 <section class="fly vino" style="--gx:50%; --gy:40%">
-  <img class="marca" src="../../marca/logo/original-claro.svg" alt="Grupo Mazi"><div class="cat">Video para redes</div>
+  <img class="marca" src="../../marca/paloma-2026/logo-plano.svg" alt="Grupo Mazi"><div class="cat">Video para redes</div>
   <h1 style="top:175px; width:940px">Que se te antoje <em style="color:#DDB3FF">desde el celular.</em></h1>
-  <div class="reel" style="left:90px; top:400px; width:270px; height:430px; transform:rotate(-5deg)"><img src="img/v-caja.webp" alt=""><i class="play"></i></div>
-  <div class="reel" style="left:405px; top:380px; width:270px; height:460px"><img src="img/v-queso.webp" alt=""><i class="play"></i></div>
-  <div class="reel" style="left:720px; top:400px; width:270px; height:430px; transform:rotate(5deg)"><img src="img/v-armar.webp" alt=""><i class="play"></i></div>
-  <div class="precios" style="top:880px; grid-template-columns:1fr 1fr 1fr; gap:12px">
+  <div class="reel" style="left:90px; top:365px; width:270px; height:430px; transform:rotate(-5deg)"><img src="img/v-caja.webp" alt=""><i class="play"></i></div>
+  <div class="reel" style="left:405px; top:345px; width:270px; height:460px"><img src="img/v-queso.webp" alt=""><i class="play"></i></div>
+  <div class="reel" style="left:720px; top:365px; width:270px; height:430px; transform:rotate(5deg)"><img src="img/v-armar.webp" alt=""><i class="play"></i></div>
+  <div class="precios" style="top:840px; grid-template-columns:1fr 1fr 1fr; gap:12px">
     <div class="p e" style="flex-direction:column; align-items:flex-start; gap:4px"><div class="q">2 videos<small>De unos 30 s</small></div><div class="v" style="margin:0; font-size:40px">$1,200</div></div>
     <div class="p" style="flex-direction:column; align-items:flex-start; gap:4px"><div class="q">Grabamos + 2<small>Hasta 2 h en tu negocio</small></div><div class="v" style="margin:0; font-size:40px">$2,900</div></div>
     <div class="p" style="flex-direction:column; align-items:flex-start; gap:4px"><div class="q">Comercial<small>Con voz, hasta 60 s</small></div><div class="v" style="margin:0; font-size:40px">$2,500</div></div>
   </div>
-  <div class="aviso" style="top:1080px; background:#5E1028; box-shadow:inset 0 0 0 2px #93294D"><svg viewBox="0 0 24 24" fill="none" stroke="#DDB3FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg><span><b>Grabamos en tu negocio dentro de Querétaro.</b> Fuera, sólo en casos especiales y con viáticos a cargo del cliente.</span></div>
+  <div class="aviso" style="top:1030px; background:#5E1028; box-shadow:inset 0 0 0 2px #93294D"><svg viewBox="0 0 24 24" fill="none" stroke="#DDB3FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg><span><b>Grabamos en tu negocio dentro de Querétaro.</b> Fuera, sólo en casos especiales y con viáticos a cargo del cliente.</span></div>
   <div class="pie"><div class="correo" style="color:#E3C9F5"><b>Con tu material o el nuestro</b>grupomazi.oficial@gmail.com</div><div class="wa"><svg viewBox="0 0 24 24"><use href="#wa"/></svg>442 883 3786</div></div>
 </section>
 
 <!-- 8 · FOTOS -->
 <section class="fly" style="--gx:72%; --gy:42%">
-  <img class="marca" src="../../marca/logo/original-claro.svg" alt="Grupo Mazi"><div class="cat">Sesión de fotos</div>
+  <img class="marca" src="../../marca/paloma-2026/logo-plano.svg" alt="Grupo Mazi"><div class="cat">Sesión de fotos</div>
   <h1 style="top:190px; width:620px">Tu negocio, <em>como se merece.</em></h1>
   <div class="hoja" style="left:720px; top:230px; width:290px; height:460px; transform:rotate(5deg)"><img src="img/v-queso.webp" alt="" style="object-position:center"></div>
   <div class="grande" style="left:62px; top:520px"><small>$</small>1,500</div>
@@ -186,7 +190,7 @@ h1 em{ font-style:normal; color:var(--rosa) } .claro h1 em, .claro .grande em{ c
 
 <!-- 9 · MARCA -->
 <section class="fly claro" style="--gx:72%; --gy:38%">
-  <img class="marca" src="../../marca/logo/original-tinta.svg" alt="Grupo Mazi"><div class="cat">Logo y marca</div>
+  <img class="marca" src="../../marca/paloma-2026/logo-claro.svg" alt="Grupo Mazi"><div class="cat">Logo y marca</div>
   <h1 style="top:190px; width:600px">Una marca que <em>se recuerda.</em></h1>
   <div class="cubo" style="left:690px; top:170px"></div>
   <div class="precios" style="top:560px">
@@ -199,23 +203,23 @@ h1 em{ font-style:normal; color:var(--rosa) } .claro h1 em, .claro .grande em{ c
 
 <!-- 10 · DISEÑO GRÁFICO -->
 <section class="fly" style="--gx:62%; --gy:42%">
-  <img class="marca" src="../../marca/logo/original-claro.svg" alt="Grupo Mazi"><div class="cat">Diseño gráfico</div>
+  <img class="marca" src="../../marca/paloma-2026/logo-plano.svg" alt="Grupo Mazi"><div class="cat">Diseño gráfico</div>
   <h1 style="top:175px; width:940px">Diseño que hace ver <em>grande tu negocio.</em></h1>
-  <div class="hoja" style="left:90px; top:420px; width:330px; height:410px; transform:rotate(-7deg)"><img src="img/v-caja.webp" alt="" style="object-position:center"></div>
-  <div class="hoja" style="left:640px; top:420px; width:330px; height:410px; transform:rotate(6deg)"><img src="salida/Grupo-Mazi-servicios-1.png" alt=""></div>
-  <div class="hoja" style="left:370px; top:390px; width:340px; height:440px"><img src="img/v-armar.webp" alt="" style="object-position:center"></div>
-  <div class="precios" style="top:880px; grid-template-columns:1fr 1fr 1fr; gap:12px">
+  <div class="hoja" style="left:90px; top:385px; width:330px; height:410px; transform:rotate(-7deg)"><img src="img/v-caja.webp" alt="" style="object-position:center"></div>
+  <div class="hoja" style="left:640px; top:385px; width:330px; height:410px; transform:rotate(6deg)"><img src="salida/Grupo-Mazi-servicios-1.png" alt=""></div>
+  <div class="hoja" style="left:370px; top:355px; width:340px; height:440px"><img src="img/v-armar.webp" alt="" style="object-position:center"></div>
+  <div class="precios" style="top:845px; grid-template-columns:1fr 1fr 1fr; gap:12px">
     <div class="p" style="flex-direction:column; align-items:flex-start; gap:4px"><div class="q">Estándar<small>Flyer o publicación</small></div><div class="v" style="margin:0; font-size:40px">$250</div></div>
     <div class="p e" style="flex-direction:column; align-items:flex-start; gap:4px"><div class="q">Pro<small>Fotos trabajadas</small></div><div class="v" style="margin:0; font-size:40px">$450</div></div>
     <div class="p" style="flex-direction:column; align-items:flex-start; gap:4px"><div class="q">Premium<small>Pieza de campaña</small></div><div class="v" style="margin:0; font-size:40px">$750</div></div>
   </div>
-  <div class="chips" style="top:1080px"><span>Menú digital con QR · $900</span><span>Presentación o documento · $900</span></div>
+  <div class="chips" style="top:1040px"><span>Menú digital con QR · $900</span><span>Presentación o documento · $900</span></div>
   <div class="pie"><div class="correo"><b>Carteles, banners y más</b>grupomazi.oficial@gmail.com</div><div class="wa"><svg viewBox="0 0 24 24"><use href="#wa"/></svg>442 883 3786</div></div>
 </section>
 
 <!-- 11 · REDES Y PUBLICIDAD -->
 <section class="fly vino" style="--gx:72%; --gy:40%">
-  <img class="marca" src="../../marca/logo/original-claro.svg" alt="Grupo Mazi"><div class="cat">Redes y publicidad</div>
+  <img class="marca" src="../../marca/paloma-2026/logo-plano.svg" alt="Grupo Mazi"><div class="cat">Redes y publicidad</div>
   <h1 style="top:190px; width:900px">Redes que <em style="color:#DDB3FF">sí venden.</em></h1>
   <p class="sub" style="top:330px; width:900px; color:#E3C9F5">Contenido que sale de <b>tu negocio real</b>, no de plantillas.</p>
   <div class="precios" style="top:470px">
@@ -229,7 +233,7 @@ h1 em{ font-style:normal; color:var(--rosa) } .claro h1 em, .claro .grande em{ c
 
 <!-- 12 · NEGOCIO: TIEMPOS Y MOVIMIENTOS Y AUTOMATIZACIÓN -->
 <section class="fly" style="--gx:75%; --gy:40%">
-  <img class="marca" src="../../marca/logo/original-claro.svg" alt="Grupo Mazi"><div class="cat">Gestión de negocio</div>
+  <img class="marca" src="../../marca/paloma-2026/logo-plano.svg" alt="Grupo Mazi"><div class="cat">Gestión de negocio</div>
   <h1 style="top:190px; width:940px">¿Dónde se te va <em>el tiempo y el dinero?</em></h1>
   <div class="precios" style="top:520px">
     <div class="p e"><div class="q">Diagnóstico de tiempos y movimientos<small>Medimos tu operación y te decimos qué cambiar</small></div><div class="v"><small>desde</small>$3,000</div></div>
@@ -241,10 +245,10 @@ h1 em{ font-style:normal; color:var(--rosa) } .claro h1 em, .claro .grande em{ c
 </section>
 
 <!-- 13 · TODOS LOS PRECIOS -->
-<section class="fly" style="--gx:85%; --gy:15%">
-  <img class="marca" src="../../marca/logo/original-claro.svg" alt="Grupo Mazi"><div class="cat">Precios 2026</div>
-  <h1 style="top:160px; width:940px; font-size:78px">Todo lo que hacemos, <em>en una hoja.</em></h1>
-  <div class="tabla" style="top:340px">
+<section class="fly" style="--gx:85%; --gy:15%; --baja:0px">
+  <img class="marca" src="../../marca/paloma-2026/logo-plano.svg" alt="Grupo Mazi"><div class="cat" style="right:auto; left:272px; top:178px">Precios 2026</div>
+  <h1 style="left:268px; top:48px; width:740px; font-size:68px">Todo lo que hacemos, <em>en una hoja.</em></h1>
+  <div class="tabla holgada" style="top:270px">
     <div><h3>Páginas web</h3>
       <div class="f">Esencial<b>$2,000</b></div><div class="f">Completa + 2 videos<b>$6,500</b></div><div class="f">A la medida<b><small>desde </small>$9,000</b></div><div class="f">Tienda en línea<b><small>desde </small>$12,000</b></div><div class="f">Mantenimiento<b><small>desde </small>$450<small>/mes</small></b></div>
       <h3>Apps y sistemas</h3>
@@ -254,7 +258,7 @@ h1 em{ font-style:normal; color:var(--rosa) } .claro h1 em, .claro .grande em{ c
       <h3>Redes y negocio</h3>
       <div class="f">Manejo de redes<b>$2,900<small>/mes</small></b></div><div class="f">Publicidad pagada<b>$1,500<small>/mes</small></b></div><div class="f">Tiempos y movimientos<b><small>desde </small>$3,000</b></div></div>
   </div>
-  <p class="sub" style="top:1150px; width:940px; font-size:20px; line-height:1.35">Servicios en persona, dentro de Querétaro; fuera, en casos especiales y con viáticos a cargo del cliente. Precios en pesos, vigentes 30 días. Si necesitas factura, se agrega el IVA.</p>
+  <p class="sub" style="top:1100px; width:940px; font-size:20px; line-height:1.35">Servicios en persona, dentro de Querétaro; fuera, en casos especiales y con viáticos a cargo del cliente. Precios en pesos, vigentes 30 días. Si necesitas factura, se agrega el IVA.</p>
   <div class="pie"><div class="correo"><b>¿Tienes un presupuesto?</b>Platícanos y lo armamos</div><div class="wa"><svg viewBox="0 0 24 24"><use href="#wa"/></svg>442 883 3786</div></div>
 </section>
 

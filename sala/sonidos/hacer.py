@@ -17,6 +17,11 @@ Cada sonido tiene una función (el criterio del documento):
   logro     terminaste algo              moneda   un nodo del camino se vuelve moneda
   combo     encadenaste buenas           hielo    ganaste una racha congelada
   voltear   una tarjeta da la vuelta     subir    subiste de grado
+  comer     tu compañero come            burbujas lo bañas
+  rebote    juega con la pelota          compra   compraste en la tienda
+  racha     tu racha creció              nivel    subiste de nivel de cuenta
+  mensaje   te escribió un amigo         invita   te invitan a estudiar juntos
+  descanso  acabó un bloque del pomodoro perdio   se perdió la racha (suave)
 Uso: python3 sala/sonidos/hacer.py   (escribe los .mp3 junto a este archivo y mide cada uno)
 """
 import numpy as np, subprocess, os, json
@@ -124,8 +129,69 @@ def subir():
     capas = [(i * .07, campana(f, .55), .85 + i * .04) for i, f in enumerate(notas)]
     return mezclar(*capas, (.0, whoosh() * .25, 1))
 
+# ── los de la segunda tanda (Carlos, 13 nov: «más efectos de sonido») ──
+def comer():
+    """ñam: tres mordidas crujientes (ruido que se cierra) sobre un «mm» grave."""
+    capas = []
+    for k, (f0, g) in enumerate([(2400, 1), (1900, .8), (2800, .7)]):
+        n = int(.07 * SR)
+        cr = pasabandas(ruido(n), f0, 2.5) * env_ad(n, .001, .045, 4) * g
+        capas.append((k * .11, cr, 1))
+    tt = t(.34)
+    mm = np.sin(2 * np.pi * (180 + 25 * np.sin(2 * np.pi * 7 * tt)) * tt) * env_ad(len(tt), .03, .26, 3) * .35
+    return mezclar(*capas, (.05, pasabajos(mm, 900), 1))
+def burbujas():
+    """burbujas del baño: pops chiquitos y agudos a destiempo, que suben."""
+    capas = []
+    for k in range(9):
+        tt = t(.06)
+        f = (900 + 140 * k + rng.uniform(-60, 60)) * (1 + 2.2 * tt / .06)
+        s = np.sin(2 * np.pi * np.cumsum(f) / SR) * env_ad(len(tt), .001, .04, 5)
+        capas.append((k * .055 + rng.uniform(0, .02), s, .55 + .05 * (k % 3)))
+    return mezclar(*capas)
+def rebote():
+    """la pelota: dos botes que se acortan, como de goma."""
+    def bote(d, g):
+        tt = t(d); f = 420 * np.exp(-tt * 18) + 160
+        return np.sin(2 * np.pi * np.cumsum(f) / SR) * env_ad(len(tt), .001, d * .7, 5) * g
+    return mezclar((0, bote(.14, 1), 1), (.2, bote(.11, .7), 1), (.33, bote(.08, .45), 1))
+def compra():
+    """compraste: los cubitos caen (tres monedas cristalinas) y cierra un acorde."""
+    capas = [(k * .055, campana(f, .25, ((1, 1), (3, .3), (5, .1))), .8) for k, f in enumerate([1568, 1760, 2093])]
+    cierre = mezclar((0, campana(1046.5, .7), .7), (0, campana(1318.5, .7), .6), (0, campana(1568, .7), .5))
+    return mezclar(*capas, (.2, cierre, 1))
+def racha():
+    """la racha creció: un fogonazo (ruido que sube) y una campana cálida."""
+    tt = t(.45)
+    f = 700 + 2200 * (tt / .45) ** 1.5
+    fuego = pasabandas(ruido(len(tt)), f, 1.2) * np.sin(np.pi * np.clip(tt / .45, 0, 1)) ** 1.6 * .5
+    return mezclar((0, fuego, 1), (.28, campana(880, .9, ((1, 1), (2.0, .35), (3.0, .15)), caida=1.0), 1), (.36, campana(1318.5, .8), .55))
+def nivel():
+    """subiste de nivel de cuenta: fanfarria corta (arpegio que sube y un acorde que se queda)."""
+    notas = [392, 523.25, 659.25, 783.99]
+    capas = [(i * .09, campana(f, .45), .85) for i, f in enumerate(notas)]
+    acorde = mezclar((0, campana(1046.5, 1.4, caida=.7), 1), (0, campana(1318.5, 1.4, caida=.7), .8), (0, campana(1568, 1.4, caida=.7), .6))
+    return mezclar(*capas, (.38, acorde, 1), (.38, whoosh() * .18, 1))
+def mensaje():
+    """te escribió un amigo: dos notas suaves que suben, como «¿eh?»."""
+    return mezclar((0, campana(783.99, .35, ((1, 1), (2, .2)), caida=1.1), .9), (.1, campana(1174.7, .5, ((1, 1), (2, .2)), caida=1.0), 1))
+def invita():
+    """te invitan a estudiar: un timbrecito de tres que se repite dos veces."""
+    uno = mezclar((0, campana(1318.5, .18), 1), (.07, campana(1568, .18), 1), (.14, campana(2093, .3), 1))
+    return mezclar((0, uno, 1), (.42, uno, .8))
+def descanso():
+    """acabó un bloque del pomodoro: campana de mesa, grave y larga, que invita a pararse."""
+    parc = ((1, 1), (2.0, .5), (2.97, .3), (4.1, .15))
+    return mezclar((0, campana(523.25, 2.2, parc, caida=.6), 1), (.012, campana(527, 2.2, parc, caida=.6), .5))
+def perdio():
+    """se perdió la racha: dos notas que bajan, suaves, sin regañar."""
+    a = campana(587.3, .4, ((1, 1), (2.0, .2)), caida=.9); b = campana(440, .7, ((1, 1), (2.0, .2)), caida=.8)
+    return pasabajos(mezclar((0, a, .8), (.16, b, 1)), 2200)
+
 SONIDOS = { 'toque': (toque, -9), 'pop': (pop, -6), 'whoosh': (whoosh, -8), 'golpe': (golpe, -5), 'bien': (bien, -4), 'mal': (mal, -6),
-            'logro': (logro, -3), 'moneda': (moneda, -5), 'combo': (combo, -6), 'hielo': (hielo, -5), 'voltear': (voltear, -10), 'subir': (subir, -3) }
+            'logro': (logro, -3), 'moneda': (moneda, -5), 'combo': (combo, -6), 'hielo': (hielo, -5), 'voltear': (voltear, -10), 'subir': (subir, -3),
+            'comer': (comer, -7), 'burbujas': (burbujas, -8), 'rebote': (rebote, -6), 'compra': (compra, -5), 'racha': (racha, -4),
+            'nivel': (nivel, -3), 'mensaje': (mensaje, -7), 'invita': (invita, -6), 'descanso': (descanso, -5), 'perdio': (perdio, -8) }
 
 if __name__ == '__main__':
     receta = {}

@@ -265,10 +265,35 @@ persona.
 
 ## FALTA de Carlos
 
-1. El Excel de costos y ejemplos.
-2. La dirección de su página actual y quién tiene el dominio.
-3. Acceso a su Meta Business (página de Facebook, Instagram y el número de WhatsApp).
-4. Capturas o exportación de las preguntas que le llegan seguido.
-5. Cuando el cliente se quede: qué modelo de IA de paga se prende. Mientras tanto, va gratis.
-6. Precios de los paquetes y fecha de entrega.
-7. Teléfono al que el bot le llama cuando lo necesite.
+**Respuestas del cliente, 17 nov** (Luis las pasó):
+
+1. ✅ **El Excel** (`CorridaCotizacion.xlsx`). Dos hojas: «Cotización convencional» (la que usa: unas 640 filas; la
+   fórmula de ahora es (químicos + mano de obra) × un multiplicador + km, con su hora y su km; los números viven en su servidor, no aquí) y «Cotización JADP» (otra
+   fórmula que estaba probando). Más su catálogo de 90 productos con costo, envase y dosis. **NO va al repo:** es
+   público y el Excel trae su lista de clientes. Se carga en el centro, pestaña «Cotizar» (ver `servidor/RUTAS.md`).
+2. ✅ **Su página:** urbanpest.mx. No recuerda quién se la registró, pero se ve desde fuera: **el dominio y su
+   correo están en GoDaddy** (sus servidores de nombres son `ns21/ns22.domaincontrol.com` y el correo
+   `secureserver.net`; la página vieja corre en un hosting de GoDaddy con PHP). **FALTA: entrar a su cuenta de
+   GoDaddy** (o que nos dé «acceso delegado»). Al apuntar el dominio a la página nueva se cambian SÓLO los
+   registros de la página (`@` y `www`); los del correo (MX) no se tocan, o deja de recibir correo.
+3. 🟠 **Redes:** mandó una búsqueda de Facebook, no el link de su página. **FALTA** el link de su página de
+   Facebook, su Instagram y el acceso a su Meta Business. El WhatsApp del negocio es el de su página.
+4. ⏳ **Capturas de lo que le preguntan:** «necesito más tiempo». Sigue pendiente.
+5. ✅ **Número para avisarle:** 442 139 4023 (el mismo de su página). Va en `negocio.dueno_wa` o `DUENO_WA`.
+6. 🟠 **Logo y fotos:** el logo llegó por Carlos (`marca-oficial/`), y el 18 nov **en vector** (`logo-vector.pdf` → `logo.svg`; el horizontal de la página, la cotización y la carpeta ya sale de ahí). Fotos de trabajos: no mandó.
+7. ✅ **LinkedIn:** el suyo personal (él mismo dice que no ayuda mucho). No es de la empresa, así que no va en la página.
+
+**El bot NO da datos del dueño (Luis, 17 nov):** ni su nombre ni su teléfono, aunque se los pidan. Avisa al encargado y ya.
+Hay una compuerta en el servidor (`sinDatosDelDueno`, en `oficina.js`) que revisa cada respuesta antes de salir: si trae su
+teléfono (`negocio.dueno_wa`) o su nombre (`negocio.dueno_nombre`), no sale y al dueño le llega por qué. Los dos datos viven
+en su servidor, no en el repo.
+
+**Excel = herramienta = bot, al centavo (Luis, 17 nov).** Una sola cuenta (`servidor/src/corrida.js`, copia exacta en
+`centro/cotizar.js`) y sin redondear. Probado contra su Excel de verdad (en privado, no está en el repo): las 165 filas con su
+fórmula de ahora dan lo mismo al centavo, 87 de sus 90 productos dan su columna F con todos los decimales (las 3 trampas no
+la tienen llena: se toma el precio de la pieza) y 180 cotizaciones del bot, puestas en una fila de su Excel, dan lo mismo.
+
+Lo de Grupo Mazi que sigue igual:
+
+- Cuando el cliente se quede: qué modelo de IA de paga se prende. Mientras tanto, va gratis.
+- Precios de los paquetes y fecha de entrega.

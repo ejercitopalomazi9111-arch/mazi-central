@@ -13,6 +13,7 @@
    ═════════════════════════════════════════════════════════════════════════ */
 export { Sala } from './sala.js';
 import { traer as traerInkwell } from './inkwell.js';
+import { buscarYouTube } from './youtube.js';
 import { esColeccion } from './pinguinos.js';
 export { Coleccion } from './pinguinos.js';
 export { Comunidad } from './comunidad.js';
@@ -83,6 +84,12 @@ async function usuarioDeToken(env, tok){
 }
 
 export default {
+  /* La tarea programada (wrangler.jsonc → triggers.crons, cada 15 min): los avisos de CARYMO.
+     Va a la sala GRUPAZ por dentro, con el host «interno» (sala.js, «/carymo-avisos»). */
+  async scheduled(evento, env, ctx){
+    if(!env.SALA) return;
+    ctx.waitUntil(env.SALA.get(env.SALA.idFromName('GRUPAZ')).fetch(new Request('https://interno/carymo-avisos')).catch(() => {}));
+  },
   async fetch(pedido, env, ctx){
     const url = new URL(pedido.url);
 
@@ -108,6 +115,12 @@ export default {
     }
 
     if(url.pathname === '/api/salud') return conCORS(Response.json({ bien:true }), pedido);
+
+    /* MAZI VR: buscar en YouTube desde el visor (youtube.js); sólo regresa la lista, el video lo da el embed oficial */
+    if(url.pathname === '/api/sala/vr/buscar'){
+      if(pedido.method !== 'GET') return conCORS(Response.json({ bien:false, error:'Sólo GET.' }, { status:405 }), pedido);
+      return conCORS(await buscarYouTube(url), pedido);
+    }
 
     /* INKWELL: el recadero de Webtoon (inkwell.js). Va antes de las rutas de
        una sala porque «inkwell» cabe en el molde /api/sala/X/Y y ahí daría
@@ -152,7 +165,7 @@ export default {
        El token es el de la cuenta de la comunidad (usuario y contraseña: /api/sala/comunidad/registro).
        Aquí se comprueba y se pasa a la sala GRUPAZ por dentro, con el usuario ya comprobado; la sala
        sólo deja usar estudio, ia-texto e ia-voz (sala.js, «CARYMO SIN LA LLAVE»). */
-    const cy = url.pathname.match(/^\/api\/carymo\/(estudio|ia-texto|ia-voz|vincular)$/);
+    const cy = url.pathname.match(/^\/api\/carymo\/(estudio|ia-texto|ia-voz|vincular|banco-escuela)$/);
     if(cy){
       if(!env.COMUNIDAD) return conCORS(Response.json({ bien:false, error:'Las cuentas todavía no están encendidas.' }, { status:503 }), pedido);
       const usuario = await usuarioDeToken(env, pedido.headers.get('x-token') || '');

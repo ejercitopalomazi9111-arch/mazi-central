@@ -85,6 +85,8 @@ async function api(metodo, ruta, cuerpo){
   } catch { return { bien: false, error: 'No hay conexión. Revisa tu internet y vuelve a abrir el link.' }; }
 }
 
+/* la del chat de pruebas no lleva folio: no gasta uno de los de verdad */
+const nombreHoja = (c) => c.prueba ? 'Cotización de prueba' : `Cotización ${String(c.folio).padStart(4, '0')}`;
 function hoja(c, n){
   const renglones = c.renglones?.length ? c.renglones : [{ concepto: c.concepto + (c.lugar ? ` · ${c.lugar}` : ''), cantidad: 1, precio: c.precio }];
   const aprox = c.origen === 'bot';
@@ -97,9 +99,9 @@ function hoja(c, n){
     c.nota && !aprox ? c.nota : null,
   ].filter(Boolean);
   const contacto = [n.telefono && `WhatsApp ${esc(n.telefono)}`, n.correo && esc(n.correo)].filter(Boolean).join(' · ');
-  const wa = n.telefono ? `https://wa.me/52${String(n.telefono).replace(/\D/g, '').slice(-10)}?text=${encodeURIComponent(`Hola, quiero agendar con la cotización ${c.folio}.`)}` : null;
+  const wa = n.telefono ? `https://wa.me/52${String(n.telefono).replace(/\D/g, '').slice(-10)}?text=${encodeURIComponent(c.prueba ? 'Hola, quiero agendar un servicio.' : `Hola, quiero agendar con la cotización ${c.folio}.`)}` : null;
   return `<article class="hoja">
-    <header class="cab"><img src="../web/img/logo.webp" alt="${esc(n.nombre)}" width="190" height="40"><div class="folio"><b>Cotización ${String(c.folio).padStart(4, '0')}</b>${corta(c.fecha)}<br>Válida al ${corta(c.vence)}</div></header>
+    <header class="cab"><img src="../web/img/logo.webp" alt="${esc(n.nombre)}" width="190" height="40"><div class="folio"><b>${nombreHoja(c)}</b>${corta(c.fecha)}<br>Válida al ${corta(c.vence)}</div></header>
     <h1>${esc(c.concepto)}</h1>
     <p class="sub">${c.cliente ? 'Para ' + esc(c.cliente) : 'Control profesional de plagas en Querétaro'}</p>
     ${c.ejemplo ? '<p class="ejemplo">Esta es una cotización de PRUEBA, con precios de ejemplo. Todavía no son los de Urban Pest.</p>' : ''}
@@ -125,7 +127,7 @@ function hoja(c, n){
 async function verUna(codigo){
   const j = await api('GET', '/api/cotizacion?c=' + encodeURIComponent(codigo));
   if(!j.bien){ app.innerHTML = `<div class="hoja"><h1>No encontramos esa cotización</h1><p class="sub">${esc(j.error)}</p></div>`; return; }
-  document.title = `Cotización ${String(j.cotizacion.folio).padStart(4, '0')} · ${j.negocio.nombre}`;
+  document.title = `${nombreHoja(j.cotizacion)} · ${j.negocio.nombre}`;
   app.innerHTML = hoja(j.cotizacion, j.negocio);
 }
 

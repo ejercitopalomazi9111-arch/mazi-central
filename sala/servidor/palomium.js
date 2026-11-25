@@ -24,6 +24,8 @@
    Sin `cloudflare:workers`: las pruebas cargan esto en Node.
    ═════════════════════════════════════════════════════════════════════════ */
 
+import { ESPECIES, ACCESORIOS, SKINS, MAX_ACCESORIOS, MUERE_HORAS, NIVEL_LENTO, FACTOR_LENTO, nivelMascota, etapaDe, precioRegreso } from '../../carymo/crianza-datos.js';
+
 /* cuánto vale cada cosa (pocos, a propósito) y cuánto se puede ganar por día de cada una */
 export const PREMIOS = {
   leccion: { cubos: 1, tope: 4, que: 'Terminaste una lección' },
@@ -33,7 +35,12 @@ export const PREMIOS = {
   semana: { cubos: 3, tope: 3, que: 'Siete días seguidos' },
   nivel: { cubos: 5, tope: 15, que: 'Subiste de nivel' },
   juntos: { cubos: 2, tope: 4, que: 'Estudiaste con un amigo' },
-  liga: { cubos: 5, tope: 5, que: 'Subiste de liga' },
+  rachaJuntos: { cubos: 3, tope: 6, que: 'Siete días seguidos estudiando con un amigo' },
+  /* los modos cooperativos de «Estudiar juntos» (Carlos, 13 nov: «invéntate más maneras… de lo de los cooperativos») */
+  equipo: { cubos: 3, tope: 9, que: 'Llegaron juntos a la meta' },
+  jefe: { cubos: 5, tope: 10, que: 'Vencieron al jefe del examen' },
+  relevo: { cubos: 3, tope: 9, que: 'Completaron el relevo' },
+  biblioteca: { cubos: 2, tope: 6, que: 'Estudiaron juntos en silencio' },
 };
 export const REGALO_INICIAL = 5;
 
@@ -81,16 +88,117 @@ export function animoDe(c){
 }
 
 /* asegura que el perfil traiga lo de la economía (los perfiles viejos no lo tienen) */
+export const CUBOS_INFINITOS = 999999;
 export function conEconomia(p, ahora){
   if(!Number.isFinite(p.cubos)) p.cubos = REGALO_INICIAL;
+  /* cubos infinitos (los pone la casa; Carlos, 14 nov): se rellena cada vez que se lee, así nunca le falta */
+  if(p.infinito) p.cubos = Math.max(p.cubos, CUBOS_INFINITOS);
   if(!p.cubosDia || typeof p.cubosDia !== 'object') p.cubosDia = { dia: '', por: {} };
   if(!Array.isArray(p.premiados)) p.premiados = [];
   if(!p.inv || typeof p.inv !== 'object') p.inv = {};
   if(!p.cuarto || typeof p.cuarto !== 'object' || !Array.isArray(p.cuarto.puestos)) p.cuarto = { puestos: [] };
   if(!p.voces || typeof p.voces !== 'object') p.voces = {};
+  const antes = p.cuidado && Number.isFinite(p.cuidado.t) ? { ...p.cuidado } : null;
   p.cuidado = cuidadoAhora(p.cuidado, ahora);
   if(!Number.isFinite(p.nivelCobrado)) p.nivelCobrado = nivelDe(p.xp || 0);
+  conCrianza(p, ahora, antes);
   return p;
+}
+
+/* ══ LA CRIANZA (carymo/crianza-datos.js): varias mascotas, cada una con su XP, que crecen y se pueden morir ══
+     mascotas   { especie: { xp, nacio, skin, acc: [], nombre?, muerta? } }
+     armario    [ accesorios y colores comprados ]
+     cielo      [ { especie, nivel, muerta } ]       las que se fueron (Carlos: «si se te muere, mamaste»)
+     peligroDesde  desde cuándo tu mascota activa está en cero de algo */
+const nuevaMascota = (ahora) => ({ xp: 0, nacio: ahora, skin: 'normal', acc: [] });
+export const vivas = (p) => Object.entries(p.mascotas || {}).filter(([, m]) => !m.muerta).map(([k]) => k);
+/* cuándo llegó a cero lo primero (hambre, limpieza o ánimo), con lo guardado ANTES de recalcular */
+function ceroDesde(antes, ya, ahora){
+  let cero = null;
+  for(const k of ['hambre', 'limpieza', 'animo']){
+    const v = antes[k];
+    const t = v <= 0 ? (ya ?? antes.t) : antes.t + (v / BAJA_HORA[k]) * 36e5;
+    if(t <= ahora && (cero == null || t < cero)) cero = t;
+  }
+  return cero;
+}
+export function conCrianza(p, ahora, antes = null){
+  if(!p.mascotas || typeof p.mascotas !== 'object') p.mascotas = {};
+  if(!Array.isArray(p.armario)) p.armario = [];
+  if(!Array.isArray(p.cielo)) p.cielo = [];
+  /* la que ya tenías elegida (de antes de que hubiera crianza) es tuya, gratis */
+  if(ESPECIES[p.mascota] && !p.mascotas[p.mascota]) p.mascotas[p.mascota] = nuevaMascota(ahora);
+  const m = ESPECIES[p.mascota] && p.mascotas[p.mascota];
+  if(!m || m.muerta || !antes) return p;
+  const cero = ceroDesde(antes, p.peligroDesde, ahora);
+  if(cero == null){ p.peligroDesde = null; return p; }
+  p.peligroDesde = cero;
+  if(ahora - cero >= MUERE_HORAS * 36e5){
+    m.muerta = Math.round(cero + MUERE_HORAS * 36e5);
+    p.cielo = [...p.cielo, { especie: p.mascota, nivel: nivelMascota(m.xp), muerta: m.muerta }].slice(-30);
+    p.avisoMascota = { tipo: 'murio', especie: p.mascota, nivel: nivelMascota(m.xp) };
+    p.peligroDesde = null;
+    p.cuidado = { hambre: 80, limpieza: 90, animo: 80, t: ahora };
+  }
+  return p;
+}
+/* lo que estudias también lo gana tu mascota activa (después de nivel 10, sólo un tercio) */
+export function crecer(p, xp){
+  const m = p.mascotas && p.mascotas[p.mascota];
+  if(!m || m.muerta || !(xp > 0)) return null;
+  const antes = nivelMascota(m.xp);
+  m.xp += Math.max(1, Math.round(antes >= NIVEL_LENTO ? xp * FACTOR_LENTO : xp));
+  const despues = nivelMascota(m.xp);
+  return despues > antes ? { especie: p.mascota, nivel: despues, etapa: etapaDe(p.mascota, despues), etapaAntes: etapaDe(p.mascota, antes) } : null;
+}
+/* adoptar, cambiar, vestir, comprar ropa, ponerle nombre */
+export function crianza(p, c, ahora){
+  const especie = String(c.especie || '');
+  if(c.que === 'adoptar'){
+    const E = ESPECIES[especie]; if(!E) return { error: 'Esa mascota no existe.' };
+    const ya = p.mascotas[especie]; if(ya && !ya.muerta) return { error: 'Ya la tienes.' };
+    /* la primera (o la que sigue cuando ya no te queda ninguna viva) es gratis */
+    const precio = vivas(p).length ? E.precio : 0;
+    if(p.cubos < precio) return { error: `Te faltan ${precio - p.cubos} cubitos.`, falta: precio - p.cubos };
+    p.cubos -= precio; p.mascotas[especie] = nuevaMascota(ahora); p.mascota = especie;
+    p.cuidado = { hambre: 85, limpieza: 95, animo: 90, t: ahora }; p.peligroDesde = null;
+    return { bien: true, gastado: precio };
+  }
+  /* que regrese la que se fue: con su nivel y su ropa, por un montón de cubitos */
+  if(c.que === 'regresar'){
+    const m = p.mascotas[especie]; if(!m || !m.muerta) return { error: 'Esa mascota no se ha ido.' };
+    const precio = precioRegreso(nivelMascota(m.xp || 0));
+    if(p.cubos < precio) return { error: `Para que regrese hacen falta ${precio} cubitos; te faltan ${precio - p.cubos}.`, falta: precio - p.cubos };
+    p.cubos -= precio; delete m.muerta; p.mascota = especie;
+    p.cuidado = { hambre: 70, limpieza: 80, animo: 75, t: ahora }; p.peligroDesde = null;
+    const i = p.cielo.map((x) => x.especie).lastIndexOf(especie); if(i >= 0) p.cielo = p.cielo.filter((_, j) => j !== i);
+    return { bien: true, gastado: precio };
+  }
+  if(c.que === 'activa'){
+    const m = p.mascotas[especie]; if(!m || m.muerta) return { error: 'Esa mascota no la tienes.' };
+    p.mascota = especie; return { bien: true };
+  }
+  if(c.que === 'comprarRopa'){
+    const item = String(c.item || ''), A = ACCESORIOS[item] || SKINS[item];
+    if(!A || A.precio == null) return { error: 'Eso no está en la tienda.' };
+    if(p.armario.includes(item)) return { error: 'Ya lo tienes.' };
+    if(p.cubos < A.precio) return { error: `Te faltan ${A.precio - p.cubos} cubitos.`, falta: A.precio - p.cubos };
+    p.cubos -= A.precio; p.armario = [...p.armario, item];
+    return { bien: true, gastado: A.precio };
+  }
+  if(c.que === 'vestir'){
+    const m = p.mascotas[especie]; if(!m || m.muerta) return { error: 'Esa mascota no la tienes.' };
+    if('skin' in c){ const k = String(c.skin || 'normal'); if(!SKINS[k] || (SKINS[k].precio !== 0 && !p.armario.includes(k))) return { error: 'Ese color no lo tienes.' }; m.skin = k; }
+    if('acc' in c){ const acc = [...new Set((Array.isArray(c.acc) ? c.acc : []).map(String))].filter((k) => ACCESORIOS[k] && p.armario.includes(k));
+      /* uno por lugar (no dos gorros) y hasta 3 */
+      const lugares = new Set(); m.acc = acc.filter((k) => { const l = ACCESORIOS[k].lugar; if(lugares.has(l)) return false; lugares.add(l); return true; }).slice(0, MAX_ACCESORIOS); }
+    return { bien: true };
+  }
+  if(c.que === 'nombre'){
+    const m = p.mascotas[especie]; if(!m || m.muerta) return { error: 'Esa mascota no la tienes.' };
+    m.nombre = String(c.nombre || '').replace(/\s+/g, ' ').trim().slice(0, 20); return { bien: true };
+  }
+  return { error: 'No sé hacer eso.' };
 }
 
 /* da un premio respetando el tope del día; devuelve lo que se dio (0 si ya no cabía) */
@@ -110,6 +218,25 @@ export function premiarUnaVez(p, motivo, id, dia){
   const dado = premiar(p, motivo, dia);
   if(dado){ p.premiados = [...p.premiados, id].slice(-300); }
   return dado;
+}
+/* LA RACHA CON UN AMIGO (Carlos, 13 nov: «racha con amigos»). La lleva la PAREJA, no cada quien:
+   est:rjuntos:<a>|<b> (en orden) = { n, ultimoDia, mejor }. Sube un día por cada día que estudian JUNTOS
+   (una sesión de «Estudiar juntos» activa); si se saltan un día, vuelve a 1. Pura, para probarla sin disco. */
+export const parejaDe = (a, b) => [a, b].sort().join('|');
+export function avanzarRachaJuntos(r, dia){
+  r = r && typeof r === 'object' ? { ...r } : { n: 0, ultimoDia: '', mejor: 0 };
+  if(r.ultimoDia === dia) return r;
+  const brinco = r.ultimoDia ? Math.round((Date.parse(dia) - Date.parse(r.ultimoDia)) / 864e5) : 0;
+  if(r.ultimoDia && brinco < 0) return r;
+  r.n = r.ultimoDia && brinco === 1 ? r.n + 1 : 1;
+  r.ultimoDia = dia; r.mejor = Math.max(r.mejor || 0, r.n);
+  return r;
+}
+/* la que se ve hoy: si ayer o hoy estudiaron juntos sigue viva; si no, ya se perdió */
+export function rachaJuntosHoy(r, hoy){
+  if(!r || !r.ultimoDia) return 0;
+  const d = Math.round((Date.parse(hoy) - Date.parse(r.ultimoDia)) / 864e5);
+  return d <= 1 ? r.n : 0;
 }
 /* el nivel: cada nivel nuevo paga una vez */
 export function cobrarNivel(p, dia){
@@ -158,6 +285,14 @@ export function cuidar(p, que, item){
     const sube = p.inv.pelota ? TIENDA.pelota.animo : 8;
     if(c.animo >= 98) return { error: 'Ya está muy contento.' };
     c.animo = lim(c.animo + sube); c.hambre = lim(c.hambre - 3);
+    return { bien: true };
+  }
+  /* acariciarla (con el dedo) o jugar a la pelota: sube poquito, con tope por día para que no sea trampa */
+  if(que === 'caricia' || que === 'pelota'){
+    const dia = new Date(c.t || Date.now()).toISOString().slice(0, 10);
+    if(!p.mimosDia || p.mimosDia.dia !== dia) p.mimosDia = { dia, n: 0 };
+    if(p.mimosDia.n >= 20) return { bien: true, tope: true };
+    p.mimosDia.n += 1; c.animo = lim(c.animo + (que === 'pelota' ? 4 : 2)); if(que === 'pelota') c.hambre = lim(c.hambre - 1);
     return { bien: true };
   }
   if(que === 'mueble'){

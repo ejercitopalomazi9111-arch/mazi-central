@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Herramientas · Grupo Mazi</title>
+<!-- GM-2 · HERRAMIENTAS (paquete del inversionista, 15 nov: «un video centrado en las herramientas, que es lo que más
+     vendemos»). Todo lo que se ve salió de usar las herramientas DE VERDAD (capturas.mjs): fotos reales de All's fashion
+     del banco de La Sala, la presentación de ventas de la casa, la tienda y el centro de Urban Pest con datos de muestra.
+     Reglas de empresa/inversionista/ESTUDIO.md: gancho en el primer segundo, cámara quieta, cada línea llega a algo,
+     todo entra con anticipación y rebote, voz de la casa (Charon) y el logo vivo grande al final. -->
+<script type="importmap">{ "imports": { "three": "../vendor/three.module.min.js" } }</script>
+<style>
+  html,body{ margin:0; background:#0E0618 }
+  #v{ position:relative; width:1080px; height:1920px; overflow:hidden; color:#fff; font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+    background:radial-gradient(110% 70% at 50% 30%, #2A1142 0%, #170A26 55%, #0B0513 100%) }
+  .luz{ position:absolute; border-radius:50%; filter:blur(100px); opacity:.5 }
+  #l1{ width:760px; height:760px; background:#7E1735; left:-260px; top:1080px }
+  #l2{ width:640px; height:640px; background:#5A1C9E; right:-220px; top:220px }
+  #tit{ position:absolute; left:60px; right:60px; top:140px; height:330px; z-index:8 }
+  .t{ position:absolute; left:0; right:0; top:0; font-weight:800; font-size:82px; line-height:1.04; letter-spacing:-.035em; text-align:center; visibility:hidden }
+  .t .p{ display:inline-block; opacity:0 } .t em{ font-style:normal; color:#C77DFF }
+  .esc{ position:absolute; inset:0; visibility:hidden }
+  .tarj{ position:absolute; border-radius:44px; overflow:hidden; box-shadow:0 0 0 3px rgba(226,184,255,.35), 0 50px 120px rgba(0,0,0,.55); background:#fff }
+  .tarj img{ display:block; width:100%; height:100%; object-fit:cover }
+  .tel{ position:absolute; width:600px; height:1298px; border-radius:78px; background:#0c0c10; box-shadow:0 0 0 3px #3a2a52, 0 50px 120px rgba(0,0,0,.55) }
+  .tel .pant{ position:absolute; inset:16px; border-radius:64px; overflow:hidden; background:#fff }
+  .tel .pant img{ position:absolute; left:0; top:0; width:100%; height:auto }
+  .tel .isla{ position:absolute; left:50%; top:30px; width:150px; height:42px; margin-left:-75px; border-radius:30px; background:#0c0c10; z-index:2 }
+  .chip{ position:absolute; z-index:9; padding:18px 30px; border-radius:999px; background:#fff; color:#170A26; font-weight:800; font-size:38px;
+    box-shadow:0 14px 40px rgba(0,0,0,.35); white-space:nowrap; visibility:hidden }
+  .chip b{ color:#7E1735 }
+  svg#lineas{ position:absolute; inset:0; z-index:8; pointer-events:none }
+  svg#lineas path{ fill:none; stroke:#E2B8FF; stroke-width:5; stroke-linecap:round } svg#lineas circle{ fill:#E2B8FF }
+  .mini{ position:absolute; width:300px; height:649px; border-radius:42px; background:#0c0c10; padding:9px; box-sizing:border-box;
+    box-shadow:0 0 0 2px #3a2a52, 0 30px 70px rgba(0,0,0,.5) }
+  .mini img{ width:100%; height:100%; object-fit:cover; object-position:top; border-radius:34px; display:block }
+  #barrido{ position:absolute; top:0; bottom:0; width:8px; background:linear-gradient(#fff0, #E2B8FF, #fff0); box-shadow:0 0 40px #C77DFF; z-index:3 }
+  #toque{ position:absolute; width:120px; height:120px; margin:-60px 0 0 -60px; border-radius:50%; border:6px solid #fff; z-index:4; box-shadow:0 0 30px rgba(255,255,255,.6) }
+  #gm{ position:absolute; inset:0; z-index:20; background:radial-gradient(120% 80% at 50% 38%, #2C1145 0%, #170A26 60%, #0E0618 100%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:44px; visibility:hidden }
+  #gmLogo{ width:760px } #gmTxt{ font-weight:800; font-size:64px; letter-spacing:.02em; color:#fff; text-align:center }
+  #gmLema{ font-size:34px; color:#C9B6DA }
+</style></head>
+<body><div id="v">
+  <div class="luz" id="l1"></div><div class="luz" id="l2"></div>
+  <div id="tit">
+    <div class="t" id="t0"><span class="p">¿Cuántas</span> <span class="p">horas</span> <span class="p"><em>pierdes</em></span> <span class="p">en</span> <span class="p">esto?</span></div>
+    <div class="t" id="t1"><span class="p">Quitar</span> <span class="p">el</span> <span class="p"><em>fondo</em></span></div>
+    <div class="t" id="t2"><span class="p">Cambiar</span> <span class="p">el</span> <span class="p"><em>color</em></span></div>
+    <div class="t" id="t3"><span class="p"><em>12</em></span> <span class="p">láminas,</span> <span class="p">un</span> <span class="p">toque</span></div>
+    <div class="t" id="t4"><span class="p">Tu</span> <span class="p"><em>tienda</em></span> <span class="p">en</span> <span class="p">línea</span></div>
+    <div class="t" id="t5"><span class="p">Tu</span> <span class="p">centro</span> <span class="p">de</span> <span class="p"><em>operaciones</em></span></div>
+    <div class="t" id="t6"><span class="p">Hechas</span> <span class="p">a</span> <span class="p">tu</span> <span class="p"><em>medida</em></span></div>
+  </div>
+  <div id="mosaico"></div>
+
+  <!-- 1 · quitar fondo -->
+  <div class="esc" id="e1">
+    <div class="tarj" id="f1" style="left:190px; top:520px; width:700px; height:1244px; background:transparent">
+      <img id="f1a" src="fotos/p33.jpg" style="position:absolute; inset:0">
+      <div id="f1b" style="position:absolute; inset:0; background:radial-gradient(90% 70% at 50% 45%, #C77DFF 0%, #6A1FB0 55%, #2A0E46 100%)">
+        <img src="cap/p33-sin-fondo.png" style="position:absolute; left:6%; top:12%; width:88%; height:auto; object-fit:contain; filter:drop-shadow(0 40px 40px rgba(0,0,0,.45))"></div>
+      <div id="barrido"></div>
+    </div>
+  </div>
+  <!-- 2 · cambiar color -->
+  <div class="esc" id="e2">
+    <div class="tarj" id="f2" style="left:190px; top:520px; width:700px; height:1244px">
+      <img src="fotos/p20.jpg" style="position:absolute; inset:0">
+      <img id="f2b" src="cap/chamarra-color.jpg" style="position:absolute; inset:0">
+      <div id="toque"></div>
+    </div>
+  </div>
+  <!-- 3 · presentaciones -->
+  <div class="esc" id="e3"><div class="tel" id="tel3" style="left:240px; top:540px"><div class="isla"></div><div class="pant">
+    <img src="cap/pres-0.png"><img id="p3b" src="cap/pres-2.png"></div></div></div>
+  <!-- 4 · tienda -->
+  <div class="esc" id="e4">
+    <div class="tel" id="tel4" style="left:240px; top:540px"><div class="isla"></div><div class="pant" id="pant4">
+      <img src="../../../tienda/video/cap/limpia-buscar.png"><img src="../../../tienda/video/cap/carrito-lleno.png"><img src="../../../tienda/video/cap/limpia-a-repartidores.png"></div></div>
+  </div>
+  <!-- 5 · centro -->
+  <div class="esc" id="e5">
+    <div class="mini" id="m5a" style="left:40px; top:760px"><img src="cap/centro-inventario.png"></div>
+    <div class="mini" id="m5b" style="left:740px; top:760px"><img src="cap/centro-servicios.png"></div>
+    <div class="tel" id="tel5" style="left:240px; top:540px"><div class="isla"></div><div class="pant"><img src="cap/centro-hoy.png"></div></div>
+  </div>
+  <svg id="lineas" viewBox="0 0 1080 1920"></svg>
+  <div class="chip" id="c1">PNG <b>sin fondo</b></div>
+  <div class="chip" id="c2">Las <b>sombras</b> se quedan</div>
+  <div class="chip" id="c3"><b>135</b> textos acomodados</div>
+  <div class="chip" id="c4">Reparto <b>en vivo</b></div>
+  <div class="chip" id="c5">Sin <b>internet</b>, también</div>
+  <div id="gm"><div id="gmLogo"></div><div id="gmTxt">Grupo Mazi</div><div id="gmLema">Si no existe la herramienta, se construye.</div></div>
+</div>
+<script type="module">
+import { guion, sonidosVoz, cl, tramo, sale, entra, resorte, mezcla, azar } from '../motor.js';
+import { crearPaloma } from '../../paloma-2026/vivo.js';
+const $ = (s) => document.querySelector(s);
+const ver = (el, a) => { el.style.visibility = a > .001 ? 'visible' : 'hidden'; el.style.opacity = a; };
+const fx = (n) => `../../../herramientas/video/efectos/${n}.wav`;
+
+/* tramos de cada escena [entra, sale] */
+const E = { 0: [0, 5.0], 1: [4.9, 9.7], 2: [9.6, 14.7], 3: [14.6, 19.7], 4: [19.6, 24.9], 5: [24.8, 30.5], 6: [30.4, 35.5] };
+const FIN_GM = 35.4, FIN = 41.0;
+
+/* el gancho y el cierre: las pantallas de verdad, revueltas, que se acomodan en una cuadrícula */
+const PANTS = ['cap/fondos-1-p33.png', 'cap/recolor-1.png', 'cap/pres-2.png', '../../../tienda/video/cap/limpia-buscar.png', 'cap/centro-hoy.png', 'cap/centro-numeros.png',
+  '../../../tienda/video/cap/limpia-a.png', 'cap/fondos-1-p8.png', 'cap/pres-0.png'];
+const mos = $('#mosaico'); azar(11);
+const M = PANTS.map((src, i) => {
+  const d = document.createElement('div'); d.className = 'mini'; d.innerHTML = `<img src="${src}">`; d.style.width = '230px'; d.style.height = '497px'; d.style.zIndex = 2; mos.append(d);
+  const col = i % 3, fila = Math.floor(i / 3);
+  return { el: d, x0: azar() * 900 - 60, y0: 300 + azar() * 1300, r0: azar() * 60 - 30, x1: 135 + col * 290, y1: 470 + fila * 470, r1: 0, k: i };
+});
+
+const lineas = $('#lineas');
+/* chip con línea: nace del chip y llega a un punto de la imagen */
+const CHIPS = [
+  { el: '#c1', a: 6.9, b: 9.4, x: 600, y: 470, px: 520, py: 900 },
+  { el: '#c2', a: 12.3, b: 14.5, x: 90, y: 470, px: 470, py: 1200 },
+  { el: '#c3', a: 17.2, b: 19.5, x: 520, y: 470, px: 620, py: 1050 },
+  { el: '#c4', a: 22.6, b: 24.7, x: 600, y: 470, px: 560, py: 1180 },
+  { el: '#c5', a: 27.6, b: 30.3, x: 80, y: 470, px: 420, py: 1000 },
+];
+lineas.innerHTML = CHIPS.map(() => '<path/><circle r="10"/>').join('');
+
+function palabras(el, t, a, paso = .1){
+  [...el.querySelectorAll('.p')].forEach((p, i) => { const u = tramo(t, a + i * paso, a + i * paso + .38);
+    p.style.opacity = sale(u); p.style.transform = `translateY(${(1 - resorte(u)) * 56}px) scale(${.86 + .14 * resorte(u)})`; });
+}
+/* entra desde abajo con rebote, sale hacia arriba acelerando */
+const vive = (t, [a, b]) => ({ en: resorte(tramo(t, a, a + .8)), sal: entra(tramo(t, b - .45, b)) });
+
+window.listo = (async () => {
+  window.G = await guion('.');
+  const P = await crearPaloma($('#gmLogo'), { reloj: 'manual', puntero: false });
+  P.abrir(1); P.paso(0);
+  await Promise.all([...document.images].map((i) => i.decode().catch(() => {})));
+  await document.fonts.ready;
+
+  window.pintar = (t) => {
+    $('#l1').style.transform = `translate(${Math.sin(t * .3) * 40}px, ${Math.cos(t * .25) * 30}px)`;
+    $('#l2').style.transform = `translate(${Math.cos(t * .2) * 40}px, ${Math.sin(t * .3) * 30}px)`;
+    /* títulos: uno por escena */
+    for(let k = 0; k <= 6; k++){
+      const el = $('#t' + k), [a, b] = E[k], dentro = t >= a && t < b;
+      ver(el, dentro ? 1 - entra(tramo(t, b - .35, b)) : 0); if(dentro) palabras(el, t, a + .1);
+      el.style.transform = `translateY(${-entra(tramo(t, b - .35, b)) * 40}px)`;
+    }
+
+    /* 0 y 6 · mosaico: revuelto al inicio, se acomoda; sale; vuelve al final ya acomodado */
+    const orden = sale(tramo(t, 1.2, 3.2)), salida0 = entra(tramo(t, 4.4, 5.0));
+    const vuelve = sale(tramo(t, 30.4, 31.4)), fuera6 = entra(tramo(t, 35.0, 35.5));
+    const vis0 = t < 5.0, vis6 = t >= 30.4 && t < 35.5;
+    M.forEach((m) => {
+      let x, y, r, s, a;
+      if(vis0){ const lleg = resorte(tramo(t, m.k * .05 - .1, m.k * .05 + .5));
+        x = mezcla(m.x0, m.x1, orden); y = mezcla(m.y0, m.y1, orden) + (1 - lleg) * 1400 - salida0 * (1800 - m.k * 60); r = mezcla(m.r0, 0, orden) + Math.sin(t * 2 + m.k) * 3 * (1 - orden); s = .9 + .1 * orden; a = 1; }
+      else if(vis6){ const e = resorte(tramo(t, 30.4 + m.k * .06, 31.2 + m.k * .06));
+        x = m.x1; y = m.y1 + (1 - e) * 1400 + Math.sin(t * 1.4 + m.k) * 8 - fuera6 * 400; r = 0; s = 1 - fuera6 * .2; a = 1 - fuera6; }
+      else { a = 0; }
+      ver(m.el, a || 0); if(a) m.el.style.transform = `translate(${x}px, ${y}px) rotate(${r}deg) scale(${s})`;
+    });
+
+    /* 1 · quitar fondo: la barra barre de izquierda a derecha y detrás queda la prenda sin fondo */
+    { const { en, sal } = vive(t, E[1]); ver($('#e1'), t >= E[1][0] && t < E[1][1] ? 1 : 0);
+      $('#f1').style.transform = `translateY(${(1 - en) * 1300 - sal * 1500}px) rotate(${(1 - en) * 5}deg)`;
+      const u = sale(tramo(t, 6.0, 7.2)); $('#f1b').style.clipPath = `inset(0 ${100 - u * 100}% 0 0)`;
+      $('#barrido').style.left = u * 100 + '%'; $('#barrido').style.opacity = u > 0 && u < 1 ? 1 : 0;
+      $('#f1b img').style.transform = `translateY(${Math.sin(t * 1.6) * 10 * u}px)`; }
+
+    /* 2 · cambiar color: un toque en la chamarra y el morado se abre en círculo desde ahí */
+    { const { en, sal } = vive(t, E[2]); ver($('#e2'), t >= E[2][0] && t < E[2][1] ? 1 : 0);
+      $('#f2').style.transform = `translateY(${(1 - en) * 1300 - sal * 1500}px) rotate(${(1 - en) * -5}deg)`;
+      const tq = tramo(t, 10.9, 11.4), u = sale(tramo(t, 11.2, 12.4));
+      ver($('#toque'), Math.sin(tq * Math.PI)); $('#toque').style.left = '42%'; $('#toque').style.top = '58%';
+      $('#toque').style.transform = `scale(${.6 + tq * .7})`;
+      $('#f2b').style.clipPath = `circle(${u * 130}% at 42% 58%)`; }
+
+    /* 3 · presentaciones: de oscuro a claro, con una cortina de abajo hacia arriba */
+    { const { en, sal } = vive(t, E[3]); ver($('#e3'), t >= E[3][0] && t < E[3][1] ? 1 : 0);
+      $('#tel3').style.transform = `translateY(${(1 - en) * 1400 - sal * 1600}px)`;
+      const u = sale(tramo(t, 16.0, 17.0)); $('#p3b').style.clipPath = `inset(${100 - u * 100}% 0 0 0)`; }
+
+    /* 4 · tienda: tres pantallas que se deslizan */
+    { const { en, sal } = vive(t, E[4]); ver($('#e4'), t >= E[4][0] && t < E[4][1] ? 1 : 0);
+      $('#tel4').style.transform = `translateY(${(1 - en) * 1400 - sal * 1600}px)`;
+      const ims = $('#pant4').children, s1 = sale(tramo(t, 21.3, 21.9)), s2 = sale(tramo(t, 22.6, 23.2));
+      ims[0].style.transform = `translateX(${-s1 * 100}%)`; ims[1].style.transform = `translateX(${(1 - s1) * 100 - s2 * 100}%)`; ims[2].style.transform = `translateX(${(1 - s2) * 100}%)`; }
+
+    /* 5 · centro: el teléfono y dos pantallas que se abren a los lados */
+    { const { en, sal } = vive(t, E[5]); ver($('#e5'), t >= E[5][0] && t < E[5][1] ? 1 : 0);
+      $('#tel5').style.transform = `translateY(${(1 - en) * 1400 - sal * 1600}px)`;
+      const ab = resorte(tramo(t, 26.2, 27.0));
+      $('#m5a').style.transform = `translateX(${(1 - ab) * 300}px) rotate(${-6 * ab}deg) translateY(${-sal * 1600 + Math.sin(t * 1.3) * 8}px)`;
+      $('#m5b').style.transform = `translateX(${-(1 - ab) * 300}px) rotate(${6 * ab}deg) translateY(${-sal * 1600 + Math.cos(t * 1.3) * 8}px)`;
+      $('#m5a').style.opacity = $('#m5b').style.opacity = ab; }
+
+    /* chips con su línea */
+    CHIPS.forEach((c, i) => {
+      const el = $(c.el), e = tramo(t, c.a, c.a + .45), s = entra(tramo(t, c.b - .3, c.b));
+      ver(el, sale(e) * (1 - s)); el.style.left = c.x + 'px'; el.style.top = c.y + 'px';
+      el.style.transform = `scale(${resorte(e)}) translateY(${Math.sin(t * 1.8 + i) * 6}px)`;
+      const w = el.offsetWidth || 400, x0 = c.x + w / 2, y0 = c.y + 90;
+      const L = sale(tramo(t, c.a + .2, c.a + .8)), path = lineas.children[i * 2], dot = lineas.children[i * 2 + 1];
+      path.setAttribute('d', `M${x0} ${y0} Q${(x0 + c.px) / 2 + 80} ${y0 + 60} ${c.px} ${c.py}`);
+      const len = path.getTotalLength(); path.style.strokeDasharray = len; path.style.strokeDashoffset = len * (1 - L);
+      path.style.opacity = dot.style.opacity = (L > 0 ? 1 : 0) * (1 - s);
+      dot.setAttribute('cx', c.px); dot.setAttribute('cy', c.py); dot.setAttribute('r', 10 * resorte(tramo(t, c.a + .75, c.a + 1.1)));
+    });
+
+    /* cierre: el logo completo, grande, que se arma y levita */
+    const g = sale(tramo(t, FIN_GM, FIN_GM + .5)); ver($('#gm'), g);
+    if(t > FIN_GM + .2) P.abrir(0); P.paso(Math.max(0, t - FIN_GM));
+    const tx = sale(tramo(t, FIN_GM + 1.0, FIN_GM + 1.6)), lm = sale(tramo(t, FIN_GM + 1.8, FIN_GM + 2.4));
+    $('#gmTxt').style.opacity = tx; $('#gmTxt').style.transform = `translateY(${(1 - tx) * 30}px)`; $('#gmLema').style.opacity = lm;
+  };
+})();
+window.VIDEO = { w: 1080, h: 1920, fps: 30, dur: FIN,
+  musica: { archivo: '/tmp/claude-0/mus/173.mp3', desde: 30, vol: .38, entrada: .3, fin: 2.2 },
+  get sonidos(){ return [...sonidosVoz(window.G, 1.05),
+    ...[0, 1, 2, 3, 4, 5, 6, 7, 8].map((k) => [fx('toque'), Math.max(0, k * .05 + .15), .14]), [fx('whoosh'), 1.3, .3], [fx('golpe'), 3.1, .3],
+    [fx('whoosh'), 4.9, .35], [fx('subida'), 6.0, .25], [fx('whoosh'), 9.6, .35], [fx('toque'), 10.95, .5], [fx('whoosh'), 14.6, .35], [fx('whoosh'), 16.0, .25],
+    [fx('whoosh'), 19.6, .35], [fx('whoosh'), 21.3, .2], [fx('whoosh'), 22.6, .2], [fx('whoosh'), 24.8, .35], [fx('golpe'), 26.3, .25],
+    [fx('whoosh'), 30.4, .35], ...CHIPS.map((c) => [fx('ding'), c.a + .75, .2]), [fx('whoosh'), FIN_GM, .35], [fx('golpe'), FIN_GM + .55, .5]]; } };
+</script></body></html>

@@ -28,6 +28,7 @@
    recorre igual que una línea. Las fotos salen de Wikipedia, con su crédito.
    ═════════════════════════════════════════════════════════════════════════ */
 import { DIBUJOS } from './iconos-clase.js';
+import { masElementos, ANCHOS_MAS } from './lienzo-mas.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -385,13 +386,17 @@ export const ELEMENTOS = {
     /* la foto entra «barriéndose» de izquierda a derecha detrás del cursor */
     img.style.clipPath = 'inset(0 100% 0 0)';
     t.push({ fase: 1, dur: 900, paso(k){ img.style.clipPath = `inset(0 ${f1((1 - k) * 100)}% 0 0)`; }, punto(k){ return [m.x + m.w * k, m.y + m.h * (.5 + Math.sin(k * 9) * .3)]; }, fin(){ img.style.clipPath = 'none'; } });
-    const sinFoto = () => { const mc = el.querySelector('.marco-img'); mc.classList.add('sin'); mc.innerHTML = `<span>No encontré una foto de «${esc(z.buscar)}» que cargue. Toca para buscarla:</span> <a href="https://es.wikipedia.org/w/index.php?search=${encodeURIComponent(z.buscar)}" target="_blank" rel="noopener">Wikipedia</a>`; };
+    /* sin foto verificada no se inventa: se dibuja (Carlos, 14 nov: «sólo imágenes del banco ya verificadas») */
+    const sinFoto = () => {
+      const mc = el.querySelector('.marco-img'); mc.classList.add('sin', 'dibujo');
+      const d = buscarDibujo(z.icono) || buscarDibujo(z.buscar) || buscarDibujo(String(z.buscar || '').split(/\s+/)[0]) || 'image';
+      if(DIBUJOS[d]) mc.innerHTML = `<svg viewBox="0 0 24 24" class="dib-foto" aria-hidden="true">${DIBUJOS[d]}</svg>`; else mc.style.display = 'none';
+      img.remove?.();
+    };
     buscarImagen(z.buscar).then((r) => {
       if(!r){ sinFoto(); return; }
-      /* si una dirección falla, se prueba la siguiente; si fallan todas, se dice (nunca un recuadro vacío) */
-      let i = 0;
-      img.onerror = () => { i++; if(r.fuentes && r.fuentes[i]) img.src = r.fuentes[i]; else sinFoto(); };
-      img.src = (r.fuentes && r.fuentes[0]) || r.src; el.querySelector('.credito').innerHTML = `Foto: <a href="${esc(r.pagina)}" target="_blank" rel="noopener">Wikipedia · ${esc(r.titulo)}</a>`;
+      img.onerror = sinFoto;
+      img.src = r.src; el.querySelector('.credito').textContent = r.credito || '';
     });
     return [...t, ...tareasTexto(el, svg, ctx)];
   } },
@@ -459,6 +464,9 @@ export const ELEMENTOS = {
   escala: { armar(el, w, z, ctx){ return armarEscala(el, w, z, ctx); } },
   partes: { armar(el, w, z, ctx){ return armarPartes(el, w, z, ctx); } },
 };
+/* los 50 de lienzo-mas.js (Carlos, 13 nov: «300 elementos extra»), aparte para no pisar lo que meta Luna aquí */
+Object.assign(ELEMENTOS, masElementos({ lienzoSVG, textoSVG, trazo, relleno, caja, circulo, ovalo, linea, flecha, sector, dibujo, partir, medirTexto, TINTAS, f1 }));
+for(const k of ANCHOS_MAS) ancho2.add(k);
 export const TIPOS = Object.keys(ELEMENTOS);
 
 /* un SVG del tamaño del elemento para los tipos que son puro dibujo */
@@ -476,13 +484,15 @@ function lienzoSVG(el, w, h, z, ctx){
 const t2 = (svg, d, o) => trazo(svg, d, o);
 
 function armarDiagrama(el, w, z, ctx){
-  const W = w, SALTO = 64, fuente = '700 14px Texto';
+  const W = w, fuente = '700 14px Texto';
   const entra = new Map(z.nodos.map((n) => [n.id, 0])); z.flechas.forEach((f) => entra.set(f.a, (entra.get(f.a) || 0) + 1));
   const nivel = new Map(); const raices = z.nodos.filter((n) => !entra.get(n.id));
   const cola = (raices.length ? raices : [z.nodos[0]]).map((n) => n.id); cola.forEach((id) => nivel.set(id, 0));
   while(cola.length){ const id = cola.shift(); for(const f of z.flechas) if(f.de === id && !nivel.has(f.a)){ nivel.set(f.a, nivel.get(id) + 1); cola.push(f.a); } }
   z.nodos.forEach((n) => { if(!nivel.has(n.id)){ nivel.set(n.id, 0); } });
   const filas = []; z.nodos.forEach((n) => { const l = nivel.get(n.id); (filas[l] = filas[l] || []).push(n); });
+  /* si hay flechas de regreso con letrero, su letrero cae en el mismo hueco que el de las que bajan: el hueco crece para que quepan los dos */
+  const SALTO = z.flechas.some((f) => f.texto && (nivel.get(f.a) ?? 0) <= (nivel.get(f.de) ?? 0)) ? 100 : 64;
   const pos = new Map(); let y = 10;
   filas.filter(Boolean).forEach((fila) => { const g = 12, cw = Math.min(210, (W - g * (fila.length + 1)) / fila.length);
     const rens = fila.map((n) => partir(n.texto, cw - 16, fuente).slice(0, 4)), h = Math.max(46, 16 + Math.max(...rens.map((r) => r.length)) * 18);
@@ -490,21 +500,43 @@ function armarDiagrama(el, w, z, ctx){
     y += h + SALTO; });
   const H = y - SALTO + 14;
   const { svg, defs, mover, tareasTitulo } = lienzoSVG(el, W, H, z, ctx);
-  const t = [];
+  const t = [], etiquetas = [];
   z.nodos.forEach((n, i) => { const p = pos.get(n.id), tn = TINTAS[(ctx.n + nivel.get(n.id)) % TINTAS.length];
     t.push(relleno(svg, caja(p.x, p.y, p.w, p.h, 12, 0), tn.c, 1), t2(svg, caja(p.x, p.y, p.w, p.h, 12), { color: tn.t, fase: 0 }));
     p.ren.forEach((r, k) => t.push(...textoSVG(svg, defs, r, p.x + p.w / 2, p.y + p.h / 2 + (k - (p.ren.length - 1) / 2) * 18, { tam: 14, fase: 2 }).tareas)); });
   for(const f of z.flechas){ const a = pos.get(f.de), b = pos.get(f.a); if(!a || !b) continue;
     const x1 = a.x + a.w / 2, x2 = b.x + b.w / 2;
     if(b.y > a.y){ t.push(t2(svg, flecha(x1, a.y + a.h + 2, x2, b.y - 4, { curva: x1 === x2 ? 0 : .08 }), { color: '#4A4656', ancho: 2.2, fase: 1 }));
-      if(f.texto) t.push(...textoSVG(svg, defs, f.texto, (x1 + x2) / 2 + 8, (a.y + a.h + b.y) / 2, { tam: 15, fam: 'Mano', ancla: 'start', color: ctx.tinta2.t, fase: 3 }).tareas); }
+      /* la etiqueta va del lado hacia donde se abre la flecha (la que baja a la izquierda, a su izquierda): si no, dos flechas que se abren chocan sus letreros en medio */
+      if(f.texto){ const izq = x2 < x1 - 2; etiquetas.push({ texto: f.texto, x: (x1 + x2) / 2 + (izq ? -8 : 8), y: (a.y + a.h + b.y) / 2, ancla: izq ? 'end' : 'start', ymin: a.y + a.h + 10, ymax: b.y - 10 }); } }
+    else if([...pos.values()].some((o) => o !== a && o.y === a.y && o.x < a.x) && [...pos.values()].some((o) => o !== a && o.y === a.y && o.x > a.x) && b.y < a.y){
+      /* una caja de EN MEDIO que regresa: por un lado cruzaría a su vecina; sube directo, a un lado de las que bajan */
+      const sx = a.x + a.w * .78, ex = Math.min(b.x + b.w - 14, Math.max(b.x + 14, b.x + b.w * .72));
+      t.push(t2(svg, flecha(sx, a.y - 4, ex, b.y + b.h + 4, { curva: .18 }), { color: '#4A4656', ancho: 2.2, fase: 1 }));
+      if(f.texto) etiquetas.push({ texto: f.texto, x: Math.max(sx, ex) + 8, y: (a.y + b.y + b.h) / 2, ancla: 'start', ymin: b.y + b.h + 10, ymax: a.y - 10 });
+    }
     else {
       const izq = a.x + a.w / 2 < W / 2;
       const ax = izq ? a.x : a.x + a.w, bx = izq ? b.x - 4 : b.x + b.w + 4, lado = izq ? Math.max(4, Math.min(a.x, b.x) - 22) : Math.min(W - 4, Math.max(a.x + a.w, b.x + b.w) + 22);
       const ay = a.y + a.h / 2, by = b.y + b.h / 2, k = 9, s = izq ? 1 : -1;
       t.push(t2(svg, `M${f1(ax)} ${f1(ay)} C${f1(lado)} ${f1(ay)} ${f1(lado)} ${f1(by)} ${f1(bx)} ${f1(by)} M${f1(bx - k * s)} ${f1(by - k * .6)} L${f1(bx)} ${f1(by)} L${f1(bx - k * s)} ${f1(by + k * .6)}`, { color: '#4A4656', ancho: 2.2, fase: 1 }));
-      if(f.texto) t.push(...textoSVG(svg, defs, f.texto, lado + (izq ? 4 : -4), (ay + by) / 2, { tam: 15, fam: 'Mano', ancla: izq ? 'start' : 'end', color: ctx.tinta2.t, fase: 3 }).tareas);
+      if(f.texto) etiquetas.push({ texto: f.texto, x: lado + (izq ? 4 : -4), y: (ay + by) / 2, ancla: izq ? 'start' : 'end', ymin: Math.min(ay, by), ymax: Math.max(ay, by) });
     } }
+  /* LOS LETREROS DE LAS FLECHAS NO SE ENCIMAN (Carlos, 13 nov: «Alta presión» y «Retorno venoso» salían uno encima del otro).
+     Cada uno se mide; si choca con una caja o con otro letrero, se corre arriba o abajo dentro de su tramo, y nunca se sale del pizarrón. */
+  const FUENTE_ET = "700 15px Mano", ALTO_ET = 15 * 1.25, ocupado = [...pos.values()].map((p) => ({ x: p.x - 4, y: p.y - 4, w: p.w + 8, h: p.h + 8 }));
+  const choca = (r) => ocupado.some((o) => r.x < o.x + o.w && r.x + r.w > o.x && r.y < o.y + o.h && r.y + r.h > o.y);
+  for(const e of etiquetas){
+    const ren = partir(e.texto, Math.max(70, W / 2 - 16), FUENTE_ET), w = Math.max(...ren.map((r) => medirTexto(r, FUENTE_ET))), h = ren.length * ALTO_ET;
+    let x0 = e.ancla === 'end' ? e.x - w : e.x;
+    x0 = Math.max(4, Math.min(W - 4 - w, x0));
+    let mejor = null;
+    for(let k = 0; k <= 12 && !mejor; k++) for(const sgn of k ? [-1, 1] : [1]){
+      const y = e.y + sgn * k * (ALTO_ET * .6); if(y - h / 2 < e.ymin - ALTO_ET || y + h / 2 > e.ymax + ALTO_ET) continue;
+      const r = { x: x0 - 2, y: y - h / 2 - 2, w: w + 4, h: h + 4 }; if(!choca(r)){ mejor = { y, r }; break; } }
+    const y = mejor ? mejor.y : e.y; ocupado.push(mejor ? mejor.r : { x: x0, y: y - h / 2, w, h });
+    t.push(...textoSVG(svg, defs, ren.join(' '), x0, y, { tam: 15, fam: 'Mano', ancla: 'start', color: ctx.tinta2.t, fase: 3, maxAncho: ren.length > 1 ? w + 1 : 0 }).tareas);
+  }
   return [...tareasTitulo, ...mover(t)];
 }
 
@@ -745,25 +777,15 @@ export function pertinente(buscado, j){
   if(m && !sinAcento(buscado).includes(m[1])) return false;
   return true;
 }
+/* De dónde salen las fotos: sólo del banco de La Sala, de las VERIFICADAS (carpeta «Escuela» y marcadas «lista»;
+   el servidor decide cuáles: sala/servidor/banco.js · fotoVerificada). Ya no de Wikipedia: ahí salió una foto de
+   otra cosa para «las trompas de Falopio» (14 nov). Quien usa el lienzo dice cómo pedirlas con ponerFuenteDeFotos. */
+let fuenteFotos = null;
+export function ponerFuenteDeFotos(f){ fuenteFotos = f; fotosVistas.clear(); }
 export function buscarImagen(titulo){
-  if(!titulo) return Promise.resolve(null);
+  if(!titulo || !fuenteFotos) return Promise.resolve(null);
   if(fotosVistas.has(titulo)) return fotosVistas.get(titulo);
-  const p = (async () => {
-    try{
-      const r = await fetch(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(String(titulo).replace(/ /g, '_'))}?redirect=true`, { headers: { accept: 'application/json' } });
-      if(!r.ok) return null;
-      const j = await r.json(), mini = j.thumbnail, orig = j.originalimage;
-      if(!(mini && mini.source) && !(orig && orig.source)) return null;
-      if(!pertinente(titulo, j)) return null;   /* en duda, mejor el dibujo que una foto equivocada */
-      /* varias direcciones, de la mejor a la más segura: la de 640 px SÓLO si el original es más grande
-         (si no, Wikimedia no la genera y la foto sale rota), luego la miniatura tal cual, luego el original */
-      const fuentes = [];
-      if(mini && mini.source && orig && orig.width >= 700 && /\/\d+px-/.test(mini.source)) fuentes.push(mini.source.replace(/\/(\d+)px-/, '/640px-'));
-      if(mini && mini.source) fuentes.push(mini.source);
-      if(orig && orig.source && !/\.svg$/i.test(orig.source) && (orig.width || 0) <= 2400) fuentes.push(orig.source);
-      return { src: fuentes[0], fuentes, titulo: j.title || titulo, pagina: (j.content_urls && j.content_urls.mobile && j.content_urls.mobile.page) || `https://es.wikipedia.org/wiki/${encodeURIComponent(titulo)}` };
-    }catch{ return null; }
-  })();
+  const p = Promise.resolve().then(() => fuenteFotos(titulo)).catch(() => null);
   fotosVistas.set(titulo, p); return p;
 }
 

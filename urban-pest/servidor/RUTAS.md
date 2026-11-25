@@ -53,6 +53,9 @@ Si `noSalio` viene puesto, Meta no lo entregó.
 | `POST /api/estimar` | `{ tamano, recamaras, banos, sala, comedor, patio, zona }` | Los metros estimados de una casa cuando el cliente no sabe. Regresa `m2`, `rango` y `afinar` (qué falta preguntar) |
 | `GET /api/medidas` · `POST /api/medidas` | `{ medidas }` | La tabla del estimado: m² por cuarto según el tamaño, y el ajuste por colonia. Se calibra con los servicios reales |
 | `POST /api/cotizar` | `{ plaga, m2, km, tipo }` | Una cotización a mano. Regresa `desde` (el aproximado), `desglose`, `visita`, `fueraDeRadio` y `atiende` (`si`, `caso-por-caso` o `no`) |
+| `GET /api/salida` | — | De dónde sale la camioneta (`{ direccion, nombre, municipio, lat, lon }`), o `null` si todavía no se guarda |
+| `POST /api/salida` | `{ direccion }` | La ubica en el mapa y la guarda. Regresa `salida` y `entendi` (lo que entendió, para que el dueño confirme). También acepta coordenadas pegadas de Google Maps («20.59, -100.39») |
+| `GET /api/distancia?donde=` | — | La colonia del cliente: `lugar`, `municipio`, `rumbo` (centro, norte… o «fuera de la ciudad») y, si ya está la salida, `km` de ida y `por` (`carretera` o `aprox`). Sin salida, `km: null` y `falta` |
 
 ## Lo que todavía NO está, y quién lo hace
 
@@ -120,6 +123,36 @@ mano y la carpeta de plantas). Entra con la llave de Grupo Mazi o con un código
 | `GET /api/vehiculos` · `POST /api/vehiculos {id?, nombre, placas?, km?}` | Los vehículos, con sus próximas revisiones |
 | `POST /api/vehiculos/revision {vehiculo, tipo, fecha, km?, costo?, proxima_fecha?, proxima_km?, nota?}` | Aceite, llantas, verificación… Sale «ya toca» a 7 días o a 500 km |
 
+## La distancia · 23 nov (Godines)
+
+El bot dice en qué ZONA está el cliente y cobra la DISTANCIA real. En su Excel, «Kilómetros» es la **ida por carretera**
+desde su bodega, con decimales, multiplicada **una vez** por su costo por km (comparado contra el mapa: San Miguel 66.2 / 63.2,
+San Juan del Río 55 / 51.4, Balvanera 16 / 12.2). `src/distancia.js`, sin dependencias:
+
+- **Dónde es.** Primero una tabla de 66 colonias, municipios y parques de la zona (geografía pública de OpenStreetMap):
+  «x el centro», «aquí en milenio», «por juriquiya». Si no está, OpenStreetMap (Nominatim), acotado a la región (hasta San
+  Miguel y Celaya), máximo 1 consulta por segundo y guardado en `geo:<colonia>`. Un error de red no se guarda.
+- **El rumbo**, respecto al centro de Querétaro: centro, norte, noreste… o «fuera de la ciudad» (más de 30 km, o fuera de
+  Querétaro, Corregidora y El Marqués).
+- **Los km**: de ida por carretera (OSRM) desde la salida; si no contesta en 4 s, línea recta × 1.3 (`por: 'aprox'`).
+- **Privacidad:** a OpenStreetMap sólo va el texto de la colonia (máx. 120 letras). Nunca el nombre, el teléfono ni el mensaje.
+
+**De dónde sale la camioneta: FALTA del cliente.** Se guarda aparte, en `salida` (no en `tarifas`, que el centro reescribe
+al cargar el Excel, ni en `negocio`, que va a la IA). Mientras no esté, el bot igual dice la zona y cotiza con los km típicos
+de su Excel, marcados como estimados. No se deduce ni se inventa.
+
+En el bot (`oficina.js`): antes de cotizar se ubica la colonia y se guarda en la conversación (`lugar`) por el texto de la
+zona, para no volver a preguntarle al mapa; si el cliente cambia de colonia, se recalculan el lugar, los km y el precio (antes
+los km de la primera zona se quedaban pegados en `datos.km`). Los km salen, en orden, de: la carretera desde la salida, su
+tabla `zonas`, o `km_tipico`.
+
+**Lejos de la ciudad** (Luis, 23 nov: su Excel trae servicios en San Miguel y una casa a 55 km; lejos sí se va):
+- **sin km reales** (falta la salida, o el mapa no contestó): `atiende: 'caso-por-caso'` y `lejos: true`, sea casa, negocio o
+  industria. Sin precio (con los km típicos le cobraría casi la mitad del traslado); al dueño le llega el aviso con el lugar;
+- **con km reales de carretera y sin `radio_km`**: se cotiza normal con esos km, como su Excel;
+- **con `radio_km`**: la regla de siempre (`fueraDeRadio`). Sin `radio_km` nunca sale «no» por lejanía. La IA recibe el lugar ya dicho («Juriquilla, en el norte de Querétaro») y lo menciona
+una vez al dar el precio; **los km no se le dicen al cliente**: van en `interno` de la hoja (`km`, `km_por`, `lugar`, `nota`).
+
 ## Lo que cuenta el cotizador · 12 nov
 
 Carlos: «todo se cuenta». Las tarifas aceptan (y el Excel del cliente debe traer):
@@ -130,3 +163,53 @@ Carlos: «todo se cuenta». Las tarifas aceptan (y el Excel del cliente debe tra
 
 Precio = (material + técnico) × factor del lugar + camioneta, más el margen. El desglose trae costo y ganancia.
 Las tarifas viejas (`mano_obra_m2`, `costo_km`) siguen sirviendo.
+
+## Su Excel · 17 nov (Godines)
+
+Llegó el Excel del cliente (`CorridaCotizacion.xlsx`). **No está en el repo, y no debe entrar: el repo es
+público y trae sus costos y su lista de clientes.** Se carga desde el centro (pestaña «Cotizar» → «Cargar tu
+Excel»): el teléfono lo lee y guarda en el servidor sólo lo que sirve, con `POST /api/tarifas`.
+
+| Ruta | Qué hace |
+|---|---|
+| `GET /api/tarifas` | Lo guardado (o `null`). La pestaña «Cotizar» lo lee para cotizar con su Excel, también sin internet |
+| `POST /api/tarifas { tarifas }` | Ahora rechaza un cuerpo sin `tarifas` (antes guardaba `undefined`) |
+
+Lo que agrega el Excel a las tarifas:
+
+- `formula: { tipo: 'excel', x, entre, km, traslado_aparte }`: su «Cotización convencional»,
+  **precio = (químicos + técnico) × x ÷ entre + km × $km**. El km es el que él anota (de su bodega al lugar),
+  sin ida y vuelta, y sin factor por tipo de lugar: así lo hace su hoja. La industria sigue pidiendo visita.
+- `tecnico.costo_hora` (lo que cobra la hora) y `plagas.<plaga>.precio_litro` (el costo por litro de mezcla del
+  producto que más usa en esa columna de su Excel). `litros_m2` (0.025) y `m2_hora` (330) **no vienen en el
+  Excel**: salen del único ejemplo suyo con cuartos medidos y se calibran con el dueño.
+- `km_tipico`: la mediana de los km de sus últimas cotizaciones. Si todavía no está de dónde sale la camioneta
+  (`salida`) y la zona del cliente no está en `zonas`, el bot cotiza con eso y la nota dice que la distancia es estimada.
+- `excel`: el catálogo completo (90 productos), su fórmula y la de su hoja «JADP», para la pestaña «Cotizar».
+
+Ratas, termitas, chinches y pulgas **no** se cotizan solas: en su Excel van con bloques, polvo o mucho más
+producto que una aspersión, y las ve él.
+
+**Orden al publicar:** primero se fusiona y se despliega este servidor, y DESPUÉS se carga el Excel. Con el
+servidor viejo, las tarifas nuevas cotizarían sin su sobreprecio (el código viejo no conoce `formula`).
+
+**Al centavo (Luis, 17 nov).** El bot cotiza con `corrida.js`, la misma cuenta de la pestaña «Cotizar» (copia exacta), sin
+mínimo ni redondeo. Cada cotización trae `desglose.excel.corrida` = horas, km, producto y litros: puestos en su Excel o en
+«Cotizar», dan el mismo precio. En «Números» sale como «Para sacarla igual en tu Excel» con el botón «Abrirla en Cotizar».
+
+**Lo que se aprendió probándolo con la IA de verdad (17 nov).** `pruebas-coloquial.mjs` corre más de mil mensajes como
+escribe la gente contra el reflejo (cero equivocados) y, en privado, el bot entero se probó con la IA real y su Excel:
+
+- con datos para cotizar en el mensaje (o dichos antes), los casos de precio, factura, empresa y mascotas no contestan por
+  reflejo: contesta la IA y cotiza (`elReflejo`). Un mensaje que nombra una plaga y sólo se parece a un caso, también;
+- la plaga se apunta en cuanto la dice, aunque conteste el reflejo;
+- «3 cuartos», «tres recámaras», «casa chiquita» cuentan aunque la IA no los apunte (`delTexto`);
+- con la cotización hecha, si la IA vuelve a pedir el tamaño o la colonia, sale el precio (`pideLoQueYaHay`);
+- una plaga sin precio automático (ratas, termitas, chinches…) se le avisa a la IA: no pide tamaño y pasa al encargado.
+
+**Lo que el bot nunca dice:** el nombre y el teléfono del dueño. `negocio.dueno_nombre` y `negocio.dueno_wa` (en `POST
+/api/negocio`) alimentan la compuerta `sinDatosDelDueno` que revisa cada respuesta antes de mandarla.
+
+**El número para avisarle al dueño:** la variable `DUENO_WA` o, sin desplegar, `POST /api/negocio
+{ negocio: { dueno_wa: '524421394023' } }`. Es el 442 139 4023 que dio el cliente (el mismo de su página).
+Sirve hasta que se conecte WhatsApp (falta su acceso a Meta).

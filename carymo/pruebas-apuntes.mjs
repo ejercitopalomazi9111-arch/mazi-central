@@ -25,7 +25,7 @@ await pg.addInitScript(() => {
 });
 await pg.goto(`http://127.0.0.1:${PUERTO}/carymo/?servidor=http://localhost:1&sala=G`, { waitUntil: 'load' });
 await pg.waitForFunction(() => window.__estudio);
-await pg.click('#nav [data-ir="apuntes"]');
+await pg.click('#nav [data-ir="yo"]').then(() => pg.click('#vYo [data-ir="apuntes"]'));
 await pg.waitForSelector('.ap-card');
 
 console.log('Los apuntes que salen solos');
@@ -37,6 +37,13 @@ await foto('01-lista');
 await pg.fill('#apBuscar', 'fotosintesis'); await pg.waitForTimeout(450);
 ok((await pg.$$('.ap-card')).length === 1, 'el buscador encuentra sin acentos');
 await pg.fill('#apBuscar', ''); await pg.waitForTimeout(450);
+/* carpetas: tipo y luego materia (Carlos, 13 nov) */
+ok(await pg.locator('.ap-carpeta[data-apf]').count() === 3, 'la entrada son tres carpetas: tuyos, de tus lecciones y del pizarrón');
+ok(/1/.test(await pg.textContent('.ap-carpeta[data-apf="leccion"] .ap-n')), 'cada carpeta dice cuántos apuntes trae');
+await pg.click('.ap-carpeta[data-apf="leccion"]'); await pg.waitForTimeout(300);
+ok(await pg.locator('.ap-card:has-text("Membrana celular")').count() === 1 && await pg.locator('.ap-card:has-text("La fotosíntesis")').count() === 0, 'adentro de «De tus lecciones» sólo salen esos (con una sola materia, directo a la lista)');
+await pg.click('.ap-migas [data-apf="todos"]'); await pg.waitForTimeout(300);
+ok(await pg.locator('.ap-carpeta[data-apf]').count() === 3, '«‹ Apuntes» regresa a las carpetas');
 await pg.click('.ap-card:has-text("La fotosíntesis")');
 const puntos = await pg.$$eval('.ap-puntos li', (x) => x.map((e) => e.textContent));
 ok(puntos.some((p) => /Necesita: Luz · Agua · CO₂/.test(p)) && puntos.some((p) => /Repaso/.test(p)), 'el apunte del pizarrón trae lo que se escribió y el repaso (sin las marcas **)');
@@ -56,20 +63,25 @@ console.log('El lápiz');
 await pg.click('.ap-card:has-text("Fotosíntesis (mío)")');
 await pg.click('[data-dibujar]');
 await pg.waitForSelector('.dib-vista'); await pg.waitForTimeout(400);
+/* se dibuja ya con el muelle vacío (muelle.js): si un aviso se va a media prueba, la hoja crece y lo dibujado se recorre */
+const calma = async () => { await pg.waitForFunction(() => getComputedStyle(document.documentElement).getPropertyValue('--muelle').trim() === '0px', null, { timeout: 8000 }).catch(() => {}); await pg.waitForTimeout(400); };
+await calma();
 const oscuros = () => pg.evaluate(() => { const c = document.querySelector('.dib-vista'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let k = 0; for(let i = 0; i < d.length; i += 4) if(d[i] < 120 && d[i + 1] < 90 && d[i + 2] < 120 && d[i + 3] > 200) k++; return k; });
 const antes = await oscuros();
-const caja = await pg.$eval('.dib-vista', (c) => { const r = c.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; });
-const trazar = async (x0, y0, x1, y1) => { await pg.mouse.move(caja.x + caja.w * x0, caja.y + caja.h * y0); await pg.mouse.down(); for(let k = 1; k <= 24; k++) await pg.mouse.move(caja.x + caja.w * (x0 + (x1 - x0) * k / 24), caja.y + caja.h * (y0 + (y1 - y0) * k / 24 + Math.sin(k / 3) * .02)); await pg.mouse.up(); await pg.waitForTimeout(120); };
+/* la hoja se mide en cada raya: si un aviso del muelle (muelle.js) se va, la página sube y la hoja con ella */
+let caja = null;
+const trazar = async (x0, y0, x1, y1) => { caja = await pg.$eval('.dib-vista', (c) => { const r = c.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; }); await pg.mouse.move(caja.x + caja.w * x0, caja.y + caja.h * y0); await pg.mouse.down(); for(let k = 1; k <= 24; k++) await pg.mouse.move(caja.x + caja.w * (x0 + (x1 - x0) * k / 24), caja.y + caja.h * (y0 + (y1 - y0) * k / 24 + Math.sin(k / 3) * .02)); await pg.mouse.up(); await pg.waitForTimeout(120); };
 await trazar(.2, .3, .8, .35);
 const despues = await oscuros();
 await foto('02b-dibujo');
 ok(despues > antes + 200, `dibujar con el dedo pinta en la hoja (${antes} → ${despues} pixeles de tinta)`);
 await pg.click('[data-deshacer]'); await pg.waitForTimeout(150);
-ok(Math.abs((await oscuros()) - antes) < 40, 'deshacer lo quita');
+{ const d = await oscuros(); ok(Math.abs(d - antes) < 40, `deshacer lo quita (${antes} → ${despues} → ${d})`); }
 await pg.click('[data-rehacer]'); await pg.waitForTimeout(150);
 ok((await oscuros()) > antes + 200, 'y rehacer lo regresa');
+const antesDeBorrar = await oscuros();   /* se cuenta justo antes: si la hoja cambió de tamaño, la tinta se vuelve a pintar a su escala */
 await pg.click('[data-herr="borrador"]'); await trazar(.2, .32, .8, .33); await pg.click('[data-herr="pincel"]');
-ok((await oscuros()) < despues, 'el borrador borra');
+ok((await oscuros()) < antesDeBorrar, `el borrador borra (${antesDeBorrar} → ${await oscuros()})`);
 
 console.log('Los pinceles');
 await pg.click('[data-pinceles]');
@@ -117,7 +129,7 @@ ok(await pg.isVisible('#apDib img'), 'al terminar, el dibujo se ve en el apunte'
 await pg.click('[data-cerrar]'); await pg.waitForTimeout(400);
 ok(await pg.isVisible('.ap-card img'), 'y en la lista sale su miniatura');
 await foto('06-con-dibujo');
-await pg.click('.ap-card:has-text("Fotosíntesis (mío)")'); await pg.click('[data-dibujar]'); await pg.waitForSelector('.dib-vista'); await pg.waitForTimeout(600);
+await pg.click('.ap-card:has-text("Fotosíntesis (mío)")'); await pg.click('[data-dibujar]'); await pg.waitForSelector('.dib-vista'); await pg.waitForTimeout(600); await calma();
 ok((await oscuros()) > antes + 200, 'al volver a abrirlo, el dibujo sigue ahí (con sus capas)');
 ok(err.length === 0, 'cero errores' + (err.length ? ': ' + err[0] : ''));
 

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<title>Memes · Grupo Mazi y CARYMO</title>
+<!-- MEMES PARA JALAR GENTE (Carlos, 14 nov: «en la parte del marketing pro haz como memes para acaparar una audiencia… y
+     memes de CARYMO también»). Uno por página: ?n=0…  ·  node marca/memes/armar.mjs → marca/anuncios/salida/memes/*.png
+     Formatos propios (sin plantillas con derechos de nadie): «Nadie: / Yo:», dos cuadros, chat, publicación de texto y
+     texto arriba con escena. El arte: las mascotas de CARYMO (nuestras), la paloma de Grupo Mazi y fotos de Mixkit
+     (licencia libre) del pietaje del tráiler. 1080 × 1350 (el formato vertical del feed de Instagram). Sin emojis. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;700;800;900&display=block">
+<style>
+*{ box-sizing:border-box; margin:0 }
+html, body{ width:1080px; height:1350px; overflow:hidden; background:#fff; font-family:"Inter Tight", Arial, sans-serif; color:#111 }
+.meme{ position:absolute; inset:0; display:flex; flex-direction:column }
+.arriba{ padding:56px 64px 40px; font:800 58px/1.18 "Inter Tight", Arial, sans-serif; letter-spacing:-.01em }
+.arriba small{ display:block; font-weight:600; font-size:44px; color:#444; margin-top:18px }
+.escena{ flex:1; position:relative; overflow:hidden; background:#170A26 }
+.escena img.foto{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover }
+.firma{ position:absolute; right:28px; bottom:22px; display:flex; align-items:center; gap:12px; font:800 26px/1 "Inter Tight", sans-serif; color:#fff; opacity:.92; text-shadow:0 2px 8px #000a; z-index:9 }
+.firma img{ width:44px; height:44px; border-radius:12px }
+.firma.osc{ color:#170A26; text-shadow:none }
+.masc-caja{ position:absolute }
+.globo{ position:absolute; background:#fff; color:#111; border-radius:40px; padding:26px 34px; font:800 52px/1.1 "Inter Tight", sans-serif; box-shadow:0 10px 30px #0006 }
+.globo::after{ content:""; position:absolute; bottom:-26px; left:70px; border:16px solid transparent; border-top:20px solid #fff }
+.dos{ flex:1; display:grid; grid-template-columns:1fr 1fr; gap:6px; background:#111 }
+.dos > div{ position:relative; display:flex; flex-direction:column; background:#fff }
+.dos h3{ padding:26px 26px 18px; font:800 40px/1.15 "Inter Tight", sans-serif; text-align:center; min-height:150px; display:grid; place-items:center }
+.dos .cuadro{ flex:1; position:relative; overflow:hidden; display:grid; place-items:center }
+.chat{ flex:1; background:#0B141A; padding:50px 46px; display:flex; flex-direction:column; gap:22px }
+.chat .m{ max-width:78%; padding:22px 28px; border-radius:26px; font:500 44px/1.25 "Inter Tight", sans-serif; color:#fff }
+.chat .yo{ align-self:flex-end; background:#5B2A86; border-bottom-right-radius:8px } .chat .el{ align-self:flex-start; background:#1F2C33; border-bottom-left-radius:8px }
+.chat .nota{ align-self:center; color:#8696A0; font:600 32px/1 "Inter Tight", sans-serif; background:#1F2C33; padding:12px 22px; border-radius:14px }
+.chat .escribiendo{ align-self:flex-start; color:#8696A0; font:italic 600 36px/1 "Inter Tight", sans-serif }
+.post{ flex:1; background:#fff; padding:80px 70px; display:flex; flex-direction:column; justify-content:center }
+.post .quien{ display:flex; align-items:center; gap:20px; margin-bottom:34px } .post .quien i{ width:96px; height:96px; border-radius:50%; background:#AC27FF; display:block; overflow:hidden }
+.post .quien b{ font:800 40px/1.1 "Inter Tight", sans-serif } .post .quien small{ display:block; color:#666; font:500 32px/1.2 "Inter Tight", sans-serif }
+.post p{ font:600 54px/1.3 "Inter Tight", sans-serif } .post p + p{ margin-top:36px }
+.chip{ position:absolute; display:inline-flex; align-items:center; gap:12px; padding:16px 26px; border-radius:999px; background:#170A26; border:3px solid #C77DFF; color:#fff; font:800 40px/1 "Inter Tight", sans-serif; box-shadow:0 0 30px #AC27FF88 }
+.web{ width:86%; height:86%; border-radius:18px; overflow:hidden; box-shadow:0 12px 40px #0005; display:flex; flex-direction:column }
+.web .barra{ height:34px; background:#ddd; display:flex; gap:8px; align-items:center; padding:0 12px } .web .barra i{ width:12px; height:12px; border-radius:50%; background:#bbb; display:block }
+</style>
+</head>
+<body>
+<div id="meme"></div>
+<script type="module">
+import { crearMascota } from '../../carymo/mascota.js';
+const n = +(new URLSearchParams(location.search).get('n') || 0);
+const FOTO = (toma, i = 40) => `../../carymo/trailer/cuadros/${toma}/${String(i).padStart(5, '0')}.jpg`;
+const GM = '<div class="firma"><img src="../paloma-2026/icono-512.png" alt="">Grupo Mazi</div>';
+const CY = '<div class="firma"><img src="../../carymo/marca/icono-192.png" alt="">CARYMO</div>';
+const mascota = (id, quien, estado, tam, x, y) => ({ id, quien, estado, tam, x, y });
+
+/* cada meme: html + las mascotas que lleva (se crean con el motor de CARYMO y se congelan en el gesto) */
+const MEMES = [
+  /* ═══ GRUPO MAZI (dueños de negocio) ═══ */
+  { nombre: 'gm-1-nadie', html: `<div class="meme"><div class="arriba">Nadie:<small>Los clientes a las 11:58 p. m.:</small></div>
+    <div class="chat"><div class="m el">¿Sigue abierto?</div><div class="m el">¿Cuánto cuesta?</div><div class="m el">¿Hacen envíos?</div><div class="m el">¿Tienen página?</div><div class="m el">¿Hola?</div><div class="nota">Una página contesta todo eso sola, a cualquier hora.</div></div>${GM}</div>` },
+  { nombre: 'gm-2-sobrino', html: `<div class="meme"><div class="dos">
+    <div><h3>La página que te hizo tu sobrino «que sabe de computadoras»</h3><div class="cuadro" style="background:#eee"><div class="web" style="transform:rotate(-3deg)"><div class="barra"><i></i><i></i><i></i></div>
+      <div style="flex:1;background:#fffde0;padding:22px;font:700 34px/1.2 'Comic Sans MS', cursive;color:#0a0">BIENVENIDOS!!!<br><span style="color:#f0f;font-size:26px">Página en construcción</span><div style="margin-top:20px;height:120px;background:repeating-linear-gradient(45deg,#ccc 0 10px,#eee 10px 20px)"></div><span style="color:#999;font-size:22px">© 2014</span></div></div></div></div>
+    <div><h3>La página que te hace Grupo Mazi</h3><div class="cuadro" style="background:#170A26"><div class="web"><div class="barra" style="background:#2A1640"><i style="background:#7E1735"></i><i style="background:#AC27FF"></i><i style="background:#C77DFF"></i></div>
+      <img src="../../empresa/ventas/district.jpg" style="flex:1;width:100%;object-fit:cover;object-position:top" alt=""></div></div></div></div>${GM}</div>` },
+  { nombre: 'gm-3-sencillito', html: `<div class="meme"><div class="arriba">Todo diseñador conoce este chat:</div>
+    <div class="chat"><div class="m el">Quiero algo sencillito</div><div class="m el">Como Amazon, pero más bonito</div><div class="m el">Con app, tienda, pagos y que se mueva</div><div class="m el">Presupuesto: 500 pesos</div><div class="m el">¿Para mañana se puede?</div><div class="escribiendo">escribiendo…</div></div>${GM}</div>` },
+  { nombre: 'gm-4-algoritmo', html: `<div class="meme"><div class="arriba">Cuando tu negocio sólo tiene Facebook y el algoritmo decide que hoy nadie te ve</div>
+    <div class="escena"><img class="foto" src="${FOTO('frustra', 60)}" alt="" style="object-position:50% 30%">${GM}</div></div>` },
+  { nombre: 'gm-5-post', html: `<div class="meme"><div class="post"><div class="quien"><i><img src="../paloma-2026/icono-512.png" style="width:100%" alt=""></i><div><b>Grupo Mazi</b><small>@grupomazi.oficial</small></div></div>
+    <p>Tu negocio sin página: «¿y dónde los encuentro?»</p><p style="color:#7E1735">Tu negocio con página: «ya vi su menú, ahí voy».</p></div>${GM.replace('firma', 'firma osc')}</div>` },
+  { nombre: 'gm-6-competencia', html: `<div class="meme"><div class="arriba">Cuando por fin tienes tu página y tu competencia sigue mandando fotos borrosas del menú por WhatsApp</div>
+    <div class="escena"><img class="foto" src="${FOTO('fuegos', 70)}" alt="">${GM}</div></div>` },
+  /* ═══ CARYMO (estudiantes) ═══ */
+  { nombre: 'cy-1-racha', html: `<div class="meme"><div class="arriba">Nadie:<small>Mi mascota de CARYMO a las 11:59 p. m. cuando no he hecho mi lección:</small></div>
+    <div class="escena" style="background:radial-gradient(70% 60% at 50% 60%, #3A1458, #170A26)"><div class="globo" style="left:300px; top:70px">¿Y la racha?</div>${CY}</div></div>`,
+    mascotas: [mascota('m1', 'paloma', 'enojado', 560, 260, 300)] },
+  { nombre: 'cy-2-perder', html: `<div class="meme"><div class="arriba">Cuando pierdes una racha de 99 días por quedarte dormido</div>
+    <div class="escena" style="background:radial-gradient(70% 60% at 50% 60%, #2A2A3A, #0E0E16)"><div class="chip" style="left:340px; top:70px; border-color:#888; box-shadow:none; color:#bbb">Racha: 0 días</div>${CY}</div></div>`,
+    mascotas: [mascota('m1', 'tigre', 'triste', 600, 240, 230)] },
+  { nombre: 'cy-3-releer', html: `<div class="meme"><div class="dos">
+    <div><h3>Releer los apuntes 4 horas</h3><div class="cuadro" style="background:#20202a" data-masc="a"></div></div>
+    <div><h3>Repasar 15 minutos lo que fallaste</h3><div class="cuadro" style="background:#3A1458" data-masc="b"></div></div></div>${CY}</div>`,
+    mascotas: [mascota('a', 'pinguino', 'duerme', 420, 60, 420), mascota('b', 'gatito', 'festeja', 420, 600, 420)] },
+  { nombre: 'cy-4-novio', html: `<div class="meme"><div class="arriba">Así empezó todo:</div>
+    <div class="chat"><div class="m el">No puedo estudiar, me aburro</div><div class="m yo">Dame dos semanas</div><div class="nota">Dos semanas después</div><div class="m yo">Te hice una app</div><div class="m el">¿Qué?</div><div class="m yo">Tiene mascota, rachas y juegos. Ya no te vas a aburrir.</div></div>${CY}</div>` },
+  { nombre: 'cy-5-3am', html: `<div class="meme"><div class="post"><div class="quien"><i style="background:#170A26"><img src="../../carymo/marca/icono-192.png" style="width:100%" alt=""></i><div><b>CARYMO</b><small>Estudia como juegas</small></div></div>
+    <p>Yo a las 3 a. m. haciendo combo x10 en vez de dormir antes del examen:</p><p style="color:#8E2FD6">«Es por la ciencia».</p></div>${CY.replace('firma', 'firma osc')}</div>` },
+  { nombre: 'cy-6-examen', html: `<div class="meme"><div class="arriba">Mi cerebro en el examen después de repasar con CARYMO:</div>
+    <div class="escena" style="background:radial-gradient(70% 60% at 50% 55%, #4A1170, #170A26)">
+      <div class="chip" style="left:90px; top:90px">+15 XP</div><div class="chip" style="right:70px; top:110px">Combo x10</div><div class="chip" style="left:50%; transform:translateX(-50%); top:900px; border-color:#FFD166">30 días seguidos</div>${CY}</div></div>`,
+    mascotas: [mascota('m1', 'foca', 'festeja', 540, 270, 300)] },
+];
+window.MEMES = MEMES.map((m) => m.nombre);
+const m = MEMES[n];
+document.querySelector('#meme').innerHTML = m.html;
+await document.fonts.ready;
+await Promise.all([...document.images].map((im) => im.decode().catch(() => {})));
+for(const k of m.mascotas || []){
+  const caja = document.createElement('div'); caja.className = 'masc-caja'; caja.style.left = k.x + 'px'; caja.style.top = k.y + 'px'; caja.style.width = k.tam + 'px'; caja.style.height = k.tam + 'px';
+  (document.querySelector(`[data-masc="${k.id}"]`) || document.querySelector('.escena') || document.querySelector('.meme')).append(caja);
+  if(document.querySelector(`[data-masc="${k.id}"]`)){ caja.style.position = 'relative'; caja.style.left = caja.style.top = 'auto'; }
+  const ms = crearMascota(caja, { personaje: k.quien, tam: k.tam });
+  ms.play?.(k.estado, { bucle: true });
+}
+window.listo = true;
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+ "titulo": "GM-5 · Cómo trabajamos (paquete del inversionista). Los cuatro pasos y por qué el modelo de comisión deja crecer sin nómina",
+ "voces": { "Narrador": "google:Despina" },
+ "lineas": [
+  { "id": "01", "voz": "Narrador", "en": 0.3,  "txt": "¿Cómo trabaja Grupo Mazi?" },
+  { "id": "02", "voz": "Narrador", "en": 3.0,  "txt": "Primero escuchamos: qué es lo que más tiempo te quita." },
+  { "id": "03", "voz": "Narrador", "en": 7.6,  "txt": "Luego lo construimos. Una página, en días; no en meses." },
+  { "id": "04", "voz": "Narrador", "en": 12.4, "txt": "Lo probamos contigo, en tu teléfono, antes de entregarlo." },
+  { "id": "05", "voz": "Narrador", "en": 17.2, "txt": "Y nos quedamos: mantenimiento y soporte, por mucho tiempo." },
+  { "id": "06", "voz": "Narrador", "en": 22.2, "txt": "Nuestro equipo cobra por proyecto. Así crecemos sin cargar una nómina." },
+  { "id": "07", "voz": "Narrador", "en": 27.8, "txt": "Entregamos rápido, y acompañamos mucho tiempo." },
+  { "id": "08", "voz": "Narrador", "en": 32.0, "txt": "Grupo Mazi. Si no existe la herramienta, se construye." }
+ ]
+}
