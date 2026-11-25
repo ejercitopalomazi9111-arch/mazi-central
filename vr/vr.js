@@ -22,7 +22,7 @@ import { crearLimites, toparCabeza } from './limites.js';
 import { crearPredictor } from './prediccion.js';
 
 /* ── ajustes: se guardan en el teléfono (sólo comodidad; si se borran, salen los de fábrica) ── */
-const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true, menuTam: 1, menuDist: 1, fondo: 0, seis: false, puntos: true, limites: true, zona: 1 };
+const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true, menuTam: 1, menuDist: 1, fondo: 0, seis: false, puntos: true, limites: true, zona: 1, tonos: true, estable: 200, enfriar: 250 };
 const AJ = { ...FABRICA };
 try{ Object.assign(AJ, JSON.parse(localStorage.getItem('mazivr.ajustes') || '{}')); }catch{}
 const guardar = () => { try{ localStorage.setItem('mazivr.ajustes', JSON.stringify(AJ)); }catch{} };
@@ -522,6 +522,28 @@ export const audio = () => actx;
 /* CERO SONIDOS DE INTERACCIÓN (Carlos, 19 nov: «quita los malditos sonidos, todo sonido de interacción, está horrible»):
    toques, dings y whooshes ya no suenan, vengan de donde vengan. Sólo suena lo que se pide como `aviso` (el de seguridad
    de los límites: «Cuidado» y «Fuera de zona», para no pegarte con la pared). La música y el narrador van por otro lado. */
+/* TONOS SUAVES DE INTERACCIÓN (prompt maestro de Carlos, §3, 25 nov: «sutil, refinada, satisfactoria… no debe sonar como
+   notificación ni como clic de mouse»). El 19 nov se quitaron los sonidos de archivo porque eran feos; éstos no son archivos:
+   son un tono senoidal muy corto y bajo, con ataque de 4 ms y una caída suave, filtrado para que no pique.
+     · foco: al cambiar lo que apuntas (nunca mientras sigues apuntando lo mismo), muy bajito;
+     · elegir: un poco más presente, dos notas que suben (se nota que se aceptó);
+     · cada vez varía tantito el tono, el volumen y la duración, dentro de un rango chico: misma identidad, sin sonar a máquina;
+     · si el narrador habla (extra.narrando), bajan a la mitad: nunca compiten con la voz.
+   Se apagan en Ajustes → Sonidos. */
+let tonoN = 0;
+export function tono(tipo = 'foco'){
+  if(!AJ.tonos || !actx || actx.state !== 'running') return;
+  try{
+    const t = actx.currentTime, n = tonoN++, var1 = 1 + (n === 0 ? 0 : ((n * 37) % 7 - 3) * .006), var2 = 1 + (((n * 53) % 5) - 2) * .05;
+    const pico = (tipo === 'elegir' ? .055 : .022) * var2 * (extra.narrando ? .5 : 1), dur = (tipo === 'elegir' ? .14 : .07) * (1 + (((n * 29) % 3) - 1) * .08);
+    const f = actx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 3200;
+    const g = actx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(pico, t + .004); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    const o = actx.createOscillator(); o.type = 'sine';
+    if(tipo === 'elegir'){ o.frequency.setValueAtTime(740 * var1, t); o.frequency.setValueAtTime(988 * var1, t + .05); }
+    else o.frequency.setValueAtTime(1175 * var1, t);
+    o.connect(g).connect(f).connect(actx.destination); o.start(t); o.stop(t + dur + .02);
+  }catch{}
+}
 export function sonar(n, vol = .5, aviso = false){ if(!aviso || !actx || !sonidos[n]) return; const s = actx.createBufferSource(), g = actx.createGain(); g.gain.value = vol; s.buffer = sonidos[n]; s.connect(g).connect(actx.destination); s.start(); }
 
 /* ── las vistas: el inicio (hub), el cine, los ajustes y las que vienen ── */
@@ -588,7 +610,7 @@ function cercaDe(o, r, m){
   const k = o.getWorldScale(_p.clone()).x || 1, mm = m / k;
   return Math.abs(_p.x) <= g.width / 2 + mm && Math.abs(_p.y) <= g.height / 2 + mm;
 }
-function darFoco(o){ if(foco === o) return; if(o && primerFoco === 'pendiente') primerFoco = o; else if(primerFoco !== 'pendiente') primerFoco = null; if(foco || !o) mirarBloqueado = false; foco?.userData.panel?.foco?.(false); foco = o; focoDesde = performance.now(); o?.userData.panel?.foco?.(true); }   /* sin «tiuk» al ver algo (Carlos, 19 nov) */
+function darFoco(o){ if(foco === o) return; if(o) tono('foco'); if(o && primerFoco === 'pendiente') primerFoco = o; else if(primerFoco !== 'pendiente') primerFoco = null; if(foco || !o) mirarBloqueado = false; foco?.userData.panel?.foco?.(false); foco = o; focoDesde = performance.now(); o?.userData.panel?.foco?.(true); }   /* sin «tiuk» al ver algo (Carlos, 19 nov) */
 function moverFoco(dx, dy){
   const L = elegibles(); if(!L.length) return;
   focoPorFlechas = performance.now(); ultimoGiro.copy(cabeza.quaternion);
@@ -599,7 +621,15 @@ function moverFoco(dx, dy){
     if(along <= .01) continue; const d = along + Math.abs(dx ? v.y : v.x) * 2; if(d < md){ md = d; mejor = o; } }
   if(mejor) darFoco(mejor);
 }
+/* ANTI-REBOTE Y ANTI-CASCADA (prompt maestro §2.3 y §2.4, todo Mazi ARE1):
+     · espera entre elecciones: AJ.enfriar ms (250): un mismo gesto no elige dos veces;
+     · tras elegir, nada se elige por pellizco durante 350 ms: si lo que cierra una ventana deja otro botón en el mismo
+       lugar, el MISMO pellizco no lo aprieta (y el pellizco tiene que soltarse antes de volver a contar);
+     · un poquito de «apachurrado» en lo que eliges, y su tono. */
+let ultimaEleccion = -1e9, pulso = null;
 function activar(o){ if(!o) return;
+  const ahoraA = performance.now(); if(ahoraA - ultimaEleccion < (AJ.enfriar ?? 250)) return; ultimaEleccion = ahoraA;
+  tono('elegir'); pulso = { o, t: ahoraA, esc: o.scale.clone() };
   /* lo que se repite mirándolo (las flechas de Ajustes): sin bloqueo, la siguiente vez a los 0.9 s */
   if(o.userData.repetir){ focoDesde = performance.now() - MIRAR_MS + 900; o.userData.accion?.(); return; }
   bloquearMirada(3000); o.userData.accion?.(); }   /* sin campanita al tocar (Carlos, 19 nov: «súper castroso») */
@@ -669,7 +699,16 @@ function cuadro(t){
     /* PELLIZCAR EL AIRE NO ELIGE NADA (Carlos, 19 nov: en MONARCH «se aburren, juegan con sus manos y omiten el video por
        accidente»): antes, sin nada bajo el rayo, el clic caía en lo último que tuvo el foco (el «Siguiente»). Ahora sólo
        cuenta lo que la mano apuntaba en ese instante. */
-    const o = quien?.objeto || antes?.[1]; if(o){ darFoco(o); activar(o); } usado.x = true; }
+    /* ESTABLE 200 ms (§2.3): el pellizco sólo cuenta si llevabas al menos AJ.estable ms apuntando a eso; y nada justo
+       después de otra elección (anti-cascada) */
+    const o = quien?.objeto || antes?.[1];
+    const est = AJ.estable ?? 200;
+    /* cerrar la mano ENTERA sobre algo (agarrar) ya es deliberado: cuenta lo que la mano apuntaba antes de cerrarse.
+       El pellizco y lo que se veía un instante antes sí tienen que llevar AJ.estable ms apuntando a eso */
+    const dePellizco = (extra.rayos || []).some((R) => R.pellizco && R.objeto === o), deAgarre = !!quien?.objeto && !dePellizco;
+    const estable = o && (deAgarre || (o === foco ? ahoraMs - focoDesde >= est : historialMira.filter(([t]) => ahoraMs - t <= est + 90 && ahoraMs - t >= 90).every(([, x]) => x === o)));
+    if(o && estable && ahoraMs - ultimaEleccion > 350){ darFoco(o); activar(o); } else if(o) extra.clicTemprano = ahoraMs;
+    usado.x = true; }
   /* MIRAR O APUNTAR FIJO 1.6 s ELIGE, SIEMPRE (Carlos, 18 nov: «si apunto hacia un elemento unos segundos, que se clique, además
      del pellizcar; y que se pueda seguir pulsando sólo quedándote viendo»): antes se apagaba con el control conectado o con
      las manos a la vista. Con las manos cuenta a lo que apunta el rayo principal; sin manos, a lo que ve la mira. */
@@ -685,6 +724,8 @@ function cuadro(t){
   if(anillo.visible){ anillo.geometry.dispose(); anillo.geometry = new THREE.RingGeometry(.016, .021, 48, 1, Math.PI / 2, -Math.min(1, fijo) * Math.PI * 2); }
   fijoAhora = fijo;
   if(fijo >= 1) activar(viendo);
+  /* el apachurrado de lo elegido: baja 6 % y regresa en 180 ms */
+  if(pulso){ const k = (performance.now() - pulso.t) / 180; if(k >= 1 || !pulso.o.parent){ pulso.o.scale.copy(pulso.esc); pulso = null; } else pulso.o.scale.copy(pulso.esc).multiplyScalar(1 - .06 * Math.sin(Math.PI * k)); }
   /* la vista de AHORA: si Círculo, la palma o un clic cambiaron de pantalla en este cuadro, la de antes ya salió y no
      le toca otro turno (Carlos, 18 nov: un sable morado gigante se quedaba flotando en el menú, porque Sables volvía a
      prenderlo después de su propio salir) */

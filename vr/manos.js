@@ -128,9 +128,17 @@ export async function iniciarManos(V){
     cand.forEach((c) => { c.nota = c.s * 4 + c.wy * .8; });
     /* CON LAS MANOS JUNTAS (Carlos, 18 nov: «si mis dos manos se acercan mucho, se rompe»): MediaPipe a veces ve la MISMA mano
        dos veces; si dos detecciones comparten muñeca y palma, se queda la mejor */
+    /* MANOS DOBLES AL MOVERSE RÁPIDO (prompt maestro de Carlos §2.1): con el movimiento, MediaPipe puede dar la misma mano
+       dos veces algo corridas, y entonces muñeca y palma ya no coinciden a 3.5 %. Ahora también es la misma si sus cajas
+       se TRASLAPAN mucho (más del 35 % de la chica) y dicen ser el mismo lado (o una lo dice con poca seguridad): dos manos
+       de verdad juntas casi siempre salen con lados distintos y seguros, así que ésas no se tocan */
+    const caja = (L) => { let x0 = 1, y0 = 1, x1 = 0, y1 = 0; for(const p of L){ x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); x1 = Math.max(x1, p.x); y1 = Math.max(y1, p.y); } return [x0, y0, x1, y1]; };
+    const traslape = (a, b) => { const [ax0, ay0, ax1, ay1] = caja(a), [bx0, by0, bx1, by1] = caja(b);
+      const i = Math.max(0, Math.min(ax1, bx1) - Math.max(ax0, bx0)) * Math.max(0, Math.min(ay1, by1) - Math.max(ay0, by0));
+      const chica = Math.min((ax1 - ax0) * (ay1 - ay0), (bx1 - bx0) * (by1 - by0)) || 1e-6; return i / chica; };
     const unicas = [];
     for(const c of cand.sort((a, b) => b.nota - a.nota))
-      if(!unicas.some((u) => Math.hypot(u.wx - c.wx, u.wy - c.wy) < .035 && Math.hypot(u.L[9].x - c.L[9].x, u.L[9].y - c.L[9].y) < .035)) unicas.push(c);
+      if(!unicas.some((u) => (Math.hypot(u.wx - c.wx, u.wy - c.wy) < .035 && Math.hypot(u.L[9].x - c.L[9].x, u.L[9].y - c.L[9].y) < .035) || (traslape(u.L, c.L) > .35 && (u.etiqueta === c.etiqueta || Math.min(u.seguro, c.seguro) < .8)))) unicas.push(c);
     const mias = unicas.slice(0, 2), asign = [null, null];
     /* y se reparten por la combinación que menos se movió, contando si es izquierda o derecha: antes cada ranura agarraba la
        primera mano que tuviera cerca, y juntas, una se robaba la de la otra y se cruzaban */

@@ -88,7 +88,7 @@ try{ const L = JSON.parse(localStorage.getItem('mazivr.errores') || '[]'), u = L
 /* LA VERSIÓN (Carlos, 19 nov: «un mensajito que diga la versión en la que estás y que se actualizó»). Va igual que la
    de sw.js (pruebas-sinred.mjs lo revisa). La primera vez que se abre una versión nueva dice «actualizada»; y si el
    trabajador de fondo ya trae una más nueva que esta página, recarga sola (sólo en la entrada, una vez) */
-const VERSION = 41;
+const VERSION = 42;
 { let antes = 0; try{ antes = +localStorage.getItem('mazivr.version') || 0; if(antes !== VERSION) localStorage.setItem('mazivr.version', VERSION); }catch{}
   const el = $('#version'); el.textContent = antes < VERSION ? `v${VERSION} · actualizada` : `v${VERSION}`; el.classList.toggle('nueva', antes < VERSION); }
 const versionSW = (n) => { if(!(n > VERSION) || document.body.classList.contains('dentro')) return;
@@ -261,10 +261,13 @@ async function montar(){
     ['Puntos', 'puntos', 0, 1, 1, (v) => v ? 'Sí' : 'No'],
     ['Límites', 'limites', 0, 1, 1, (v) => v ? 'Sí' : 'No'],
     ['Zona', 'zona', .5, 3, .25, (v) => `${(+v).toFixed(2)} m`],
+    ['Sonidos', 'tonos', 0, 1, 1, (v) => v !== false ? 'Sí' : 'No'],
+    ['Confirmar', 'estable', 0, 500, 50, (v) => `${v ?? 200} ms`],
+    ['Espera', 'enfriar', 100, 700, 50, (v) => `${v ?? 250} ms`],
     ['Borrar mapa', null],
     ['De fábrica', null],
   ];
-  const SIONO = new Set(['camVoltear', 'manos', 'manoModelo', 'fondo', 'seis', 'puntos', 'limites']);
+  const SIONO = new Set(['camVoltear', 'manos', 'manoModelo', 'fondo', 'seis', 'puntos', 'limites', 'tonos']);
   let fila = 0;
   const PX = 420, ALTO = 2.1, hoja = new V.Panel(1.5, ALTO, PX); hoja.malla.position.set(0, .05, -2.0); aj.grupo.add(hoja.malla);
   const yFila = (i) => 136 + i * 52;

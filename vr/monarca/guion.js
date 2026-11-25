@@ -37,6 +37,7 @@ export const ESCENAS = [
       { grande: { es: '4 semanas', en: '4 weeks' }, chico: { es: 'de huevo a adulta, en verano', en: 'egg to adult, in summer' }, en: .78, pos: [1.55, .02] }] },
   { id: 'flores', cielo: 'alps_field', monarca: 'vuela', juego: 'flores', titulo: { es: 'Flores en el camino', en: 'Flowers on the way' }, materias: ['bio', 'steam'],
     fuente: 'National Park Service', claves: [] },
+  { id: 'maceta', cielo: 'alps_field', juego: 'maceta', titulo: { es: 'Tu maceta', en: 'Your pot' }, materias: ['bio', 'steam'], claves: [] },
   { id: 'migracion', cielo: null, mapa: true, titulo: { es: 'La migración', en: 'The migration' }, materias: ['fis', 'bio', 'steam'],
     fuente: 'USFWS, 2024 · U.S. Forest Service',
     claves: [{ grande: '+3,000 km', chico: { es: 'desde el norte', en: 'from the north' }, en: .08, pos: [-1.3, .62] },
