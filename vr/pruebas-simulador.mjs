@@ -102,6 +102,21 @@ const a0 = await p.evaluate(() => __fisica.p.angulo); await pulsar(15);
 sí(await p.evaluate((a) => __fisica.p.angulo === a + 5, a0), '→ sube el ángulo');
 await pulsar(7);
 sí(await p.evaluate(() => __fisica.rastros.length === 1), 'R2 lanza');
+/* LOS TEMAS DE 3.er SEMESTRE: cada uno arranca, corre a medias, termina, deja su resultado y su foto */
+for(const [k, yaw] of [['circular', -.1], ['plano', -.1], ['pendulo', -.25], ['resorte', -.1], ['choque', -.1]]){
+  await p.evaluate((k) => { let n = 0; while(__fisica.modo !== k && n++ < 20) __fisica.botones.rModo.b.malla.userData.accion(); }, k);
+  const r = await p.evaluate(() => { __fisica.lanzar(); return { modo: __fisica.modo, corre: __fisica.corriendo, lanzar: __fisica.botones.lanzarB.dice.valor }; });
+  await p.waitForTimeout(900);
+  const medio = await p.evaluate(() => { const r = __fisica.rastros.at(-1); return { va: r.pts.geometry.drawRange.count, total: r.tiempos.length }; });
+  await foto('t-' + k, yaw, -.05);
+  const fin = await p.evaluate(() => { __fisica.terminar(); const L = __fisica.elegibles(); return { datos: __fisica.rastros.at(-1).marca.malla.visible, botones: L.length, mismos: __nodos.every((n) => __fisica.elegibles().includes(n) || !n.visible) }; });
+  sí(r.modo === k && r.corre && medio.va > 0 && medio.va <= medio.total && fin.datos, `${k}: arranca («${r.lanzar}»), se va dibujando (${medio.va} de ${medio.total}) y termina con su marca`);
+}
+sí(await p.evaluate(() => { __fisica.botones.reboteB.malla.userData.accion(); __fisica.lanzar(); __fisica.terminar(); const r = __fisica.rastros.at(-1).sim; return r.pegan === true && Math.abs(r.pAntes - r.pDespues) < 1e-9; }), 'choques: «Se pegan» cambia el tipo de choque y la cantidad de movimiento se conserva');
+await p.evaluate(() => __fisica.botones.reboteB.malla.userData.accion());
+sí(await p.evaluate(() => { let n = 0; while(__fisica.modo !== 'plano' && n++ < 20) __fisica.botones.rModo.a.malla.userData.accion(); __fisica.botones.rParam.ang.a.malla.userData.accion(); for(let i = 0; i < 6; i++) __fisica.botones.rParam.ang.a.malla.userData.accion(); __fisica.lanzar(); __fisica.terminar(); return __fisica.rastros.at(-1).sim.semueve === false; }), 'plano en 0° sin empuje: no se mueve (la fricción gana)');
+const nodosFin = await p.evaluate(() => { const L = [...__fisica.F_todos()]; return __nodos.every((n) => L.includes(n)); });
+sí(nodosFin, 'después de recorrer los 10 temas, los botones del principio siguen siendo los mismos nodos');
 /* la realidad mixta: el cuarto virtual no la tapa */
 await p.evaluate(() => { __vr.AJ.mixta = true; __vr.ir('juegos'); }); await p.waitForTimeout(200);
 await p.evaluate(() => __vr.ir('fisica')); await p.waitForTimeout(200);

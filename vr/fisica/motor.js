@@ -122,3 +122,74 @@ export function enInstante(sim, t){
   const a = P[lo], b = P[hi], f = (t - a.t) / Math.max(1e-9, b.t - a.t);
   return { t, x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f, vx: a.vx + (b.vx - a.vx) * f, vy: a.vy + (b.vy - a.vy) * f };
 }
+
+/* ══ LOS DEMÁS TEMAS DE FÍSICA DE 3.er SEMESTRE (Carlos, 26 nov: «cualquier otro que puedas creer que es parte de un plan de
+   estudios de una preparatoria… física de 3er semestre, bachillerato modalidad DGETI») ══
+   Lo que lleva Física en el bachillerato tecnológico: cinemática (MRU, MRUA, caída, tiros: arriba), movimiento circular,
+   las leyes de Newton con fricción y plano inclinado, trabajo y energía (y su conservación), la ley de Hooke con el
+   movimiento armónico, y la cantidad de movimiento en los choques. Cada uno devuelve sus puntos en el tiempo (para
+   animarlo y graficarlo) y los números que el alumno debería sacar a mano. */
+const muestrear = (tFin, f, dt = 1 / 120) => { const P = []; const n = Math.max(1, Math.ceil(tFin / dt)); for(let i = 0; i <= n; i++) P.push(f(Math.min(tFin, i * dt))); return P; };
+/* MOVIMIENTO CIRCULAR UNIFORME: radio r (m), periodo T (s) */
+export function circular({ r, T, vueltas = 2 }){
+  const w = 2 * Math.PI / T, v = w * r, ac = v * v / r;
+  const puntos = muestrear(vueltas * T, (t) => ({ t, th: w * t, x: r * Math.cos(w * t), y: r * Math.sin(w * t), v, ac }));
+  return { puntos, tVuelo: vueltas * T, w, v, ac, f: 1 / T, formula: 'v = 2πr / T     ω = 2π / T     a = v² / r' };
+}
+/* PLANO INCLINADO Y FUERZAS: ángulo θ (°), fricción μ, masa m (kg), empuje F (N, a lo largo del plano, hacia abajo),
+   largo L (m). Con θ = 0 es la segunda ley de Newton en el piso. Se toma el mismo μ para arrancar y para deslizar. */
+export function plano({ angulo, mu, m, F = 0, L = 5, g = GRAVEDADES.tierra }){
+  const th = angulo * RAD, P = m * g, N = P * Math.cos(th), Px = P * Math.sin(th), empuja = Px + F, fMax = mu * N;
+  const semueve = empuja > fMax + 1e-9, fr = semueve ? fMax : empuja, a = semueve ? (empuja - fMax) / m : 0;
+  const t = semueve ? Math.sqrt(2 * L / a) : 0, tFin = semueve ? t : 2;
+  const puntos = muestrear(tFin, (tt) => ({ t: tt, s: semueve ? .5 * a * tt * tt : 0, v: semueve ? a * tt : 0 }));
+  const vFin = a * t;
+  return { puntos, tVuelo: tFin, semueve, P, N, Px, fr, a, tBajar: t, vFin, trabajoFr: -fr * L * (semueve ? 1 : 0), trabajoNeto: (empuja - fr) * L * (semueve ? 1 : 0), Ec: .5 * m * vFin * vFin,
+    formula: 'ΣF = m·a     N = m·g·cosθ     f = μ·N     a = (m·g·senθ + F − f) / m' };
+}
+/* PÉNDULO Y ENERGÍA: largo L (m), ángulo inicial θ0 (°), masa m (kg). Sin aproximar senθ ≈ θ (RK4): la energía se
+   conserva y el periodo de ángulos grandes sale un poco más largo que 2π√(L/g), como en la realidad. */
+export function pendulo({ L, angulo, m, g = GRAVEDADES.tierra, oscilaciones = 2 }){
+  const T0 = 2 * Math.PI * Math.sqrt(L / g), dt = 1 / 240; let th = angulo * RAD, w = 0, t = 0;
+  const E = (th, w) => ({ Ec: .5 * m * (L * w) ** 2, Ep: m * g * L * (1 - Math.cos(th)) });
+  const al = (th) => -g / L * Math.sin(th);
+  const puntos = [{ t, th, w, ...E(th, w) }]; let cruces = 0, antes = th, tCruces = [];
+  while(t < oscilaciones * T0 * 1.3 && cruces < oscilaciones * 2 + 1){
+    const k1t = w, k1w = al(th), k2t = w + k1w * dt / 2, k2w = al(th + k1t * dt / 2), k3t = w + k2w * dt / 2, k3w = al(th + k2t * dt / 2), k4t = w + k3w * dt, k4w = al(th + k3t * dt);
+    th += dt / 6 * (k1t + 2 * k2t + 2 * k3t + k4t); w += dt / 6 * (k1w + 2 * k2w + 2 * k3w + k4w); t += dt;
+    if((antes > 0) !== (th > 0)){ cruces++; tCruces.push(t - dt * th / (th - antes)); } antes = th;
+    puntos.push({ t, th, w, ...E(th, w) });
+  }
+  const T = tCruces.length >= 3 ? tCruces[2] - tCruces[0] : T0;
+  const Etotal = m * g * L * (1 - Math.cos(angulo * RAD));
+  return { puntos, tVuelo: t, T, T0, Etotal, vMax: Math.sqrt(2 * g * L * (1 - Math.cos(angulo * RAD))), hMax: L * (1 - Math.cos(angulo * RAD)),
+    formula: 'Ec = ½·m·v²     Ep = m·g·h     Ec + Ep = constante     T ≈ 2π√(L/g)' };
+}
+/* RESORTE (LEY DE HOOKE) Y MOVIMIENTO ARMÓNICO: constante k (N/m), masa m (kg), estirado x0 (m), sin fricción */
+export function resorte({ k, m, x0, oscilaciones = 3 }){
+  const w = Math.sqrt(k / m), T = 2 * Math.PI / w;
+  const puntos = muestrear(oscilaciones * T, (t) => ({ t, x: x0 * Math.cos(w * t), v: -x0 * w * Math.sin(w * t), F: -k * x0 * Math.cos(w * t) }));
+  return { puntos, tVuelo: oscilaciones * T, w, T, F0: k * x0, Ep: .5 * k * x0 * x0, vMax: x0 * w, formula: 'F = −k·x     T = 2π√(m/k)     Ep = ½·k·x²' };
+}
+/* CHOQUES EN UNA LÍNEA: masas m1, m2 (kg) y velocidades v1, v2 (m/s; + a la derecha). Elástico (rebotan, se conserva la
+   energía) o se pegan (perfectamente inelástico). En los dos se conserva la cantidad de movimiento p = m·v.
+   Salen separados 3 m (el 1 en x = 0, el 2 en x = 3) y se ven 4 s. */
+export function choque({ m1, m2, v1, v2, pegan = false, sep = 3, tFin = 4 }){
+  let u1, u2;
+  if(pegan){ u1 = u2 = (m1 * v1 + m2 * v2) / (m1 + m2); }
+  else { u1 = ((m1 - m2) * v1 + 2 * m2 * v2) / (m1 + m2); u2 = ((m2 - m1) * v2 + 2 * m1 * v1) / (m1 + m2); }
+  const acerca = v1 - v2, tc = acerca > 0 ? sep / acerca : Infinity;
+  const puntos = muestrear(tFin, (t) => t < tc ? { t, x1: v1 * t, x2: sep + v2 * t, v1, v2 } :
+    { t, x1: v1 * tc + u1 * (t - tc), x2: sep + v2 * tc + u2 * (t - tc), v1: u1, v2: u2 });
+  const Ec = (a, b) => .5 * m1 * a * a + .5 * m2 * b * b;
+  return { puntos, tVuelo: tFin, tChoque: tc, u1, u2, pAntes: m1 * v1 + m2 * v2, pDespues: m1 * u1 + m2 * u2, EcAntes: Ec(v1, v2), EcDespues: Ec(u1, u2), chocan: tc <= tFin,
+    formula: 'p = m·v     m₁v₁ + m₂v₂ = m₁v₁′ + m₂v₂′' };
+}
+/* en el instante t, con cualquier serie de puntos que tenga t (búsqueda binaria e interpolación de todos los números) */
+export function enTiempo(sim, t){
+  const P = sim.puntos; if(t <= P[0].t) return P[0]; if(t >= P.at(-1).t) return P.at(-1);
+  let lo = 0, hi = P.length - 1; while(hi - lo > 1){ const mm = (lo + hi) >> 1; if(P[mm].t <= t) lo = mm; else hi = mm; }
+  const a = P[lo], b = P[hi], f = (t - a.t) / Math.max(1e-9, b.t - a.t), o = {};
+  for(const k in a) o[k] = typeof a[k] === 'number' ? a[k] + (b[k] - a[k]) * f : a[k];
+  return o;
+}
