@@ -21,7 +21,7 @@ export const esVideo = (u) => /\.(mp4|webm|m4v|mov|m3u8)(\?|#|$)/i.test(String(u
 export function crearPantallaWeb(V){
   const { THREE } = V;
   const capa = document.createElement('div');
-  capa.style.cssText = 'position:fixed; inset:0; z-index:3; pointer-events:none; display:none';
+  capa.className = 'capa-giro'; capa.style.cssText = 'position:fixed; inset:0; z-index:3; pointer-events:none; display:none';
   const ojos = [0, 1].map((i) => { const o = document.createElement('div'); o.style.cssText = `position:absolute; top:0; bottom:0; ${i ? 'right:0' : 'left:0'}; width:50%; overflow:hidden`; capa.appendChild(o); return o; });
   document.body.appendChild(capa);
   /* los dos videos se crean desde el principio para «desbloquearlos» con el toque de Entrar: el iPhone sólo deja sonar
@@ -94,6 +94,56 @@ export function crearPantallaWeb(V){
     montar(marcos[0], marcos[1]);
     V.hud('Si sale en blanco, ese sitio no se deja mostrar', 3);
   }
+  /* ── EL NAVEGADOR (Carlos, 25 nov: «tienes que meterle un navegador»): La Sala baja la página y la entrega limpia, sin
+     scripts, desde NUESTRA dirección (sala/servidor/web.js por la puerta de la Central). Así se ve aunque el sitio prohíba
+     mostrarse en otra página, y como es del mismo sitio, el visor puede bajarla y picarle a lo que apuntas: enlaces,
+     cajas de texto (con el teclado del visor), botones de buscar y listas. El marco va con `sandbox` sin scripts. ── */
+  const RUTA_WEB = new URL('/api/sala/vr/web', location.href).href;
+  const historial = []; let hIdx = -1, marcos = [];
+  const aWeb = (texto) => `${RUTA_WEB}?u=${encodeURIComponent(texto)}`;
+  function verNavegador(texto, titulo = ''){
+    limpiar(); modo = 'navegador'; estado.modo = modo; estado.titulo = titulo || texto;
+    marcos = [0, 1].map(() => { const f = document.createElement('iframe'); f.setAttribute('sandbox', 'allow-same-origin'); f.referrerPolicy = 'same-origin';
+      f.style.cssText = `position:absolute; left:0; top:0; width:${BASE_W}px; height:${BASE_H}px; transform-origin:0 0; border:0; background:#fff`; return f; });
+    marcos[0].addEventListener('load', () => { try{ const d = marcos[0].contentDocument; estado.titulo = d?.title || estado.titulo; estado.origen = d?.querySelector('meta[name="mazi-origen"]')?.content || ''; V.hud(estado.titulo.slice(0, 40), 1.6); }catch{} });
+    montar(marcos[0], marcos[1]);
+    historial.length = 0; hIdx = -1; irWeb(aWeb(texto));
+    V.hud('Cargando…', 4);
+  }
+  function irWeb(src, guardar = true){
+    if(guardar){ historial.splice(hIdx + 1); historial.push(src); hIdx = historial.length - 1; }
+    marcos.forEach((f) => { f.src = src; });
+  }
+  const doc = (i = 0) => { try{ return marcos[i]?.contentDocument || null; }catch{ return null; } };
+  /* el mismo elemento en el otro ojo: por su camino de hijos desde <html> */
+  function camino(el){ const r = []; while(el && el.parentElement){ r.unshift([...el.parentElement.children].indexOf(el)); el = el.parentElement; } return r; }
+  function enOtro(el){ const d = doc(1); if(!d) return null; let e = d.documentElement; for(const i of camino(el)){ e = e?.children[i]; } return e || null; }
+  function desplazar(dy){ marcos.forEach((f) => { try{ f.contentWindow.scrollBy(0, dy); }catch{} }); }
+  /* picar en (u, v) de la pantalla (0..1 desde arriba a la izquierda) → qué hay ahí */
+  function clicEn(u, v){
+    const d = doc(); if(!d) return null;
+    const el = d.elementFromPoint(u * BASE_W, v * BASE_H); if(!el) return null;
+    const campo = el.closest('input:not([type=submit]):not([type=button]):not([type=checkbox]):not([type=radio]):not([type=hidden]), textarea');
+    if(campo) return { tipo: 'texto', valor: campo.value || '', titulo: campo.placeholder || campo.name || 'Escribe', escribir: (t, enviar) => { campo.value = t; const o = enOtro(campo); if(o) o.value = t; if(enviar && campo.form) mandar(campo.form); } };
+    const sel = el.closest('select'); if(sel){ sel.selectedIndex = (sel.selectedIndex + 1) % Math.max(1, sel.options.length); const o = enOtro(sel); if(o) o.selectedIndex = sel.selectedIndex; return { tipo: 'lista', texto: sel.options[sel.selectedIndex]?.text }; }
+    const marca = el.closest('input[type=checkbox], input[type=radio]'); if(marca){ marca.checked = marca.type === 'radio' ? true : !marca.checked; const o = enOtro(marca); if(o) o.checked = marca.checked; return { tipo: 'marca' }; }
+    const btn = el.closest('button, input[type=submit]'); if(btn?.form){ mandar(btn.form, btn); return { tipo: 'enviar' }; }
+    const a = el.closest('a[href]');
+    if(a){ const h = a.getAttribute('href') || '';
+      if(h.startsWith('#')){ const id = decodeURIComponent(h.slice(1)); marcos.forEach((f, i) => { try{ doc(i)?.getElementById(id)?.scrollIntoView(); }catch{} }); return { tipo: 'ancla' }; }
+      irWeb(new URL(h, marcos[0].contentWindow.location.href).href); return { tipo: 'enlace', a: h }; }
+    return { tipo: 'nada' };
+  }
+  /* un formulario (buscar, filtrar…) se manda por la puerta con sus campos (web.js pega los campos a su acción) */
+  function mandar(form, boton){
+    const fd = new FormData(form); if(boton?.name) fd.append(boton.name, boton.value || '');
+    const q = new URLSearchParams(); for(const [k, v] of fd) if(typeof v === 'string') q.append(k, v);
+    if(!q.has('u')) q.set('u', form.dataset.maziAccion || estado.origen || '');
+    irWeb(`${RUTA_WEB}?${q}`);
+  }
+  const navAtras = () => { if(hIdx > 0){ hIdx--; irWeb(historial[hIdx], false); return true; } return false; };
+  const navAdelante = () => { if(hIdx < historial.length - 1){ hIdx++; irWeb(historial[hIdx], false); return true; } return false; };
+
   function abrir(url, titulo = ''){
     const id = deYouTube(url);
     if(id) return verYouTube(id, titulo);
@@ -104,13 +154,15 @@ export function crearPantallaWeb(V){
   /* ── control ── */
   const tiempo = () => modo === 'youtube' ? (yts[0]?.getCurrentTime?.() || 0) : videos[0].currentTime;
   function pausa(){
-    if(modo === 'youtube'){ const p = yts[0]?.getPlayerState?.() === 1; yts.forEach((y) => p ? y.pauseVideo() : y.playVideo()); return !p; }
+    if(modo === 'youtube'){ const p = yts[0]?.getPlayerState?.() === 1; yts.forEach((y) => p ? y.pauseVideo?.() : y.playVideo?.()); return !p; }
     if(modo === 'video'){ const p = !videos[0].paused; videos.forEach((v) => p ? v.pause() : v.play().catch(() => {})); return !p; }
     return true;
   }
+  /* el reproductor de YouTube no trae sus funciones hasta que está listo (onReady): un brinco con el control antes de
+     eso tronaba «y.seekTo is not a function» (captura de Carlos, v40, 25 nov). Antes de listo, no hace nada */
   function brincar(s){
     const t = Math.max(0, tiempo() + s);
-    if(modo === 'youtube') yts.forEach((y) => y.seekTo(t, true));
+    if(modo === 'youtube') yts.forEach((y) => y.seekTo?.(t, true));
     if(modo === 'video') videos.forEach((v) => { v.currentTime = t; });
   }
   /* el derecho persigue al izquierdo: en el visor, dos ojos con cuadros distintos se ven dobles */
@@ -145,6 +197,6 @@ export function crearPantallaWeb(V){
       if(!atras) elems[i].style.transform = matrizDe(BASE_W, BASE_H, d);
     });
   }
-  return { abrir, verVideo, verYouTube, verPagina, cerrar: () => { limpiar(); alSalir?.(); }, pausa, brincar, sincronizar, colocar, desbloquear, estado,
+  return { abrir, verVideo, verYouTube, verPagina, verNavegador, desplazar, clicEn, navAtras, navAdelante, irA: (t) => irWeb(aWeb(t)), get navegando(){ return modo === 'navegador'; }, cerrar: () => { limpiar(); alSalir?.(); }, pausa, brincar, sincronizar, colocar, desbloquear, estado,
     anclar: (malla) => { anclaje = malla; }, get activa(){ return !!modo; }, al: (f) => { alSalir = f; } };
 }

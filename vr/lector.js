@@ -516,7 +516,7 @@ export async function montarLector(V, { pedirTexto } = {}){
       if(c.oprimido[B.L1] && pagina > 0){ pagina--; pintarEstante(); }
       return {};
     }
-    if(fase !== 'leyendo'){ velStick = 0; return { x: true, flechas: true }; }
+    if(fase !== 'leyendo'){ velStick = 0; return { x: !!c.oprimidoPad[B.X], flechas: true };   /* (27 nov) el pellizco no es esta X: si no, nunca llegaba a los botones */ }
     if(moverCtl(c, dt)){ velStick = 0; return { x: true, flechas: true }; }
     /* los dos sticks leen; cuánto se empuje es qué tan rápido (al cuadrado: con poquito, despacio) */
     const a = Math.max(-1, Math.min(1, (c.ejes[1] || 0) + (c.ejes[3] || 0)));
@@ -528,7 +528,7 @@ export async function montarLector(V, { pedirTexto } = {}){
     if(c.oprimido[B.L1]) irCapitulo(-1);
     /* R2 cambia la distancia (cerca, normal, lejos); L2 apretado es mover y escalar (arriba) */
     if(c.oprimido[B.R2]){ dist = dist < 1.4 ? 1.5 : dist < 2 ? 2.2 : 1.2; ponerVentana(); V.hud(dist < 1.4 ? 'Cerca' : dist < 2 ? 'Normal' : 'Lejos', .8); }
-    return { x: true, flechas: true };
+    return { x: !!c.oprimidoPad[B.X], flechas: true };   /* (27 nov) el pellizco no es esta X: si no, nunca llegaba a los botones */
   };
   Object.defineProperty(lector, 'ocupaStick', { get: () => fase === 'leyendo' });
   Object.defineProperty(lector, 'ocupaGiro', { get: () => fase === 'leyendo' && V.control.apretado(B.L2) });

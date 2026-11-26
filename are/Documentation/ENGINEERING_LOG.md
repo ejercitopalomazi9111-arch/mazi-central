@@ -171,3 +171,38 @@ Niveles de prueba: **documentado** · **implementado** · **probado en navegador
   - **más seguido:** si el rastreo de manos tarda menos de 14 ms, corre en cada cuadro (antes, uno sí y uno no).
 - **Pruebas:** `vr/pruebas-manos-estables.mjs` 10/10 (mano sana pasa tal cual; índice estirado al doble y medio doblado al revés se quedan en su forma buena; volteo de un cuadro se ignora y uno que se mantiene se acepta; 3 lecturas de «izquierda» no cambian la derecha y 8 sí; un puño de verdad no se confunde). Las de manos, gestos, agarrar, sables y objetos siguen en verde.
 - **Nivel:** probado en Node con manos inventadas. **Falta:** las manos de Carlos.
+
+---
+
+## 014 · ¿Cómo lo resolvió Pokémon GO? (25 nov 2026, pedido de Carlos)
+
+- **Pregunta de Carlos:** «investiga y utiliza exactamente el mismo sistema que utiliza Pokémon Go para poner los Pokémones fijos y que tú te puedas mover alrededor de ellos… haz ingeniería inversa».
+- **Lo que dice la fuente oficial:** «AR+ leverages Apple’s ARKit framework… With AR+, Pokémon are now fixed to a point in space, meaning you can walk up close to a Pokémon» (pokemongolive.com/post/arplus, 20 dic 2017, leída el 25 nov 2026; iOS 11 en iPhone 6s o más nuevo). En Android hacen lo mismo con **ARCore** (el equivalente de Google). Y la documentación de Google: «WebXR uses ARCore to power AR experiences on the Google Chrome browser on Android devices» (developers.google.com/ar/develop/webxr, leída el 25 nov 2026).
+- **La ingeniería inversa, en corto:** Pokémon GO no tiene un rastreo propio. Le pide al **sistema operativo** la pose 6DoF (ARKit en iPhone, ARCore en Android), que fusiona cámara e IMU con la **calibración de fábrica de cada modelo de teléfono** y detecta el piso. El Pokémon se pone sobre un **plano detectado** y se queda en un **ancla**; el modo viejo «AR» (sin el +) sólo usaba el giroscopio: el Pokémon giraba contigo pero no podías acercarte. Es exactamente la diferencia entre nuestro 3DoF y el 6DoF.
+- **Qué significa para nosotros:**
+
+| Teléfono | Lo que usa Pokémon GO | Lo que puede usar una PÁGINA web | Ruta |
+|---|---|---|---|
+| Android con Chrome | ARCore | **El mismo ARCore**, por WebXR `immersive-ar` (con `hit-test` y anclas) | **Implementar** (R1 de INVESTIGACION-XR): la misma calidad que Pokémon GO, desde la web |
+| iPhone | ARKit | **Nada**: Safari no expone ARKit ni WebXR | La app nativa `are/MaziXR.swiftpm` (Hito 03) es la vía Pokémon GO; nuestro VIO web (visloc-rs) queda de respaldo |
+
+- **Lo que sí se copia de su diseño, aunque no tengamos ARKit en la web:** (1) **primero encontrar el piso**: AR+ pide mover el teléfono hasta ver una superficie antes de poner al Pokémon; nosotros ponemos lo virtual antes de que el VIO esté firme. (2) **anclar a un plano**, no a la pose del primer cuadro. (3) si el rastreo se pierde, **congelar** lo anclado en vez de dejarlo nadar.
+- **8th Wall:** el repositorio abierto (github.com/8thwall/8thwall, MIT) dice «SLAM is distributed separately under a binary-only license»: el rastreo NO es abierto. **AlvaAR:** GPLv3 y sólo visual (sin IMU). Ninguna cambia la conclusión.
+- **Nivel:** documentado. **Siguiente:** sesión WebXR `immersive-ar` en Android dentro del motor (pose de ARCore + nuestro estéreo pintado en la capa de XR, con la cámara como textura por ojo), y el paso «encuentra el piso» en el VIO del iPhone.
+
+## 015 · ARCore de fábrica en Mazi VR (26 nov 2026, v47)
+
+- **Qué se hizo:** al tocar «Entrar», si el teléfono abre `immersive-ar` (Chrome de Android con ARCore), Mazi VR entra por
+  WebXR: la **pose 6DoF la da ARCore** (como Pokémon GO, entrada 014) y la **imagen de la cámara** llega por
+  `camera-access`. Los dos ojos del visor de cartón siguen siendo nuestros (lente, separación, campo de Ajustes): se
+  pintan opacos en el búfer de la sesión, así que la imagen de ARCore de atrás no se ve.
+- **Piezas:** `vr/arcore.js` (abrir la sesión dentro del toque, el ciclo de la sesión, la cámara como `ExternalTexture`,
+  una copia de 320 px para MediaPipe), `vr/vr.js` (`ar`, `fuenteManos`, `usarCamaraAR`, `cuadroExterno`, la pose en
+  `leerCabeza` y el destino del pintado), `vr/manos.js` (lee de `fuenteManos` en AR). Ajustes → «ARCore» lo apaga.
+- **Lo que se mantiene:** sin ARCore (iPhone, computadora) o si algo falla al abrir, se entra como siempre (giroscopio,
+  `getUserMedia`, el 6DoF propio de `seis.js`). Al salir de la sesión, el ciclo vuelve a la ventana y la cámara de siempre.
+- **Probado con una sesión de mentira** con la forma que da Chrome (`vr/pruebas-arcore.mjs`, 15/15): la pose mueve la
+  cabeza, la cámara llega a la mixta y a las manos, y salir regresa al modo de siempre. **No probado en un Android real:**
+  lo prueba Carlos. Lo que puede fallar ahí: el sentido de la imagen de la cámara (Ajustes → «Voltear cámara»), que el
+  teléfono no dé `camera-access` (entonces sin manos ni mixta, lo avisa), y la capa web encima (`dom-overlay` con el `body`).
+- **El iPhone no:** Safari no trae WebXR. Ahí ARKit sólo se alcanza con una app nativa (entrada 014).

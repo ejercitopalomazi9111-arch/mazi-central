@@ -58,7 +58,7 @@ export async function iniciarManos(V){
 
   let ultimoT = -1, cuadroN = 0, enfriar = 0;
   /* donde la palma NO es «Atrás»: las manos están jugando (ver abajo, «PALMA ARRIBA») */
-  const PALMA_NO = ['sables', 'monarca', 'taller'];
+  const PALMA_NO = ['monarca'];   /* (27 nov) Carlos: «en todo menos monarch» */
   const v3 = new THREE.Vector3(), origen = new THREE.Vector3(), dir = new THREE.Vector3();
   /* de un punto de la imagen (0..1) y la distancia estimada, a un punto en el espacio de la cabeza */
   /* aEspacio vive en mano3d.js (con la profundidad al derecho y su prueba) */
@@ -99,23 +99,31 @@ export async function iniciarManos(V){
   function filtrarW(m, W){ if(!W) return W; if(!m.fW){ m.fW = W.map((q) => ({ x: q.x, y: q.y, z: q.z })); return m.fW.map((q) => ({ ...q })); }
     m.fW.forEach((P, i) => { P.x += (W[i].x - P.x) * .6; P.y += (W[i].y - P.y) * .6; P.z += (W[i].z - P.z) * .6; }); return m.fW.map((q) => ({ ...q })); }
   estado.cuadro = (t) => {
-    const video = V.video, ahora = performance.now();
+    /* con ARCore la cámara la tiene la sesión: llega en chiquito por V.fuenteManos (arcore.js) */
+    const video = V.fuenteManos?.activa ? V.fuenteManos : V.video, ahora = performance.now();
     if(!V.hayCamara() || !V.AJ.manos || video.readyState < 2){ manos.forEach((m) => { m.g.visible = false; }); rayosVis.forEach((x) => { x.linea.visible = x.cursor.visible = false; }); V.extra.rayo = null; V.extra.rayos = []; V.extra.manos = []; V.extra.camSinc = false; manos3d?.esconder(0); manos3d?.esconder(1); return; }
     /* un cuadro sí y uno no: en el iPhone el rastreo cuesta y la pantalla va a 60 */
     /* y si el teléfono va lento (el rastreo tarda más de 28 ms), uno de cada tres: que el visor no se trabe por las manos */
     /* MÁS SEGUIDO SI SE PUEDE (guía de Carlos: «aumentar la frecuencia del tracking»): si el rastreo tarda menos de 14 ms,
        en cada cuadro; si tarda más, uno sí y uno no; si pasa de 28 ms, uno de cada tres */
-    if(++cuadroN % (estado.ms > 28 ? 3 : estado.ms > 14 ? 2 : 1) || video.currentTime === ultimoT) return;
+    /* (26 nov) nunca uno de cada TRES: con el teléfono ocupado, un pellizco rápido cabía entero en el hueco y se perdía */
+    if(++cuadroN % (estado.ms > 14 ? 2 : 1) || (video.currentTime === ultimoT && !window.__detectorFalso)) return;
+    /* con la cámara del App Clip (modo ligero) MediaPipe corre máximo 10 veces por segundo: tarda ~27 ms y comparte hilo con el dibujo */
+    if(V.ar?.enLienzo && performance.now() - (estado.ultimaDeteccion || 0) < 100 && !window.__detectorFalso) return;
+    estado.ultimaDeteccion = performance.now();
     ultimoT = video.currentTime;
     const t0 = performance.now(); let r;
-    try{ r = lm.detectForVideo(video, ahora); }catch(e){ estado.error = String(e?.message || e); V.extra.camSinc = false; return; }
+    try{ r = window.__detectorFalso ? window.__detectorFalso(ahora) : lm.detectForVideo(video.canvas || video, ahora); }   /* la persona simulada (vr/persona/) mete sus manos aquí */catch(e){ estado.error = String(e?.message || e); V.extra.camSinc = false; return; }
     estado.ms = Math.round(performance.now() - t0);
     /* LA IMAGEN Y LOS PUNTOS, DEL MISMO CUADRO (fotos de Carlos, 19 nov en la noche: los puntos iban un paso atrás de su mano
        y los dedos salían cortos). El rastreo corre uno de cada dos o tres cuadros y la cámara se pintaba en TODOS: la
        imagen se adelantaba a los puntos. Con una mano a la vista en la mixta, la cámara sólo se repinta cuando hubo
        rastreo (vr.js), así lo que ves y lo que se dibuja encima son la misma foto. */
     V.extra.camFresco = true; V.extra.camSinc = !!V.AJ.mixta && r.landmarks.length > 0;
-    const asp = video.videoWidth / video.videoHeight, tx = Math.tan(V.campoCamara() * Math.PI / 360), ty = tx / asp;
+    /* ACOSTADO (vr.js): la vista va acostada y la cámara da la imagen en vertical; las marcas se giran a la vista:
+       (x, y) → (y, 1 − x), y el campo de la cámara se cambia de eje */
+    const asp0 = video.videoWidth / video.videoHeight, tx0 = Math.tan(V.campoCamara() * Math.PI / 360), giraM = !!V.estaAcostado?.() && asp0 < 1;
+    const asp = giraM ? 1 / asp0 : asp0, tx = giraM ? tx0 / asp0 : tx0, ty = tx / asp;
     const voltear = V.AJ.camVoltear;
     estado.manos = r.landmarks.length; estado.gesto = '';
     const botones = []; const visibles = [];
@@ -123,14 +131,23 @@ export async function iniciarManos(V){
        hasta 4 y se quedan las dos que son tuyas: las más grandes (más cerca de la cámara) y las que entran por abajo
        de la imagen (de tu cuerpo). Cada una sigue en su lugar mientras se mueva poco entre cuadros */
     const hd = r.handedness || r.handednesses || [];
-    const cand = r.landmarks.map((l, i) => { const L = voltear ? l.map((p) => ({ x: 1 - p.x, y: 1 - p.y, z: p.z })) : l;
-      return { L, W: r.worldLandmarks?.[i], s: tamano(L, asp), wx: L[0].x, wy: L[0].y, etiqueta: hd[i]?.[0]?.categoryName || '', seguro: hd[i]?.[0]?.score ?? 0 }; });
+    const cand = r.landmarks.map((l, i) => { const L0 = voltear ? l.map((p) => ({ x: 1 - p.x, y: 1 - p.y, z: p.z })) : l, L = giraM ? L0.map((p) => ({ x: p.y, y: 1 - p.x, z: p.z })) : L0;
+      const Wr = r.worldLandmarks?.[i];   /* (como antes: sin voltear; sólo se gira si va acostado) */
+      return { L, W: Wr && giraM ? Wr.map((p) => ({ x: p.y, y: -p.x, z: p.z })) : Wr, s: tamano(L, asp), wx: L[0].x, wy: L[0].y, etiqueta: hd[i]?.[0]?.categoryName || '', seguro: hd[i]?.[0]?.score ?? 0 }; });
     cand.forEach((c) => { c.nota = c.s * 4 + c.wy * .8; });
     /* CON LAS MANOS JUNTAS (Carlos, 18 nov: «si mis dos manos se acercan mucho, se rompe»): MediaPipe a veces ve la MISMA mano
        dos veces; si dos detecciones comparten muñeca y palma, se queda la mejor */
+    /* MANOS DOBLES AL MOVERSE RÁPIDO (prompt maestro de Carlos §2.1): con el movimiento, MediaPipe puede dar la misma mano
+       dos veces algo corridas, y entonces muñeca y palma ya no coinciden a 3.5 %. Ahora también es la misma si sus cajas
+       se TRASLAPAN mucho (más del 35 % de la chica) y dicen ser el mismo lado (o una lo dice con poca seguridad): dos manos
+       de verdad juntas casi siempre salen con lados distintos y seguros, así que ésas no se tocan */
+    const caja = (L) => { let x0 = 1, y0 = 1, x1 = 0, y1 = 0; for(const p of L){ x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); x1 = Math.max(x1, p.x); y1 = Math.max(y1, p.y); } return [x0, y0, x1, y1]; };
+    const traslape = (a, b) => { const [ax0, ay0, ax1, ay1] = caja(a), [bx0, by0, bx1, by1] = caja(b);
+      const i = Math.max(0, Math.min(ax1, bx1) - Math.max(ax0, bx0)) * Math.max(0, Math.min(ay1, by1) - Math.max(ay0, by0));
+      const chica = Math.min((ax1 - ax0) * (ay1 - ay0), (bx1 - bx0) * (by1 - by0)) || 1e-6; return i / chica; };
     const unicas = [];
     for(const c of cand.sort((a, b) => b.nota - a.nota))
-      if(!unicas.some((u) => Math.hypot(u.wx - c.wx, u.wy - c.wy) < .035 && Math.hypot(u.L[9].x - c.L[9].x, u.L[9].y - c.L[9].y) < .035)) unicas.push(c);
+      if(!unicas.some((u) => (Math.hypot(u.wx - c.wx, u.wy - c.wy) < .035 && Math.hypot(u.L[9].x - c.L[9].x, u.L[9].y - c.L[9].y) < .035) || (traslape(u.L, c.L) > .35 && (u.etiqueta === c.etiqueta || Math.min(u.seguro, c.seguro) < .8)))) unicas.push(c);
     const mias = unicas.slice(0, 2), asign = [null, null];
     /* y se reparten por la combinación que menos se movió, contando si es izquierda o derecha: antes cada ranura agarraba la
        primera mano que tuviera cerca, y juntas, una se robaba la de la otra y se cruzaban */
@@ -143,12 +160,19 @@ export async function iniciarManos(V){
       const c = asign[k];
       /* perdida un instante: se sostiene como iba (no se suelta lo agarrado, el cursor no parpadea) */
       if(!c && m.info && ahora - (m.vistaEn || 0) < 350){ m.info.estimada = true; visibles.push(m.info); return; }
-      if(!c){ manos3d?.esconder(k); m.g.visible = false; m.pellizco = false; m.palmaDesde = 0; m.suave = null; m.ult = null; m.info = null; m.fijo = null; m.hist = null; m.etiqueta = ''; m.G = null; m.filtro = null; m.filtroDibujo = null; m.fW = null; m.estable = crearEstable(); return; }
+      if(!c){ manos3d?.esconder(k); m.g.visible = false; m.pellizco = false; m.palmaDesde = 0; m.suave = null; m.ult = null; m.info = null; m.fijo = null; m.hist = null; m.etiqueta = ''; m.G = null; m.filtro = null; m.filtroDibujo = null; m.fW = null; m.distSuave = 0; m.estable = crearEstable(); return; }
       m.vistaEn = ahora;
       /* antes de suavizar: dedos inventados, palma volteada de golpe y lado que brinca (manos-estables.js) */
       const E = m.estable.paso(c.L, c.W, c.etiqueta, c.seguro); m.dudosos = E.dudosos; m.sostenida = E.sostenida;
       const L = filtrar(m, E.L, ahora); m.ult = { x: c.wx, y: c.wy }; m.W = filtrarW(m, E.W); if(E.lado) m.etiqueta = E.lado;
-      const s = tamano(L, asp), dist = Math.min(1.2, Math.max(.15, .085 / (s * 2 * tx)));
+      /* A QUÉ DISTANCIA ESTÁ LA MANO (26 nov, lo cazó la persona simulada): antes salía de lo largo que se VE la palma en la
+         imagen; al apuntar hacia adelante la palma se ve corta (escorzo) y la mano parecía al doble de lejos: la mano 3D salía
+         chiquita y lejos y el dedo nunca «tocaba» nada. Ahora se compara la mano EN METROS de MediaPipe (W, que no se acorta)
+         contra lo que mide en la imagen, punto por punto, sólo en el plano de la imagen: el escorzo se cancela */
+      const s = tamano(L, asp); let dist = .085 / (s * 2 * tx);
+      if(m.W){ let num = 0, den = 0; for(let i = 1; i < 21; i++){ num += Math.hypot(m.W[i].x - m.W[0].x, m.W[i].y - m.W[0].y); den += Math.hypot(2 * tx * (L[i].x - L[0].x), 2 * ty * (L[i].y - L[0].y)); }
+        if(den > 1e-6 && num > 1e-4){ const dW = num / den; m.distSuave = m.distSuave ? m.distSuave + (dW - m.distSuave) * .35 : dW; dist = m.distSuave; } }
+      dist = Math.min(1.2, Math.max(.15, dist));
       /* EN tu mano (Carlos, 18 nov): con la mixta, la imagen de la cámara está pintada al fondo (a 20 m) y cada ojo la ve en el
          mismo lugar; los puntos se ponen a esa misma distancia y en la misma dirección, así caen justo encima de tu mano y no
          se desdoblan entre ojos. Sin la mixta no se ve tu mano: se dibujan a la distancia que se calcula, como una mano virtual */
@@ -156,6 +180,10 @@ export async function iniciarManos(V){
       const Ld = mixta ? filtrar(m, E.L, ahora, 'filtroDibujo', UE_DIBUJO, false) : L;
       const nuevos = Ld.map((p) => mixta ? aEspacio({ x: p.x, y: p.y, z: 0 }, lejos, tx, ty, new THREE.Vector3()) : aEspacio(p, dist, tx, ty, new THREE.Vector3()));
       m.suave = nuevos;   /* ya viene filtrado (un euro): sin otra capa de retraso */
+      /* LA PUNTA QUE VES (Carlos, 26 nov: «mi dedo índice es lo que va a tratar de apuntar»; «ahora como que apuntas con el
+         centro de tu palma»): el rayo y el toque salen de la punta del índice que se DIBUJA (la del modelo 3D si está
+         puesto, si no la de los puntos). Antes el rayo usaba su propia punta y no caía en el dedo que veías. */
+      m.punta3d = m.suave[8].clone(); m.kMixta = mixta ? lejos / dist : 1;
       m.mixta = mixta;
       m.suave.forEach((q, i) => { m.pts[i].position.copy(q); m.pts[i].scale.setScalar(q.length() * (i === 8 || i === 4 ? .0062 : .0042)); });
       const pos = m.lin.geometry.attributes.position; HUESOS.forEach(([a, b], i) => { pos.setXYZ(i * 2, ...m.suave[a].toArray()); pos.setXYZ(i * 2 + 1, ...m.suave[b].toArray()); }); pos.needsUpdate = true;
@@ -165,27 +193,35 @@ export async function iniciarManos(V){
          mismo lugar y no se desdobla entre ojos). MediaPipe da la mano como si la imagen fuera de selfie (en espejo):
          con la cámara de atrás, su «Left» es tu mano derecha. */
       const modelo = conModelo(); m.lin.visible = !modelo; m.pts.forEach((b, i) => { b.visible = !modelo || i === 4 || i === 8; });
-      if(modelo){ const k3 = mixta ? lejos / dist : 1, P3 = Ld.map((p) => aEspacio(p, dist, tx, ty, new THREE.Vector3()).multiplyScalar(k3));
+      if(modelo){ const k3 = mixta ? lejos / dist : 1, P3 = Ld.map((p) => aEspacio(p, dist, tx, ty, new THREE.Vector3()).multiplyScalar(k3)); P3.k3 = k3;
         if(ahora - (m.visto3d || 0) > 600) m.lado3d = {}; m.visto3d = ahora;   /* mano nueva: decide otra vez */
-        manos3d.poner(k, P3, elegirLado(m.lado3d, ladoPorForma(THREE, P3), (m.etiqueta || c.etiqueta) === 'Right' ? 'izq' : 'der'), mixta); }
+        const pm = manos3d.poner(k, P3, elegirLado(m.lado3d, ladoPorForma(THREE, P3), (m.etiqueta || c.etiqueta) === 'Right' ? 'izq' : 'der'), mixta); if(pm) m.punta3d = pm.clone(); }
       else manos3d?.esconder(k);
       /* los gestos */
-      const G = leer(L, asp); m.G = G;
+      const G = leer(L, asp, m.W); m.G = G;
       /* el pellizco con la mano EN 3D (metros, de MediaPipe): de frente la punta del pulgar tapa a la del índice y en la
          imagen plana nunca «se tocaban» (por eso no jalaba pellizcar) */
       const W = m.W;
       /* más fácil de captar (Carlos, 18 nov: «a veces no lo captura»): cuenta si se tocan en 3D o en la imagen */
-      if(W){ const p3 = d3(W[4], W[8]); G.pellizca = !G.puno && (p3 < .038 || G.pinza < .3); G.suelta = G.puno || (p3 > .058 && G.pinza > .45); G.pinza3 = p3; }
+      /* SOLTAR (26 nov, lo cazó la persona simulada): pedía separar los dedos MÁS de 5.8 cm en 3D Y en la imagen; al regresar a
+         apuntar con el pulgar recogido (lo normal) quedan a 4-5 cm y el pellizco no se soltaba nunca: el rayo se quedaba
+         congelado en el botón de antes y ya no se podía elegir otro. Ahora basta con separarlos (4.6 cm, o en la imagen) */
+      if(W){ const p3 = d3(W[4], W[8]); G.pellizca = !G.puno && (p3 < .035 || (G.pinza < .2 && p3 < .055));   /* (27 nov) en la imagen plana, al mover la mano el pulgar «tapa» al índice: ya no basta con eso solo */ G.suelta = G.puno || p3 > .046 || G.pinza > .42; G.pinza3 = p3; }
       /* puño arriba y abajo 4 veces: el menú se vuelve a poner enfrente de donde miras */
       /* AGARRAR UN BOTÓN ES CLIC (Carlos, 19 nov: «casi casi trato de agarrar el botón para que salga y aún así no quiere»):
          cerrar la mano encima de un botón se leía como puño y no hacía nada. Ahora, si la mano apuntaba a un botón hace un
          momento y se cierra, es clic sobre ESE botón. */
-      const cierra = G.puno && !m.punoAntes; m.punoAntes = G.puno;
-      if(cierra && m.objetoAntes && ahora - (m.objetoEn || 0) < 450 && !V.extra.gestosVideo){ m.agarro = ahora; botones[V.B.X] = true; estado.gesto = 'agarrar'; }
+      /* …PERO SÓLO UN PUÑO DE VERDAD (26 nov, lo cazó la persona simulada): al soltar un pellizco la mano pasa un instante por
+         una forma de puño, y eso elegía lo último que el dedo había tocado de pasada (entraba a Sables queriendo Física).
+         Ahora el puño tiene que sostenerse 200 ms y no venir de soltar un pellizco (800 ms) */
+      if(G.puno){ m.punoDesde ||= ahora; } else m.punoDesde = 0;
+      const punoFirme = G.puno && ahora - m.punoDesde >= 200 && ahora - (m.soltoEn || 0) > 800;
+      const cierra = punoFirme && !m.punoAntes; m.punoAntes = punoFirme;
+      if(false && cierra && m.objetoAntes && ahora - (m.objetoEn || 0) < 650 && !V.extra.gestosVideo){   /* (27 nov) APAGADO: con el dedo apuntando, MediaPipe a veces lee «puño» y eso daba clics que nadie hizo. Sólo el pellizco elige */ m.agarro = ahora; botones[V.B.X] = true; estado.gesto = 'agarrar'; }
       if(m.puno(G.puno, L[0].y, ahora)){ V.recentrar(); V.hud('Centrado', 1.2); V.sonar('ding', .3); }
-      if(!m.pellizco && G.pellizca) m.pellizco = true; else if(m.pellizco && G.suelta) m.pellizco = false;
+      if(!m.pellizco && G.pellizca){ m.pellizco = true; m.pellizcoBoton = !!(V.extra.sobreBoton || V.brilloHace?.(300)); } else if(m.pellizco && (G.suelta || G.puno)){ m.pellizco = false; m.soltoEn = ahora; }
       /* donde la vista usa el pellizco para otra cosa (el video, leer), sólo es clic si apuntas a un botón */
-      if(m.pellizco){ if(!V.extra.gestosVideo || V.extra.sobreBoton) botones[V.B.X] = true; estado.gesto = 'pellizco'; }
+      if(m.pellizco){ if(!V.extra.gestosVideo || V.extra.sobreBoton || m.pellizcoBoton) botones[V.B.X] = true; estado.gesto = 'pellizco'; }
       const muneca = L[0], ix = L[8], tp = L[4];
       /* la mano en el espacio, aproximada (para el rayo y para los sables): palma, punta del medio y muñeca */
       const est = (q) => cabeza.localToWorld(aEspacio(q, dist, tx, ty, new THREE.Vector3()));
@@ -211,12 +247,19 @@ export async function iniciarManos(V){
            · no cuenta donde las manos se usan para jugar (Sables, MONARCH, el Taller): ahí se sale con el control o el menú;
            · hay que sostenerla 1.5 s y QUIETA (si la muñeca se mueve más de 4 % de la imagen, se vuelve a empezar);
            · a la mitad sale «Atrás…» en el HUD: si no era tu intención, bajas la mano y no pasa nada. */
-      const palmaVale = G.palma && !m.pellizco && !PALMA_NO.includes(V.ahora?.());
+      /* (27 nov) DE VUELTA, con Carlos: «pulsar atrás en objetos no funciona; vuelve a poner el gesto de atrás en todo menos
+         monarch, mirando abajo con palma abierta y quedándote quieto, y que se vayan poniendo los … dentro de la espera para
+         evitar regresar si no quiere el jugador». Lo apagamos el 26 porque cualquiera deja la mano abierta viendo qué pasa;
+         ahora pide TRES cosas a la vez: cabeza agachada (más de ~27°), mano abierta y quieta. Los puntos van saliendo
+         («Atrás.», «Atrás..», «Atrás...») y a los 1.6 s regresa; si levantas la vista, cierras o mueves la mano, se borra. */
+      const adelante = v3.set(0, 0, -1).applyQuaternion(cabeza.getWorldQuaternion(new THREE.Quaternion()));
+      const palmaVale = G.palma && !m.pellizco && adelante.y < -.45 && !PALMA_NO.includes(V.ahora?.());
       if(palmaVale){
-        if(!m.palmaDesde || Math.hypot(muneca.x - m.palmaEn.x, muneca.y - m.palmaEn.y) > .04){ m.palmaDesde = ahora; m.palmaEn = { x: muneca.x, y: muneca.y }; m.palmaAviso = false; }
-        if(!m.palmaAviso && ahora - m.palmaDesde > 750){ m.palmaAviso = true; V.hud('Atrás…', .9); }
-        if(ahora - m.palmaDesde > 1500 && ahora > enfriar){ botones[V.B.O] = true; enfriar = ahora + 2500; m.palmaDesde = 0; estado.gesto = 'palma'; }
-      } else m.palmaDesde = 0;
+        if(!m.palmaDesde || Math.hypot(muneca.x - m.palmaEn.x, muneca.y - m.palmaEn.y) > .04){ if(m.palmaPuntos) V.callarHud?.(); m.palmaDesde = ahora; m.palmaEn = { x: muneca.x, y: muneca.y }; m.palmaPuntos = 0; }
+        const n = Math.min(3, Math.floor((ahora - m.palmaDesde) / 400));
+        if(n > m.palmaPuntos){ m.palmaPuntos = n; V.hud('Atrás' + '.'.repeat(n), 1); }
+        if(ahora - m.palmaDesde > 1600 && ahora > enfriar){ botones[V.B.O] = true; enfriar = ahora + 2500; m.palmaDesde = 0; m.palmaPuntos = 0; estado.gesto = 'palma'; V.sonar?.('ding', .3); }
+      } else { if(m.palmaPuntos) V.callarHud?.(); m.palmaDesde = 0; m.palmaPuntos = 0; }
     });
     V.extra.botones = botones; V.extra.manos = visibles;
     /* UN RAYO POR MANO (Carlos, 18 nov: «solamente aparece un rayo a la vez; haz que sea el derecho o que los dos tengan»).
@@ -233,28 +276,40 @@ export async function iniciarManos(V){
          que sale del dedo en 3D se desdobla, uno por ojo. Y la punta en la imagen se ve aunque el dedo apunte de frente,
          que es justo cuando su dirección 3D falla. */
       const I = m.info, o = cabeza.getWorldPosition(new THREE.Vector3()), d = new THREE.Vector3();
-      if(m.suave?.[8]) d.copy(cabeza.localToWorld(m.suave[8].clone())).sub(o).normalize(); else d.copy(I.mundo.dedo).sub(o).normalize();
+      if(m.punta3d) d.copy(cabeza.localToWorld(m.punta3d.clone())).sub(o).normalize(); else d.copy(I.mundo.dedo).sub(o).normalize();
+      /* dónde está tu dedo DE VERDAD (para tocar los botones con él): la punta sin llevarla al fondo de la mixta */
+      const dedo = m.punta3d ? cabeza.localToWorld(m.punta3d.clone().divideScalar(m.kMixta || 1)) : I.mundo.dedo.clone();
       /* AL PELLIZCAR EL RAYO SE CONGELA (Carlos, 18 nov: «cuando apunto y hago el click no sirve»): para juntar los dedos el
          índice se dobla hacia el pulgar y el rayo se iba para otro lado justo en el clic. Mientras dura el pellizco se usa
          hacia dónde apuntaba ~200 ms antes de que se notara; sólo se traslada con la muñeca (para arrastrar). */
       const H = m.hist || (m.hist = []);
       H.push({ t: ahora, o: o.clone(), d: d.clone(), w: I.mundo.muneca.clone() }); while(H.length > 2 && ahora - H[0].t > 700) H.shift();
       if(m.pellizco){
-        if(!m.fijo){ const e = H.filter((x) => ahora - x.t >= 200).pop() || H[0]; m.fijo = { o: e.o.clone(), d: e.d.clone(), w: e.w.clone(), desde: ahora }; m.dirSuave = e.d.clone(); }
+        if(!m.fijo){
+          /* QUÉ SE ELIGE AL PELLIZCAR (27 nov, clic fantasma): lo que la mano lleva apuntando DE CORRIDO al menos 250 ms; o, si
+             al juntar los dedos se resbaló, aquello en lo que estuvo quieta 300 ms justo antes. Lo que sólo cruzó, nada */
+          const elegido = (() => { if(m.objAhora && ahora - m.objDesde >= 250) return m.objAhora; const pv = m.previo;
+            if(pv && ahora - pv.hasta < 350 && pv.hasta - pv.desde >= 300) return pv.o; return null; })();
+          /* el rayo se congela donde estaba hace 200 ms SÓLO si es para no perder ese botón; si no, donde está ahora (si no, al
+             cruzar de un botón a otro se congelaba sobre el de en medio) */
+          const e = elegido && elegido !== m.objAhora ? (H.filter((x) => ahora - x.t >= 200).pop() || H[0]) : H[H.length - 1];
+          m.fijo = { o: e.o.clone(), d: e.d.clone(), w: e.w.clone(), desde: ahora, objeto: elegido }; m.dirSuave = e.d.clone(); }
         /* congelado: lo que se mueve la MANO (la muñeca vista desde tu cabeza) gira el rayo, para poder arrastrar */
         const w0 = m.fijo.w.clone().sub(o).normalize(), w1 = I.mundo.muneca.clone().sub(o).normalize();
         d.copy(m.fijo.d).applyQuaternion(new THREE.Quaternion().setFromUnitVectors(w0, w1));
       } else m.fijo = null;
       /* suavizado aparte: el rayo tiembla más que la mano porque amplifica el giro */
-      if(m.fijo) m.dirSuave.copy(d); else if(!m.dirSuave) m.dirSuave = d.clone(); else m.dirSuave.lerp(d, .45).normalize();
-      const R = { origen: o, dir: m.dirSuave.clone(), lado: I.lado, pellizco: m.pellizco, mano: m };
+      if(m.fijo) m.dirSuave.copy(d); else if(!m.dirSuave) m.dirSuave = d.clone(); else { /* (27 nov, Carlos: «dale cierta estabilidad a la mano») suavizado que se adapta: el temblor chico (menos de ~1°) casi
+           no mueve el rayo y un movimiento de verdad lo sigue al instante; antes era un .45 parejo que dejaba pasar el temblor */
+        const ang = m.dirSuave.angleTo(d), k = ang < .017 ? .1 : ang < .05 ? .25 : ang < .12 ? .45 : .7; m.dirSuave.lerp(d, k).normalize(); }
+      const R = { origen: o, dir: m.dirSuave.clone(), lado: I.lado, pellizco: m.pellizco, mano: m, dedo };
       m.rayo = R; rayos.push(R);
     }
     const conPellizco = rayos.filter((R) => R.mano.fijo).sort((a, b) => b.mano.fijo.desde - a.mano.fijo.desde)[0];
     const principal = conPellizco || rayos.find((R) => R.mano.G?.apunta) || rayos.find((R) => R.mano === principalAntes) || rayos.find((R) => R.lado > 0) || rayos[0] || null;
     principalAntes = principal?.mano || null;
     V.extra.rayos = rayos; V.extra.rayo = principal;
-    estado.rayos = rayos.length; estado.congelado = !!principal?.mano.fijo; estado.punta = principal ? principal.mano.info.mundo.dedo.toArray() : null;
+    estado.rayos = rayos.length; estado.congelado = !!principal?.mano.fijo; estado.punta = principal ? principal.mano.info.mundo.dedo.toArray() : null; estado.puntaRayo = principal?.mano.punta3d ? cabeza.localToWorld(principal.mano.punta3d.clone()).toArray() : estado.punta;
     if(!principal){ rayosVis.forEach((x) => { x.linea.visible = x.cursor.visible = false; }); }
   };
   /* el dibujo de los rayos y sus cursores va cada cuadro (el rastreo, cada dos), con el punto donde pegó (lo pone vr.js) */

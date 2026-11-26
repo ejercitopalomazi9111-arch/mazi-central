@@ -27,6 +27,7 @@ sí(!/v\.cuadro = \(t, dt\) => \{ poner\(\); agarrar\(\)/.test(idx), 'el menú p
 
 /* MONARCH: subtítulos */
 await p.evaluate(() => __vr.ir('monarca')); await p.evaluate(() => window.__monarca.armado);
+await p.evaluate(() => __monarca.arrancar({ idioma: 'es' }));   /* sin idioma ni tutorial: directo a la historia */
 await p.waitForFunction(() => __monarca.narrador.actual === 'e-bienvenida', null, { timeout: 15000 }).catch(() => {});
 await p.waitForTimeout(1800);
 const s1 = await p.evaluate(() => ({ vis: __monarca.subt.malla.visible, pr: __monarca.narrador.progreso() }));
@@ -38,6 +39,8 @@ const lado = await p.evaluate(async () => { const V = __vr, m = __monarca.subt.m
   await new Promise((r) => setTimeout(r, 2500)); const fin = m.position.clone();
   const meta = new V.THREE.Vector3(0, -.32, -1.6).applyQuaternion(V.cabeza.getWorldQuaternion(new V.THREE.Quaternion())).add(V.cabeza.getWorldPosition(new V.THREE.Vector3()));
   V.cabeza.rotation.y -= Math.PI / 2;
+  /* (27 nov) sólo de lado: la altura ya no es fija, baja para no tapar los botones */
+  fin.y = meta.y = 0;
   return { brinco: medio.distanceTo(antes), resta: fin.distanceTo(meta) }; });
 sí(lado.brinco < .6 && lado.resta < .15, `al voltear, el subtítulo te alcanza suave (primer cuadro ${lado.brinco.toFixed(2)} m, al final queda a ${lado.resta.toFixed(2)} m de su lugar)`);
 /* una reacción también sale en el subtítulo */
