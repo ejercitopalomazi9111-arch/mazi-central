@@ -71,15 +71,20 @@ export function iniciarAR(V){
     if(variant){
       const grande = document.createElement('canvas'), xg = grande.getContext('2d'), mini = document.createElement('canvas'), xm = mini.getContext('2d', { willReadFrequently: true });
       const texV = new THREE.CanvasTexture(grande); texV.colorSpace = THREE.SRGBColorSpace; ar.texVariant = texV;
-      let pedidos = 0, pintados = 0, ultimo = 0, ocupado = false;
+      let pedidos = 0, llegados = 0, pintados = 0, tirados = 0, ultimo = 0, llegoEn = 0, ocupado = false, ocupadoDesde = 0;
+      /* decodificar: con <img> (lo más seguro dentro del WebView del App Clip) y un tope de 1.5 s, para que un cuadro atorado
+         no deje a todos los demás tirados para siempre (27 nov: «actualiza una vez la imagen y después así se queda») */
+      function decodificar(dato, f){
+        if(typeof dato === 'string'){ const img = new Image(); img.src = 'data:image/jpeg;base64,' + dato;
+          return Promise.race([img.decode().then(() => img), new Promise((_, no) => setTimeout(() => no(new Error('el JPEG tardó más de 1.5 s')), 1500))]); }
+        if(dato instanceof ImageData) return createImageBitmap(dato);
+        const bytes = new Uint8Array(dato), w = f.width, h = f.height;   /* bytes crudos: el plano de brillo (Y), en grises */
+        if(!w || !h || bytes.length < w * h) return Promise.reject(new Error(`cuadro de cámara raro: ${w}×${h}, ${bytes.length} bytes`));
+        const id = new ImageData(w, h); for(let k = 0, q = 0; k < w * h; k++, q += 4){ const v = bytes[k]; id.data[q] = id.data[q + 1] = id.data[q + 2] = v; id.data[q + 3] = 255; }
+        return createImageBitmap(id);
+      }
       async function pintar(f){
-        const bin = atob(f.data), bytes = new Uint8Array(bin.length); for(let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-        let img, w, h;
-        if(bytes[0] === 0xFF && bytes[1] === 0xD8){ img = await createImageBitmap(new Blob([bytes], { type: 'image/jpeg' })); w = img.width; h = img.height; }
-        else { /* si no es JPEG: el plano de brillo (Y) de la imagen, en grises */
-          w = f.width; h = f.height; if(!w || !h || bytes.length < w * h) throw new Error(`cuadro de cámara raro: ${f.format} ${w}×${h}, ${bytes.length} bytes`);
-          const id = new ImageData(w, h); for(let i = 0, j = 0; i < w * h; i++, j += 4){ const v = bytes[i]; id.data[j] = id.data[j + 1] = id.data[j + 2] = v; id.data[j + 3] = 255; }
-          img = await createImageBitmap(id); }
+        const img = await decodificar(f.data, f), w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
         const k = Math.min(1, 960 / w), gw = Math.round(w * k), gh = Math.round(h * k);
         if(grande.width !== gw || grande.height !== gh){ grande.width = gw; grande.height = gh; }
         xg.drawImage(img, 0, 0, gw, gh); texV.needsUpdate = true; ar.ancho = w; ar.alto = h;
@@ -89,12 +94,28 @@ export function iniciarAR(V){
         if(!ar.camaraVista){ ar.camaraVista = true; V.usarCamaraAR(texV); hecho.resolver(true); V.hud?.('Cámara lista', 1.6); }
         pintados++;
       }
+      function llego(f){
+        llegados++; llegoEn = performance.now();
+        if(ocupado && performance.now() - ocupadoDesde < 2000){ tirados++; return; }   /* todavía se dibuja el anterior: éste se tira */
+        ocupado = true; ocupadoDesde = performance.now();
+        pintar(f).catch((e) => V.fallo?.('E-AR-CAM', 'cuadro de cámara del iPhone', e)).finally(() => { ocupado = false; });
+      }
+      /* EL CANAL: se escucha la cámara del App Clip TODO el tiempo (no un pedido de una sola vez que, si se pierde, deja el ciclo
+         esperando para siempre), se le pide que mande seguido, y se vuelve a pedir cada cuadro y cada medio segundo sin nada */
+      const W = window.VLaunch.webXR?._arKitWrapper;
+      const directo = W && typeof W.addEventListener === 'function' && typeof W._requestComputerVisionData === 'function';
       const pedir = () => { if(!ar.activo) return; pedidos++; ultimo = performance.now();
-        /* el siguiente se pide en cuanto llega éste (no después de dibujarlo); si todavía se está dibujando uno, éste se tira */
-        try{ window.VLaunch.requestVideoFrame((f) => { setTimeout(pedir, Math.max(0, 40 - (performance.now() - ultimo)));
-          if(ocupado) return; ocupado = true; pintar(f).catch((e) => V.fallo?.('E-AR-CAM', 'cuadro de cámara del iPhone', e)).finally(() => { ocupado = false; }); }); }
-        catch(e){ V.fallo?.('E-AR-CAM', 'pedir la cámara al App Clip', e); hecho.resolver(false); } };
-      ar.camaraVariant = () => ({ pedidos, pintados });
+        try{ if(directo) W._requestComputerVisionData(); else window.VLaunch.requestVideoFrame((f) => { llego(f); setTimeout(pedir, Math.max(0, 33 - (performance.now() - ultimo))); }); }
+        catch(e){ V.fallo?.('E-AR-CAM', 'pedir la cámara al App Clip', e); } };
+      if(directo){
+        W.addEventListener('cv_data', (r) => { const b = r.detail?._buffers?.[0]; if(!b) return;
+          llego({ width: b.size?.width, height: b.size?.height, data: b._buffer ?? b.buffer });
+          try{ r.detail.release?.(); }catch{}
+          setTimeout(pedir, Math.max(0, 33 - (performance.now() - ultimo))); });
+        try{ W._startSendingComputerVisionData?.(); }catch{}
+      }
+      const vigia = setInterval(() => { if(!ar.activo){ clearInterval(vigia); return; } if(performance.now() - Math.max(llegoEn, ultimo) > 500) pedir(); }, 250);
+      ar.camaraVariant = () => ({ directo: !!directo, pedidos, llegados, pintados, tirados });
       pedir();
       /* si en 6 s no llegó ningún cuadro, se dice (sin cámara siguen el AR y el giroscopio) */
       setTimeout(() => { if(!pintados){ hecho.resolver(false); V.hud?.('Sin cámara en el App Clip', 2.4); } }, 6000);
