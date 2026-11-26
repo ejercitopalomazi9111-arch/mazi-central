@@ -176,6 +176,10 @@ export class Oficina {
     if(peligro){
       await this.aviso(conv, `El bot iba a contestar algo que no debe (${peligro}); se cambió por «ya le aviso al encargado». Iba a decir: «${String(texto).slice(0, 200)}»`);
       texto = 'Eso lo ve directamente el encargado; ya le aviso para que te conteste.';
+      /* …pero si ya hay precio y todavía no se le dijo, se le da: tapar la promesa no le debe quitar su precio al cliente
+         (prueba con la IA real, 26 nov: preguntó «¿hay descuento?» con sus 90 m² y su colonia, y se quedó sin precio) */
+      if(/descuento/.test(peligro) && cotP && conv.precioDicho !== cotP.desde)
+        texto = ponerPrecio((cotP.lugar ? `Para ${comoDecirlo(cotP.lugar)}, te saldría` : 'Te saldría') + ' aproximadamente en {precio}. Si los datos que nos diste están bien, ése es el costo; el técnico te lo confirma al ver el lugar. Lo demás que me preguntas lo ve directamente el encargado; ya le aviso.', cotP) || texto;
     }
     if(texto.length > RESPUESTA_MAX){ const corte = texto.slice(0, RESPUESTA_MAX), punto = Math.max(corte.lastIndexOf('. '), corte.lastIndexOf('? ')); texto = punto > 200 ? corte.slice(0, punto + 1) : corte.trimEnd() + '…'; }
     const dioPrecio = !!(cotP && texto.includes(pesos(cotP.desde)));
@@ -408,8 +412,12 @@ export const hizoCuestionario = (t) => /rec[aá]maras|chic[ao],? median[ao] o gr
 const LARGO_MAX = 1500, RESPUESTA_MAX = 700;
 /** Lo que la IA NO puede decir, se lo pida quien se lo pida: descuentos, cosas gratis, y cómo funciona por dentro.
     Regresa el motivo, o null si la respuesta está bien. La garantía de su página («regresamos sin costo adicional») sí vale. */
+/* Decir que NO hay descuento es la respuesta correcta, no una promesa (prueba con la IA real, 26 nov: «No manejamos
+   descuentos, pero te saldría en $856.53» se tapaba entero y el cliente se quedaba sin su precio). Se quitan esas
+   negaciones antes de buscar promesas. «No te cobramos» NO se quita: eso sí es prometer algo gratis. */
+const NO_HAY = /\b(no|ni|sin)\s+(?:(?:manejamos|hacemos|damos|tenemos|hay|ofrecemos|aplicamos|aplica|aplican|contamos con|se manejan|se hacen|se dan|se aplican|puedo dar|podemos dar|puedo hacer|podemos hacer)\s+)?(?:ningun[oa]?\s+|algun[oa]?s?\s+|otr[oa]s?\s+)?(descuentos?|promo(?:cion|ciones)?|rebajas?|cupon(?:es)?|bonificacion(?:es)?)\b|\bno\s+(?:es|son|sale|salen)\s+(?:gratis|gratuit[oa]s?)\b/g;
 export function respuestaInsegura(t){
-  const n = normal(t), sinGarantia = n.replace(/sin costo adicional/g, '');
+  const n = normal(t), sinGarantia = n.replace(/sin costo adicional/g, '').replace(NO_HAY, ' ');
   if(/\bdescuento|\d{1,3}\s*%\s*(de\s+)?(descuento|menos|off)|\bgratis\b|\bgratuit|\bregal(o|amos|arte)|\bpromo(cion|ciones)?\b|\b2x1\b|\bcupon|\bbonificacion|te lo dejo en|\bsin costo\b|no te cobramos|\bcortesia\b|\brebaja/.test(sinGarantia)) return 'prometía un descuento, una promoción o algo gratis';
   if(/necesita_dueno|precio_aproximado|ya_se_lo_dijiste|\{\s*precio\s*\}|reglas que no se rompen|respuestas ya aprobadas|system prompt|prompt del sistema|mis instrucciones|modelo de lenguaje|\b(openai|groq|gemini|llama|qwen|gpt)\b/.test(n)) return 'iba a hablar de cómo funciona por dentro';
   return null;
@@ -431,7 +439,8 @@ export function ponerPrecio(texto, cot){
     const n = Number(m[1].replace(/[.,]+$/, '').replace(/,/g, '').replace(/\.(?=\d{3}\b)/g, ''));
     if(!cot || !Number.isFinite(n) || Math.abs(n - cot.desde) > 1) return null;
   }
-  return t;
+  /* «Para el Centro Histórico de Querétaro,⏎te saldría…»: la IA copiaba el salto de renglón del ejemplo (26 nov) */
+  return t.replace(/,[ \t]*\n+[ \t]*(?=te saldr)/gi, ', ');
 }
 
 const normal = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
