@@ -64,13 +64,19 @@ export function montarMonarca(V){
   const texs = {}, cargador = new THREE.TextureLoader();
   const cielo = new THREE.Mesh(new THREE.SphereGeometry(30, 48, 24), new THREE.MeshBasicMaterial({ side: THREE.BackSide, depthWrite: false, toneMapped: false }));
   cielo.renderOrder = -5; cielo.visible = false; m.grupo.add(cielo);
-  const textura = (nombre) => texs[nombre] || (texs[nombre] = new Promise((ok) => cargador.load(AQUI(`medios/cielos/${nombre}.webp`), (t) => { t.colorSpace = THREE.SRGBColorSpace; t.mapping = THREE.EquirectangularReflectionMapping; st.cargados++; ok(t); }, undefined, () => ok(null))));
+  /* EN EL TELÉFONO, CIELOS DE 2048 (27 nov, medido en el iPhone con el App Clip: 2 cuadros por segundo en «Flores»): cada cielo
+     de 4096×2048 son ~43 MB en la tarjeta gráfica y no se soltaban al cambiar de escena (cinco = más de 200 MB, junto a la
+     cámara de ARKit). En pantallas de dedo va el de 2048 (cabe de sobra en el ojo de un visor) y se suelta el que ya no se ve */
+  const SUF = (matchMedia?.('(pointer: coarse)').matches || /iPhone|iPad|Android/.test(navigator.userAgent)) ? '-2k' : '';
+  const textura = (nombre) => texs[nombre] || (texs[nombre] = new Promise((ok) => cargador.load(AQUI(`medios/cielos/${nombre}${SUF}.webp`), (t) => { t.colorSpace = THREE.SRGBColorSpace; t.mapping = THREE.EquirectangularReflectionMapping; st.cargados++; ok(t); }, undefined, () => ok(null))));
   let cieloPedido = null;
   async function ponerCielo(nombre){
     cieloPedido = nombre;
     if(!nombre){ cielo.visible = false; return; }
     const t = await textura(nombre); if(cieloPedido !== nombre) return;
+    const antes = cielo.material.map;
     cielo.material.map = t; cielo.material.needsUpdate = true; cielo.visible = !!t;
+    if(antes && antes !== t) antes.dispose();   /* sólo suelta la copia de la tarjeta gráfica: si se vuelve a usar, se sube otra vez */
   }
 
   /* ── el ancla de lo que se cuenta (antes era el cartel; ya no se ve, pero las travesuras miden contra ella) ── */

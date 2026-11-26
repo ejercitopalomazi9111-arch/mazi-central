@@ -34,9 +34,15 @@ export function crearEspejo(V, { alOrden = () => {}, estado = () => ({}) } = {})
     if(!E.ws || E.ws.readyState !== 1 || !E.mirando) return;
     const ahora = performance.now(); if(ahora - ultimo < 330 || ocupado || E.ws.bufferedAmount > 200000) return; ultimo = ahora;
     mandarEstado();
-    const cv = V.render.domElement, ojo = V.modo?.mono ? cv.width : cv.width / 2, w = 480, h = Math.round(w * cv.height / Math.max(1, ojo));
-    if(lienzo.width !== w || lienzo.height !== h){ lienzo.width = w; lienzo.height = h; }
-    try{ x.drawImage(cv, 0, 0, ojo, cv.height, 0, 0, w, h); }catch{ return; }
+    const cv = V.render.domElement;
+    /* acostado (vertical en la pantalla, de lado en el visor): el ojo izquierdo es la mitad de ARRIBA y va girado; se endereza
+       para el docente (27 nov: en el espejo se veía una tira acostada) */
+    if(V.estaAcostado?.()){ const sw = cv.width, sh = cv.height / 2, w = 480, h = Math.round(w * sw / Math.max(1, sh));
+      if(lienzo.width !== w || lienzo.height !== h){ lienzo.width = w; lienzo.height = h; }
+      try{ x.save(); x.translate(0, h); x.rotate(-Math.PI / 2); x.drawImage(cv, 0, 0, sw, sh, 0, 0, h, w); x.restore(); }catch{ x.restore(); return; } }
+    else { const ojo = V.modo?.mono ? cv.width : cv.width / 2, w = 480, h = Math.round(w * cv.height / Math.max(1, ojo));
+      if(lienzo.width !== w || lienzo.height !== h){ lienzo.width = w; lienzo.height = h; }
+      try{ x.drawImage(cv, 0, 0, ojo, cv.height, 0, 0, w, h); }catch{ return; } }
     ocupado = true;
     lienzo.toBlob((b) => { ocupado = false; if(!b || !E.ws || E.ws.readyState !== 1) return; b.arrayBuffer().then((buf) => { try{ E.ws.send(buf); E.enviados++; }catch{} }); }, 'image/jpeg', .6);
   });
