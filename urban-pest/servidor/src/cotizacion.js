@@ -17,6 +17,8 @@
      · «mano»  la hace el dueño desde el centro, con renglones y precios suyos.
    ═══════════════════════════════════════════════════════════════════════════ */
 
+import { notaDistancia } from './distancia.js';
+
 export const VIGENCIA_DIAS = 15;
 const azar = (n, abc = 'abcdefghjkmnpqrstuvwxyz23456789') => [...crypto.getRandomValues(new Uint8Array(n))].map(x => abc[x % abc.length]).join('');
 const texto = (v, max = 200) => String(v ?? '').trim().slice(0, max);
@@ -46,7 +48,10 @@ export async function cotizacionDelBot(A, conv, cot, ahora = Date.now()){
     nota: cot.nota, ...(cot.ejemplo ? { ejemplo: true } : {}), ...(prueba ? { prueba: true } : {}),
     /* SÓLO para el dueño (centro → Números): de dónde sale el precio, cuánto cuesta y cuánto queda, y a qué chat
        contestarle. cotizacionPublica lo quita: el cliente nunca lo ve. */
-    interno: { desglose: cot.desglose || null, km: d.km ?? null, plaga: d.plaga || null, canal: conv.canal, chat: conv.chat },
+    /* La distancia también es SÓLO del dueño: con qué km se cotizó y de dónde salieron (carretera desde la bodega, tabla de
+       zonas o km típicos de su Excel) y la nota que lo dice en una línea. Al cliente sólo le llega el precio. */
+    interno: { desglose: cot.desglose || null, km: cot.distancia?.km ?? null, km_por: cot.distancia?.por || null, lugar: cot.lugar || null,
+      nota: notaDistancia(cot.lugar, cot.distancia?.km, cot.distancia?.por), plaga: d.plaga || null, canal: conv.canal, chat: conv.chat },
   };
   await A.put('cotdoc:' + codigo, doc);
   return doc;

@@ -22,9 +22,14 @@ import { crearLimites, toparCabeza } from './limites.js';
 import { crearPredictor } from './prediccion.js';
 
 /* ── ajustes: se guardan en el teléfono (sólo comodidad; si se borran, salen los de fábrica) ── */
-const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true, menuTam: 1, menuDist: 1, fondo: 0, seis: false, puntos: true, limites: true, zona: 1 };
+const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true, menuTam: 1, menuDist: 1, fondo: 0, seis: false, puntos: true, limites: true, zona: 1, tonos: true, estable: 150, enfriar: 250, arcore: false };
 const AJ = { ...FABRICA };
 try{ Object.assign(AJ, JSON.parse(localStorage.getItem('mazivr.ajustes') || '{}')); }catch{}
+/* LO GUARDADO NO TAPA UN VALOR NUEVO DE FÁBRICA (Carlos, 26 nov: «ninguno de los cambios de 200 ms está activo»): los Ajustes
+   se guardan ENTEROS, así que un teléfono que ya había guardado algo conservaba el valor viejo para siempre. Cada que cambia
+   un valor de fábrica que importa, sube `aj` y aquí se pone el nuevo a quien traía el viejo. */
+if((AJ.aj || 0) < 3){ AJ.estable = FABRICA.estable; AJ.aj = 3; }
+if((AJ.aj || 0) < 4){ AJ.arcore = false; AJ.aj = 4; }   /* 4 (27 nov, Carlos: «que si sólo le doy a entrar me meta la versión normal, con las manos bien»): ARCore/ARKit ya no es de fábrica; se prende en Ajustes o con el botón «AR» */   /* 3 (26 nov): «si hago el clic, ya se debería de seleccionar inmediatamente»: 150 ms sólo contra el temblor */
 const guardar = () => { try{ localStorage.setItem('mazivr.ajustes', JSON.stringify(AJ)); }catch{} };
 
 /* ── ERRORES QUE DICEN QUÉ, DÓNDE Y CUÁNDO (Carlos, 19 nov: «que el código de error sea tan claro que sepas exactamente
@@ -116,6 +121,15 @@ const video = document.createElement('video'); video.playsInline = true; video.m
    jalaban en el cuarto virtual (sin la mixta) */
 video.style.cssText = 'position:fixed; left:0; bottom:0; width:2px; height:2px; opacity:.01; pointer-events:none; z-index:0';
 (document.body ? document.body.appendChild(video) : addEventListener('DOMContentLoaded', () => document.body.appendChild(video)));
+/* ── ARCORE (arcore.js): con la sesión «immersive-ar» abierta, la pose sale de ARCore, la cámara también, y lo pintado va
+   al búfer de la sesión. Sin ella, todo sigue como siempre ── */
+export const ar = { activo: false, pose: null, frame: null, rt: null, tex: null, campo: 0, ancho: 4, alto: 3, origen: null, camaraVista: false, conCamara: false, piso: false };
+/* la fuente para las manos cuando la cámara la tiene ARCore (un lienzo chico que llena arcore.js) */
+export const fuenteManos = { activa: false, canvas: null, videoWidth: 0, videoHeight: 0, readyState: 0, currentTime: 0 };
+let camAntesAR = null;
+export function usarCamaraAR(tex){ camAntesAR = camTex; camTex = tex; pared.material.map = tex; pared.material.color.set(0xffffff); pared.material.needsUpdate = true; ponerMixta(AJ.mixta); }
+export function dejarCamaraAR(){ fijarPared(null); camTex = camAntesAR; pared.material.map = camTex; pared.material.needsUpdate = true; if(!camTex) pared.visible = false; ar.camaraVista = false; }
+export function cuadroExterno(t){ if(!rtI) return; /* la sesión de AR puede dar su primer cuadro antes de arrancar() (sin ojos medidos todavía) */ try{ cuadro(t); }catch(e){ fallo('E-MOTOR', 'cuadro', e); } }
 let camTex = null, camNuevo = true, camPintado = 0, camT = -1, flujo = null, ultra = false, camVIO = false;
 /* lo que abre la cámara de lado. En Android casi nunca se reconoce la gran angular por su nombre y la imagen salía como
    una ventanita en medio de la vista (foto de Carlos, 18 nov): si la cámara abre menos que el ojo, se estira hasta
@@ -123,9 +137,22 @@ let camTex = null, camNuevo = true, camPintado = 0, camT = -1, flujo = null, ult
 const ojoH = () => 2 * Math.atan(Math.tan(AJ.campo * Math.PI / 360) * Math.max(.5, (W / 2) / Math.max(1, H))) * 180 / Math.PI;
 /* con 6DoF la imagen va a su campo REAL (el de la lente principal): así los puntitos y lo 3D caen justo sobre tus cosas */
 const campoVIO = () => { const k = camVIO && seis?.vio?.intrinsecos?.(640, 480); return k ? 2 * Math.atan(320 / k.fx) * 180 / Math.PI : 0; };
-export const campoCamara = () => AJ.camCampo || campoVIO() || (ultra ? 104 : Math.max(69, Math.min(110, ojoH())));
+export const campoCamara = () => (ar.activo && ar.camaraVista && ar.campo) || AJ.camCampo || campoVIO() || (ultra ? 104 : Math.max(69, Math.min(110, ojoH())));
 const pared = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0x000000, depthWrite: false, depthTest: false, toneMapped: false }));
 pared.renderOrder = -10; pared.position.z = -20; pared.visible = false; cabeza.add(pared);
+/* LA CÁMARA FIJA AL MUNDO (27 nov, Carlos con el App Clip: «la cámara tarda mucho en cambiar de frame… puede marear muchísimo»):
+   cuando la imagen de la cámara llega tarde (el App Clip la pasa como fotos sueltas), pegada a la cabeza se arrastra contigo al
+   girar: el mundo se mueve con tu cara y eso marea. Fijada al mundo, cada foto se pone donde estaba tu cabeza CUANDO SE TOMÓ:
+   al girar, la foto se queda en su lugar (como lo de verdad) hasta que llega la siguiente. Es la reproyección de los visores */
+const anclaPared = new THREE.Group(); anclaPared.matrixAutoUpdate = false; escena.add(anclaPared);
+const histCabeza = Array.from({ length: 120 }, () => ({ t: -1e9, m: new THREE.Matrix4() })); let histN = 0;
+export function guardarPoseCabeza(){ const h = histCabeza[histN++ % histCabeza.length]; h.t = performance.now(); h.m.copy(cabeza.matrixWorld); }
+export function poseCabezaEn(t){ let mejor = null, d = Infinity; for(const h of histCabeza){ const x = Math.abs(h.t - t); if(x < d){ d = x; mejor = h; } } return mejor && d < 1000 ? mejor.m : null; }
+export function fijarPared(m){
+  if(!m){ if(pared.parent !== cabeza){ cabeza.add(pared); } return; }
+  if(pared.parent !== anclaPared) anclaPared.add(pared);
+  anclaPared.matrix.copy(m); anclaPared.matrixWorldNeedsUpdate = true;
+}
 /* los puntitos del rastreo (nube.js): los que sigue la cámara, sobre la imagen; y el mapa del cuarto que se va dibujando */
 export const nube = crearNube({ THREE, escena, rig, pared });
 /* OBSTÁCULOS Y ZONA SEGURA (limites.js), con ese mismo mapa: puntos rojos en lo que tienes cerca y la pared morada de la
@@ -215,8 +242,10 @@ async function ponerFlujo(){
 export async function reabrirCamara(){ flujo?.getTracks().forEach((t) => t.stop()); flujo = null; return abrirCamara(); }
 function medirPared(){
   const d = -pared.position.z, ancho = 2 * d * Math.tan(campoCamara() * Math.PI / 360);
-  const asp = video.videoWidth && video.videoHeight ? video.videoWidth / video.videoHeight : 16 / 9;
-  pared.scale.set(ancho, ancho / asp, 1); pared.rotation.z = AJ.camVoltear ? Math.PI : 0;
+  const asp = ar.activo && ar.camaraVista ? ar.ancho / Math.max(1, ar.alto) : video.videoWidth && video.videoHeight ? video.videoWidth / video.videoHeight : 16 / 9;
+  /* acostado con la cámara en vertical: la imagen de la cámara se gira con la vista (su «arriba» queda a tu izquierda) */
+  const giraCam = acostado && asp < 1;
+  pared.scale.set(ancho, ancho / asp, 1); pared.rotation.z = (AJ.camVoltear ? Math.PI : 0) + (giraCam ? Math.PI / 2 : 0);
 }
 function ponerMixta(si){
   AJ.mixta = si; guardar();
@@ -230,11 +259,13 @@ function ponerMixta(si){
 /* ── ojos a la textura y la deformación del lente ── */
 let rtI, rtD, W = 1, H = 1;
 const pase = new THREE.ShaderMaterial({
-  uniforms: { tI: { value: null }, tD: { value: null }, k1: { value: AJ.k1 }, k2: { value: AJ.k2 }, off: { value: 0 }, asp: { value: 1 }, esc: { value: 1 } },
+  uniforms: { tI: { value: null }, tD: { value: null }, k1: { value: AJ.k1 }, k2: { value: AJ.k2 }, off: { value: 0 }, asp: { value: 1 }, esc: { value: 1 }, gira: { value: 0 } },
   vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }',
-  fragmentShader: `uniform sampler2D tI, tD; uniform float k1, k2, off, asp, esc; varying vec2 vUv;
+  fragmentShader: `uniform sampler2D tI, tD; uniform float k1, k2, off, asp, esc, gira; varying vec2 vUv;
     void main(){
-      bool der = vUv.x > .5; vec2 e = vec2(der ? (vUv.x - .5) * 2. : vUv.x * 2., vUv.y);
+      /* acostado: la pantalla está en vertical y la vista va girada 90° (lo de arriba de la vista, a la derecha de la pantalla) */
+      vec2 u = gira > .5 ? vec2(1. - vUv.y, vUv.x) : vUv;
+      bool der = u.x > .5; vec2 e = vec2(der ? (u.x - .5) * 2. : u.x * 2., u.y);
       vec2 c = vec2(.5 + (der ? -off : off), .5);
       vec2 d = e - c; d.x *= asp; float r2 = dot(d, d); d *= (1. + k1 * r2 + k2 * r2 * r2) / esc; d.x /= asp;
       vec2 s = d + vec2(.5);
@@ -243,11 +274,28 @@ const pase = new THREE.ShaderMaterial({
     }` });
 const paseEsc = new THREE.Scene(), paseCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 paseEsc.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), pase));
+/* ACOSTADO (27 nov, Carlos: «el teléfono no se gira y no puedo hacer nada por la pantalla de gira el teléfono; haz que aunque
+   esté en vertical se muestre la vista como si estuviese en horizontal»): el App Clip de AR del iPhone se queda en vertical, y
+   muchos teléfonos tienen el giro bloqueado. Con el visor (no en «Sin visor») y la pantalla en vertical, los ojos se dibujan
+   como si estuviera acostado (W y H son los de la vista, no los de la pantalla), el pase del lente gira la imagen 90° al
+   pintarla, la cabeza (giroscopio o ARKit) se toma como acostada, y las capas de la página giran con la clase .capa-giro.
+   Se pone el teléfono con la parte de arriba hacia la IZQUIERDA (como para ver un video). */
+let acostado = false;
+export const estaAcostado = () => acostado;
+/* MODO LIGERO (27 nov, medido en el iPhone con el App Clip: 15 cuadros por segundo): ahí el mismo hilo dibuja, decodifica la
+   cámara y corre MediaPipe. Se dibuja a menos resolución (1.2 en vez de 1.6) y sin el suavizado de bordes de 4 muestras */
+let ligero = false;
+export function modoLigero(si){ if(ligero === !!si) return; ligero = !!si; render.setPixelRatio(ligero ? 1.2 : Math.min(devicePixelRatio, 1.6)); medir(); }
 function medir(){
-  W = innerWidth; H = innerHeight; render.setSize(W, H, false);
+  const rw = innerWidth, rh = innerHeight;
+  acostado = !modo.mono && rh > rw && AJ.acostar !== false;
+  W = acostado ? rh : rw; H = acostado ? rw : rh; render.setSize(rw, rh, false);
+  pase.uniforms.gira.value = acostado ? 1 : 0;
+  document.documentElement.classList.toggle('acostado', acostado);
+  document.documentElement.style.setProperty('--ancho-real', rw + 'px'); document.documentElement.style.setProperty('--alto-real', rh + 'px');
   const pr = render.getPixelRatio(), ew = Math.round(W / 2 * pr), eh = Math.round(H * pr);
   rtI?.dispose(); rtD?.dispose();
-  const op = { colorSpace: THREE.SRGBColorSpace, samples: 4 };
+  const op = { colorSpace: THREE.SRGBColorSpace, samples: ligero ? 0 : 4 };
   rtI = new THREE.WebGLRenderTarget(ew, eh, op); rtD = new THREE.WebGLRenderTarget(ew, eh, op);
   pase.uniforms.tI.value = rtI.texture; pase.uniforms.tD.value = rtD.texture;
   cabeza.aspect = modo.mono ? W / H : (W / 2) / H; aplicarAjustes();
@@ -269,11 +317,21 @@ const ori = { a: 0, b: 90, g: 0, hay: false, t: 0, nuevo: false };
 const pred = crearPredictor(), conPred = !new URLSearchParams(location.search).has('nopred');
 const zee = new THREE.Vector3(0, 0, 1), eul = new THREE.Euler(), q0 = new THREE.Quaternion(), q1 = new THREE.Quaternion(-Math.SQRT1_2, 0, 0, Math.SQRT1_2);
 addEventListener('deviceorientation', (e) => { if(e.alpha == null) return; ori.a = e.alpha; ori.b = e.beta; ori.g = e.gamma; ori.hay = true; ori.t = performance.now(); ori.nuevo = true; });
-const angPantalla = () => (screen.orientation?.angle ?? window.orientation ?? 0) * Math.PI / 180;
+const angPantalla = () => acostado ? Math.PI / 2 : (screen.orientation?.angle ?? window.orientation ?? 0) * Math.PI / 180;
 let guinada = 0;                                             // el giro extra: stick derecho y «recentrar»
 const qCab = new THREE.Quaternion(), qG = new THREE.Quaternion(), yUp = new THREE.Vector3(0, 1, 0);
 export const sim = { yaw: 0, pitch: 0 };                            // sin giroscopio (pruebas y computadora): ratón y flechas
 function leerCabeza(){
+  /* CON ARCORE: dónde está y hacia dónde ve el teléfono lo dice el sistema (ya viene predicho para cuando se vea).
+     La posición cuenta desde donde estabas al abrir la sesión: el menú queda enfrente igual que siempre */
+  if(ar.activo && ar.pose){
+    const t = ar.pose.transform, o = t.orientation, p = t.position;
+    if(!ar.origen) ar.origen = new THREE.Vector3(p.x, p.y, p.z);
+    cabeza.quaternion.set(o.x, o.y, o.z, o.w); if(acostado) cabeza.quaternion.multiply(q0.setFromAxisAngle(zee, -Math.PI / 2));   /* la sesión viene en vertical */
+    cabeza.position.set(p.x - ar.origen.x, p.y - ar.origen.y, p.z - ar.origen.z);
+    rig.quaternion.copy(qG.setFromAxisAngle(yUp, guinada));
+    return;
+  }
   if(ori.hay){
     const D = THREE.MathUtils.DEG2RAD; eul.set(ori.b * D, ori.a * D, -ori.g * D, 'YXZ');
     qCab.setFromEuler(eul); qCab.multiply(q1); qCab.multiply(q0.setFromAxisAngle(zee, -angPantalla()));
@@ -522,6 +580,39 @@ export const audio = () => actx;
 /* CERO SONIDOS DE INTERACCIÓN (Carlos, 19 nov: «quita los malditos sonidos, todo sonido de interacción, está horrible»):
    toques, dings y whooshes ya no suenan, vengan de donde vengan. Sólo suena lo que se pide como `aviso` (el de seguridad
    de los límites: «Cuidado» y «Fuera de zona», para no pegarte con la pared). La música y el narrador van por otro lado. */
+/* TONOS SUAVES DE INTERACCIÓN (prompt maestro de Carlos, §3, 25 nov: «sutil, refinada, satisfactoria… no debe sonar como
+   notificación ni como clic de mouse»). El 19 nov se quitaron los sonidos de archivo porque eran feos; éstos no son archivos:
+   son un tono senoidal muy corto y bajo, con ataque de 4 ms y una caída suave, filtrado para que no pique.
+     · foco: al cambiar lo que apuntas (nunca mientras sigues apuntando lo mismo), muy bajito;
+     · elegir: un poco más presente, dos notas que suben (se nota que se aceptó);
+     · cada vez varía tantito el tono, el volumen y la duración, dentro de un rango chico: misma identidad, sin sonar a máquina;
+     · si el narrador habla (extra.narrando), bajan a la mitad: nunca compiten con la voz.
+   Se apagan en Ajustes → Sonidos. */
+let tonoN = 0;
+export function tono(tipo = 'foco'){
+  if(!AJ.tonos || !actx || actx.state !== 'running') return;
+  try{
+    const t = actx.currentTime, n = tonoN++, var1 = 1 + (n === 0 ? 0 : ((n * 37) % 7 - 3) * .006), var2 = 1 + (((n * 53) % 5) - 2) * .05;
+    const pico = (tipo === 'elegir' ? .055 : .022) * var2 * (extra.narrando ? .5 : 1), dur = (tipo === 'elegir' ? .14 : .07) * (1 + (((n * 29) % 3) - 1) * .08);
+    const f = actx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 3200;
+    const g = actx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(pico, t + .004); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    const o = actx.createOscillator(); o.type = 'sine';
+    if(tipo === 'elegir'){ o.frequency.setValueAtTime(740 * var1, t); o.frequency.setValueAtTime(988 * var1, t + .05); }
+    else o.frequency.setValueAtTime(1175 * var1, t);
+    o.connect(g).connect(f).connect(actx.destination); o.start(t); o.stop(t + dur + .02);
+  }catch{}
+}
+/* TIC DE RELOJ (Carlos, 26 nov: la cuenta de MONARCH «con un sonidito como de tic de reloj cada vez»): un golpecito de
+   ruido por un filtro estrecho, como la madera de un reloj de pared; tic y tac alternan un poco de tono. Hecho aquí, no es
+   una grabación de nadie. No depende de «Sonidos» (es parte de la experiencia, no del menú). */
+let ticN = 0;
+export function tic(vol = .35){
+  if(!actx) return; if(actx.state !== 'running') actx.resume?.();
+  try{ const t = actx.currentTime + .01, largo = Math.floor(actx.sampleRate * .03), b = actx.createBuffer(1, largo, actx.sampleRate), d = b.getChannelData(0);
+    for(let i = 0; i < largo; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / largo, 6);
+    const s = actx.createBufferSource(); s.buffer = b; const f = actx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = ticN++ % 2 ? 2300 : 2900; f.Q.value = 9;
+    const g = actx.createGain(); g.gain.value = vol * 6; s.connect(f).connect(g).connect(actx.destination); s.start(t); }catch{}
+}
 export function sonar(n, vol = .5, aviso = false){ if(!aviso || !actx || !sonidos[n]) return; const s = actx.createBufferSource(), g = actx.createGain(); g.gain.value = vol; s.buffer = sonidos[n]; s.connect(g).connect(actx.destination); s.start(); }
 
 /* ── las vistas: el inicio (hub), el cine, los ajustes y las que vienen ── */
@@ -559,7 +650,8 @@ export const ahora = () => vista;
 const ray = new THREE.Raycaster(); const centro = new THREE.Vector2(0, 0);
 let foco = null, focoDesde = 0, focoPorFlechas = -1e9, ultimoGiro = new THREE.Quaternion();
 function elegibles(){ const L = vistas[vista]?.elegibles?.() || []; return atras.visible ? [...L, atras] : L; }
-const historialMira = []; let xManoAntes = false;
+export const elegiblesAhora = () => elegibles();   /* lo que se puede elegir ahora (la persona simulada lo usa) */
+const historialMira = []; let xManoAntes = false, clicPendiente = null, fuenteFoco = 'mira', manosVistasEn = -1e9;
 let mirarBloqueado = true;                                   // al abrir una vista, lo que ya tenías enfrente no se elige solo
 /* …hasta que la cabeza se mueva. Antes sólo se soltaba al pasar de un botón a OTRO: si llegabas a «Atrás» desde el vacío,
    seguía bloqueado y sin control no había salida (Carlos, 18 nov) */
@@ -588,7 +680,22 @@ function cercaDe(o, r, m){
   const k = o.getWorldScale(_p.clone()).x || 1, mm = m / k;
   return Math.abs(_p.x) <= g.width / 2 + mm && Math.abs(_p.y) <= g.height / 2 + mm;
 }
-function darFoco(o){ if(foco === o) return; if(o && primerFoco === 'pendiente') primerFoco = o; else if(primerFoco !== 'pendiente') primerFoco = null; if(foco || !o) mirarBloqueado = false; foco?.userData.panel?.foco?.(false); foco = o; focoDesde = performance.now(); o?.userData.panel?.foco?.(true); }   /* sin «tiuk» al ver algo (Carlos, 19 nov) */
+/* ¿la punta del dedo (mundo) está dentro de alguno? Se mide en el espacio de cada uno (su caja, con margen) */
+const pDedo = new THREE.Vector3();
+function tocando(dedo, L){
+  let mejor = null, md = Infinity;
+  for(const o of L){ if(!o.visible || !o.geometry) continue; const g = o.geometry; if(!g.boundingBox) g.computeBoundingBox();
+    pDedo.copy(dedo); o.worldToLocal(pDedo); const b = g.boundingBox, sx = o.getWorldScale(new THREE.Vector3()), mx = .015 / (sx.x || 1), my = .015 / (sx.y || 1), mz = .06 / (sx.z || 1);
+    if(pDedo.x < b.min.x - mx || pDedo.x > b.max.x + mx || pDedo.y < b.min.y - my || pDedo.y > b.max.y + my || pDedo.z < b.min.z - mz || pDedo.z > b.max.z + mz) continue;
+    const dz = Math.abs(pDedo.z - (b.min.z + b.max.z) / 2); if(dz < md){ md = dz; mejor = o; } }
+  return mejor;
+}
+/* CUÁNTO TIEMPO SEGUIDO lleva cada mano apuntándole a lo mismo (27 nov, Carlos: «cuando pasas de un botón a otro, con el dedo
+   se pulsa el segundo botón por el que pasaste… eso nunca, jamás debe pasar por accidente»). El pellizco elegía «lo que
+   brilló hace 260 ms o lo que se vio en los últimos 700 ms»: al cruzar de un botón a otro, eso era el de en medio. Ahora
+   sólo cuenta algo a lo que la mano le estuvo apuntando de corrido (manos.js, al pellizcar) */
+function seguirObjeto(m, o){ if(!m) return; const t = performance.now(); if(m.objAhora !== o){ if(m.objAhora) m.previo = { o: m.objAhora, desde: m.objDesde, hasta: t }; m.objAhora = o || null; m.objDesde = t; } }
+function darFoco(o){ if(foco === o) return; if(o) tono('foco'); if(o && primerFoco === 'pendiente') primerFoco = o; else if(primerFoco !== 'pendiente') primerFoco = null; if(foco || !o) mirarBloqueado = false; foco?.userData.panel?.foco?.(false); foco = o; focoDesde = performance.now(); o?.userData.panel?.foco?.(true); }   /* sin «tiuk» al ver algo (Carlos, 19 nov) */
 function moverFoco(dx, dy){
   const L = elegibles(); if(!L.length) return;
   focoPorFlechas = performance.now(); ultimoGiro.copy(cabeza.quaternion);
@@ -599,7 +706,16 @@ function moverFoco(dx, dy){
     if(along <= .01) continue; const d = along + Math.abs(dx ? v.y : v.x) * 2; if(d < md){ md = d; mejor = o; } }
   if(mejor) darFoco(mejor);
 }
+/* ANTI-REBOTE Y ANTI-CASCADA (prompt maestro §2.3 y §2.4, todo Mazi ARE1):
+     · espera entre elecciones: AJ.enfriar ms (250): un mismo gesto no elige dos veces;
+     · tras elegir, nada se elige por pellizco durante 350 ms: si lo que cierra una ventana deja otro botón en el mismo
+       lugar, el MISMO pellizco no lo aprieta (y el pellizco tiene que soltarse antes de volver a contar);
+     · un poquito de «apachurrado» en lo que eliges, y su tono. */
+let ultimaEleccion = -1e9, pulso = null;
+export const eleccionesHechas = { n: 0 };   /* cuántas veces ha elegido algo la persona (la ayuda de la mano fantasma se calla después) */
 function activar(o){ if(!o) return;
+  const ahoraA = performance.now(); if(ahoraA - ultimaEleccion < (AJ.enfriar ?? 250)) return; ultimaEleccion = ahoraA; eleccionesHechas.n++; eleccionesHechas.ultima = o.userData.panel?.titulo || null; if(window.__depurar) eleccionesHechas.pila = new Error().stack;
+  tono('elegir'); pulso = { o, t: ahoraA, esc: o.scale.clone() };
   /* lo que se repite mirándolo (las flechas de Ajustes): sin bloqueo, la siguiente vez a los 0.9 s */
   if(o.userData.repetir){ focoDesde = performance.now() - MIRAR_MS + 900; o.userData.accion?.(); return; }
   bloquearMirada(3000); o.userData.accion?.(); }   /* sin campanita al tocar (Carlos, 19 nov: «súper castroso») */
@@ -640,14 +756,22 @@ function cuadro(t){
   if(mirar.activo && L.length && !modo.mono){
     const flechasRecientes = performance.now() - focoPorFlechas < 4000 && cabeza.quaternion.angleTo(ultimoGiro) < .12;
     /* cada mano con su rayo: cada uno sabe a qué le pega; el foco lo da el principal (o la mira, sin manos) */
-    for(const R of extra.rayos || []){ ray.set(R.origen, R.dir); let hh = ray.intersectObjects(L, false)[0];
+    for(const R of extra.rayos || []){
+      /* TOCAR CON EL ÍNDICE (Carlos, 26 nov: «si el modelo de mi mano está tocando el botón con el dedo índice, debería
+         estar ya brillando… y si hago el clic, ya se debería de seleccionar inmediatamente»): si la punta del dedo está
+         dentro de un botón (a 6 cm de su cara, con 1.5 cm de margen), ése es el que se toca, gane o no el rayo */
+      const tocado = R.dedo ? tocando(R.dedo, L) : null; R.toque = !!tocado;
+      if(tocado){ extra.toqueEn = performance.now(); R.hit = R.dedo.clone(); R.objeto = tocado; if(R.mano){ R.mano.objetoAntes = tocado; R.mano.objetoEn = performance.now(); } seguirObjeto(R.mano, tocado); continue; }
+      ray.set(R.origen, R.dir); let hh = ray.intersectObjects(L, false)[0];
       /* (el imán de 5° se quitó el 19 nov: Carlos, «estaba mejor antes del imán») */
       R.hit = hh ? hh.point.clone() : null; R.objeto = hh?.object || null;
-      if(R.objeto && R.mano){ R.mano.objetoAntes = R.objeto; R.mano.objetoEn = performance.now(); } }
+      seguirObjeto(R.mano, R.objeto);
+      if(R.objeto && R.mano){ R.mano.objetoAntes = R.objeto; R.mano.objetoEn = performance.now(); const V2 = R.mano.vistos || (R.mano.vistos = []); V2.push([R.objeto, performance.now()]); if(V2.length > 30) V2.shift(); } }
     let h;
     if(extra.rayo){ h = extra.rayo.objeto !== undefined ? (extra.rayo.objeto ? { object: extra.rayo.objeto } : null) : (ray.set(extra.rayo.origen, extra.rayo.dir), ray.intersectObjects(L, false)[0]);
       if(h && !extra.rayo.hit && h.point) extra.rayo.hit = h.point.clone(); }
     else { ray.setFromCamera(centro, cabeza); h = ray.intersectObjects(L, false)[0]; }
+    { const tq = (extra.rayos || []).find((R) => R.toque); if(tq){ h = { object: tq.objeto }; } }   /* lo que tocas con el dedo manda */
     /* MARGEN PARA NO SOLTAR (Carlos, 19 nov: «todavía no puedo manejar ajustes con la vista»): los renglones de Ajustes miden
        ~3° y la cabeza con el visor tiembla más que eso; el foco brincaba al renglón de al lado y el reloj de mirar fijo volvía
        a empezar. Si lo que tienes enfocado sigue a menos de `pegajoso` metros del rayo (en su propio plano), se queda.
@@ -657,27 +781,66 @@ function cuadro(t){
     if(h && (!flechasRecientes || extra.rayo)){ viendo = h.object; darFoco(viendo); }
   }
   if(!extra.rayo) extra.sobreBoton = false;
+  /* MIRAR, QUITAR LA VISTA Y VOLVER NO ELIGE (27 nov, Carlos: «si viste un botón, dejas de verlo y lo vuelves a ver, se
+     selecciona inmediatamente»): el foco se queda en el botón aunque ya no lo veas, y el reloj de mirar fijo seguía contando
+     desde la primera vez. Ahora el reloj vuelve a cero en cuanto no lo estás viendo */
+  if(viendo !== foco) focoDesde = performance.now();
+  /* …y también al cambiar de quién apunta: bajar la mano deja la mira en el mismo botón que apuntaba el dedo, y el reloj ya
+     llevaba segundos (la persona simulada lo cazó: quitó la mano y se metió sola a «Leer») */
+  { const f = extra.rayo ? 'mano' : 'mira'; if(f !== fuenteFoco){ fuenteFoco = f; focoDesde = performance.now(); } if(extra.rayo) manosVistasEn = performance.now(); }
+  /* y si la cámara te pierde la mano un momento (lo normal al pellizcar o al bajarla), mirar fijo no elige: a los 2 s de no
+     verla, lo que quedó enfrente se metía solo. Mirar fijo es para quien NO está usando las manos: 3 s sin manos */
+  if(!extra.rayo && performance.now() - manosVistasEn < 3000) focoDesde = performance.now();
   /* el clic con pellizco elige a lo que apuntabas UN INSTANTE ANTES: al juntar los dedos la mano se mueve y el rayo se
      brincaba de la tarjeta (Carlos, 18 nov: «haz que pellizcar sea un click») */
   const ahoraMs = performance.now(); historialMira.push([ahoraMs, viendo]); while(historialMira.length > 30) historialMira.shift();
   const xMano = !!extra.botones?.[B.X], clicMano = xMano && !xManoAntes; xManoAntes = xMano;
   if(clicMano && !usado.x && extra.rayo){
     /* el clic va a lo que apunta LA MANO QUE PELLIZCA (su rayo ya está congelado en hacia dónde apuntaba antes de juntar los dedos) */
-    const quien = (extra.rayos || []).find((R) => R.pellizco && R.objeto)
+    const quien = (extra.rayos || []).filter((R) => R.pellizco && (R.mano?.fijo?.objeto || R.objeto)).map((R) => ({ objeto: R.mano?.fijo?.objeto && L.includes(R.mano.fijo.objeto) ? R.mano.fijo.objeto : R.objeto, R }))[0]
       || (extra.rayos || []).filter((R) => R.mano?.agarro && ahoraMs - R.mano.agarro < 250).map((R) => ({ objeto: R.mano.objetoAntes }))[0];
     const antes = quien ? null : historialMira.find(([t, o]) => ahoraMs - t <= 260 && ahoraMs - t >= 90 && o);
     /* PELLIZCAR EL AIRE NO ELIGE NADA (Carlos, 19 nov: en MONARCH «se aburren, juegan con sus manos y omiten el video por
        accidente»): antes, sin nada bajo el rayo, el clic caía en lo último que tuvo el foco (el «Siguiente»). Ahora sólo
        cuenta lo que la mano apuntaba en ese instante. */
-    const o = quien?.objeto || antes?.[1]; if(o){ darFoco(o); activar(o); } usado.x = true; }
+    /* ESTABLE 200 ms (§2.3): el pellizco sólo cuenta si llevabas al menos AJ.estable ms apuntando a eso; y nada justo
+       después de otra elección (anti-cascada) */
+    const o = quien?.objeto || antes?.[1];
+    const est = AJ.estable ?? 200;
+    /* cerrar la mano ENTERA sobre algo (agarrar) ya es deliberado: cuenta lo que la mano apuntaba antes de cerrarse.
+       El pellizco y lo que se veía un instante antes sí tienen que llevar AJ.estable ms apuntando a eso */
+    const dePellizco = (extra.rayos || []).some((R) => R.pellizco && (R.objeto === o || R.mano?.fijo?.objeto === o)), deAgarre = !!quien?.objeto && !dePellizco;
+    const porToque = (extra.rayos || []).some((R) => R.toque && R.objeto === o);   /* tocándolo con el dedo: al instante */
+    const deFijo = (extra.rayos || []).some((R) => R.pellizco && R.mano?.fijo?.objeto === o);   /* lo que brillaba al cerrar los dedos: al instante */
+    /* ESPERA PROPIA (27 nov, Carlos en la maceta: «con sólo rozar otro elemento lo toma como si quisiera usarlo… activa la
+       espera antes de pulsar»): un objeto con userData.espera (ms) no se elige al instante por tocarlo ni por pellizcarlo de
+       pasada: hay que llevar ese tiempo apuntándole; si no, el clic queda pendiente y sale en cuanto se cumple */
+    const espera = o?.userData?.espera || 0, yaEspero = !espera || (o === foco && ahoraMs - focoDesde >= espera);
+    /* con las manos: lo que elegiste al juntar los dedos (deFijo, ya revisado en manos.js) o algo a lo que la mano le lleva
+       apuntando 250 ms de corrido. Rozarlo de pasada (con el dedo o con el rayo) ya no basta */
+    const continuo = (extra.rayos || []).some((R) => R.mano ? R.mano.objAhora === o && ahoraMs - R.mano.objDesde >= 250 : R.objeto === o && o === foco && ahoraMs - focoDesde >= 250);
+    const conManos = (extra.rayos || []).length > 0;
+    const estable = o && yaEspero && conManos ? (deFijo || continuo) : o && yaEspero && (deAgarre || porToque || deFijo || (o === foco ? ahoraMs - focoDesde >= est : historialMira.filter(([t]) => ahoraMs - t <= est + 90 && ahoraMs - t >= 90).every(([, x]) => x === o)));
+    if(o && estable && ahoraMs - ultimaEleccion > 350){ darFoco(o); activar(o); }
+    /* PELLIZCO TEMPRANO (Carlos, 26 nov: «que se seleccione inmediatamente, pero que sí te dé un pequeño tiempo de espera»):
+       no se tira: si sigues apuntando a lo mismo, se elige en cuanto se cumple la espera. Si te mueves a otra cosa, se olvida. */
+    else if(o && ahoraMs - ultimaEleccion > 350){ extra.clicTemprano = ahoraMs; clicPendiente = { o, desde: ahoraMs }; }   /* un pellizco justo después de elegir es el mismo clic repetido: no se guarda para después (salía doble) */
+    usado.x = true; }
   /* MIRAR O APUNTAR FIJO 1.6 s ELIGE, SIEMPRE (Carlos, 18 nov: «si apunto hacia un elemento unos segundos, que se clique, además
      del pellizcar; y que se pueda seguir pulsando sólo quedándote viendo»): antes se apagaba con el control conectado o con
      las manos a la vista. Con las manos cuenta a lo que apunta el rayo principal; sin manos, a lo que ve la mira. */
   /* con L2 apretado estás moviendo o agrandando algo: mirar fijo no elige (si no, al acomodar el menú se metía a lo que veías) */
   if(control.apretado(B.L2)) focoDesde = performance.now();
+  if(clicPendiente){ const ahoraP = performance.now();
+    const esp = Math.max(AJ.estable ?? 720, 250, clicPendiente.o.userData?.espera || 0);   /* 250: lo mismo que pide el pellizco (de corrido) */
+    if(viendo !== clicPendiente.o || foco !== clicPendiente.o || ahoraP - clicPendiente.desde > Math.max(1500, esp + 900)) clicPendiente = null;   /* hay que SEGUIR apuntándole */
+    else if(ahoraP - focoDesde >= esp && ahoraP - ultimaEleccion > 350){ const o = clicPendiente.o; clicPendiente = null; activar(o); } }
   if(!viendo && primerFoco && primerFoco !== 'pendiente') primerFoco = null;   /* le quitaste la vista: ya cuenta */
   if(primerFoco && !primerEstricto && cabeza.quaternion.angleTo(giroAlBloquear) > .14) primerFoco = null;   /* giraste la cabeza: ya cuenta */
-  const fijo = !mirarBloqueado && viendo && viendo === foco && viendo !== primerFoco && !(extra.rayo && extra.rayo.pellizco) ? Math.max(0, (performance.now() - focoDesde) / MIRAR_MS) : 0;
+  /* CON LAS MANOS NO SE ELIGE SOLO (Carlos, 26 nov: «el asunto es que no se presionen automáticamente»): apuntar con la
+     mano mientras decides ya no elige a los 2.5 s; con la mano se elige pellizcando. Mirar fijo (sin manos) sigue igual,
+     porque sin manos ni control es la única forma de elegir. */
+  const fijo = !mirarBloqueado && !extra.rayo && viendo && viendo === foco && viendo !== primerFoco ? Math.max(0, (performance.now() - focoDesde) / MIRAR_MS) : 0;
   anillo.visible = fijo > .05;
   /* el anillo se llena donde estás apuntando: en el cursor del rayo, o en la mira */
   if(anillo.visible && extra.rayo?.hit){ const pl = cabeza.worldToLocal(extra.rayo.hit.clone()); const k = Math.max(.3, -pl.z); anillo.position.copy(pl).multiplyScalar(.98); anillo.scale.setScalar(k); }
@@ -685,6 +848,8 @@ function cuadro(t){
   if(anillo.visible){ anillo.geometry.dispose(); anillo.geometry = new THREE.RingGeometry(.016, .021, 48, 1, Math.PI / 2, -Math.min(1, fijo) * Math.PI * 2); }
   fijoAhora = fijo;
   if(fijo >= 1) activar(viendo);
+  /* el apachurrado de lo elegido: baja 6 % y regresa en 180 ms */
+  if(pulso){ const k = (performance.now() - pulso.t) / 180; if(k >= 1 || !pulso.o.parent){ pulso.o.scale.copy(pulso.esc); pulso = null; } else pulso.o.scale.copy(pulso.esc).multiplyScalar(1 - .06 * Math.sin(Math.PI * k)); }
   /* la vista de AHORA: si Círculo, la palma o un clic cambiaron de pantalla en este cuadro, la de antes ya salió y no
      le toca otro turno (Carlos, 18 nov: un sable morado gigante se quedaba flotando en el menú, porque Sables volvía a
      prenderlo después de su propio salir) */
@@ -695,7 +860,8 @@ function cuadro(t){
   /* la mira sólo cuando estás viendo un botón (Carlos, 18 nov: «si no estoy mirando a ningún botón, que el cursor desaparezca, es molesto») */
   mira.visible = !extra.rayo && !!viendo;
   if(aviso.malla.visible && performance.now() > avisoHasta) aviso.malla.visible = false;
-  if(pared.visible){ medirPared();
+  if(pared.visible && ar.activo){ medirPared(); }
+  else if(pared.visible){ medirPared();
     /* camNuevo === null: sin aviso de cuadros (navegador viejo), se repinta siempre */
     /* RESPALDO (Carlos, 19 nov: «la realidad mixta anda valiendo verga», cámara en negro): en el iPhone el aviso de cuadro
        nuevo (requestVideoFrameCallback) puede no llegar NUNCA con el video escondido de 2 px, y la cámara se quedaba en su
@@ -709,11 +875,12 @@ function cuadro(t){
 
   /* dos ojos a dos texturas, y el pase del lente a la pantalla */
   rig.updateMatrixWorld(true);
-  if(modo.mono){ render.setRenderTarget(null); render.render(escena, cabeza); for(const f of trasCuadro) f([cabeza], W, H); capaEncima.style.display = 'none'; return; }
+  const destino = ar.activo && !ar.enLienzo ? ar.rt : null;   /* con ARCore, al búfer de la sesión; con el App Clip del iPhone, al lienzo (arcore.js) */
+  if(modo.mono){ render.setRenderTarget(destino); render.render(escena, cabeza); for(const f of trasCuadro) f([cabeza], W, H); capaEncima.style.display = 'none'; return; }
   estereo.update(cabeza);
   render.setRenderTarget(rtI); render.render(escena, estereo.cameraL);
   render.setRenderTarget(rtD); render.render(escena, estereo.cameraR);
-  render.setRenderTarget(null); render.render(paseEsc, paseCam);
+  render.setRenderTarget(destino); render.render(paseEsc, paseCam);
   for(const f of trasCuadro) f([estereo.cameraL, estereo.cameraR], W / 2, H);
   ponerEncima([estereo.cameraL, estereo.cameraR], W / 2, H);
 }
@@ -723,7 +890,7 @@ function cuadro(t){
    mientras está puesta, la mira y el aviso se dibujan también en la página, uno por ojo, con la curva del lente ── */
 let fijoAhora = 0;
 export const encima = { activa: false };
-const capaEncima = document.createElement('div'); capaEncima.style.cssText = 'position:fixed; inset:0; z-index:4; pointer-events:none; display:none';
+const capaEncima = document.createElement('div'); capaEncima.className = 'capa-giro'; capaEncima.style.cssText = 'position:fixed; inset:0; z-index:4; pointer-events:none; display:none';
 const ojosEncima = [0, 1].map((i) => { const o = document.createElement('div'); o.style.cssText = `position:absolute; top:0; ${i ? 'left:50%' : 'left:0'}; width:50%; height:100%; overflow:hidden`;
   const m = document.createElement('div'); m.style.cssText = 'position:absolute; width:16px; height:16px; margin:-8px 0 0 -8px; border-radius:50%; box-shadow:0 0 0 2px #fff, 0 0 0 4px rgba(0,0,0,.45)';
   const a = document.createElement('div'); a.style.cssText = 'position:absolute; width:30px; height:30px; margin:-15px 0 0 -15px; border-radius:50%; -webkit-mask:radial-gradient(circle, transparent 10px, #000 11px); mask:radial-gradient(circle, transparent 10px, #000 11px)';
@@ -751,7 +918,8 @@ function ponerEncima(camaras, ancho, alto){
 export function arrancar(){
   medir(); addEventListener('resize', medir); screen.orientation?.addEventListener?.('change', medir);
   ponerMixta(AJ.mixta && !!camTex);
-  render.setAnimationLoop((t) => { try{ cuadro(t); }catch(e){ fallo('E-MOTOR', 'cuadro', e); } });
+  /* con ARCore el ciclo lo marca la sesión (arcore.js), no la ventana */
+  if(!ar.activo) render.setAnimationLoop((t) => { try{ cuadro(t); }catch(e){ fallo('E-MOTOR', 'cuadro', e); } });
 }
 export const hayControl = () => padVisto;
 export const hayGiro = () => ori.hay;   /* ¿la cabeza la mueve el giroscopio de verdad? (sin él, la mueve el ratón) */
@@ -768,5 +936,13 @@ export function alLente(u, v, der){
   for(let i = 0; i < 8; i++){ const r2 = ex * ex + ey * ey, f = (1 + k1 * r2 + k2 * r2 * r2) / esc; ex = tx / f; ey = ty / f; }
   return [cx + ex / asp, .5 + ey];
 }
+export const relojMirar = () => [Math.round(performance.now() - focoDesde), primerFoco?.userData?.panel?.titulo || String(primerFoco), mirarBloqueado, fijoAhora];
 export const focoActual = () => foco?.userData.panel?.titulo || null;
+export const focoObjeto = () => foco || null;
+/* lo que brillaba hace `ms` (al juntar los dedos la punta del índice baja y el rayo se resbala al de abajo ANTES de que se note el pellizco) */
+/* ¿brilló algún botón en los últimos `ms`? (al pellizcar la punta baja y el rayo se sale del botón ANTES de que se note el
+   pellizco; en Objetos y el lector eso hacía que el pellizco a Atrás se leyera como «agarrar» y no como clic) */
+export const brilloHace = (ms) => { const t = performance.now() - ms; return historialMira.some(([tt, o]) => o && tt >= t); };
+export const callarHud = () => { avisoHasta = 0; };
+export const focoHace = (ms) => { const t = performance.now() - ms; let r = null; for(const [tt, o] of historialMira){ if(tt <= t && o) r = o; } return r; };   /* lo que está brillando ahora (el pellizco elige ESO: es lo que ve la persona) */
 export const enfrente = (dist, alto = 0) => { const p = new THREE.Vector3(0, alto, -dist); return p; };

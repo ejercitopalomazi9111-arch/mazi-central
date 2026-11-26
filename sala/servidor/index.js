@@ -14,6 +14,9 @@
 export { Sala } from './sala.js';
 import { traer as traerInkwell } from './inkwell.js';
 import { buscarYouTube } from './youtube.js';
+import { navegar } from './web.js';
+import { codigoBueno } from './espejo.js';
+export { Espejo } from './espejo.js';
 import { esColeccion } from './pinguinos.js';
 export { Coleccion } from './pinguinos.js';
 export { Comunidad } from './comunidad.js';
@@ -117,6 +120,14 @@ export default {
     if(url.pathname === '/api/salud') return conCORS(Response.json({ bien:true }), pedido);
 
     /* MAZI VR: buscar en YouTube desde el visor (youtube.js); sólo regresa la lista, el video lo da el embed oficial */
+    /* MAZI VR: el navegador (web.js): la página limpia, sin scripts, servida desde nuestra dirección. Sin CORS: es para
+       mostrarse en el marco del visor, no para leerse desde otro sitio */
+    if(url.pathname === '/api/sala/vr/web') return await navegar(url, pedido);
+    /* MAZI VR: el espejo (espejo.js): lo que ve el visor, en vivo, en el teléfono del docente, y sus órdenes de regreso */
+    { const e = url.pathname.match(/^\/api\/sala\/vr\/espejo\/([^/]+)$/);
+      if(e){ if(!codigoBueno(e[1]) || !env.ESPEJO) return conCORS(Response.json({ bien:false, error:'Código no válido.' }, { status:400 }), pedido);
+        return env.ESPEJO.get(env.ESPEJO.idFromName(e[1])).fetch(pedido); } }
+
     if(url.pathname === '/api/sala/vr/buscar'){
       if(pedido.method !== 'GET') return conCORS(Response.json({ bien:false, error:'Sólo GET.' }, { status:405 }), pedido);
       return conCORS(await buscarYouTube(url), pedido);

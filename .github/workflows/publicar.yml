@@ -1,0 +1,118 @@
+# ══════════════════════════════════════════════════════════════════════════
+# PUBLICAR EN CLOUDFLARE DESDE GITHUB
+# ──────────────────────────────────────────────────────────────────────────
+# Carlos, 25 nov: «me acabé el uso del mes de cloudflare». Lo que se acabó son
+# los MINUTOS DE ARMADO de Cloudflare (Workers Builds): cada fusión a main
+# falla en 0 segundos hasta que se reinicia el mes (lunes 30, 5:59 pm). Las
+# páginas siguen vivas, sólo congeladas.
+#
+# Este flujo arma en GitHub (gratis en repos públicos) y le entrega a
+# Cloudflare la versión ya hecha con `wrangler deploy`: eso NO gasta minutos
+# de armado. Mismos links de siempre.
+#
+# Sólo publica lo que cambió: cada servidor tiene su filtro de carpetas.
+# Sin el secreto CLOUDFLARE_API_TOKEN no hace nada y lo dice.
+# La ficha: dash.cloudflare.com → My Profile → API Tokens → Create Token →
+# plantilla «Edit Cloudflare Workers».
+name: Publicar en Cloudflare
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      todo:
+        description: 'Publicar todo aunque no haya cambiado (sí/no)'
+        required: false
+        default: 'sí'
+
+concurrency:
+  group: publicar
+  cancel-in-progress: false
+
+jobs:
+  cambios:
+    runs-on: ubuntu-latest
+    outputs:
+      sitio: ${{ steps.f.outputs.sitio }}
+      sala: ${{ steps.f.outputs.sala }}
+      fadori: ${{ steps.f.outputs.fadori }}
+      puercos: ${{ steps.f.outputs.puercos }}
+      urban: ${{ steps.f.outputs.urban }}
+      llave: ${{ steps.llave.outputs.hay }}
+    steps:
+      - id: llave
+        env:
+          FICHA: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$FICHA" ]; then
+            echo "::warning::Falta el secreto CLOUDFLARE_API_TOKEN (Settings → Secrets and variables → Actions). No se publica nada."
+            echo "hay=no" >> "$GITHUB_OUTPUT"
+          else
+            echo "hay=si" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - id: f
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.todo }}" != "no" ]; then
+            for k in sitio sala fadori puercos urban; do echo "$k=si" >> "$GITHUB_OUTPUT"; done; exit 0
+          fi
+          cambio=$(git diff --name-only HEAD~1 HEAD || true)
+          echo "$cambio"
+          tiene(){ echo "$cambio" | grep -qE "$1" && echo si || echo no; }
+          echo "sala=$(tiene '^sala/servidor/|^inkwell/|^carymo/')" >> "$GITHUB_OUTPUT"
+          echo "fadori=$(tiene '^servidor/')" >> "$GITHUB_OUTPUT"
+          echo "puercos=$(tiene '^juegos/servidor/|^juegos/guerra-de-puercos/motor')" >> "$GITHUB_OUTPUT"
+          echo "urban=$(tiene '^urban-pest/servidor/')" >> "$GITHUB_OUTPUT"
+          # el sitio cambia con casi todo lo demás: se publica si cambió algo fuera de los servidores
+          otro=$(echo "$cambio" | grep -vE '^(sala/servidor|servidor|juegos/servidor|urban-pest/servidor)/' | grep -v '^$' || true)
+          [ -n "$otro" ] && echo "sitio=si" >> "$GITHUB_OUTPUT" || echo "sitio=no" >> "$GITHUB_OUTPUT"
+
+  publicar:
+    needs: cambios
+    if: needs.cambios.outputs.llave == 'si'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { nombre: sitio, carpeta: '.' }
+          - { nombre: sala, carpeta: 'sala/servidor' }
+          - { nombre: fadori, carpeta: 'servidor' }
+          - { nombre: puercos, carpeta: 'juegos/servidor' }
+          - { nombre: urban, carpeta: 'urban-pest/servidor' }
+    steps:
+      - name: ¿Toca?
+        id: toca
+        run: |
+          case "${{ matrix.nombre }}" in
+            sitio) v="${{ needs.cambios.outputs.sitio }}";;
+            sala) v="${{ needs.cambios.outputs.sala }}";;
+            fadori) v="${{ needs.cambios.outputs.fadori }}";;
+            puercos) v="${{ needs.cambios.outputs.puercos }}";;
+            urban) v="${{ needs.cambios.outputs.urban }}";;
+          esac
+          echo "va=$v" >> "$GITHUB_OUTPUT"; echo "${{ matrix.nombre }}: $v"
+      - uses: actions/checkout@v4
+        if: steps.toca.outputs.va == 'si'
+      - uses: actions/setup-node@v4
+        if: steps.toca.outputs.va == 'si'
+        with:
+          node-version: '22'
+      - name: Publicar ${{ matrix.nombre }}
+        if: steps.toca.outputs.va == 'si'
+        working-directory: ${{ matrix.carpeta }}
+        env:
+          FICHA: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          # el número de la cuenta de Carlos (no es secreto: sale en cada dirección del panel)
+          CLOUDFLARE_ACCOUNT_ID: faa3f1c20e5962a4e225cc9015b6d78c
+        # La llave se limpia antes de usarla (25 nov: Cloudflare la daba por buena desde fuera y aquí decía «Invalid
+        # access token»: se había guardado con un espacio, un salto de línea, comillas o «Bearer» pegados).
+        # El sitio corre su propio `node build.mjs` (lo manda wrangler.jsonc).
+        run: |
+          limpia=$(printf '%s' "$FICHA" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^Bearer[[:space:]]*//' -e 's/^"//' -e 's/"$//' | tr -d '\r\n ')
+          echo "::add-mask::$limpia"
+          echo "La llave mide ${#limpia} caracteres (la guardada medía ${#FICHA})."
+          CLOUDFLARE_API_TOKEN="$limpia" npx --yes wrangler@4 deploy

@@ -1,0 +1,698 @@
+{
+ "voces": {
+  "n": "google:Orus",
+  "s": "google:Charon"
+ },
+ "lineas": [
+  {
+   "id": "t-hola",
+   "voz": "n",
+   "dice": "Hello. I am the voice that will be with you. Before we start, let’s practice a little. Nothing hard, I promise."
+  },
+  {
+   "id": "t-mirar",
+   "voz": "n",
+   "dice": "First, move your head. Look to your left, where that butterfly is going. And now to your right."
+  },
+  {
+   "id": "t-mirar-bien",
+   "voz": "s",
+   "dice": "Perfect. You know how to look around. The hardest part of the day."
+  },
+  {
+   "id": "t-manos",
+   "voz": "n",
+   "dice": "Now raise one hand in front of you, as if you were waving at the phone’s camera."
+  },
+  {
+   "id": "t-manos-bien",
+   "voz": "s",
+   "dice": "There is your hand. Yes, it is still yours. It has not developed an independent civilization. Yet."
+  },
+  {
+   "id": "t-sin-manos",
+   "voz": "n",
+   "dice": "If I can’t see your hands, that’s fine: you can also choose by looking steadily, with the controller, or by tapping the screen."
+  },
+  {
+   "id": "t-apuntar",
+   "voz": "n",
+   "dice": "Now point your finger at the button in front of you. Or simply look at it."
+  },
+  {
+   "id": "t-elegir",
+   "voz": "n",
+   "dice": "Very good. To choose it, touch the tip of your thumb to the tip of your index finger, like a pinch. Or keep looking at it for a moment."
+  },
+  {
+   "id": "t-elegir-otra",
+   "voz": "s",
+   "dice": "All right, let’s try again. Don’t worry, the button doesn’t bite. Although, the way you are avoiding it, I’m starting to suspect it did something to you."
+  },
+  {
+   "id": "t-listo",
+   "voz": "s",
+   "dice": "Done. You know how to look, point and choose. Now, on to the monarch."
+  },
+  {
+   "id": "t-saltar",
+   "voz": "s",
+   "dice": "You already know how to use this? Very well. We’ll skip the practice."
+  },
+  {
+   "id": "e-bienvenida",
+   "voz": "n",
+   "dice": "This is the story of someone with a headset on their face. One day, without anyone asking, they decided to follow a monarch butterfly. Look around you. Whenever you like, choose Start. I’ll wait. It’s what I do best."
+  },
+  {
+   "id": "e-mariposa",
+   "voz": "n",
+   "dice": "This is the monarch. The female lays her eggs only on milkweed, also called asclepias. It is the only thing her caterpillars eat. And here comes the chemistry: milkweed carries bitter substances called cardenolides. The caterpillar stores them in its body, so almost no animal wants to eat it. Not bad for something so small. As an adult, it drinks nectar from many flowers."
+  },
+  {
+   "id": "e-ciclo",
+   "voz": "n",
+   "dice": "From the egg comes a caterpillar that eats only milkweed. It goes through five stages: it sheds its skin four times as it grows, and the fifth time it is already a chrysalis. In that time it gains about two thousand times its mass. Do the math: if a three kilogram baby grew the same way, it would weigh six tonnes. In summer, from egg to adult takes about four weeks. In the cold, longer. Nobody likes getting up when it’s cold."
+  },
+  {
+   "id": "e-flores",
+   "voz": "n",
+   "dice": "As an adult, the monarch needs nectar for the road. And this is where you come in. There are five spots in the grass. Plant a flower in each one, and watch her arrive. Your turn to help."
+  },
+  {
+   "id": "e-migracion",
+   "voz": "n",
+   "dice": "The ones from the north fly more than three thousand kilometers to central Mexico, and never in a straight line. They travel eighty to one hundred sixty kilometers a day: pure physics, distance over time. The one that flies to Mexico lives up to about nine months, and in spring it starts the return: it lays its eggs in the southern United States, and its daughters and granddaughters finish the trip north. The summer ones live only a few weeks."
+  },
+  {
+   "id": "e-cuerpo",
+   "voz": "n",
+   "dice": "A question for your physical education class. What if you made the trip? A person weighing sixty kilos, three thousand kilometers. Choose: walking or running."
+  },
+  {
+   "id": "e-santuario",
+   "voz": "n",
+   "dice": "They spend the winter on eleven or twelve mountains in Michoacán and the State of Mexico, from October to late March, in oyamel fir forests. The Monarch Butterfly Biosphere Reserve covers fifty-six thousand two hundred fifty-nine hectares, and has been a World Heritage site since two thousand eight. Look around you. Slowly. They are not asleep: they are almost still because of the cold, saving their fat. On warm days they come down to drink water."
+  },
+  {
+   "id": "e-tala",
+   "voz": "n",
+   "dice": "Now, the part nobody wants to hear. Between February two thousand twenty-four and February two thousand twenty-five, two point five five hectares of the heart of the reserve were degraded. Illegal logging: one point eight five. Fires: zero point five eight. Drought: zero point one one. They look like small numbers. But last season, all the colonies together covered less than three hectares."
+  },
+  {
+   "id": "e-campo",
+   "voz": "n",
+   "dice": "No milkweed, no caterpillars. And no caterpillars, no migration. That simple. That fragile. In two thousand twenty-two, the IUCN listed the migratory monarch as Endangered. In two thousand twenty-three, Vulnerable. Not because it got better: they revised their models, and it is declining more slowly than they thought. But it is still declining."
+  },
+  {
+   "id": "e-decision",
+   "voz": "n",
+   "dice": "And now, a test of character. Your family owns land with oyamel firs next to the sanctuary. A company offers to pay to log it. What do you do? I think I know what you will choose. But go ahead. Surprise me."
+  },
+  {
+   "id": "e-cuestionario",
+   "voz": "n",
+   "dice": "Time to see how much stayed with you. A few questions, from all your subjects. No pressure. Well, a little."
+  },
+  {
+   "id": "e-final",
+   "voz": "n",
+   "dice": "Season two thousand twenty-five to two thousand twenty-six: two point nine three hectares of colonies. Do the math: divided by one point seven nine from the year before, that is one point six four. Sixty-four percent more. About four soccer fields, for millions of butterflies. But one good season is not a trend. The highest was eighteen point one nine hectares, in nineteen ninety-six to ninety-seven. The lowest, zero point six seven, in two thousand thirteen to fourteen. And so ends the story of someone who followed a butterfly. Or maybe it is just beginning."
+  },
+  {
+   "id": "q-1",
+   "voz": "n",
+   "dice": "Where does the monarch lay its eggs?"
+  },
+  {
+   "id": "q-2",
+   "voz": "n",
+   "dice": "In what order does the monarch change?"
+  },
+  {
+   "id": "q-3",
+   "voz": "n",
+   "dice": "Does a single butterfly finish the return to Canada?"
+  },
+  {
+   "id": "q-4",
+   "voz": "n",
+   "dice": "Which tree dominates its sanctuary?"
+  },
+  {
+   "id": "q-5",
+   "voz": "n",
+   "dice": "What degraded the most forest between two thousand twenty-four and two thousand twenty-five?"
+  },
+  {
+   "id": "q-6",
+   "voz": "n",
+   "dice": "Why do almost no animals like to eat the monarch?"
+  },
+  {
+   "id": "q-7",
+   "voz": "n",
+   "dice": "To travel the three thousand kilometers, what uses more energy in total?"
+  },
+  {
+   "id": "q-8",
+   "voz": "n",
+   "dice": "From one point seven nine to two point nine three hectares. How much did it grow?"
+  },
+  {
+   "id": "q-1-mal",
+   "voz": "s",
+   "dice": "Hmm. No. It was milkweed. I said it very clearly."
+  },
+  {
+   "id": "q-2-mal",
+   "voz": "s",
+   "dice": "No. Egg, caterpillar, chrysalis, butterfly. In that order. Always in that order."
+  },
+  {
+   "id": "q-3-mal",
+   "voz": "s",
+   "dice": "No. The one that flies to Mexico starts the return, but its daughters and granddaughters finish it."
+  },
+  {
+   "id": "q-4-mal",
+   "voz": "s",
+   "dice": "No. It was the oyamel fir. It was right in front of you a minute ago."
+  },
+  {
+   "id": "q-5-mal",
+   "voz": "s",
+   "dice": "No. It was illegal logging. One point eight five hectares."
+  },
+  {
+   "id": "q-6-mal",
+   "voz": "s",
+   "dice": "No. It’s chemistry: it stores the milkweed’s cardenolides, and it tastes terrible."
+  },
+  {
+   "id": "q-7-mal",
+   "voz": "s",
+   "dice": "No. Running gets you there sooner, but in total you use more energy."
+  },
+  {
+   "id": "q-8-mal",
+   "voz": "s",
+   "dice": "No. Two point nine three divided by one point seven nine: sixty-four percent more."
+  },
+  {
+   "id": "r-bien-1",
+   "voz": "s",
+   "dice": "Correct. I knew you could."
+  },
+  {
+   "id": "r-bien-2",
+   "voz": "s",
+   "dice": "Exactly. You are impressing me."
+  },
+  {
+   "id": "r-bien-3",
+   "voz": "s",
+   "dice": "Correct. That’s what I like to see."
+  },
+  {
+   "id": "r-bien-4",
+   "voz": "s",
+   "dice": "Very good. Keep it up."
+  },
+  {
+   "id": "r-perfecto",
+   "voz": "s",
+   "dice": "All of them right. Perfect. I must admit, I am impressed."
+  },
+  {
+   "id": "r-medio",
+   "voz": "s",
+   "dice": "Not bad. Room to improve. But not bad."
+  },
+  {
+   "id": "r-cero",
+   "voz": "s",
+   "dice": "Zero. Well: now you know how much there is to discover. One more round and you’ll master it."
+  },
+  {
+   "id": "r-talar",
+   "voz": "s",
+   "dice": "Log it. There is money now. But the forest takes a long time to come back, and the butterflies lose their winter shelter. It is a hard decision. That is why it is worth thinking about."
+  },
+  {
+   "id": "r-conservar",
+   "voz": "s",
+   "dice": "Protect it. How elegant. The forest stays. Although your family gets nothing for caring for it. So the question changes: who should pay for conservation?"
+  },
+  {
+   "id": "r-turismo",
+   "voz": "s",
+   "dice": "Tourism. I like the way you think. Guided visits can bring income without logging. As long as the limits are respected, so the colonies are not disturbed."
+  },
+  {
+   "id": "r-cuerpo-camina",
+   "voz": "s",
+   "dice": "Walking, at five kilometers per hour: six hundred hours. Eight hours a day, and you arrive in seventy-five days. You would burn about one hundred thirty-seven thousand kilocalories: more than two months of food. She does it in about two months, with nectar and her own fat."
+  },
+  {
+   "id": "r-cuerpo-corre",
+   "voz": "s",
+   "dice": "Running, at ten kilometers per hour: three hundred hours, half the time. But you would burn about one hundred sixty-seven thousand kilocalories: more than walking. You arrive sooner, but it costs more energy. That is how intense exercise works."
+  },
+  {
+   "id": "r-prisa-1",
+   "voz": "s",
+   "dice": "Already? I was halfway through. But go ahead. You’re the boss."
+  },
+  {
+   "id": "r-prisa-2",
+   "voz": "s",
+   "dice": "In a hurry again. She travels thousands of kilometers without skipping a single stretch."
+  },
+  {
+   "id": "r-prisa-3",
+   "voz": "s",
+   "dice": "Fine. I’ll skip the boring part. Which, apparently, was all of it."
+  },
+  {
+   "id": "r-atras",
+   "voz": "s",
+   "dice": "Going back? Nobody ever goes back. I’m flattered."
+  },
+  {
+   "id": "r-lejos-1",
+   "voz": "s",
+   "dice": "The story is in front of you. But go ahead, admire the horizon."
+  },
+  {
+   "id": "r-lejos-2",
+   "voz": "s",
+   "dice": "I’m talking to you. Yes. You. Right here in front."
+  },
+  {
+   "id": "r-lejos-3",
+   "voz": "s",
+   "dice": "Still looking over there. Is there something more interesting than an endangered species? Don’t answer that."
+  },
+  {
+   "id": "r-quieto-1",
+   "voz": "s",
+   "dice": "I’m still here. Whenever you like, choose something."
+  },
+  {
+   "id": "r-quieto-2",
+   "voz": "s",
+   "dice": "She flies thousands of kilometers. You only have to choose a button."
+  },
+  {
+   "id": "r-quieto-3",
+   "voz": "s",
+   "dice": "One minute without doing anything. By now, the monarch would be very far away."
+  },
+  {
+   "id": "r-quieto-4",
+   "voz": "s",
+   "dice": "Let me tell you a secret: this only works if you do something. Anything. Please."
+  },
+  {
+   "id": "r-quieto-5",
+   "voz": "s",
+   "dice": "All right. I’ll move on myself. Someone has to."
+  },
+  {
+   "id": "r-flor-1",
+   "voz": "s",
+   "dice": "One flower. She has seen it. Don’t get excited: there are five."
+  },
+  {
+   "id": "r-flor-hablando",
+   "voz": "s",
+   "dice": "Planting before I finish explaining. I like your initiative."
+  },
+  {
+   "id": "r-flores-todas",
+   "voz": "s",
+   "dice": "Five flowers on her way. Five places to drink nectar. Look at her."
+  },
+  {
+   "id": "r-flores-rapido",
+   "voz": "s",
+   "dice": "Five flowers in five seconds. That’s not gardening: that’s a race."
+  },
+  {
+   "id": "r-voz-off",
+   "voz": "s",
+   "dice": "Turning me off? Very well. Read it yourself."
+  },
+  {
+   "id": "r-voz-on",
+   "voz": "s",
+   "dice": "I knew you would miss me."
+  },
+  {
+   "id": "r-voz-juega",
+   "voz": "s",
+   "dice": "On, off, on. I’m not a light bulb."
+  },
+  {
+   "id": "r-creditos",
+   "voz": "s",
+   "dice": "All the people who made this possible. And me. Especially me."
+  },
+  {
+   "id": "r-creditos-2",
+   "voz": "s",
+   "dice": "You already read the credits. Yes, I’m still in them."
+  },
+  {
+   "id": "r-otra-vez",
+   "voz": "s",
+   "dice": "Again? I love it. From the beginning, then."
+  },
+  {
+   "id": "r-otra-vez-2",
+   "voz": "s",
+   "dice": "Again? Another one? Very well. But this time, pay attention."
+  },
+  {
+   "id": "r-atras-mira",
+   "voz": "s",
+   "dice": "You turned your back on the whole story. Brave. The story is still here in front, waiting for you."
+  },
+  {
+   "id": "r-piso",
+   "voz": "s",
+   "dice": "Looking for something on the floor? Monarchs fly. Upward. Well, in front of you."
+  },
+  {
+   "id": "r-cielo",
+   "voz": "s",
+   "dice": "Yes, that’s the sky. It’s pretty. So is the explanation, and it’s down here."
+  },
+  {
+   "id": "r-ladeado",
+   "voz": "s",
+   "dice": "Tilting your head doesn’t make the text easier to read. I checked."
+  },
+  {
+   "id": "r-vueltas-1",
+   "voz": "s",
+   "dice": "Round and round you go. Like the migration, but without getting anywhere."
+  },
+  {
+   "id": "r-vueltas-2",
+   "voz": "s",
+   "dice": "If you get dizzy, it’s not my fault. Let the record show I warned you."
+  },
+  {
+   "id": "r-no-cabeza",
+   "voz": "s",
+   "dice": "Shaking your head at me? What a pity. The facts don’t change because you don’t like them."
+  },
+  {
+   "id": "r-si-cabeza",
+   "voz": "s",
+   "dice": "Yes, yes. You nod as if you were listening. I believe you. More or less."
+  },
+  {
+   "id": "r-sin-cabeza",
+   "voz": "s",
+   "dice": "Nobody stays this still. Did you take off the headset? Did you leave me talking to myself? Again."
+  },
+  {
+   "id": "r-agachado",
+   "voz": "s",
+   "dice": "Looking for something down there? The butterflies are quite a bit higher."
+  },
+  {
+   "id": "r-salto",
+   "voz": "s",
+   "dice": "A jump? Butterflies take off with more grace. But you’re getting there."
+  },
+  {
+   "id": "r-cerca-cartel",
+   "voz": "s",
+   "dice": "You don’t have to get that close. The text doesn’t bite. Neither do I."
+  },
+  {
+   "id": "r-lejos-cuerpo",
+   "voz": "s",
+   "dice": "Where are you going? The story stays here. Come back a little."
+  },
+  {
+   "id": "r-zona",
+   "voz": "s",
+   "dice": "Careful. That over there is real. I am not responsible for your shins."
+  },
+  {
+   "id": "r-manos-juega",
+   "voz": "s",
+   "dice": "I see your hands. They move a lot. They aren’t listening either."
+  },
+  {
+   "id": "r-saludo",
+   "voz": "s",
+   "dice": "Hello. Yes, hello. I’m waving back. Now, shall we continue?"
+  },
+  {
+   "id": "r-punos",
+   "voz": "s",
+   "dice": "Fists up? If you’re celebrating, it’s a little early."
+  },
+  {
+   "id": "r-pellizcos",
+   "voz": "s",
+   "dice": "You pinch the air like it owes you money. The buttons are in front of you."
+  },
+  {
+   "id": "r-manos-arriba",
+   "voz": "s",
+   "dice": "Hands up? Giving up? It’s not over yet."
+  },
+  {
+   "id": "r-tocar-mariposa",
+   "voz": "s",
+   "dice": "Don’t touch her. Her wings are covered in very delicate scales. Well, this one is virtual. But don’t touch her."
+  },
+  {
+   "id": "r-oscuro",
+   "voz": "s",
+   "dice": "Everything went dark. Something is covering the camera. Without light, neither the butterflies nor I can see anything."
+  },
+  {
+   "id": "r-machaca",
+   "voz": "s",
+   "dice": "You press buttons like it’s a fighting game. It isn’t. Breathe."
+  },
+  {
+   "id": "r-stick",
+   "voz": "s",
+   "dice": "The controller turns the view, not the story. You’ve already gone around about ten times."
+  },
+  {
+   "id": "r-opciones",
+   "voz": "s",
+   "dice": "That button won’t get you out of here. Only the teacher knows how. And they won’t tell you."
+  },
+  {
+   "id": "r-pingpong",
+   "voz": "s",
+   "dice": "Forward, back, forward. Make up your mind. The butterfly has left three times already."
+  },
+  {
+   "id": "r-puntaje",
+   "voz": "s",
+   "dice": "Yes, that’s your score. Touching it doesn’t change it."
+  },
+  {
+   "id": "r-puntaje-2",
+   "voz": "s",
+   "dice": "You keep touching it. It keeps saying the same thing. That’s how numbers work."
+  },
+  {
+   "id": "r-record",
+   "voz": "s",
+   "dice": "You finished in less than a minute. A speed record. Next time, let’s go for an attention record."
+  },
+  {
+   "id": "r-sospechoso",
+   "voz": "s",
+   "dice": "You skipped almost everything and got every answer right. Suspicious. Very suspicious."
+  },
+  {
+   "id": "r-rapido-resp",
+   "voz": "s",
+   "dice": "You answered without reading? Such confidence. I hope it lasts."
+  },
+  {
+   "id": "r-volviste",
+   "voz": "s",
+   "dice": "You’re back. I saved your spot."
+  },
+  {
+   "id": "r-vertical",
+   "voz": "s",
+   "dice": "You stood the phone upright. This story is meant to be seen with the phone sideways."
+  },
+  {
+   "id": "r-agitar",
+   "voz": "s",
+   "dice": "Are you shaking the phone? The answers don’t come out that way. It’s not a magic eight ball."
+  },
+  {
+   "id": "r-largo",
+   "voz": "s",
+   "dice": "You’ve been here a good while. I’m flattered. But out there, there are real butterflies too."
+  },
+  {
+   "id": "e-maceta",
+   "voz": "n",
+   "dice": "Now, precision gardening. You are going to plant something for the butterflies. First, take the bag of soil and bring it to the pot."
+  },
+  {
+   "id": "k-primero",
+   "voz": "s",
+   "dice": "Not yet. First things first. The butterfly is showing you what comes next."
+  },
+  {
+   "id": "k-otra",
+   "voz": "s",
+   "dice": "Not that one. Look where the butterfly landed: that is the next one."
+  },
+  {
+   "id": "k-hoyo",
+   "voz": "s",
+   "dice": "Soil ready. Now take the trowel and dig a hole."
+  },
+  {
+   "id": "k-semilla",
+   "voz": "s",
+   "dice": "Perfect. Take a seed from the seed tray and put it in the hole."
+  },
+  {
+   "id": "k-cubrir",
+   "voz": "s",
+   "dice": "Now cover it with soil. With the trowel again."
+  },
+  {
+   "id": "k-regar",
+   "voz": "s",
+   "dice": "It needs water. The watering can, please."
+  },
+  {
+   "id": "k-crece",
+   "voz": "s",
+   "dice": "And now, patience. A lot of patience. Well, we will speed it up a little."
+  },
+  {
+   "id": "k-lista",
+   "voz": "s",
+   "dice": "A new plant for the ecosystem. And look who came to visit."
+  },
+  {
+   "id": "r-tarda-maceta",
+   "voz": "s",
+   "dice": "There is no rush. Nature took millions of years to develop these mechanisms. Although, honestly, I expected filling a pot to take us a little less."
+  },
+  {
+   "id": "r-regresa-exp",
+   "voz": "s",
+   "dice": "You came back. I knew you would."
+  },
+  {
+   "id": "r-materias",
+   "voz": "s",
+   "dice": "Biology, chemistry, physics, math, physical education, ethics and technology. All with one butterfly. See, it wasn’t just a pretty bug."
+  },
+  {
+   "id": "r-como-funciona",
+   "voz": "s",
+   "dice": "This headset is a phone: the gyroscope follows your head, the camera sees your hands, and the processor draws everything many times per second. If it feels hot, give it a break."
+  },
+  {
+   "id": "r-como-contamos",
+   "voz": "s",
+   "dice": "I told it in the second person, with questions, irony and facts that have a source. Kind at first, and a little cheekier when you got distracted. That is how you talk to an audience so it doesn’t fall asleep."
+  },
+  {
+   "id": "r-calor",
+   "voz": "s",
+   "dice": "We’ve been at this a while. Your phone is running the camera, the 3D and your hands all at once. If it feels hot, a break will do it good. Computers get tired too; they just get hot instead."
+  },
+  {
+   "id": "m-manos-migracion",
+   "voz": "s",
+   "dice": "And just as they cross thousands of kilometers guided by signals from their surroundings, I keep trying to guide your attention. Although I admit your hands have proven to be a very popular destination."
+  },
+  {
+   "id": "m-manos-1",
+   "voz": "s",
+   "dice": "By the way, I keep thinking about how much you like your hands. They are good hands. Now, back to the butterflies."
+  },
+  {
+   "id": "m-manos-2",
+   "voz": "s",
+   "dice": "Fun fact: the monarch has no hands. You do, and you have checked them plenty. They’re still there, I promise."
+  },
+  {
+   "id": "m-lejos-santuario",
+   "voz": "s",
+   "dice": "Here you can look everywhere. In fact, I’m asking you to. You already practiced plenty earlier."
+  },
+  {
+   "id": "m-lejos-1",
+   "voz": "s",
+   "dice": "A while ago you got lost staring at the horizon. Now that you’re back, this is the important part."
+  },
+  {
+   "id": "m-prisa-tala",
+   "voz": "s",
+   "dice": "I’ve seen you skip explanations. Please don’t skip this one. It’s the one that matters most."
+  },
+  {
+   "id": "m-prisa-1",
+   "voz": "s",
+   "dice": "You’ve been in a hurry since the start. That’s fine, the monarch has a long journey too. But she doesn’t skip any stretch."
+  },
+  {
+   "id": "m-mariposa-flores",
+   "voz": "s",
+   "dice": "This time you can help her without touching her. Flowers count as affection too."
+  },
+  {
+   "id": "m-mariposa-1",
+   "voz": "s",
+   "dice": "By the way, the butterfly from earlier is still a little nervous. You touched her quite a bit."
+  },
+  {
+   "id": "m-quieto-migracion",
+   "voz": "s",
+   "dice": "Earlier you stayed still for quite a while. Monarchs rest too, but in winter. And it is still autumn."
+  },
+  {
+   "id": "m-quieto-1",
+   "voz": "s",
+   "dice": "You seem more awake than earlier. That’s what I like to see."
+  },
+  {
+   "id": "m-vueltas-migracion",
+   "voz": "s",
+   "dice": "After all those turns earlier, you finally understand the monarch: she doesn’t travel in a straight line either."
+  },
+  {
+   "id": "m-vueltas-1",
+   "voz": "s",
+   "dice": "You stopped spinning. Thank you. Narrators get dizzy too."
+  },
+  {
+   "id": "m-cielo-santuario",
+   "voz": "s",
+   "dice": "Now you can look up, like you did earlier. But this time there is something to see."
+  },
+  {
+   "id": "m-piso-flores",
+   "voz": "s",
+   "dice": "Earlier you were looking for something on the floor. Good news: now the floor is what matters."
+  }
+ ]
+}

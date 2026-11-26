@@ -27,7 +27,7 @@ volver la señal **nunca se pierde callado**.
 
 ```
 node urban-pest/centro/pruebas.mjs            # el motor sin red: 32 comprobaciones
-node urban-pest/centro/pruebas-pantalla.mjs   # la pantalla con Playwright, y sin internet de verdad: 17
+node urban-pest/centro/pruebas-pantalla.mjs   # la pantalla con Playwright, sin internet de verdad y «Calcular»: 23
 ```
 
 Si `pruebas.mjs` dice que `motor.js` ya no es copia exacta, es que cambiaron las reglas del
@@ -83,3 +83,9 @@ La sexta pestaña. Es su «CorridaCotizacion.xlsx» hecha pantalla:
   cargar su Excel de verdad: se queda en ese teléfono y no se manda a ningún lado.
 
 El bot cotiza con lo mismo (`servidor/RUTAS.md`, «Su Excel»).
+
+**La distancia (23 nov, Godines).** Debajo de «Kilómetros», **«Calcular»** toma la zona, pregunta `GET /api/distancia` y
+llena los km de IDA por carretera desde la bodega, como su Excel («Juriquilla · norte · 18.5 km por carretera»). El renglón
+**«La camioneta sale de»** guarda la bodega con `POST /api/salida` y dice qué dirección entendió el mapa. **FALTA del cliente:
+la dirección de su bodega**; sin ella, «Calcular» dice la zona y el rumbo y pide la bodega. Con `?muestra` no se calcula
+(no hay servidor). En «Números», el traslado de cada cotización del bot dice con qué km se cotizó.

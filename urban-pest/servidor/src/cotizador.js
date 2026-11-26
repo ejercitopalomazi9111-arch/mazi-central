@@ -59,7 +59,10 @@ export function cotizar(p, t){
   if(!(p.km >= 0)) falta.push('zona o distancia');
   if(falta.length) return { bien: false, falta };
 
-  const tipo = (t.tipos || {})[p.tipo || 'casa'] || { factor: 1 };
+  /* La industria se confirma con visita aunque las tarifas no traigan `tipos` (prueba por tipo, 23 nov: las que salen de su
+     Excel no los traen, y a una nave de 3,000 m² le llegaba la hoja sin «se confirma con una visita»). Lo que digan las
+     tarifas manda: `tipos.industria.visita: false` lo apaga. */
+  const tipo = { ...TIPOS_DE_FABRICA[p.tipo || 'casa'], ...(t.tipos || {})[p.tipo || 'casa'] };
   const deExcel = t.formula?.tipo === 'excel' && t.formula.x > 0 && t.formula.entre > 0;
   /* el material: el de esa plaga, por metro. Con su Excel, los litros van a 2 decimales ANTES de calcular: así lo que
      se le enseña al dueño («3.43 L») es exactamente lo que entró a la cuenta, y en su Excel le da lo mismo. */
@@ -107,7 +110,10 @@ export function cotizar(p, t){
   /* Un lugar enorme no se cotiza solo (prueba de seguridad, 23 nov: «mi casa mide 99999999 metros» daba $384,711,032.18
      y una hoja). Arriba de m2_maximo_auto (1,500 m² en casa; 20,000 en negocio o industria) lo revisa el encargado. */
   const enorme = p.m2 > (t.m2_maximo_auto ?? ((p.tipo || 'casa') === 'casa' ? 1500 : 20000));
-  const atiende = enorme ? 'caso-por-caso' : !fueraDeRadio ? 'si' : p.tipo === 'industria' ? 'si' : grande ? 'caso-por-caso' : 'no';
+  /* `p.lejos` (Luis, 23 nov): el lugar queda lejos de la ciudad (distancia.js) y NO hay km reales de carretera (falta la salida
+     o el mapa no contestó). Con los km típicos se le cobraría casi la mitad del traslado: no hay precio, lo decide el dueño,
+     sea casa, negocio o industria. Nunca es «no» por lejanía: eso sólo pasa con el radio_km que él ponga. */
+  const atiende = enorme || p.lejos ? 'caso-por-caso' : !fueraDeRadio ? 'si' : p.tipo === 'industria' ? 'si' : grande ? 'caso-por-caso' : 'no';
   return {
     bien: true, desde, moneda: 'MXN', ...(t.ejemplo ? { ejemplo: true } : {}),
     desglose: excel ? { producto: r2(producto), mano_de_obra: r2(mano), traslado: r2(traslado),
@@ -116,15 +122,18 @@ export function cotizar(p, t){
       material: { nombre: plaga.material || null, litros: Math.round(litros * 100) / 100, costo: Math.round(producto) },
       tecnico, vehiculo: vehiculo && Object.fromEntries(Object.entries(vehiculo).map(([k, v]) => [k, Math.round(v * 10) / 10])),
       factor: tipo.factor || 1, costo: Math.round(costo), ganancia: Math.round(desde - costo) },
-    visita: !!tipo.visita || enorme || (t.umbral_visita_m2 != null && p.m2 >= t.umbral_visita_m2), ...(enorme ? { enorme: true } : {}),
+    visita: !!tipo.visita || enorme || (t.umbral_visita_m2 != null && p.m2 >= t.umbral_visita_m2), ...(enorme ? { enorme: true } : {}), ...(p.lejos ? { lejos: true } : {}),
     fueraDeRadio, atiende,
     ...(p.m2Estimado ? { m2: p.m2, m2Estimado: true } : {}), ...(p.kmEstimado ? { kmEstimado: true } : {}),
+    /* dónde es (para que la IA lo diga una vez) y con qué km se cotizó (SÓLO del dueño: la IA y la hoja no lo ven) */
+    ...(p.lugar ? { lugar: p.lugar } : {}), ...(p.kmPor ? { distancia: { km: p.km, por: p.kmPor } } : {}),
     nota: 'Precio aproximado: si los datos que dio son correctos, ése es más o menos el costo. El técnico lo confirma al ver el lugar.'
       + (p.m2Estimado ? ' Los metros son estimados por lo que contó.' : '')
-      + (p.kmEstimado ? ' La distancia también es estimada: falta la zona exacta.' : ''),
+      + (p.kmEstimado ? (p.lugar ? ' La distancia también es estimada.' : ' La distancia también es estimada: falta la zona exacta.') : ''),
   };
 }
 
+const TIPOS_DE_FABRICA = { industria: { visita: true } };
 /* a la decena hacia arriba: $487 → $490 (sólo con las tarifas de antes; con su Excel va al centavo, como su hoja) */
 const redondear = (n) => Math.ceil(n / 10) * 10;
 const r2 = (n) => Math.round(n * 100) / 100;

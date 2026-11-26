@@ -67,10 +67,46 @@ export function pose(THREE, P, rep){
   /* DEDOS SIN GRIETAS (Carlos, 19 nov: «los dedos a veces se cuartean»): si cada articulación va donde la ve la cámara, una
      falange tuya más larga o más corta que la del modelo abre una grieta en el nudillo. Se encadena: cada hueso empieza donde
      acaba el anterior, con el largo del modelo (a la escala de tu mano); de la cámara sólo se toma hacia dónde apunta. */
-  const k = pos['middle-finger-phalanx-proximal'].distanceTo(pos.wrist) / rep.largo;
+  const k = (P.escalaFija ?? pos['middle-finger-phalanx-proximal'].distanceTo(pos.wrist)) / rep.largo;
+  rigidos(THREE, pos, dir);
   for(const c of CADENAS) for(let i = 1; i < c.length; i++) pos[c[i]] = pos[c[i - 1]].clone().addScaledVector(dir[c[i - 1]], rep.largos[c[i - 1]] * k);
   for(const nom of NOMBRES) out[nom] = { p: pos[nom], q: marco(THREE, dir[nom], n, new THREE.Quaternion()).multiply(rep.ajuste[nom]) };
   return { huesos: out, escala: k };
+}
+/* DEDOS RÍGIDOS (Carlos, 26 nov: «ponle rigidez al modelo de la mano en aspecto de laterales. Ninguna mano tiene una Z en
+   cada dedo»). Con el ruido de la cámara cada falange apuntaba a un lado distinto: de lado, el dedo salía en zigzag, y a veces
+   un nudillo se doblaba hacia atrás y el siguiente hacia adelante. Un dedo de verdad:
+     · de la segunda falange en adelante sólo se dobla en UN plano (como bisagra): se quita lo que se vaya de lado;
+     · las dos bisagras se doblan hacia el MISMO lado (nada de Z): si una va al revés de lo que se dobla el dedo más de lo
+       que da una mano real (~10°, la punta se echa un poco para atrás), se topa ahí;
+     · en el nudillo puede abrirse de lado, pero poco (hasta 22°); en las otras dos articulaciones, casi nada (8°, lo que trae
+       la mano en reposo). El pulgar se deja como lo ve la cámara. */
+const LADO_MAX = 22 * Math.PI / 180, LADO_BISAGRA = 8 * Math.PI / 180, ATRAS = 10 * Math.PI / 180;
+export function rigidos(THREE, pos, dir){
+  const lado = pos['pinky-finger-phalanx-proximal'].clone().sub(pos['index-finger-phalanx-proximal']);
+  if(lado.lengthSq() < 1e-12) return;
+  lado.normalize();
+  for(const d of DEDOS){
+    const pr = `${d}-phalanx-proximal`, it = `${d}-phalanx-intermediate`, di = `${d}-phalanx-distal`, ti = `${d}-tip`;
+    /* nudillo: lo de lado, topado */
+    const fw = pos[pr].clone().sub(pos[`${d}-metacarpal`]); if(fw.lengthSq() > 1e-12){ fw.normalize();
+      const sP = lado.clone().addScaledVector(fw, -lado.dot(fw)); if(sP.lengthSq() > 1e-12){ sP.normalize();
+        const v = dir[pr], sl = v.dot(sP), tope = Math.sin(LADO_MAX);
+        if(Math.abs(sl) > tope){ const resto = v.clone().addScaledVector(sP, -sl); const r = resto.length();
+          if(r > 1e-6){ resto.multiplyScalar(Math.cos(LADO_MAX) / r); dir[pr] = resto.addScaledVector(sP, Math.sign(sl) * tope).normalize(); } } } }
+    /* la bisagra: el eje es «de lado» y perpendicular a la primera falange */
+    const u = dir[pr], a = lado.clone().addScaledVector(u, -lado.dot(u)); if(a.lengthSq() < 1e-10) continue; a.normalize();
+    const plano = (v) => { const w = v.clone().addScaledVector(a, -v.dot(a)); return w.lengthSq() < 1e-10 ? u.clone() : w.normalize(); };
+    const deLado = (v) => Math.max(-Math.sin(LADO_BISAGRA), Math.min(Math.sin(LADO_BISAGRA), v.dot(a)));
+    const angulo = (x, y) => Math.atan2(a.dot(new THREE.Vector3().crossVectors(x, y)), x.dot(y));
+    const l1 = deLado(dir[it]), l2 = deLado(dir[di]), v1 = plano(dir[it]), v2 = plano(dir[di]);
+    let t1 = angulo(u, v1), t2 = angulo(v1, v2);
+    const S = Math.sign(t1 + t2) || 1;
+    t1 = Math.max(-ATRAS, Math.min(1.9, t1 * S)) * S; t2 = Math.max(-ATRAS, Math.min(1.7, t2 * S)) * S;   /* nada de Z, ni de 180° */
+    const q1 = new THREE.Quaternion().setFromAxisAngle(a, t1), q2 = new THREE.Quaternion().setFromAxisAngle(a, t1 + t2);
+    const con = (v, l) => v.multiplyScalar(Math.sqrt(1 - l * l)).addScaledVector(a, l).normalize();
+    dir[it] = con(u.clone().applyQuaternion(q1), l1); dir[di] = con(u.clone().applyQuaternion(q2), l2); dir[ti] = dir[di].clone();
+  }
 }
 /** ¿izquierda o derecha, por la FORMA? (Carlos, 19 nov: «en el modo sin mixta la mano se pone al revés»): la etiqueta
     de MediaPipe supone una cámara de selfie y depende de si la imagen va volteada; con el modelo equivocado la palma sale del
@@ -131,12 +167,20 @@ export async function crearManos3D(V, padre){
     poner(k, P, lado, mixta){
       const r = ranuras[k]; if(!r) return;
       const otra = lado === 'izq' ? 'der' : 'izq'; r[otra].raiz.visible = false;
-      const m = r[lado], ps = pose(THREE, P, reposo[lado]);
+      const m = r[lado];
+      /* NI SE ESTIRA NI SE ACHICA (Carlos, 26 nov): el tamaño de tu mano no cambia, pero el que calcula la cámara brinca con
+         cada cuadro. Se toma el de los primeros cuadros (mediana) y después sólo se deja ir muy despacio (por si te alejas) */
+      const k3 = P.k3 || 1, crudo = P[9].distanceTo(P[0]) / k3; m.tams ||= [];   /* medido antes de llevarlo encima de la cámara (mixta) */
+      if(m.tams.length < 15){ m.tams.push(crudo); m.tam = [...m.tams].sort((x, y) => x - y)[m.tams.length >> 1]; }
+      else m.tam += Math.max(-.004 * m.tam, Math.min(.004 * m.tam, (crudo - m.tam) * .03));
+      P.escalaFija = m.tam * k3;
+      const ps = pose(THREE, P, reposo[lado]);
       for(const nom of NOMBRES){ const b = m.huesos[nom], x = ps.huesos[nom]; b.position.copy(x.p); b.quaternion.copy(x.q); b.scale.setScalar(ps.escala); }
       const mat = mixta ? m.mats.si : m.mats.no; if(m.malla && m.malla.material !== mat) m.malla.material = mat;
       m.raiz.visible = true;
+      return ps.huesos['index-finger-tip'].p;   /* la punta del índice DEL MODELO (la que ves): de ahí apunta y con ella se toca */
     },
-    esconder(k){ const r = ranuras[k]; if(r){ r.izq.raiz.visible = false; r.der.raiz.visible = false; } },
+    esconder(k){ const r = ranuras[k]; if(r){ r.izq.raiz.visible = false; r.der.raiz.visible = false; r.izq.tams = r.der.tams = null; } },   /* otra mano que entra se vuelve a medir */
     ranuras, reposo,
   };
 }

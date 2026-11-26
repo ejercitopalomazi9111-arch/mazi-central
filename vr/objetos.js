@@ -214,7 +214,7 @@ export function montarObjetos(V){
         else o.mano.sueltaDesde = 0;
         continue;
       }
-      if(a.pellizco && a.nueva && listo && !V.extra.sobreBoton){ const o = cercano(a.dir); if(o) tomar(o, a.m, a.dir); }
+      if(a.pellizco && a.nueva && listo && !V.extra.sobreBoton && !V.brilloHace?.(300)){ const o = cercano(a.dir); if(o) tomar(o, a.m, a.dir); }
     }
     antes = actuales.map((a) => ({ dir: a.dir, pellizco: a.pellizco }));
   }
@@ -234,14 +234,18 @@ export function montarObjetos(V){
     o.c.quaternion.slerp(aLocalQ(q), Math.min(1, dt * 14));
     o.hist.push({ p: o.c.position.clone(), t: performance.now() }); if(o.hist.length > 6) o.hist.shift();
   }
+  /* (27 nov, Carlos: «estoy tratando de pulsar atrás en objetos y no funciona») la X de aquí era la de TODO: el pellizco de la
+     mano también, y esto contestaba siempre { x: true }, así que el clic del pellizco nunca llegaba al botón Atrás (y además
+     agarraba lo que tenías enfrente). Aquí sólo cuenta la X del control o el teclado; la mano agarra por su lado (manosCuadro) */
   vista.control = (ctl) => {
-    if(ctl.oprimido[B.X]){
+    const xPad = !!(ctl.oprimidoPad || ctl.oprimido)[B.X];
+    if(xPad){
       if(traeControl){ const o = traeControl; traeControl = null; soltar(o); }
       else if(listo){ const d = new THREE.Vector3(); V.cabeza.getWorldDirection(d); const o = cercano(d);
         if(o){ tomar(o, { dist: .5 }, d); o.porControl = true; traeControl = o; } }
     }
     if((ctl.oprimido[B.R2] || ctl.oprimido[B.R1]) && traeControl?.tipo === 'pistola') disparar(traeControl);
-    return { x: true };
+    return { x: xPad };
   };
 
   /* ── física sencilla: gravedad, la mesa, el piso y que no se encimen ── */

@@ -271,6 +271,9 @@ details.nuevo > summary > [data-ic]{ display:grid; place-items:center; width:34p
 .up-precio b{ font-size:34px; line-height:1; font-variant-numeric:tabular-nums; color:#FFC66B } .up-precio span{ width:100%; color:#B9C9E3; font-size:13px }
 .up-jadp{ margin:0; font-size:14px; color:var(--tenue) } .up-jadp b{ color:var(--tinta) }
 .up-cot-acc{ margin:4px 0 6px }
+/* la distancia (23 nov): «Calcular» debajo de los km y de dónde sale la camioneta */
+.up-km{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px } .up-km .msj{ flex:1 1 180px; margin:0 }
+.up-salida{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:end } .up-salida + .msj{ margin:-4px 0 0 }
 .up-subir{ cursor:pointer }
 .up-catalogo{ list-style:none; margin:0; padding:0 16px 14px; display:grid; gap:0; max-height:420px; overflow:auto }
 .up-catalogo li{ display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid var(--linea); font-size:14px }
@@ -775,7 +778,7 @@ const PANTALLAS = {
           ${fila('Material' + (d.material?.nombre ? ' · ' + esc(d.material.nombre) : '') + (d.material?.litros ? ` · ${d.material.litros} L` : ''), pesos(d.material?.costo ?? d.producto))}
           ${d.tecnico ? fila(`Técnico · ${d.tecnico.horas} h${d.tecnico.personas > 1 ? ' × ' + d.tecnico.personas : ''} a ${pesos(d.tecnico.costo_hora)}`, pesos(d.mano_de_obra)) : fila('Mano de obra', pesos(d.mano_de_obra))}
           ${d.factor && d.factor !== 1 ? fila(`${esc(c.lugar || 'Tipo de lugar')} (×${d.factor})`, '') : ''}
-          ${d.vehiculo ? fila(`Camioneta · ${d.vehiculo.km} km ida y vuelta`, pesos(d.traslado)) + fila('&nbsp;&nbsp;Gasolina', pesos(d.vehiculo.gasolina)) + fila('&nbsp;&nbsp;Llantas', pesos(d.vehiculo.llantas)) + fila('&nbsp;&nbsp;Balatas', pesos(d.vehiculo.balatas)) + fila('&nbsp;&nbsp;Motor y aceite', pesos(d.vehiculo.motor)) : fila('Traslado', pesos(d.traslado))}
+          ${d.vehiculo ? fila(`Camioneta · ${d.vehiculo.km} km ida y vuelta`, pesos(d.traslado)) + fila('&nbsp;&nbsp;Gasolina', pesos(d.vehiculo.gasolina)) + fila('&nbsp;&nbsp;Llantas', pesos(d.vehiculo.llantas)) + fila('&nbsp;&nbsp;Balatas', pesos(d.vehiculo.balatas)) + fila('&nbsp;&nbsp;Motor y aceite', pesos(d.vehiculo.motor)) : fila('Traslado' + (i.nota ? ' · ' + esc(i.nota) : ''), pesos(d.traslado))}
           <span class="sep"></span>${fila('Costo', pesos(d.costo))}${fila('Precio al cliente', pesos(c.precio))}${fila('Ganancia', pesos(d.ganancia), 'gana')}</dl>
           ${d.excel?.corrida ? ((e) => `<p class="up-formula" style="padding:10px 0 0">Para sacarla igual en tu Excel: Mano de obra <b>${e.horas}</b> · Kilómetros <b>${e.km}</b> · ${e.columna ? esc(e.columna) + ': ' : ''}<b>${e.cantidad} L</b> de ${esc(e.material || 'su producto')}. Da ${pesos(c.precio)}.</p>
           <div class="acc"><button class="btn b2" type="button" data-en-cotizar="${esc(JSON.stringify({ cliente: c.cliente || '', zona: c.zona || '', ...e }))}"><span data-ic="calculator"></span>Abrirla en Cotizar</button></div>`)(d.excel.corrida) : ''}</details>` : ''}
@@ -787,7 +790,10 @@ const PANTALLAS = {
         guarda.poner(CLAVE_BORRADOR, JSON.stringify(borrador)); ir('cotizar'); } });
   },
   async cotizar(el){
-    const r = await tarifasDelExcel(); if(r.falla) return falla(el, r.falla);
+    const [r, sj] = await Promise.all([tarifasDelExcel(), DE_MUESTRA ? null : apiRed('GET', '/api/salida')]); if(r.falla) return falla(el, r.falla);
+    /* de dónde sale la camioneta (POST /api/salida): con copia en el teléfono para enseñarla sin internet */
+    if(sj?.bien) guarda.poner('up_salida', JSON.stringify(sj.salida || null));
+    const salida = DE_MUESTRA ? null : sj?.bien ? sj.salida : leerJSON('up_salida');
     const ex = r.t?.excel || null;
     const cargar = (b2) => `<label class="btn ${b2 ? 'b2 ' : ''}up-subir"><span data-ic="file-spreadsheet"></span>${ex && !ex.muestra ? 'Volver a cargar tu Excel' : 'Cargar tu Excel'}<input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden></label>`;
     if(!ex){
@@ -802,6 +808,9 @@ const PANTALLAS = {
       <form class="f up-cot" id="fCot" style="padding:0" autocomplete="off">
         <div class="dos"><label>Cliente o lugar<input name="cliente" value="${esc(borrador.cliente)}" placeholder="Casa en Juriquilla, Planta…"></label><label>Zona<input name="zona" value="${esc(borrador.zona)}" placeholder="Juriquilla, Centro…"></label></div>
         <div class="dos"><label>Horas del técnico<input name="horas" inputmode="decimal" value="${esc(borrador.horas)}"></label><label>Kilómetros<input name="km" inputmode="decimal" value="${esc(borrador.km)}"></label></div>
+        <div class="up-km"><button class="btn b2" type="button" id="calcKm" aria-label="Calcular los kilómetros a la zona"><span data-ic="map-pin"></span>Calcular</button><p class="msj" id="msjKm" role="status"></p></div>
+        <div class="up-salida"><label>La camioneta sale de<input name="salida" id="salida" value="${esc(salida?.direccion || '')}" placeholder="Calle, número y colonia de tu bodega"></label><button class="btn b2" type="button" id="guardaSalida"><span data-ic="truck"></span>Guardar</button></div>
+        <p class="msj" id="msjSalida" role="status">${salida ? '' : 'Falta tu bodega: con ella, «Calcular» saca los km por carretera.'}</p>
         <h2>Lo que se va a aplicar</h2>
         <ul class="lista-c" id="renglones"></ul>
         <div class="dos"><button class="btn b2" type="button" id="masR"><span data-ic="plus"></span>Agregar producto</button><label>Otro material, en pesos<input name="extra" inputmode="decimal" value="${esc(borrador.extra || '')}" placeholder="monitoreo, trampas…"></label></div>
@@ -846,6 +855,34 @@ const PANTALLAS = {
     };
     pintaRenglones(); pintaTotal();
     f.addEventListener('input', () => { leer(); pintaTotal(); });
+    /* «Calcular»: la zona del cliente → GET /api/distancia → los km de ida por carretera desde la bodega (como su Excel) */
+    el.querySelector('#calcKm').addEventListener('click', async (e) => {
+      const msj = el.querySelector('#msjKm'), b = e.currentTarget, zona = f.zona.value.trim();
+      if(!zona){ msj.className = 'msj mal'; msj.textContent = 'Escribe arriba la zona o colonia del cliente.'; f.zona.focus(); return; }
+      if(DE_MUESTRA){ msj.className = 'msj'; msj.textContent = 'En la muestra no se calcula. Con tu cuenta, aquí sale la zona y los km desde tu bodega.'; return; }
+      b.disabled = true; msj.className = 'msj'; msj.textContent = 'Buscando la zona…';
+      const j = await apiRed('GET', '/api/distancia?donde=' + encodeURIComponent(zona));
+      b.disabled = false;
+      if(!j.bien){ msj.className = 'msj mal'; msj.textContent = j.sinRed ? 'Sin internet: pon los km a mano.' : (j.error || 'No se pudo calcular.'); return; }
+      const donde = [j.lugar + (j.municipio && j.municipio !== 'Querétaro' ? ', ' + j.municipio : ''), j.rumbo].filter(Boolean).join(' · ');
+      if(j.km == null){ msj.className = 'msj mal'; msj.textContent = `${donde}. Falta de dónde sale la camioneta: guárdala abajo y vuelve a calcular.`; el.querySelector('#salida').focus(); return; }
+      f.km.value = String(j.km); leer(); pintaTotal();
+      msj.className = 'msj bien'; msj.textContent = `${donde} · ${j.km} km ${j.por === 'carretera' ? 'por carretera' : 'aproximados (el mapa no contestó)'}`;
+    });
+    /* «La camioneta sale de»: se ubica en el mapa y se guarda en su servidor; se le enseña lo que entendió para que confirme */
+    const guardaSalida = async () => {
+      const msj = el.querySelector('#msjSalida'), b = el.querySelector('#guardaSalida'), direccion = el.querySelector('#salida').value.trim();
+      if(!direccion){ msj.className = 'msj mal'; msj.textContent = 'Escribe la dirección de tu bodega: calle, número y colonia.'; return; }
+      if(DE_MUESTRA){ msj.className = 'msj'; msj.textContent = 'En la muestra no se guarda. Con tu cuenta, aquí te dice qué dirección entendió el mapa.'; return; }
+      b.disabled = true; msj.className = 'msj'; msj.textContent = 'Buscándola en el mapa…';
+      const j = await apiRed('POST', '/api/salida', { direccion });
+      b.disabled = false;
+      if(!j.bien){ msj.className = 'msj mal'; msj.textContent = j.sinRed ? 'Sin internet: guárdala cuando tengas señal.' : (j.error || 'No se pudo guardar.'); return; }
+      guarda.poner('up_salida', JSON.stringify(j.salida));
+      msj.className = 'msj bien'; msj.textContent = `Guardada. Entendí: ${j.entendi}. Si no es tu bodega, escríbela más completa.`;
+    };
+    el.querySelector('#guardaSalida').addEventListener('click', guardaSalida);
+    el.querySelector('#salida').addEventListener('keydown', (e) => { if(e.key === 'Enter'){ e.preventDefault(); guardaSalida(); } });
     f.addEventListener('change', (e) => {
       const li = e.target.closest('.up-renglon'); if(!li) return;
       if(e.target.name === 'plaga'){ const col = ex.columnas.find(c => c.nombre === e.target.value); if(col?.producto) li.querySelector('[name=producto]').value = col.producto; }

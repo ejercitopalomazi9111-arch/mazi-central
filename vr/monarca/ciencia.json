@@ -1,0 +1,295 @@
+{
+  "esquema": "mazi.monarca.ciencia/1",
+  "actualizado": "2026-11-23",
+  "consultado": "2026-11-23",
+  "como_leer": [
+    "Cada cifra trae `fuente`: uno o varios id de la bibliografía de vr/monarca/CIENCIA.md (sección «Bibliografía»).",
+    "Rangos: {min, max} y, cuando una fuente lo da, `tipico`. `alternos` = lo que dicen otras fuentes cuando no coinciden: no se elige una en silencio.",
+    "`null` = ninguna fuente leída da el número. No se rellena: el juego usa el `texto` o lo deja sin cifra.",
+    "Unidades en el nombre de la llave (dias, horas, km, ha, mm). Temperaturas en °C.",
+    "`derivado` = cuenta hecha aquí con cifras de las fuentes (por ejemplo, sumar etapas). `calculo_propio` = distancia en línea recta calculada aquí con coordenadas; NO es la ruta volada."
+  ],
+
+  "ciclo": {
+    "huevo": {
+      "dias": { "min": 3, "max": 5, "tipico": 4 },
+      "fuente": ["MJV-CICLO", "USFS-BIOLOGIA"],
+      "alternos": [{ "dias": { "min": 2, "max": 5 }, "fuente": "USFWS-SSA-2024" }, { "dias": { "min": 3, "max": 5 }, "fuente": "CCA-2008" }],
+      "tamano_mm": { "alto": 1.2, "ancho": 0.9 },
+      "tamano_fuente": ["MJV-CICLO", "CCA-2008"],
+      "donde": "Uno por vez, casi siempre en el envés de una hoja cerca de la punta del algodoncillo; queda pegado.",
+      "donde_fuente": ["MJV-CICLO", "CCA-2008"],
+      "color": "amarillo crema, cónico, con costillas de la punta a la base",
+      "color_fuente": "CCA-2008"
+    },
+    "eclosion": {
+      "texto": "La oruguita sale y se come el cascarón (corion).",
+      "fuente": "MJV-CICLO"
+    },
+    "larva": {
+      "estadios": 5,
+      "mudas_entre_estadios": 4,
+      "muda_a_crisalida": 1,
+      "nota_mudas": "5 estadios = 4 mudas mientras crece; la quinta vez que cambia de piel ya sale la crisálida. Decir «muda 5 veces para crecer» es impreciso.",
+      "dias": { "min": 9, "max": 14 },
+      "fuente": ["MJV-CICLO"],
+      "alternos": [{ "dias": { "min": 9, "max": 18 }, "fuente": "USFWS-SSA-2024" }, { "dias": { "min": 9, "max": 13 }, "fuente": "CCA-2008" }],
+      "por_estadio": [
+        { "estadio": 1, "dias": { "min": 1, "max": 3 }, "largo_mm": { "min": 2, "max": 6 }, "ancho_mm": { "min": 0.5, "max": 1.5 }, "capsula_cefalica_mm": 0.6 },
+        { "estadio": 2, "dias": { "min": 1, "max": 3 }, "largo_mm": { "min": 6, "max": 9 }, "ancho_mm": { "min": 1, "max": 2 }, "capsula_cefalica_mm": 0.8 },
+        { "estadio": 3, "dias": { "min": 1, "max": 3 }, "largo_mm": { "min": 10, "max": 14 }, "ancho_mm": { "min": 2, "max": 3.5 }, "capsula_cefalica_mm": 1.5 },
+        { "estadio": 4, "dias": { "min": 1, "max": 3 }, "largo_mm": { "min": 13, "max": 25 }, "ancho_mm": { "min": 2.5, "max": 5 }, "capsula_cefalica_mm": 2.2 },
+        { "estadio": 5, "dias": { "min": 3, "max": 5 }, "largo_mm": { "min": 25, "max": 45 }, "ancho_mm": { "min": 5, "max": 8 }, "capsula_cefalica_mm": 3.5 }
+      ],
+      "por_estadio_fuente": "MJV-CICLO",
+      "crecimiento": { "masa_veces": 2000, "fuente": "MJV-CICLO", "alternos": [{ "tamano_veces": 3000, "fuente": "CONAFOR-2013" }] },
+      "come": "sólo hojas de algodoncillo (Asclepias) y algunas enredaderas parientes",
+      "come_fuente": ["NPS-GRCA-2023", "CCA-2008"]
+    },
+    "prepupa_j": {
+      "texto": "La oruga de quinto estadio se aleja de la planta, teje un cojín de seda, se cuelga de cabeza en forma de J y cambia de piel por última vez.",
+      "fuente": ["MJV-CICLO", "CCA-2008", "CONAFOR-2013"],
+      "horas": null,
+      "horas_nota": "Ninguna fuente leída da cuánto dura colgada en J. Pendiente."
+    },
+    "crisalida": {
+      "dias": { "min": 8, "max": 15 },
+      "fuente": ["MJV-CICLO"],
+      "alternos": [{ "dias": { "min": 9, "max": 15 }, "fuente": "CCA-2008" }, { "dias": { "min": 6, "max": 14 }, "fuente": "USFWS-SSA-2024" }, { "texto": "unas dos semanas", "fuente": "JN-CRISALIDA" }],
+      "largo_cm": 3,
+      "aspecto": "verde turquesa con manchas doradas",
+      "aspecto_fuente": "CCA-2008",
+      "antes_de_emerger": "El último día se ven a través de la cubierta los colores de las alas (naranja, negro y blanco). No es que la cubierta se vuelva transparente: lo que cambia es el ala que se pintó adentro.",
+      "antes_de_emerger_fuente": ["CCA-2008", "MJV-CICLO"]
+    },
+    "emergencia": {
+      "texto": "Rompe la cubierta por una línea débil y sale colgando.",
+      "fuente": ["JN-CRISALIDA", "MJV-CICLO"]
+    },
+    "expansion_y_secado_alas": {
+      "texto": "Bombea fluido a las alas para darles forma y pasa varias horas secándose antes de irse a buscar néctar o pareja. No vuela en cuanto sale.",
+      "horas": null,
+      "horas_texto": "varias horas",
+      "fuente": "MJV-CICLO",
+      "horas_nota": "Ninguna fuente leída da un número exacto. Pendiente."
+    },
+    "huevo_a_adulto_dias": {
+      "verano": { "min": 20, "max": 34, "derivado": "suma de huevo + larva + crisálida de MJV-CICLO" },
+      "alternos": [
+        { "min": 17, "max": 37, "derivado": "suma de USFWS-SSA-2024, calculado de Zalucki (1982) a 22–32 °C" },
+        { "min": 25, "texto": "en apenas 25 días", "fuente": "NPS-ACADIA-2023" }
+      ],
+      "primavera_fresca": { "texto": "puede tardar 40 o 50 días, o más", "fuente": "MJV-CICLO" }
+    },
+    "temperatura_desarrollo_c": { "min": 12, "max": 33, "fuente": "USFWS-SSA-2024", "nota": "Fuera de ese rango no se desarrolla (la SSA cita a Zalucki 1982). Útil para la noche y el frío en el ciclo acelerado." }
+  },
+
+  "adulto": {
+    "madurez_reproductiva_dias": { "min": 3, "max": 8, "fuente": "MJV-CICLO", "nota": "generaciones de verano; la migratoria no se reproduce hasta después del invierno" },
+    "copula": { "texto": "de una tarde a la mañana siguiente, hasta 16 horas", "horas_max": 16, "fuente": "MJV-CICLO" },
+    "huevos_por_hembra": {
+      "min": 300, "max": 500, "fuente": "MJV-CICLO",
+      "alternos": [
+        { "min": 100, "max": 300, "fuente": "USFS-BIOLOGIA" },
+        { "min": 300, "max": 400, "texto": "en estado silvestre; en cautiverio, 700 en promedio", "fuente": "CCA-2008" }
+      ],
+      "semanas_de_puesta": { "min": 2, "max": 5, "fuente": "MJV-CICLO" }
+    },
+    "alimento": { "texto": "Néctar de muchas flores, y agua.", "fuente": ["CCA-2008", "MJV-CICLO"] }
+  },
+
+  "longevidad_adulto": {
+    "verano_semanas": {
+      "min": 2, "max": 5, "fuente": ["MJV-CICLO", "USFWS-SSA-2024", "USFS-BIOLOGIA"],
+      "alternos": [{ "min": 2, "max": 6, "fuente": "MJV-MIGRACION" }, { "texto": "alrededor de cuatro semanas", "fuente": "CCA-2008" }]
+    },
+    "migratoria_meses": {
+      "min": 6, "max": 9, "fuente": ["USFWS-SSA-2024", "MJV-MIGRACION"],
+      "alternos": [{ "min": 7, "max": 9, "fuente": "CCA-2008" }, { "texto": "de agosto/septiembre a marzo", "fuente": "HERMAN-TATAR-2001" }]
+    },
+    "por_que": { "texto": "La generación migratoria entra en diapausa reproductiva (no madura sus órganos reproductivos) por la hormona juvenil suprimida; eso alarga su vida.", "fuente": ["HERMAN-TATAR-2001", "USFWS-SSA-2024"] }
+  },
+
+  "generaciones": {
+    "por_anio": { "min": 3, "max": 5, "tipico": 4, "fuente": ["USFWS-SSA-2024", "MJV-MIGRACION", "NPS-GRCA-2023"] },
+    "migratoria": {
+      "nombre": "generación migratoria («súper generación», «generación Matusalén»)",
+      "oriental": "la que emerge después de mediados de agosto; casi siempre la cuarta del año",
+      "fuente": ["MJV-MIGRACION", "CCA-2008", "USFWS-SSA-2024"]
+    },
+    "regreso_al_norte": {
+      "generaciones": { "min": 2, "max": 3 },
+      "fuente": ["USFWS-SSA-2024", "FLOCKHART-2013"],
+      "alternos": [{ "generaciones": { "min": 3, "max": 4 }, "texto": "para llegar al norte de EE. UU. y Canadá", "fuente": "USFS-MIGRACION" }],
+      "texto": "La misma mariposa que bajó a México empieza el regreso: en primavera se aparea, vuela hacia el sur de EE. UU., pone huevos y muere. Sus descendientes terminan de subir al norte."
+    },
+    "primera_generacion_nace_en": { "texto": "sobre todo este de Texas y sur de Oklahoma (abril–mayo)", "fuente": "FLOCKHART-2013" }
+  },
+
+  "migracion": {
+    "oriental": {
+      "de": "sur de Canadá y este y centro de EE. UU.",
+      "a": "bosques de oyamel en montañas del este de Michoacán y oeste del Estado de México",
+      "fuente": ["CCA-2008", "USFS-MIGRACION"],
+      "otono": {
+        "inicio": { "texto": "desde mediados de agosto; a principios de agosto en el norte", "fuente": ["MJV-MIGRACION", "TAYLOR-2019"] },
+        "llegada_a_mexico": { "texto": "últimos días de octubre, cerca del Día de Muertos (2 de noviembre)", "fuente": "TAYLOR-2019", "alternos": [{ "texto": "a partir de principios de noviembre", "fuente": "MJV-MIGRACION" }] },
+        "colonias_formadas": { "texto": "a mediados de noviembre", "fuente": "TAYLOR-2019" },
+        "ultimas_llegadas": { "texto": "a principios de diciembre", "fuente": "TAYLOR-2019" },
+        "duracion": { "texto": "hasta dos meses; más de dos meses", "fuente": ["USFS-MIGRACION", "USFWS-SSA-2024"] }
+      },
+      "invernada": {
+        "texto": "de octubre a finales de marzo; actividad mínima de mediados de noviembre a mediados de marzo",
+        "fuente": ["USFS-MIGRACION", "CCA-2008"]
+      },
+      "primavera": {
+        "salida": { "texto": "febrero–marzo: rompen la diapausa y se aparean en los santuarios antes de dispersarse", "fuente": "USFWS-SSA-2024" },
+        "llegada_a_texas": { "texto": "marzo", "fuente": "MJV-MIGRACION" },
+        "norte": { "texto": "la primera generación avanza por latitudes medias de finales de abril a mayo", "fuente": "MJV-MIGRACION" }
+      },
+      "distancia_volada_km": {
+        "mas_de": 3000,
+        "hasta_aprox": 4800,
+        "texto": "«más de 3,000 km» (USFWS) y «hasta 3,000 millas» ≈ 4,800 km (MJV, USFS); «más de 4,000 km» (Taylor 2019); «la mayoría, más de 2,500 km» (CCA 2008). Depende de dónde salga cada mariposa.",
+        "fuente": ["USFWS-SSA-2024", "MJV-MIGRACION", "USFS-MIGRACION", "TAYLOR-2019", "CCA-2008"]
+      },
+      "linea_recta_km_a_el_rosario": {
+        "calculo_propio": true,
+        "metodo": "gran círculo, radio terrestre 6,371 km; El Rosario ≈ 19.59 N, 100.27 O",
+        "desde": {
+          "Toronto, Ontario": 3307,
+          "Halifax, Nueva Escocia": 4378,
+          "Winnipeg, Manitoba": 3382,
+          "Minneapolis, Minnesota": 2896,
+          "Cape May, Nueva Jersey": 3247,
+          "San Antonio, Texas": 1108,
+          "49.34 N sobre 100.3 O (inicio del modelo de Taylor 2019)": 3308
+        },
+        "nota": "La ruta volada es más larga que la línea recta y nadie la conoce exacta para una mariposa (MW-2025). Taylor 2019 modela una ruta de 3,300 km desde 49.34 N; nuestro cálculo en línea recta da 3,308 km para ese punto.",
+        "ejemplo_ruta_real": { "texto": "Hembra marcada en Biddeford, Maine (28 ago) y hallada en Perryton, Texas (15 oct 2025): 2,688 km de recta hasta ahí y 1,870 km más hasta El Rosario = al menos 4,558 km, contra 3,840 km de recta directa.", "fuente": "MW-2025", "calculo_propio": true }
+      },
+      "ritmo": {
+        "individuo_km_dia": { "min": 80, "max": 160, "texto": "50 a 100 millas por día", "fuente": "USFS-MIGRACION" },
+        "record_un_dia_km": { "valor": 426, "texto": "265 millas en un día", "fuente": "USFS-MIGRACION" },
+        "alternos": [{ "km_dia": 130, "texto": "promedio", "fuente": "CONAFOR-2013" }],
+        "frente_migratorio_km_dia": { "min": 17, "max": 47, "fuente": "TAYLOR-2019", "nota": "es la velocidad a la que avanza la migración entera (marcaje), no lo que vuela una mariposa en un día" }
+      },
+      "ruta": {
+        "texto": "Vuelan sobre todo al sur o suroeste y se encauzan por Texas en octubre y noviembre. Hay indicios genéticos, no confirmados por marcaje, de una ruta por Florida a Cuba y Yucatán.",
+        "fuente": ["USFWS-SSA-2024"]
+      }
+    },
+    "occidental": {
+      "de": "oeste de las Rocosas (oeste de EE. UU. y Canadá)",
+      "a": "arboledas de la costa de California y de Baja California; algunas a Arizona y Sonora",
+      "fuente": ["USFWS-SSA-2024", "MJV-MIGRACION", "CCA-2008"],
+      "distancia_volada_km": { "min": 500, "max": 1600, "fuente": ["USFWS-SSA-2024", "USFWS-FR-2024"], "nota": "La SSA lo cita de Yang et al. 2016 (YANG-2016); en la versión del artículo que leí no encontré la cifra en el texto." },
+      "llegada": { "texto": "hacia finales de octubre", "fuente": "MJV-MIGRACION" },
+      "salida": { "texto": "febrero y marzo", "fuente": "MJV-MIGRACION" },
+      "longevidad_migratoria_meses": { "min": 6, "max": 9, "fuente": "MJV-MIGRACION" },
+      "sitios": { "aprox": 400, "texto": "unas 400 arboledas ocupadas alguna vez, a lo largo de ~1,225 km de costa; cada año sólo una parte", "fuente": "USFWS-SSA-2024", "alternos": [{ "texto": "más de 400 históricos", "fuente": "MJV-MIGRACION" }, { "texto": "más de 300 documentados", "fuente": "CCA-2008" }] },
+      "arboles": { "texto": "eucalipto (introducido), pino de Monterey, ciprés de Monterey", "fuente": ["USFWS-SSA-2024", "CCA-2008"] },
+      "conteo": {
+        "2025": { "monarcas": 12260, "sitios": 249, "fuente": "XERCES-2026" },
+        "2024": { "monarcas": 9119, "fuente": "XERCES-2026" },
+        "2020": { "monarcas": 1901, "fuente": "XERCES-2026" },
+        "decada_1980": { "texto": "millones (bajos) cada año", "fuente": "XERCES-2026" }
+      }
+    }
+  },
+
+  "mexico": {
+    "reserva": {
+      "nombre": "Reserva de la Biosfera Mariposa Monarca (RBMM)",
+      "superficie_ha": 56259,
+      "zona_nucleo_ha": 13551,
+      "zona_amortiguamiento_ha": 42707,
+      "fuente": "CONAFOR-2013",
+      "fuente_original": "CONANP (2001), citada en CONAFOR-2013",
+      "decretos": [1980, 1986, 2000],
+      "decreto_2000": "amplió la zona núcleo de 4,490 a 13,551 ha (10 de noviembre de 2000)",
+      "patrimonio_mundial_unesco": 2008,
+      "estados": ["Michoacán", "Estado de México"],
+      "municipios": ["Temascalcingo", "San José del Rincón", "Donato Guerra", "Villa de Allende", "Contepec", "Senguio", "Angangueo", "Ocampo", "Zitácuaro", "Áporo"],
+      "altitud_reserva_msnm": { "min": 2040, "max": 3640 },
+      "decretos_fuente": "CONAFOR-2013"
+    },
+    "sitios_invernada": {
+      "macizos_montanosos": { "min": 11, "max": 12, "fuente": ["USFS-MIGRACION", "CCA-2008"] },
+      "altitud_m": { "min": 2400, "max": 3600, "fuente": "USFS-MIGRACION", "alternos": [{ "min": 2900, "max": 3300, "fuente": "USFWS-SSA-2024" }, { "aprox": 3000, "fuente": "MJV-MIGRACION" }] },
+      "temperatura_c": { "min": 0, "max": 15, "fuente": "USFS-MIGRACION" },
+      "arbol": { "comun": "oyamel", "cientifico": "Abies religiosa", "fuente": ["USFWS-SSA-2024", "CCA-2008"] },
+      "laderas": { "texto": "laderas que miran al sur-suroeste", "fuente": "JN-INVERNADA" },
+      "abiertos_al_publico": { "texto": "Sierra Chincua y El Rosario", "fuente": "JN-INVERNADA" },
+      "comportamiento": { "texto": "Racimos densos en ramas y troncos; casi inmóviles con el frío; en días tibios salen en masa a beber agua de arroyos y del rocío.", "fuente": "CCA-2008" },
+      "area_con_microclima_km2": { "valor": 562, "de_km2": 10000, "fuente": "CCA-2008" }
+    },
+    "superficie_colonias_ha": {
+      "nota": "Lo que se mide es el bosque que ocupan las colonias, no el número de mariposas.",
+      "temporadas": {
+        "2025-2026": { "ha": 2.93, "fuente": ["EXPANSION-2026", "UNOTV-2026", "MW-2026"] },
+        "2024-2025": { "ha": 1.79, "fuente": ["EXPANSION-2026", "UNOTV-2026", "MW-2026"] },
+        "1996-1997": { "ha": 18.19, "maximo_historico": true, "fuente": ["EXPANSION-2026", "UNOTV-2026"] },
+        "2013-2014": { "ha": 0.67, "minimo_historico": true, "fuente": "UNOTV-2026" }
+      },
+      "cambio_2025_2026_pct": { "valor": 64, "fuente": ["EXPANSION-2026", "UNOTV-2026", "MW-2026"] },
+      "colonias_2025_2026": {
+        "total": 9, "michoacan": 3, "estado_de_mexico": 6, "dentro_rbmm": 5, "fuera_rbmm": 4,
+        "mayor": { "lugar": "El Rosario (Michoacán)", "ha": 1.62 },
+        "menor": { "lugar": "San Francisco (Michoacán)", "ha": 0.031 },
+        "fuente": ["EXPANSION-2026", "UNOTV-2026"]
+      },
+      "quien_mide": { "texto": "CONANP y WWF México (13 santuarios, imágenes satelitales y análisis geoespacial)", "fuente": "EXPANSION-2026" }
+    },
+    "degradacion_zona_nucleo": {
+      "periodo": "febrero 2024 – febrero 2025",
+      "total_ha": 2.55,
+      "por_causa_ha": { "tala_ilegal": 1.85, "incendios": 0.58, "sequia": 0.11 },
+      "nota": "Las tres causas suman 2.54; el total publicado es 2.55 (redondeo).",
+      "quien": "WWF México con apoyo técnico de la UNAM",
+      "fuente": "EXPANSION-2026"
+    }
+  },
+
+  "plantas": {
+    "hospederas": {
+      "genero": "Asclepias (algodoncillo, venenillo, asclepia)",
+      "especies_norteamerica_caribe": { "aprox": 115, "fuente": "CCA-2008" },
+      "especies_mundo": { "mas_de": 140, "fuente": "CCA-2008", "alternos": [{ "mas_de": 200, "texto": "«milkweed» en el mundo (definición más amplia)", "fuente": "NPS-ACADIA-2023" }] },
+      "otras": { "texto": "enredaderas parientes: Sarcostemma, Cynanchum y Matelea", "fuente": "CCA-2008" },
+      "mexico": [
+        { "especie": "Asclepias curassavica", "comun": "algodoncillo tropical, veintiunilla", "nota": "probablemente la hospedera más importante en México", "fuente": "CCA-2008" },
+        { "especie": "Asclepias glaucescens", "nota": "huevos y larvas registrados en Michoacán", "fuente": "CCA-2008" }
+      ],
+      "norte": [{ "especie": "Asclepias syriaca", "comun": "algodoncillo común", "fuente": "CCA-2008" }],
+      "sur_eeuu": [{ "especie": "Asclepias viridis" }, { "especie": "Asclepias asperula" }, { "especie": "Asclepias oenotheroides" }],
+      "sur_eeuu_fuente": "CCA-2008",
+      "defensa": { "texto": "La oruga guarda los cardenólidos del látex y eso la vuelve tóxica para casi todos los vertebrados.", "fuente": ["CCA-2008", "NPS-ACADIA-2023"] }
+    },
+    "nectariferas": {
+      "texto": "Las adultas son generalistas: muchas flores. En otoño el néctar es el combustible del viaje y lo convierten en grasa para el invierno.",
+      "fuente": ["CCA-2008", "USFWS-SSA-2024"],
+      "ejemplos_migracion_otono": [
+        { "nombre": "vara de oro", "genero": "Solidago", "donde": "norte" },
+        { "nombre": "aster (reina margarita)", "genero": "Aster", "donde": "norte" },
+        { "nombre": "liatris", "genero": "Liatris", "donde": "norte" },
+        { "nombre": "verbesina", "especie": "Verbesina virginica", "donde": "Texas" },
+        { "nombre": "trébol, girasol, alfalfa", "donde": "campos en flor" }
+      ],
+      "ejemplos_fuente": "CCA-2008",
+      "pendiente": "Nectaríferas de los santuarios de México con fuente: pendiente."
+    }
+  },
+
+  "conservacion": {
+    "uicn": [
+      { "anio": 2022, "categoria": "En Peligro", "que": "monarca migratoria (subespecie Danaus plexippus plexippus)", "fuente": "NATGEO-2023" },
+      { "anio": 2023, "categoria": "Vulnerable", "texto": "anunciado el 27 sep 2023 y publicado el 7 dic 2023; la UICN juzgó sus modelos anteriores «demasiado precautorios»: la caída es más lenta de lo que se pensaba, no que se haya recuperado", "fuente": "NATGEO-2023" }
+    ],
+    "eeuu": {
+      "texto": "Propuesta para listarla como amenazada (Federal Register, 12 dic 2024; comentarios hasta el 12 mar 2025). Sin decisión final al 21 sep 2026.",
+      "fuente": ["USFWS-FR-2024", "USFWS-MONARCA"],
+      "probabilidad_extincion_2080": { "oriental_pct": { "min": 56, "max": 74 }, "occidental_pct": { "mas_de": 95 }, "fuente": "USFWS-MONARCA" }
+    }
+  }
+}

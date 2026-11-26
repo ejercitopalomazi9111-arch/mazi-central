@@ -6,6 +6,7 @@
    Lo de otros sitios va en la pantalla de la web (pantalla.js), encima de la escena, una copia por ojo.
    Netflix, Crunchyroll y similares no: su protección pinta negro y no dejan meterse en otra página (PLAN.md). */
 import { crearAgarre, crearMoverConControl } from './agarre.js';
+import { deYouTube, esVideo } from './pantalla.js';
 export const SALA = 'https://sala.palomazi9111.workers.dev';
 const ARCHIVO = 'https://archive.org';
 
@@ -45,7 +46,7 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
   const PUERTAS = [
     ['YouTube', 'search', () => inicioYouTube()],
     ['Películas', 'popcorn', () => inicioPelis()],
-    ['Enlace', 'link', () => abrirEnlace()],
+    ['Internet', 'globe', () => abrirEnlace()],
     ['Mis videos', 'folder-open', () => verMios()],
   ];
   for(const [i, [t, ic, fn]] of PUERTAS.entries()){
@@ -151,10 +152,33 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
       ver(() => web.verVideo(usar.map((f) => `${ARCHIVO}/download/${encodeURIComponent(it.id)}/${encodeURIComponent(f.name)}`), it.titulo));
     }catch(e){ decir('No se pudo abrir'); console.warn(e); }
   }
+  /* INTERNET (Carlos, 25 nov): una dirección o lo que quieras buscar. Los videos (YouTube, .mp4) van a su reproductor; todo
+     lo demás, al navegador de verdad (pantalla.js + sala/servidor/web.js), que se baja y se le pica con la mano o la vista */
   async function abrirEnlace(){
-    let u = await pedirTexto('Escribe la dirección', { regresarA: 'cine' }); if(!u) return;
-    if(!/^https?:\/\//.test(u)) u = 'https://' + u;
-    ver(() => web.abrir(u, u));
+    const t = await pedirTexto('Dirección o búsqueda', { regresarA: 'cine' }); if(!t) return;
+    const u = /^https?:\/\//i.test(t) ? t : (!/\s/.test(t) && /\.[a-z]{2,}/i.test(t) ? 'https://' + t : null);
+    if(u && (deYouTube(u) || esVideo(u))) ver(() => web.abrir(u, u)); else ver(() => web.verNavegador(t, t));
+  }
+  cine.internet = () => abrirEnlace();
+  /* lo que se apunta sobre la página: la pantalla 3D (invisible mientras la web va encima) recibe el pellizco o la mirada,
+     y aquí se calcula en qué punto de la página caíste */
+  const rayo = new THREE.Raycaster();
+  async function picarPagina(){
+    if(!web.navegando) return;
+    const R = V.extra.rayo; if(R) rayo.set(R.origen, R.dir); else rayo.setFromCamera(new THREE.Vector2(0, 0), V.cabeza);
+    const h = rayo.intersectObject(pantalla, false)[0]; if(!h?.uv) return;
+    const r = web.clicEn(h.uv.x, 1 - h.uv.y); if(!r) return;
+    if(r.tipo === 'texto'){ const t = await pedirTexto(r.titulo, { inicial: r.valor, regresarA: 'cine' }); if(t != null){ r.escribir(t, true); } }
+    else if(r.tipo === 'lista') V.hud(r.texto || '', 1.2);
+  }
+  pantalla.userData.panel = { titulo: 'Página', foco: () => {} };
+  pantalla.userData.accion = () => picarPagina();
+  /* los botones del navegador, debajo de la pantalla: subir y bajar se repiten si los sigues viendo */
+  const navBotones = [];
+  for(const [i, [t, ic, fn, rep]] of [['Subir', 'arrow-up', () => web.desplazar(-420), true], ['Bajar', 'arrow-down', () => web.desplazar(420), true],
+    ['Regresar', 'arrow-left', () => { if(!web.navAtras()) V.hud('No hay atrás', 1); }], ['Buscar', 'globe', () => abrirEnlace()]].entries()){
+    const b = (await V.tarjeta({ titulo: t, icono: ic })).malla; b.scale.setScalar(.5); b.position.set(-1.0 + i * .36, -.95, -1.7); b.lookAt(0, -.95 * .3, 0);
+    b.userData.accion = fn; if(rep) b.userData.repetir = true; b.visible = false; cine.grupo.add(b); navBotones.push(b);
   }
 
   /* ── mis videos ── */
@@ -197,17 +221,25 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
   cine.fondo = aFondo;
   cine.entrar = () => { if(fondo) volverDeFondo(); else { fase = 'estante'; decir(''); } };
   cine.salir = () => { if(!fondo) dejarDeVer(); limpiarTarjetas(); V.extra.gestosVideo = false; };
-  cine.elegibles = () => fase === 'estante' ? puertas : fase === 'resultados' ? tarjetas : fase === 'viendo' ? [bFondo] : [];
+  cine.elegibles = () => fase === 'estante' ? puertas : fase === 'resultados' ? tarjetas : fase === 'viendo' ? (web.navegando ? [...navBotones, bFondo, pantalla] : [bFondo]) : [];
   cine.control = (c, dt) => {
     if(fase !== 'viendo') return {};
     if(moverCtl(c, dt)) return { x: true, flechas: true };
+    if(web.navegando){
+      /* navegando: flechas y palanca derecha bajan y suben la página, L1 regresa, R1 escribe otra dirección */
+      if(c.oprimido[B.ARRIBA]) web.desplazar(-300); if(c.oprimido[B.ABAJO]) web.desplazar(300);
+      if(Math.abs(c.ejes[3] || 0) > .2) web.desplazar((c.ejes[3]) * 1400 * dt);
+      if(c.oprimido[B.L1]) web.navAtras(); if(c.oprimido[B.R1]) abrirEnlace();
+      if(c.oprimido[B.R2]) aFondo();
+      return { flechas: true };
+    }
     if(c.oprimidoPad[B.X]) pausar();
     if(c.oprimido[B.R2]) aFondo();
     if(c.oprimido[B.L1]) brincar(-10);
     if(c.oprimido[B.R1]) brincar(10);
     if(c.oprimido[B.ARRIBA]){ dist = Math.max(1.6, dist - .4); ponerPantalla(); }
     if(c.oprimido[B.ABAJO]){ dist = Math.min(8, dist + .4); ponerPantalla(); }
-    return { x: true, flechas: true };
+    return { x: !!c.oprimidoPad[B.X], flechas: true };   /* (27 nov) el pellizco no es esta X: si no, nunca llegaba a los botones */
   };
   /* con L2 apretado los sticks son de la pantalla: ni caminas ni giras */
   Object.defineProperty(cine, 'ocupaStick', { get: () => fase === 'viendo' && V.control.apretado(B.L2) });
@@ -238,11 +270,11 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
     else if(!p && gV.activo){ gV.activo = false; if(!gV.arrastre && !gV.cancelado && ahora - gV.t0 < 700) pausar(); }
   }
   cine.cuadro = (t) => {
-    puertas.forEach((m) => { m.visible = fase === 'estante'; }); bFondo.visible = fase === 'viendo'; if(web.activa) web.sincronizar(t);
+    puertas.forEach((m) => { m.visible = fase === 'estante'; }); bFondo.visible = fase === 'viendo'; navBotones.forEach((m) => { m.visible = fase === 'viendo' && web.navegando; }); if(web.activa) web.sincronizar(t);
     V.extra.gestosVideo = fase === 'viendo';
-    if(fase === 'viendo') gestosVideo(); else gV.activo = false;
+    if(fase === 'viendo' && !web.navegando) gestosVideo(); else gV.activo = false;
   };
   cine.estado = () => ({ fondo, fase, altoGrados: +(2 * Math.atan(pantalla.scale.y / 2 / dist) * 180 / Math.PI).toFixed(1), anchoGrados: +(2 * Math.atan(pantalla.scale.x / 2 / dist) * 180 / Math.PI).toFixed(1), web: web.estado.modo, tarjetas: tarjetas.length, dist: +dist.toFixed(2), tam: +tam.toFixed(2), giro: +(2 * Math.acos(Math.min(1, Math.abs(soporte.quaternion.w))) * 180 / Math.PI).toFixed(1), pausa: web.activa ? null : peli.paused, t: web.activa ? null : +peli.currentTime.toFixed(1) });
-  V.registrar('cine', cine);
+  V.registrar('cine', cine); window.__cine = cine;
   return cine;
 }

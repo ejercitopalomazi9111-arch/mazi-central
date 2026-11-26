@@ -33,11 +33,12 @@ Lo que una página web **no puede** bloquear es el botón de inicio del teléfon
 |---|---|
 | Bienvenida | Cómo se elige (mirada, mano, control o toque) |
 | La monarca | Algodoncillo: huevos y orugas |
-| La migración | Más de 3,000 km; varias generaciones |
+| La migración | Miles de km (más de 3,000 desde el norte), 80-160 km por día; la que baja empieza el regreso y sus descendientes lo terminan |
 | El santuario | Oyamel, Michoacán y Edomex, la Reserva y la UNESCO |
 | Amenazas (2) | Tala, incendios, sequía; estado en la UICN |
 | Tú decides | Dilema ético: talar, conservar o turismo |
-| Cuestionario | 4 preguntas de lo que se vio |
-| Final | Temporada 2025-2026 y por qué una buena temporada no es una tendencia; créditos |
+| ¿Y si fueras tú? | Educación física y matemáticas: METs y calorías de caminar contra correr 3,000 km |
+| Cuestionario | 8 preguntas de lo que se vio, de varias materias |
+| Final | Temporada 2025-2026 (la cuenta del 64 %) y por qué una buena temporada no es una tendencia; botones de Materias, Cómo funciona (mantenimiento de cómputo), Cómo te lo contamos (expresión y comunicación) y créditos |
 
 Todas las cifras tienen fuente y año en `are/Documentation/MONARCH_XR.md`.

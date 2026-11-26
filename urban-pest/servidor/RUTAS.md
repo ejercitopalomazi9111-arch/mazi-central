@@ -53,6 +53,9 @@ Si `noSalio` viene puesto, Meta no lo entregó.
 | `POST /api/estimar` | `{ tamano, recamaras, banos, sala, comedor, patio, zona }` | Los metros estimados de una casa cuando el cliente no sabe. Regresa `m2`, `rango` y `afinar` (qué falta preguntar) |
 | `GET /api/medidas` · `POST /api/medidas` | `{ medidas }` | La tabla del estimado: m² por cuarto según el tamaño, y el ajuste por colonia. Se calibra con los servicios reales |
 | `POST /api/cotizar` | `{ plaga, m2, km, tipo }` | Una cotización a mano. Regresa `desde` (el aproximado), `desglose`, `visita`, `fueraDeRadio` y `atiende` (`si`, `caso-por-caso` o `no`) |
+| `GET /api/salida` | — | De dónde sale la camioneta (`{ direccion, nombre, municipio, lat, lon }`), o `null` si todavía no se guarda |
+| `POST /api/salida` | `{ direccion }` | La ubica en el mapa y la guarda. Regresa `salida` y `entendi` (lo que entendió, para que el dueño confirme). También acepta coordenadas pegadas de Google Maps («20.59, -100.39») |
+| `GET /api/distancia?donde=` | — | La colonia del cliente: `lugar`, `municipio`, `rumbo` (centro, norte… o «fuera de la ciudad») y, si ya está la salida, `km` de ida y `por` (`carretera` o `aprox`). Sin salida, `km: null` y `falta` |
 
 ## Lo que todavía NO está, y quién lo hace
 
@@ -120,6 +123,36 @@ mano y la carpeta de plantas). Entra con la llave de Grupo Mazi o con un código
 | `GET /api/vehiculos` · `POST /api/vehiculos {id?, nombre, placas?, km?}` | Los vehículos, con sus próximas revisiones |
 | `POST /api/vehiculos/revision {vehiculo, tipo, fecha, km?, costo?, proxima_fecha?, proxima_km?, nota?}` | Aceite, llantas, verificación… Sale «ya toca» a 7 días o a 500 km |
 
+## La distancia · 23 nov (Godines)
+
+El bot dice en qué ZONA está el cliente y cobra la DISTANCIA real. En su Excel, «Kilómetros» es la **ida por carretera**
+desde su bodega, con decimales, multiplicada **una vez** por su costo por km (comparado contra el mapa: San Miguel 66.2 / 63.2,
+San Juan del Río 55 / 51.4, Balvanera 16 / 12.2). `src/distancia.js`, sin dependencias:
+
+- **Dónde es.** Primero una tabla de 66 colonias, municipios y parques de la zona (geografía pública de OpenStreetMap):
+  «x el centro», «aquí en milenio», «por juriquiya». Si no está, OpenStreetMap (Nominatim), acotado a la región (hasta San
+  Miguel y Celaya), máximo 1 consulta por segundo y guardado en `geo:<colonia>`. Un error de red no se guarda.
+- **El rumbo**, respecto al centro de Querétaro: centro, norte, noreste… o «fuera de la ciudad» (más de 30 km, o fuera de
+  Querétaro, Corregidora y El Marqués).
+- **Los km**: de ida por carretera (OSRM) desde la salida; si no contesta en 4 s, línea recta × 1.3 (`por: 'aprox'`).
+- **Privacidad:** a OpenStreetMap sólo va el texto de la colonia (máx. 120 letras). Nunca el nombre, el teléfono ni el mensaje.
+
+**De dónde sale la camioneta: FALTA del cliente.** Se guarda aparte, en `salida` (no en `tarifas`, que el centro reescribe
+al cargar el Excel, ni en `negocio`, que va a la IA). Mientras no esté, el bot igual dice la zona y cotiza con los km típicos
+de su Excel, marcados como estimados. No se deduce ni se inventa.
+
+En el bot (`oficina.js`): antes de cotizar se ubica la colonia y se guarda en la conversación (`lugar`) por el texto de la
+zona, para no volver a preguntarle al mapa; si el cliente cambia de colonia, se recalculan el lugar, los km y el precio (antes
+los km de la primera zona se quedaban pegados en `datos.km`). Los km salen, en orden, de: la carretera desde la salida, su
+tabla `zonas`, o `km_tipico`.
+
+**Lejos de la ciudad** (Luis, 23 nov: su Excel trae servicios en San Miguel y una casa a 55 km; lejos sí se va):
+- **sin km reales** (falta la salida, o el mapa no contestó): `atiende: 'caso-por-caso'` y `lejos: true`, sea casa, negocio o
+  industria. Sin precio (con los km típicos le cobraría casi la mitad del traslado); al dueño le llega el aviso con el lugar;
+- **con km reales de carretera y sin `radio_km`**: se cotiza normal con esos km, como su Excel;
+- **con `radio_km`**: la regla de siempre (`fueraDeRadio`). Sin `radio_km` nunca sale «no» por lejanía. La IA recibe el lugar ya dicho («Juriquilla, en el norte de Querétaro») y lo menciona
+una vez al dar el precio; **los km no se le dicen al cliente**: van en `interno` de la hoja (`km`, `km_por`, `lugar`, `nota`).
+
 ## Lo que cuenta el cotizador · 12 nov
 
 Carlos: «todo se cuenta». Las tarifas aceptan (y el Excel del cliente debe traer):
@@ -150,8 +183,8 @@ Lo que agrega el Excel a las tarifas:
 - `tecnico.costo_hora` (lo que cobra la hora) y `plagas.<plaga>.precio_litro` (el costo por litro de mezcla del
   producto que más usa en esa columna de su Excel). `litros_m2` (0.025) y `m2_hora` (330) **no vienen en el
   Excel**: salen del único ejemplo suyo con cuartos medidos y se calibran con el dueño.
-- `km_tipico`: la mediana de los km de sus últimas cotizaciones. Si la zona del cliente no está en `zonas`, el bot
-  cotiza con eso y la nota dice que la distancia es estimada.
+- `km_tipico`: la mediana de los km de sus últimas cotizaciones. Si todavía no está de dónde sale la camioneta
+  (`salida`) y la zona del cliente no está en `zonas`, el bot cotiza con eso y la nota dice que la distancia es estimada.
 - `excel`: el catálogo completo (90 productos), su fórmula y la de su hoja «JADP», para la pestaña «Cotizar».
 
 Ratas, termitas, chinches y pulgas **no** se cotizan solas: en su Excel van con bloques, polvo o mucho más
@@ -180,3 +213,20 @@ escribe la gente contra el reflejo (cero equivocados) y, en privado, el bot ente
 **El número para avisarle al dueño:** la variable `DUENO_WA` o, sin desplegar, `POST /api/negocio
 { negocio: { dueno_wa: '524421394023' } }`. Es el 442 139 4023 que dio el cliente (el mismo de su página).
 Sirve hasta que se conecte WhatsApp (falta su acceso a Meta).
+
+## Por tipo de cliente · 23 nov
+
+`pruebas-tipos.mjs` cotiza miles de casos por tipo (casa, depa, condominio, restaurante, oficina, bodega, nave, hospital,
+escuela, hotel; de 20 a 50,000 m²) y corre cientos de pláticas con la IA de mentiras, que a propósito a veces se porta mal.
+Con tarifas de MUESTRA; contra su Excel de verdad se corre en privado, con la misma revisión. Lo que quedó:
+
+- **El precio no depende del tipo** (su hoja no lo multiplica): el tipo sólo decide la visita y cuándo lo ve el encargado.
+- **La industria se confirma con visita** aunque las tarifas no traigan `tipos` (las que salen de su Excel no los traen).
+  `tipos.industria.visita: false` en las tarifas lo apaga.
+- **Qué es el lugar** sale de la IA y, si no lo apuntó, de lo que dijo el cliente (restaurante, hotel, escuela, bodega… →
+  negocio; nave, fábrica, planta de alimentos → industria). A un negocio no se le pregunta por «tu casa» ni sus recámaras
+  (ni el reflejo ni la pregunta de respaldo: se le piden los metros del lugar), y «hotel de 33 cuartos» no se mide como casa.
+- **Varias casas o departamentos** (administra un condominio o un fraccionamiento, «40 casas», «12 departamentos»): no hay
+  precio automático, lo da el encargado y le llega «son varias casas». Se calibra con el dueño.
+- **Los metros como los escribe la gente:** «24.100 m²» son 24,100 (antes 24.1) y «3 mil metros» son 3,000.
+- Al dueño le llega el motivo de verdad: «lugar muy grande», «varias casas» o «casa grande fuera de la zona».

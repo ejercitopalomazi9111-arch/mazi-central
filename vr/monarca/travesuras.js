@@ -29,7 +29,7 @@ export const T = {
   manosJuega: 6, saludo: 4, saludoAmp: .08, pellizcos: 6, pellizcosSeg: 4,
   oscuro: .06, oscuroSeg: 1.5, machaca: 8, machacaSeg: 3, stickSeg: 5,
   quieto: [25, 25, 60, 120, 240],              /* s sin tocar nada → r-quieto-1…5 (el 5 avanza solo) */
-  record: 60, rapidoResp: 1.2, floresRapido: 5, largo: 15 * 60, sacudida: 25,
+  record: 60, rapidoResp: 1.2, floresRapido: 5, largo: 15 * 60, calor: 9 * 60, sacudida: 25,
 };
 
 const deg = (r) => r * 180 / Math.PI;
@@ -52,7 +52,7 @@ export function crearTravesuras(op = {}){
   const veces = {};                                 /* familia → cuántas veces se ha dicho (para escalar) */
   const st = { dicho: null, enEscena: new Set(), ultimaT: -99, inicio: null, tocoEn: 0, quietos: 0, saltadas: 0, base: null,
     botones: [], pingpong: [], voces: [], puntaje: 0, creditos: 0, otraVez: 0, pregEn: 0, plantas: [], ocultoEn: null,
-    salioEn: null, finalDicho: false, largoDicho: false, escena: null };
+    salioEn: null, finalDicho: false, largoDicho: false, calorDicho: false, escena: null };
 
   /* decide si una reacción se puede decir ahora */
   function puede(id, t, { seguridad = false, unaVez = false, enfria = 30 } = {}){
@@ -84,6 +84,8 @@ export function crearTravesuras(op = {}){
     if(f.vertical && durante((x) => x.vertical, 2, t) && puede('r-vertical', t, { enfria: 90 })) return decir('r-vertical', t);
     if(f.luz != null && durante((x) => x.luz != null && x.luz < L.oscuro, L.oscuroSeg, t) && puede('r-oscuro', t, { enfria: 45 })) return decir('r-oscuro', t);
     if(!st.largoDicho && t - st.inicio > L.largo && puede('r-largo', t)){ st.largoDicho = true; return decir('r-largo', t); }
+    /* mantenimiento de cómputo: a los 9 min, que el teléfono descanse si se calienta (una vez) */
+    if(!st.calorDicho && !f.explicando && t - st.inicio > L.calor && puede('r-calor', t)){ st.calorDicho = true; return decir('r-calor', t); }
 
     /* ── la cabeza ── */
     if(f.yaw != null){
