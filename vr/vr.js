@@ -22,13 +22,14 @@ import { crearLimites, toparCabeza } from './limites.js';
 import { crearPredictor } from './prediccion.js';
 
 /* ── ajustes: se guardan en el teléfono (sólo comodidad; si se borran, salen los de fábrica) ── */
-const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true, menuTam: 1, menuDist: 1, fondo: 0, seis: false, puntos: true, limites: true, zona: 1, tonos: true, estable: 150, enfriar: 250, arcore: true };
+const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true, menuTam: 1, menuDist: 1, fondo: 0, seis: false, puntos: true, limites: true, zona: 1, tonos: true, estable: 150, enfriar: 250, arcore: false };
 const AJ = { ...FABRICA };
 try{ Object.assign(AJ, JSON.parse(localStorage.getItem('mazivr.ajustes') || '{}')); }catch{}
 /* LO GUARDADO NO TAPA UN VALOR NUEVO DE FÁBRICA (Carlos, 26 nov: «ninguno de los cambios de 200 ms está activo»): los Ajustes
    se guardan ENTEROS, así que un teléfono que ya había guardado algo conservaba el valor viejo para siempre. Cada que cambia
    un valor de fábrica que importa, sube `aj` y aquí se pone el nuevo a quien traía el viejo. */
-if((AJ.aj || 0) < 3){ AJ.estable = FABRICA.estable; AJ.aj = 3; }   /* 3 (26 nov): «si hago el clic, ya se debería de seleccionar inmediatamente»: 150 ms sólo contra el temblor */
+if((AJ.aj || 0) < 3){ AJ.estable = FABRICA.estable; AJ.aj = 3; }
+if((AJ.aj || 0) < 4){ AJ.arcore = false; AJ.aj = 4; }   /* 4 (27 nov, Carlos: «que si sólo le doy a entrar me meta la versión normal, con las manos bien»): ARCore/ARKit ya no es de fábrica; se prende en Ajustes o con el botón «AR» */   /* 3 (26 nov): «si hago el clic, ya se debería de seleccionar inmediatamente»: 150 ms sólo contra el temblor */
 const guardar = () => { try{ localStorage.setItem('mazivr.ajustes', JSON.stringify(AJ)); }catch{} };
 
 /* ── ERRORES QUE DICEN QUÉ, DÓNDE Y CUÁNDO (Carlos, 19 nov: «que el código de error sea tan claro que sepas exactamente
