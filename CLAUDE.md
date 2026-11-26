@@ -657,6 +657,9 @@ dependemos.
 
    | si existe el objeto `YT.Player`, ya se le pueden pedir `seekTo`, `pauseVideo` o `playVideo` | sus funciones no existen hasta su `onReady`: brincar ±10 s con el control mientras el video carga tronaba «y.seekTo is not a function» | lo reportó Carlos con captura (Mazi VR v40, cine). Las llamadas al reproductor van con `?.()` (`brincar` y `pausa` en `vr/pantalla.js`) |
 
+   | si cambio un valor de fábrica (`FABRICA.estable` de 200 a 720), todos los teléfonos lo reciben | los Ajustes se guardan ENTEROS en `localStorage`: el que ya había guardado algo conserva el valor viejo para siempre | Carlos: «ninguno de los cambios de 200 ms está activo». Ahora `AJ.aj` lleva la versión de los valores de fábrica y al cargar se pone el nuevo a quien traía el viejo (`vr/vr.js`) |
+   | arreglar la profundidad de la mano 3D (v38) sólo cambia cómo se dibuja la mano | el rayo sale de tu cabeza POR la punta del índice calculada con la misma función: voltear la profundidad también movió hacia dónde apunta (hacia afuera, «más a la derecha» con la derecha) | seis días con el puntero corrido sin que una prueba lo viera (todas medían rayo contra punta dibujada, y las dos se movieron juntas). El rayo usa ahora su propia punta (`puntaRayo` en `vr/manos.js`) |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 13. **CERO PARPADEO. Nunca, jamás, de los jamases** (Carlos, 14 nov, por el ajedrez de CARYMO). Tocar algo o que

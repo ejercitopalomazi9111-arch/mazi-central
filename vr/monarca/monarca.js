@@ -23,6 +23,7 @@ import { crearRotulos } from './rotulos.js';
 import { crearTutorial } from '../tutorial.js';
 import { crearCiclo } from './ciclo.js';
 import { crearMaceta } from './maceta.js';
+import { crearEspejo } from '../espejo.js';
 import { t as tr, UI, ESCENAS, PREGUNTAS, MATERIAS, NOMBRE_MATERIA, FUNCIONA, CONTAMOS, CREDITOS } from './guion.js';
 
 const AQUI = (f) => new URL(f, import.meta.url).href;
@@ -103,9 +104,10 @@ export function montarMonarca(V){
   const mariposa = new THREE.Group(), colonia = new THREE.Group(); m.grupo.add(mariposa, colonia); mariposa.visible = colonia.visible = false;
   let modelo = null;
   /* EL ECOSISTEMA (ecosistema.js) */
-  const eco = crearEcosistema({ THREE, render: V.render, grupo: m.grupo, cabeza: V.cabeza }); m.eco = eco;
-  const PAPEL = { bienvenida: ['ambiente', 8], mariposa: ['ambiente', 4], ciclo: ['ambiente', 4], flores: ['ambiente', 5], migracion: ['rumbo', 12],
-    cuerpo: ['ambiente', 6], maceta: ['ambiente', 2], santuario: ['racimo'], tala: ['ambiente', 1], campo: ['ambiente', 2], decision: ['ambiente', 3], cuestionario: ['nada'], final: ['ambiente', 14] };
+  const eco = crearEcosistema({ THREE, render: V.render, grupo: m.grupo, cabeza: V.cabeza, N: 96 }); m.eco = eco;
+  /* MUCHAS MÁS (Carlos, 26 nov: «hay muy pocas mariposas… faltan muchas más, las interactivas»): de 4-14 a 14-70 por escena */
+  const PAPEL = { bienvenida: ['ambiente', 30], mariposa: ['ambiente', 18], ciclo: ['ambiente', 14], flores: ['ambiente', 26], migracion: ['rumbo', 70],
+    cuerpo: ['ambiente', 22], maceta: ['ambiente', 14], santuario: ['racimo'], tala: ['ambiente', 3], campo: ['ambiente', 8], decision: ['ambiente', 14], cuestionario: ['ambiente', 10], final: ['ambiente', 70] };
   function papelDe(E){ const [p, n] = PAPEL[E.id] || ['nada']; eco.poner(p, { cuantas: n }); eco.guiar(null); if(eco.listo && E.monarca === 'colonia') colonia.visible = false; }
   let tocoEco = false;
   eco.alTocar = () => { memo.apuntar('mariposa', ESCENAS[st.escena]?.id, ahora()); if(!tocoEco){ tocoEco = true; reaccionar('r-tocar-mariposa'); } };
@@ -117,7 +119,7 @@ export function montarMonarca(V){
     let k = 3; const az = () => (k = (k * 16807) % 2147483647) / 2147483647;
     for(let i = 0; i < 18; i++){ const c2 = piv.clone(); const a = (az() - .5) * 2.4, r = 1.3 + az() * 2;
       c2.userData.base = new THREE.Vector3(Math.sin(a) * r, -.3 + az() * 1.6, -Math.cos(a) * r); c2.userData.fase = az() * 6; c2.scale.multiplyScalar(.6 + az() * .5); colonia.add(c2); }
-    if(eco.desdeModelo(piv)){ colonia.visible = false; if(st.fase === 'escenas') papelDe(ESCENAS[st.escena]); else eco.poner('ambiente', { cuantas: 5 }); }
+    if(eco.desdeModelo(piv)){ colonia.visible = false; if(st.fase === 'escenas') papelDe(ESCENAS[st.escena]); else eco.poner('ambiente', { cuantas: 24 }); }
   }).catch((e) => { V.fallo?.('E-MONARCA', 'cargar monarca.glb', e); });
 
   /* ── el minijuego «Flores en el camino»: cinco lugares en el pasto; al elegir uno crece una flor (Poly Haven) y la
@@ -219,25 +221,32 @@ export function montarMonarca(V){
   let cuentaT0 = 0, cuentaN = -1;
   function pedirIdioma(){
     st.fase = 'idioma'; narr.callar(); limpiarEscena(); ponerCielo('alps_field'); V.cuarto.visible = false;
-    rot.mensaje('MONARCH', ['Idioma · Language']);
+    const cod = espejo.abrir();
+    rot.mensaje('MONARCH', ['Idioma · Language', `Docente · Teacher: ${cod}`]);
     ponerBotones([boton('Español', () => elegirIdioma('es'), .6), boton('English', () => elegirIdioma('en'), .6)], -.2);
   }
-  function elegirIdioma(l){ st.idioma = l; st.fase = 'cuenta'; cuentaT0 = ahora(); cuentaN = -1; ponerBotones([]); narr.precargar(); }
+  /* EL IDIOMA → «LISTO» → LA CUENTA (Carlos, 26 nov: «que sea listo, ... 5, 4, con un sonidito como de tic de reloj»): el
+     operador elige el idioma, le pone el visor al alumno y toca «Listo»; ahí empieza la cuenta, con un tic cada segundo. */
+  function elegirIdioma(l){ st.idioma = l; st.fase = 'listo'; narr.precargar(); V.despertarAudio?.();
+    rot.mensaje('MONARCH', [L(UI.ponte)]);
+    ponerBotones([boton(L(UI.listoOperador), empezarCuenta, .7)], -.2); }
+  function empezarCuenta(){ st.fase = 'cuenta'; cuentaT0 = ahora(); cuentaN = -1; ponerBotones([]); }
   const tut = crearTutorial({ THREE, V, grupo: m.grupo,
     decir: (ids, fin) => decirY(ids, fin),
     boton: (txt, acc, an) => boton(L(UI.aqui), acc, an),
     guia: (p) => eco.guiar(p, { posarse: false }),
-    alTerminar: () => { V.extra.palmaPermitida = false; empezarHistoria(); } });
+    alTerminar: () => empezarHistoria() });
   m.tutorial = tut;
   function empezarTutorial(){
-    st.fase = 'tutorial'; V.extra.palmaPermitida = true;   /* manos.js: aquí la palma arriba sí cuenta como «atrás» */
-    rot.mensaje(L(UI.tutorial), [L(UI.saltar)], { chico: true });
+    /* el tutorial es OBLIGATORIO (Carlos, 26 nov: «se pasa aleatoriamente… quita por completo el gesto para esquipearlo») */
+    st.fase = 'tutorial';
+    rot.mensaje(L(UI.tutorial), [], { chico: true });
     setTimeout(() => { if(st.fase === 'tutorial') rot.limpiar(); }, 4500);
     tut.empezar();
   }
   function empezarHistoria(){ st.fase = 'escenas'; st.escena = 0; mostrar(0); }
   /* para las pruebas y para el docente: entrar directo a la historia (o al tutorial) */
-  m.arrancar = ({ idioma = 'es', tutorial = false } = {}) => { st.idioma = idioma; if(tutorial) empezarTutorial(); else { V.extra.palmaPermitida = false; empezarHistoria(); } };
+  m.arrancar = ({ idioma = 'es', tutorial = false } = {}) => { st.idioma = idioma; if(tutorial) empezarTutorial(); else empezarHistoria(); };
 
   /* ── las escenas ── */
   let t0 = 0;
@@ -342,7 +351,7 @@ export function montarMonarca(V){
     if(alCallar && !narr.ocupado){ const f = alCallar; alCallar = null; f(); }
     if(st.fase === 'cuenta'){
       const n = 5 - Math.floor(t - cuentaT0);
-      if(n !== cuentaN && n >= 1){ cuentaN = n; rot.mensaje(String(n), [L(UI.entrega)]); V.sonar('toque', .12); }
+      if(n !== cuentaN && n >= 1){ cuentaN = n; rot.mensaje(String(n), []); V.tic?.(); }
       if(n < 1){ rot.limpiar(); empezarTutorial(); }
       return;
     }
@@ -399,23 +408,43 @@ export function montarMonarca(V){
   }
   m.vigilar = vigilar;
 
+  /* ── EL ESPEJO PARA EL DOCENTE (espejo.js y vr/operador.html): ve en su teléfono lo que ves, y guía la explicación ── */
+  const ordenes = {
+    idioma: (o) => { if(st.fase === 'idioma') elegirIdioma(o.l === 'en' ? 'en' : 'es'); },
+    listo: () => { if(st.fase === 'listo') empezarCuenta(); },
+    saltarTutorial: () => { if(st.fase === 'tutorial'){ tut.activo = false; empezarHistoria(); } },
+    siguiente: () => { if(st.fase === 'escenas' && st.escena < ESCENAS.length - 1) mostrar(st.escena + 1); },
+    atras: () => { if(st.fase === 'escenas' && st.escena > 0) mostrar(st.escena - 1); },
+    repetir: () => { if(st.fase === 'escenas') mostrar(st.escena); },
+    callar: () => narr.callar(),
+    escena: (o) => { const n = Math.max(0, Math.min(ESCENAS.length - 1, o.n | 0)); if(st.fase === 'tutorial'){ tut.activo = false; st.fase = 'escenas'; } if(st.fase === 'escenas') mostrar(n); },
+    reiniciar: () => reiniciar(),
+  };
+  const espejo = crearEspejo(V, { alOrden: (o) => ordenes[o.accion]?.(o),
+    estado: () => ({ fase: st.fase, escena: st.escena, idioma: st.idioma, titulo: st.fase === 'escenas' ? L(ESCENAS[st.escena].titulo) : '',
+      escenas: ESCENAS.map((e) => tr(e.titulo, st.idioma)), habla: !!narr.ocupado }) });
+  m.espejo = espejo; m.ordenes = ordenes;
+
   /* ── entrar y salir: se apaga el cuarto del motor y la mixta; al salir, todo vuelve ── */
   let antes = null;
   m.entrar = () => {
     antes = { cuarto: V.cuarto.visible, tem: window.__temshop?.grupo.visible, mixta: V.AJ.mixta };
     if(V.AJ.mixta) V.ponerMixta(false); V.cuarto.visible = false; if(window.__temshop) window.__temshop.grupo.visible = false;
     if(st.fase === 'escenas') mostrar(st.escena); else pedirIdioma();
+    /* ADENTRO DE MONARCH NO SE SALE (Carlos, 26 nov: «a cada rato te saca… apaga eso de que pueda salirme con el botón de
+       atrás o con el gesto»): al entrar se cierra como en exposición. Sólo el docente sale (Opciones/PS 5 veces, o 5 toques
+       en la esquina de arriba a la izquierda del teléfono); salir del navegador o cerrar la app del teléfono sigue igual. */
+    m.exposicion(true);
     reaccionar(ev('entrar'));
   };
   m.salir = () => {
-    narr.callar(); ev('salir'); subt.malla.visible = false; V.extra.palmaPermitida = false; if(tut.activo){ tut.activo = false; }
+    narr.callar(); ev('salir'); subt.malla.visible = false; espejo.cerrar(); V.kiosco.activo = false; V.kiosco.alPS = null; if(tut.activo){ tut.activo = false; }
     if(st.fase !== 'escenas') st.fase = 'idioma';
     if(antes){ V.cuarto.visible = antes.cuarto; if(window.__temshop) window.__temshop.grupo.visible = !!antes.tem; if(antes.mixta) V.ponerMixta(true); }
   };
   m.elegibles = () => [...botones, ...lugares, ...tut.elegibles(), ...maceta.elegibles()];
-  /* ATRÁS: en el tutorial, el gesto de atrás (palma arriba o Círculo) lo SALTA (Carlos, 25 nov). Fuera de él, en
-     exposición no hay «Atrás»: sólo la salida del docente */
-  Object.defineProperty(m, 'atras', { get: () => (st.fase === 'tutorial' ? () => tut.saltar() : V.kiosco.activo ? undefined : () => V.ir('juegos')), configurable: true });
+  /* ATRÁS: no hay (Carlos, 26 nov). Ni Círculo, ni la palma, ni un botón: sólo la salida del docente */
+  Object.defineProperty(m, 'atras', { get: () => undefined, configurable: true });
   m.atrasEn = [0, -1.25, -1.7];
   m.mostrar = mostrar; m.reiniciar = reiniciar; m.ESCENAS = ESCENAS; m.PREGUNTAS = PREGUNTAS; m.MATERIAS = MATERIAS; m.elegirIdioma = elegirIdioma;
 

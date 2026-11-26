@@ -80,10 +80,10 @@ export function crearEcosistema({ THREE, render, grupo, cabeza, N = 48 }){
     let i = 0; const tomar = () => eco.mariposas[i++];
     if(papel === 'racimo'){
       /* racimos colgados de ramas imaginarias del oyamel, enfrente y a los lados, de 1.4 a 2.6 m de alto */
-      const sitios = racimos || [[-1.5, 1.3, -2.6], [1.4, 1.5, -2.8], [-.3, 1.9, -3.4], [2.6, 1.1, -1.8]];
-      for(const [x, y, z] of sitios){ for(let j = 0; j < 9 && i < eco.mariposas.length - 5; j++){ const m = tomar(); m.papel = 'racimo';
+      const sitios = racimos || [[-1.5, 1.3, -2.6], [1.4, 1.5, -2.8], [-.3, 1.9, -3.4], [2.6, 1.1, -1.8], [-2.7, 1.6, -1.2], [.8, 2.1, -4], [-1, .9, -3.8]];
+      for(const [x, y, z] of sitios){ for(let j = 0; j < 9 && i < eco.mariposas.length - 20; j++){ const m = tomar(); m.papel = 'racimo';
         m.base.set(x + (j % 3 - 1) * .07, y - Math.floor(j / 3) * .09 - (j % 2) * .03, z + (j % 2) * .04); m.g.visible = true; } }
-      for(let j = 0; j < 4; j++){ const m = tomar(); m.papel = 'ambiente'; m.g.visible = true; }
+      for(let j = 0; j < 16; j++){ const m = tomar(); m.papel = 'ambiente'; m.g.visible = true; }
     } else if(papel !== 'nada'){
       for(let j = 0; j < Math.min(cuantas, eco.mariposas.length - 1); j++){ const m = tomar(); m.papel = papel; m.rumbo = rumbo; m.g.visible = true; }
     }
@@ -98,11 +98,19 @@ export function crearEcosistema({ THREE, render, grupo, cabeza, N = 48 }){
   };
 
   /* ── cada cuadro ── */
-  const ENFRENTE = -2.2;
+  const ENFRENTE = -2.2, quietas = [];
   eco.cuadro = (t, manos = []) => {
     if(!eco.listo || !capa.visible) return;
     cabeza.getWorldPosition(ojo); const ojoL = capa.worldToLocal(ojo.clone());
     const palmas = manos.map((h) => h.mundo?.palma).filter(Boolean).map((p) => capa.worldToLocal(p.clone()));
+    /* SE POSAN EN TU MANO (las interactivas): con la mano quieta 1.2 s, la mariposa más cercana viene y se queda en tu palma,
+       abriendo y cerrando las alas despacio; si mueves la mano rápido, se va volando. Hasta dos manos, una en cada una. */
+    palmas.forEach((p, k) => { const q = quietas[k] || (quietas[k] = { en: p.clone(), desde: t, m: null });
+      if(p.distanceTo(q.en) > .05){ q.en.copy(p); q.desde = t; if(q.m){ q.m.papel = 'ambiente'; q.m.huye.set(0, .6, 0); q.m = null; } }
+      else if(!q.m && t - q.desde > 1.2){ let mejor = null, md = 9; for(const m of eco.mariposas) if(m.g.visible && m.papel === 'ambiente'){ const d = m.g.position.distanceToSquared(p); if(d < md){ md = d; mejor = m; } }
+        if(mejor){ q.m = mejor; mejor.papel = 'mano'; mejor.t0 = t; mejor.desde.copy(mejor.g.position); eco.posadas++; try{ eco.alPosar?.(); }catch{} } }
+      if(q.m) q.palma = p; });
+    for(let k = palmas.length; k < quietas.length; k++){ const q = quietas[k]; if(q?.m){ q.m.papel = 'ambiente'; q.m = null; } }
     for(const m of eco.mariposas){
       if(!m.g.visible) continue;
       m.cuadro++; const lejos = m.g.position.distanceToSquared(ojoL) > 36;
@@ -112,6 +120,14 @@ export function crearEcosistema({ THREE, render, grupo, cabeza, N = 48 }){
         m.g.position.set(m.base.x + Math.sin(t * .5 + m.fase) * .005, m.base.y, m.base.z);
         m.g.rotation.set(Math.PI / 2 - .2, m.fase, 0);
         if(!lejos || m.cuadro % 2) aletear(m, cerca ? .5 + Math.sin(t * 6 + m.fase) * .5 : 1.35 + Math.sin(t * .7 + m.fase) * .05);
+        continue;
+      }
+      if(m.papel === 'mano'){
+        const q = quietas.find((x) => x?.m === m); if(!q?.palma){ m.papel = 'ambiente'; continue; }
+        const dest = tmp.copy(q.palma).add(tmp2.set(0, .05, 0)), k = Math.min(1, (t - m.t0) / 1.6), e = 1 - Math.pow(1 - k, 3);
+        m.g.position.lerpVectors(m.desde, dest, e); m.g.position.y += Math.sin(k * Math.PI) * .2;
+        tmp2.copy(ojoL); tmp2.y = m.g.position.y; m.g.lookAt(tmp2); m.g.scale.setScalar(m.esc);
+        aletear(m, k < 1 ? Math.sin(t * m.f * 6.283) * 1.05 : .35 + (Math.sin(t * 1.4 + m.fase) * .5 + .5) * .9);
         continue;
       }
       if(m.papel === 'guia' && m.dest){
@@ -148,6 +164,6 @@ export function crearEcosistema({ THREE, render, grupo, cabeza, N = 48 }){
       if(!lejos || m.cuadro % 2) aletear(m, planea ? .12 : Math.sin(t * m.f * 6.283 + m.fase) * 1.05);
     }
   };
-  eco.capa = capa;
+  eco.capa = capa; eco.posadas = 0;
   return eco;
 }

@@ -9,7 +9,7 @@ const ctx = await b.newContext({ viewport: { width: 844, height: 390 } });
 await ctx.addInitScript(() => { try{ localStorage.setItem('mazivr.ajustes', JSON.stringify({ fondo: 1, manos: false })); }catch{}
   window.__pad = { id: 'Wireless Controller', index: 0, connected: true, mapping: 'standard', buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })), axes: [0, 0, 0, 0] }; navigator.getGamepads = () => [window.__pad]; });
 const p = await ctx.newPage(); const errores = []; p.on('pageerror', (e) => errores.push(e.message));
-p.on('console', (m) => { if(m.type() === 'error' && !/favicon|getUserMedia|Permission|NotAllowed|NotFound|Requested device/i.test(m.text())) errores.push(m.text()); });
+p.on('console', (m) => { if(m.type() === 'error' && !/favicon|getUserMedia|Permission|NotAllowed|NotFound|Requested device|espejo|status of 404/i.test(m.text())) errores.push(m.text()); });
 let ok = 0, mal = 0; const sí = (c, t) => { c ? ok++ : mal++; console.log(c ? '✓' : '✗', t); };
 await p.goto(BASE + '/vr/?monarca', { waitUntil: 'networkidle' }); await p.click('#bEntrar');
 await p.waitForFunction(() => window.__vr?.ahora() === 'monarca', null, { timeout: 20000 });
@@ -21,14 +21,24 @@ const escena = () => p.evaluate(() => __monarca.ESCENAS[__monarca.estado.escena]
 const cap = async (n) => { await p.waitForTimeout(900); await p.screenshot({ path: `${CAPS}/${n}.png` }); };
 await cap('0-idioma');
 /* EL ARRANQUE (Carlos, 25 nov): idioma → 5 s para entregar el visor → tutorial, que se salta con el gesto de atrás */
-await tocar('Español'); await p.waitForTimeout(1200);
-sí(await p.evaluate(() => __monarca.estado.fase === 'cuenta' && __monarca.rotulos.visibles().length > 0), 'elegido el idioma, sale la cuenta para entregar el visor'); await cap('0b-cuenta');
+/* (26 nov) idioma → «Listo» (el operador, ya con el visor puesto al alumno) → la cuenta con tic → tutorial OBLIGATORIO */
+await tocar('Español'); await p.waitForTimeout(600);
+sí(await p.evaluate(() => __monarca.estado.fase === 'listo' && __monarca.elegibles().map((m) => m.userData.panel.titulo).join() === 'Listo'), 'elegido el idioma, sale el botón «Listo» (y nada corre hasta tocarlo)');
+await p.evaluate(() => { window.__ticks = 0; const st = AudioBufferSourceNode.prototype.start; AudioBufferSourceNode.prototype.start = function(...a){ if(this.buffer?.duration < .05) window.__ticks++; return st.apply(this, a); }; __vr.despertarAudio(); });
+await tocar('Listo'); await p.waitForTimeout(2300);
+sí(await p.evaluate(() => __monarca.estado.fase === 'cuenta' && __monarca.rotulos.visibles().length > 0), 'con «Listo» empieza la cuenta'); await cap('0b-cuenta');
+sí(await p.evaluate(() => window.__ticks >= 2), `cada segundo de la cuenta suena un tic de reloj (${await p.evaluate(() => window.__ticks)} en 2.3 s)`);
 await p.waitForFunction(() => __monarca.estado.fase === 'tutorial', null, { timeout: 8000 }).catch(() => {});
 sí(await p.evaluate(() => __monarca.estado.fase === 'tutorial' && __monarca.narrador.pedidos.includes('t-hola')), 'a los 5 s empieza el tutorial con su explicación');
-sí(await p.evaluate(() => typeof __monarca.atras === 'function'), 'en el tutorial, el gesto de atrás SÍ hace algo (aunque sea exposición)');
-await p.evaluate(() => __monarca.atras());
+sí(await p.evaluate(() => __monarca.atras === undefined), 'en el tutorial NO hay gesto de atrás: es obligatorio (Carlos, 26 nov)');
+/* Círculo y PS una vez no sacan a nadie */
+const pulsa = async (i) => { await p.evaluate((i) => { window.__pad.buttons[i] = { pressed: true, value: 1 }; window.__pad.timestamp = performance.now(); }, i); await p.waitForTimeout(250); await p.evaluate((i) => { window.__pad.buttons[i] = { pressed: false, value: 0 }; }, i); await p.waitForTimeout(250); };
+await pulsa(1); await pulsa(16);
+sí(await p.evaluate(() => __vr.ahora() === 'monarca' && __monarca.estado.fase === 'tutorial'), 'Círculo y PS no te sacan ni te saltan el tutorial');
+/* sólo el docente lo salta (desde su pantalla) */
+await p.evaluate(() => __monarca.ordenes.saltarTutorial());
 await p.waitForFunction(() => __monarca.estado.fase === 'escenas', null, { timeout: 20000 }).catch(() => {});
-sí(await p.evaluate(() => __monarca.estado.fase === 'escenas' && __monarca.narrador.pedidos.includes('t-saltar') && !__monarca.atras), 'el gesto de atrás salta el tutorial («nos saltamos la práctica») y ya no hay «Atrás» en exposición');
+sí(await p.evaluate(() => __monarca.estado.fase === 'escenas' && !__monarca.atras), 'el docente puede saltar el tutorial desde su pantalla, y en la historia tampoco hay «Atrás»');
 await cap('1-bienvenida');
 /* EL NARRADOR: cada renglón tiene su audio, y se da cuenta de lo que haces */
 const { LINEAS } = await import('./monarca/narrador.js');

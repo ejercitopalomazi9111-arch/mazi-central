@@ -164,6 +164,11 @@ export async function iniciarManos(V){
       const Ld = mixta ? filtrar(m, E.L, ahora, 'filtroDibujo', UE_DIBUJO, false) : L;
       const nuevos = Ld.map((p) => mixta ? aEspacio({ x: p.x, y: p.y, z: 0 }, lejos, tx, ty, new THREE.Vector3()) : aEspacio(p, dist, tx, ty, new THREE.Vector3()));
       m.suave = nuevos;   /* ya viene filtrado (un euro): sin otra capa de retraso */
+      /* EL RAYO COMO ESTABA ANTES DEL 20 NOV (Carlos, 26 nov: «me pasaste el puntero… más a la derecha. Regrésalo a la
+         posición previa»): al voltear la profundidad para la mano 3D (v38) también se movió hacia dónde pasa el rayo, porque
+         sale de tu cabeza por la punta del índice y esa punta trae profundidad. La mano 3D se queda al derecho; el rayo usa
+         la punta con la profundidad como antes. (En la mixta la punta va sin profundidad y no cambió.) */
+      m.puntaRayo = mixta ? null : aEspacio({ x: L[8].x, y: L[8].y, z: -L[8].z }, dist, tx, ty, new THREE.Vector3());
       m.mixta = mixta;
       m.suave.forEach((q, i) => { m.pts[i].position.copy(q); m.pts[i].scale.setScalar(q.length() * (i === 8 || i === 4 ? .0062 : .0042)); });
       const pos = m.lin.geometry.attributes.position; HUESOS.forEach(([a, b], i) => { pos.setXYZ(i * 2, ...m.suave[a].toArray()); pos.setXYZ(i * 2 + 1, ...m.suave[b].toArray()); }); pos.needsUpdate = true;
@@ -173,7 +178,7 @@ export async function iniciarManos(V){
          mismo lugar y no se desdobla entre ojos). MediaPipe da la mano como si la imagen fuera de selfie (en espejo):
          con la cámara de atrás, su «Left» es tu mano derecha. */
       const modelo = conModelo(); m.lin.visible = !modelo; m.pts.forEach((b, i) => { b.visible = !modelo || i === 4 || i === 8; });
-      if(modelo){ const k3 = mixta ? lejos / dist : 1, P3 = Ld.map((p) => aEspacio(p, dist, tx, ty, new THREE.Vector3()).multiplyScalar(k3));
+      if(modelo){ const k3 = mixta ? lejos / dist : 1, P3 = Ld.map((p) => aEspacio(p, dist, tx, ty, new THREE.Vector3()).multiplyScalar(k3)); P3.k3 = k3;
         if(ahora - (m.visto3d || 0) > 600) m.lado3d = {}; m.visto3d = ahora;   /* mano nueva: decide otra vez */
         manos3d.poner(k, P3, elegirLado(m.lado3d, ladoPorForma(THREE, P3), (m.etiqueta || c.etiqueta) === 'Right' ? 'izq' : 'der'), mixta); }
       else manos3d?.esconder(k);
@@ -219,8 +224,7 @@ export async function iniciarManos(V){
            · no cuenta donde las manos se usan para jugar (Sables, MONARCH, el Taller): ahí se sale con el control o el menú;
            · hay que sostenerla 1.5 s y QUIETA (si la muñeca se mueve más de 4 % de la imagen, se vuelve a empezar);
            · a la mitad sale «Atrás…» en el HUD: si no era tu intención, bajas la mano y no pasa nada. */
-      /* en el TUTORIAL de una experiencia (vr/tutorial.js) sí vale: ahí la palma arriba salta el tutorial (Carlos, 25 nov) */
-      const palmaVale = G.palma && !m.pellizco && (!PALMA_NO.includes(V.ahora?.()) || V.extra.palmaPermitida);
+      const palmaVale = G.palma && !m.pellizco && !PALMA_NO.includes(V.ahora?.());
       if(palmaVale){
         if(!m.palmaDesde || Math.hypot(muneca.x - m.palmaEn.x, muneca.y - m.palmaEn.y) > .04){ m.palmaDesde = ahora; m.palmaEn = { x: muneca.x, y: muneca.y }; m.palmaAviso = false; }
         if(!m.palmaAviso && ahora - m.palmaDesde > 750){ m.palmaAviso = true; V.hud('Atrás…', .9); }
@@ -242,7 +246,7 @@ export async function iniciarManos(V){
          que sale del dedo en 3D se desdobla, uno por ojo. Y la punta en la imagen se ve aunque el dedo apunte de frente,
          que es justo cuando su dirección 3D falla. */
       const I = m.info, o = cabeza.getWorldPosition(new THREE.Vector3()), d = new THREE.Vector3();
-      if(m.suave?.[8]) d.copy(cabeza.localToWorld(m.suave[8].clone())).sub(o).normalize(); else d.copy(I.mundo.dedo).sub(o).normalize();
+      if(m.puntaRayo) d.copy(cabeza.localToWorld(m.puntaRayo.clone())).sub(o).normalize(); else if(m.suave?.[8]) d.copy(cabeza.localToWorld(m.suave[8].clone())).sub(o).normalize(); else d.copy(I.mundo.dedo).sub(o).normalize();
       /* AL PELLIZCAR EL RAYO SE CONGELA (Carlos, 18 nov: «cuando apunto y hago el click no sirve»): para juntar los dedos el
          índice se dobla hacia el pulgar y el rayo se iba para otro lado justo en el clic. Mientras dura el pellizco se usa
          hacia dónde apuntaba ~200 ms antes de que se notara; sólo se traslada con la muñeca (para arrastrar). */
@@ -263,7 +267,7 @@ export async function iniciarManos(V){
     const principal = conPellizco || rayos.find((R) => R.mano.G?.apunta) || rayos.find((R) => R.mano === principalAntes) || rayos.find((R) => R.lado > 0) || rayos[0] || null;
     principalAntes = principal?.mano || null;
     V.extra.rayos = rayos; V.extra.rayo = principal;
-    estado.rayos = rayos.length; estado.congelado = !!principal?.mano.fijo; estado.punta = principal ? principal.mano.info.mundo.dedo.toArray() : null;
+    estado.rayos = rayos.length; estado.congelado = !!principal?.mano.fijo; estado.punta = principal ? principal.mano.info.mundo.dedo.toArray() : null; estado.puntaRayo = principal?.mano.puntaRayo ? cabeza.localToWorld(principal.mano.puntaRayo.clone()).toArray() : estado.punta;
     if(!principal){ rayosVis.forEach((x) => { x.linea.visible = x.cursor.visible = false; }); }
   };
   /* el dibujo de los rayos y sus cursores va cada cuadro (el rastreo, cada dos), con el punto donde pegó (lo pone vr.js) */

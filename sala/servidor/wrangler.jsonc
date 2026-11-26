@@ -41,14 +41,17 @@
       { "name": "PINGUINOS", "class_name": "Coleccion" },
       // INKWELL · la Comunidad: cuentas, comentarios, foros y perfiles (comunidad.js).
       { "name": "COMUNIDAD", "class_name": "Comunidad" },
-      { "name": "URBAN", "class_name": "UrbanPest" }
+      { "name": "URBAN", "class_name": "UrbanPest" },
+      // MAZI VR · el espejo para el docente (espejo.js): un relevo por código, nada se guarda.
+      { "name": "ESPEJO", "class_name": "Espejo" }
     ]
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["Sala"] },
     { "tag": "v2", "new_sqlite_classes": ["Coleccion"] },
     { "tag": "v3", "new_sqlite_classes": ["Comunidad"] },
-    { "tag": "v4", "new_sqlite_classes": ["UrbanPest"] }
+    { "tag": "v4", "new_sqlite_classes": ["UrbanPest"] },
+    { "tag": "v5", "new_sqlite_classes": ["Espejo"] }
   ],
 
   "vars": {
