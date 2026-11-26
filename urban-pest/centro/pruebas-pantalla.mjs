@@ -1,7 +1,8 @@
 /* La compuerta de la pantalla (skill app-de-campo), con Playwright:
  *   node urban-pest/centro/pruebas-pantalla.mjs
  * 1 · Con datos de muestra camina las seis pestañas a 320, 390 y 414 px y mide: cero errores de
- *     página, cero desborde horizontal, objetivos táctiles de 44 px y campos de 16 px (computados).
+ *     página, cero desborde horizontal, objetivos táctiles de 48 px, campos de 16 px y ningún texto
+ *     abajo de 15 px (la barra de abajo, 12 px con su ícono). Un señor de 90 años y un niño (Luis, 23 nov).
  * 2 · SIN INTERNET DE VERDAD: carga con señal contra un servidor de mentiras, corta la red, recarga
  *     (tiene que abrir), marca un servicio como hecho, y al volver la señal comprueba que llegó.
  * 3 · COTIZAR · LA DISTANCIA: «Calcular» llena los km de la zona y «La camioneta sale de» se guarda. El servidor de
@@ -54,8 +55,11 @@ const medir = () => {
   const visibles = [...document.querySelectorAll('button, a, input, select, textarea, summary')].filter(e => { const r = e.getBoundingClientRect(), s = getComputedStyle(e); return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && e.type !== 'hidden'; });
   const nom = e => (e.tagName.toLowerCase() + ' «' + (e.textContent || e.name || e.placeholder || '').trim().slice(0, 22) + '»');
   return { desborde: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    chicos: [...new Set(visibles.filter(e => { const r = e.getBoundingClientRect(); return r.height < 43.5 || r.width < 43.5; }).map(e => nom(e) + ' ' + Math.round(e.getBoundingClientRect().width) + '×' + Math.round(e.getBoundingClientRect().height)))],
-    letraChica: [...new Set(visibles.filter(e => /^(INPUT|SELECT|TEXTAREA)$/.test(e.tagName) && parseFloat(getComputedStyle(e).fontSize) < 16).map(e => nom(e) + ' ' + getComputedStyle(e).fontSize))] };
+    chicos: [...new Set(visibles.filter(e => { const r = e.getBoundingClientRect(); return r.height < 47.5 || r.width < 47.5; }).map(e => nom(e) + ' ' + Math.round(e.getBoundingClientRect().width) + '×' + Math.round(e.getBoundingClientRect().height)))],
+    letraChica: [...new Set(visibles.filter(e => /^(INPUT|SELECT|TEXTAREA)$/.test(e.tagName) && parseFloat(getComputedStyle(e).fontSize) < 16).map(e => nom(e) + ' ' + getComputedStyle(e).fontSize))],
+    /* lo que se lee: todo elemento con texto propio, visible y fuera de lo que sólo es para el lector de pantalla */
+    textoChico: [...new Set([...document.querySelectorAll('body *')].filter(e => [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()) && e.checkVisibility() && !e.closest('[aria-hidden="true"], .up-solo-lector, .up-apertura') && e.getBoundingClientRect().width > 0
+      && parseFloat(getComputedStyle(e).fontSize) < (e.closest('.barra-inf') ? 12 : 15)).map(e => nom(e) + ' ' + getComputedStyle(e).fontSize))] };
 };
 
 const nav = await chromium.launch({ args: ['--no-sandbox'] });
@@ -71,9 +75,10 @@ for (const ancho of [320, 390, 414]) {
     if (m.desborde > 0) fallas.push(`${p}: se desborda ${m.desborde}px`);
     if (m.chicos.length) fallas.push(`${p}: objetivos chicos: ${m.chicos.slice(0, 4).join(', ')}`);
     if (m.letraChica.length) fallas.push(`${p}: campos con letra chica: ${m.letraChica.slice(0, 3).join(', ')}`);
+    if (m.textoChico.length) fallas.push(`${p}: texto abajo de 15 px: ${m.textoChico.slice(0, 3).join(', ')}`);
     if (await pg.locator('.vacio button').count()) fallas.push(`${p}: salió la pantalla de error`);
   }
-  ok(`${ancho}px: sin desbordes, objetivos de 44 px y campos de 16 px`, !fallas.length, fallas.join(' | '));
+  ok(`${ancho}px: sin desbordes, objetivos de 48 px, campos de 16 px y nada que se lea abajo de 15 px`, !fallas.length, fallas.join(' | '));
   ok(`${ancho}px: sin errores de página`, !errores.length, errores.slice(0, 2).join(' | '));
   if (ancho === 390) {
     ok('la franja dice que son datos de muestra', /Datos de muestra/.test(await pg.locator('#red').innerText()));
@@ -138,6 +143,65 @@ console.log('\n3 · Cotizar: la distancia');
   if (process.env.CAPTURA_COTIZAR) await pg.screenshot({ path: process.env.CAPTURA_COTIZAR });
   ok('sin errores de página en Cotizar', !errores.length, errores.slice(0, 2).join(' | '));
   await ctx.close();
+}
+console.log('\n4 · Fácil de usar y nada aparece de golpe');
+{
+  /* cuenta las View Transitions que pide la página; con `sinVT` el navegador «no las sabe hacer» (Safari 17) */
+  const contexto = async (extra = {}, sinVT = false) => { const ctx = await nav.newContext({ viewport: { width: 390, height: 760 }, isMobile: true, hasTouch: true, serviceWorkers: 'block', ...extra });
+    await ctx.addInitScript((sinVT) => { sessionStorage.setItem('up-visto', '1'); window.__vt = 0;
+      if (sinVT) delete Document.prototype.startViewTransition;
+      else { const o = Document.prototype.startViewTransition; Document.prototype.startViewTransition = function (f) { window.__vt++; return o.call(this, f); }; } }, sinVT);
+    const pg = await ctx.newPage(); pg.errores = []; pg.on('pageerror', e => pg.errores.push(e.message));
+    await pg.goto(URL_SITIO + '?muestra'); await pg.waitForSelector('.barra-inf:not([hidden])'); await pg.waitForSelector('[data-est="hecho"]'); await pg.waitForTimeout(400); return { ctx, pg }; };
+  /* lo que anima el código a mano (FLIP, el nivel del insumo): las animaciones que no son de CSS */
+  const aMano = (pg) => pg.evaluate(() => document.getAnimations().filter(a => !(a instanceof CSSAnimation) && !(a instanceof CSSTransition)).length);
+  {
+    const { ctx, pg } = await contexto();
+    const pendientes = await pg.locator('[data-est="cancelado"]').count();
+    await pg.locator('[data-est="cancelado"]').first().click(); await pg.waitForTimeout(400);
+    ok('«Cancelar servicio» no cancela de un toque: pregunta y el botón se vuelve «Sí, cancelarlo» junto a «No, déjalo así»',
+      await pg.locator('[data-est="cancelado"]').count() === pendientes && /Sí, cancelarlo/.test(await pg.locator('[data-seguro]').innerText()) && await pg.locator('[data-no]').isVisible() && /¿Seguro que quieres cancelar/.test(await pg.locator('.up-pregunta').innerText()));
+    await pg.locator('[data-no]').click(); await pg.waitForTimeout(400);
+    ok('«No» lo deja como estaba', !(await pg.locator('.up-pregunta').count()) && !(await pg.locator('[data-seguro]').count()) && await pg.locator('li.item:has([data-est="cancelado"]) [data-est="hecho"]').first().isVisible());
+    await pg.locator('[data-est="cancelado"]').first().click(); await pg.waitForTimeout(400); await pg.locator('[data-seguro]').click(); await pg.waitForTimeout(700);
+    ok('y «Sí, cancelarlo» sí cancela', await pg.locator('[data-est="cancelado"]').count() === pendientes - 1);
+    const vt0 = await pg.evaluate(() => window.__vt);
+    await pg.click('.barra-inf [data-p="inventario"]'); await pg.waitForTimeout(500);
+    await pg.locator('form.mov [name=delta]').first().fill('2'); await pg.locator('form.mov button[value="-1"]').first().click(); await pg.waitForTimeout(120);
+    const nivel = await aMano(pg); await pg.waitForTimeout(600);
+    ok('cambiar de pestaña y sacar un insumo se transforman (View Transition) y el nivel baja desde donde estaba', await pg.evaluate(() => window.__vt) >= vt0 + 2 && nivel >= 1, `transiciones ${await pg.evaluate(() => window.__vt) - vt0}, animaciones a mano ${nivel}`);
+    ok('sin errores de página al transformar', !pg.errores.length, pg.errores.slice(0, 2).join(' | '));
+    await ctx.close();
+  }
+  {
+    const { ctx, pg } = await contexto({}, true);
+    await pg.locator('#lHoy [data-est="hecho"]').first().click(); await pg.waitForTimeout(260);
+    const n = await aMano(pg); await pg.waitForTimeout(500);
+    ok('sin View Transitions (Safari 17): las tarjetas viajan con FLIP a mano', n >= 1 && !pg.errores.length, `animaciones ${n} ${pg.errores.join(' | ')}`);
+    await ctx.close();
+  }
+  {
+    const { ctx, pg } = await contexto({ reducedMotion: 'reduce' });
+    await pg.locator('#lHoy [data-est="hecho"]').first().click(); await pg.waitForTimeout(150);
+    const n1 = await aMano(pg); await pg.click('.barra-inf [data-p="inventario"]'); await pg.waitForTimeout(400);
+    await pg.locator('form.mov [name=delta]').first().fill('1'); await pg.locator('form.mov button[value="-1"]').first().click(); await pg.waitForTimeout(150);
+    const n2 = await aMano(pg), vt = await pg.evaluate(() => window.__vt);
+    ok('con «reducir movimiento» no corre ninguna transición nueva: ni View Transitions ni FLIP ni el nivel', vt === 0 && n1 === 0 && n2 === 0, `transiciones ${vt}, animaciones ${n1}/${n2}`);
+    await ctx.close();
+  }
+  {
+    /* la letra del teléfono al 200 %: un teléfono de 390 se vuelve de 195 */
+    const { ctx, pg } = await contexto({ viewport: { width: 195, height: 420 } });
+    const fallas = [];
+    for (const p of ['hoy', 'servicios', 'inventario', 'vehiculo', 'cotizar', 'numeros']) {
+      await pg.click(`.barra-inf [data-p="${p}"]`); await pg.waitForTimeout(500);
+      const m = await pg.evaluate(() => { const b = document.querySelector('.barra-inf [aria-current="page"]').getBoundingClientRect(), r = document.querySelector('.barra-inf').getBoundingClientRect();
+        return { desborde: document.documentElement.scrollWidth - document.documentElement.clientWidth, aLaVista: b.left >= r.left - 1 && b.right <= r.right + 1 }; });
+      if (m.desborde > 0) fallas.push(`${p}: se desborda ${m.desborde}px`); if (!m.aLaVista) fallas.push(`${p}: su pestaña quedó fuera de la barra`);
+    }
+    ok('con la letra al 200 % nada se sale de lado y la pestaña en la que estás queda a la vista', !fallas.length, fallas.join(' | '));
+    await ctx.close();
+  }
 }
 await nav.close(); sitio.close(); datos.close();
 console.log(`\n${bien} bien, ${mal} mal`);

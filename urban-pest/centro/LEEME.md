@@ -27,7 +27,7 @@ volver la señal **nunca se pierde callado**.
 
 ```
 node urban-pest/centro/pruebas.mjs            # el motor sin red: 32 comprobaciones
-node urban-pest/centro/pruebas-pantalla.mjs   # la pantalla con Playwright, sin internet de verdad y «Calcular»: 23
+node urban-pest/centro/pruebas-pantalla.mjs   # la pantalla con Playwright, sin internet de verdad, «Calcular» y uso fácil: 31
 ```
 
 Si `pruebas.mjs` dice que `motor.js` ya no es copia exacta, es que cambiaron las reglas del
@@ -89,3 +89,26 @@ llena los km de IDA por carretera desde la bodega, como su Excel («Juriquilla �
 **«La camioneta sale de»** guarda la bodega con `POST /api/salida` y dice qué dirección entendió el mapa. **FALTA del cliente:
 la dirección de su bodega**; sin ella, «Calcular» dice la zona y el rumbo y pide la bodega. Con `?muestra` no se calcula
 (no hay servidor). En «Números», el traslado de cada cotización del bot dice con qué km se cotizó.
+
+## Fácil de usar, y nada aparece de golpe (23-26 nov)
+
+Luis: «que lo use perfectamente un señor de 45 hasta 70, 80 o 90 años, e incluso un niño» y «ningún elemento aparezca
+de la nada: todo se transforma en su siguiente fase». Medido con Playwright a 360, 390, 768 px y con la letra al 200 %.
+
+- **Letra:** cuerpo de 17 px y nada que se lea abajo de 15 px; la barra de abajo va a 13-14 px con su ícono y, si de
+  plano no cabe (letra al 200 %), se desliza de lado con la pestaña en la que estás siempre a la vista.
+- **Dedos:** botones de 52 px, filtros y atajos de 48-52, y 12 px entre uno y otro.
+- **Palabras:** «Cobrados», «en 5 días», «piezas», «+ Entró / − Salió», «Lo último: salieron 17». «pzas» sigue siendo
+  como lo guarda el motor (es copia del servidor): sólo cambia en pantalla.
+- **Antes de lo que no tiene vuelta, se pregunta:** «Cancelar servicio» se convierte en «Sí, cancelarlo» y el botón de al
+  lado en «No, déjalo así». Un error se queda escrito en la tarjeta, no en una ventanita.
+- **Transiciones** (`transicion()`, `claves()`, `flip()` en `index.html`): View Transitions donde existe y FLIP a mano
+  donde no (Safari 17). La pestaña se desliza hacia su lado; al tocar algo, cada tarjeta es la MISMA y viaja a su lugar
+  nuevo, la que se va sale de lado, las cifras cuentan desde lo que decían y el nivel del insumo baja desde donde
+  estaba. 150-250 ms, sólo transform (la opacidad, sólo en lo que se va o llega, completa a la mitad del viaje).
+  La pantalla nueva se arma escondida y se cambia de un jalón: la vieja nunca se queda en blanco esperando datos.
+- **«Reducir movimiento»** apaga todo lo de este apartado (ni View Transitions, ni FLIP, ni el nivel). Lo de antes
+  (la entrada corta de cada pantalla, el logo) sigue como se decidió el 14 nov: reduce, no apaga.
+- Las pruebas (`pruebas-pantalla.mjs`, parte 4) lo vigilan: objetivos de 48 px, texto de 15 px, que «Cancelar» pregunte,
+  que las transiciones corran, que con «reducir movimiento» no corra ninguna y que con la letra al 200 % nada se salga.
+

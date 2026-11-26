@@ -279,6 +279,106 @@ details.nuevo > summary > [data-ic]{ display:grid; place-items:center; width:34p
 .up-catalogo li{ display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid var(--linea); font-size:14px }
 .up-catalogo span{ color:var(--tenue); white-space:nowrap; font-variant-numeric:tabular-nums }
 .up-formula{ margin:0; padding:0 16px 16px; font-size:14px; color:var(--tenue); line-height:1.5 } .up-formula b{ color:var(--tinta) }
+
+/* ══ FÁCIL DE USAR (23 nov; Luis: «que lo use perfectamente un señor de 45 hasta 70, 80 o 90 años, e incluso un niño»).
+   Medido con Playwright a 360, 390 y 768 px y con la letra al 200 %: antes, 58 textos de «Hoy» quedaban abajo de 16 px
+   (hasta 11 px en la barra), los botones medían 44 px y la barra de seis pestañas no cabía con letra grande.
+   Ahora: cuerpo de 17 px, nada que se lea abajo de 15 px (la barra, 13-14 px con su ícono), botones de 52 px con 12 px
+   entre uno y otro, y la barra se desliza de lado si de plano no cabe. Las pruebas lo vigilan (pruebas-pantalla.mjs). ══ */
+body{ font-size:17px; line-height:1.5 }
+:focus-visible{ outline:3px solid var(--acento-texto); outline-offset:3px; border-radius:10px }
+.barra-inf :focus-visible, .up-hero :focus-visible, .up-cab :focus-visible, .up-precio :focus-visible{ outline-color:#FFC66B }
+.red{ font-size:16px }
+.up-hero__eti{ font-size:15px } .up-hero__saludo{ font-size:17px } .up-hero__s{ font-size:17px }
+.up-cab small{ font-size:16px }
+.cifra small{ font-size:15.5px; line-height:1.3 } .cifra b{ font-size:clamp(26px, 8vw, 32px) }
+.atajos{ gap:12px } .atajos a{ min-height:52px; padding:0 18px; font-size:16px }
+h2{ font-size:20px } h2 .n{ font-size:17px }
+.item{ gap:10px; padding:18px 16px }
+.item .t{ flex-wrap:wrap; gap:2px 12px } .item .t b{ font-size:18.5px } .item .t span{ font-size:16px; white-space:normal }
+.item p{ font-size:17px; line-height:1.45 }
+.chip{ font-size:15px; padding:4px 12px; line-height:1.35 }
+.acc{ gap:12px }
+.btn{ min-height:52px; padding:0 20px; font-size:17px }
+.btn .ic{ width:22px; height:22px }
+.vacio{ font-size:17px }
+/* los filtros y los atajos se ven todos, en dos renglones si hace falta: nada escondido a la derecha */
+.filtro, .atajos{ flex-wrap:wrap; overflow:visible } .filtro{ gap:10px } .filtro button{ min-height:48px; padding:0 18px; font-size:16px }
+details.nuevo{ margin:8px 0 14px } details.nuevo > summary{ min-height:56px; font-size:17px }
+.item details > summary{ min-height:48px; font-size:16px }
+.f{ gap:16px } .f label{ font-size:16px; gap:8px }
+.f input, .f select, .f textarea{ min-height:52px; font-size:17px; min-width:0; max-width:100% }
+.dos{ grid-template-columns:repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap:16px } .dos > *{ min-width:0 }
+.msj{ font-size:16px }
+.desg{ font-size:16px; gap:6px 12px }
+.up-catalogo li{ font-size:16px } .up-formula, .up-jadp{ font-size:16px }
+.up-con small{ font-size:15px }
+.up-precio small{ font-size:15px } .up-precio span{ font-size:15px; line-height:1.4 }
+.up-renglon__abajo{ grid-template-columns:minmax(0,1fr) auto 52px } .up-quitar{ width:52px }
+.up-aviso{ font-size:16px; padding:14px 18px }
+.acc a.chip{ min-height:48px; padding:0 16px } .mov{ grid-template-columns:minmax(0,1fr) 128px }
+/* con la letra al 200 % (un teléfono de 390 queda de 195) lo que iba lado a lado va uno abajo del otro */
+@media (max-width:300px){ .mov, .up-salida, .up-renglon__abajo{ grid-template-columns:minmax(0,1fr) } .up-renglon__abajo .up-quitar{ width:100% } }  .mov .acc .btn{ flex:1 1 0 }
+.entrar b{ font-size:20px }
+/* la barra: cada pestaña del ancho de su nombre y con su letra a 13-14 px; si no cabe, se desliza de lado */
+.barra-inf{ display:flex; left:6px; right:6px; padding:4px; overflow-x:auto; overscroll-behavior-x:contain; scrollbar-width:none }
+.barra-inf::-webkit-scrollbar{ display:none }
+.barra-inf button{ flex:1 0 auto; min-width:52px; min-height:56px; padding:0 3px; font-size:clamp(12px, 3.6vw, 14px); letter-spacing:-.01em; align-content:center }
+.up-luz{ top:4px; height:56px }
+.barra-inf i{ top:3px; right:auto; left:calc(50% + 4px); height:20px; min-width:20px; border-radius:10px; font-size:12.5px; line-height:20px }
+.env{ padding-bottom:calc(124px + env(safe-area-inset-bottom)) }
+/* una pregunta antes de lo que no tiene vuelta (cancelar un servicio) */
+.up-pregunta{ margin:0; font-weight:700; color:var(--tinta) !important; font-size:17px }
+.btn.up-peligro{ background:#B42318; color:#fff; box-shadow:none }
+.msj.mal, .up-error{ color:#B42318 } .up-error{ margin:0; font-weight:600; font-size:16px }
+@media (prefers-color-scheme: dark){ :root:not([data-tema="claro"]) .msj.mal, :root:not([data-tema="claro"]) .up-error{ color:#FF8A80 } }
+
+/* ══ NADA APARECE DE LA NADA (23 nov; Luis: «todo elemento se convierte y se transforma en su siguiente fase»).
+   Al cambiar de pestaña la pantalla se desliza hacia el lado de la pestaña; al tocar algo en la misma pestaña, cada
+   tarjeta es la MISMA y viaja a su lugar nuevo (la que se va sale de lado, la nueva entra), las cifras cuentan desde
+   lo que decían y el nivel del insumo baja o sube desde donde estaba. View Transitions donde existe (Chrome, Safari 18)
+   y, donde no, FLIP a mano con transform. Todo de 150 a 250 ms. Con «reducir movimiento» nada de esto corre: lo
+   decide transicion() en el código y, aquí, la media query de abajo. ══ */
+.barra-inf{ view-transition-name:up-barra } .red{ view-transition-name:up-red } .up-aviso{ view-transition-name:up-aviso }
+::view-transition-group(*){ animation-duration:.22s; animation-timing-function:cubic-bezier(.2,.8,.2,1) }
+::view-transition-old(root), ::view-transition-new(root){ animation-duration:.16s }
+::view-transition-group(up-barra), ::view-transition-group(up-aviso){ animation:none }
+::view-transition-old(up-barra), ::view-transition-old(up-aviso){ display:none }
+::view-transition-new(up-barra), ::view-transition-new(up-aviso){ animation:none }
+html[data-up-vt="der"]::view-transition-old(root){ animation:upVtSaleIzq .2s cubic-bezier(.4,0,.6,1) both }
+html[data-up-vt="der"]::view-transition-new(root){ animation:upVtEntraDer .24s cubic-bezier(.2,.8,.2,1) both }
+html[data-up-vt="izq"]::view-transition-old(root){ animation:upVtSaleDer .2s cubic-bezier(.4,0,.6,1) both }
+html[data-up-vt="izq"]::view-transition-new(root){ animation:upVtEntraIzq .24s cubic-bezier(.2,.8,.2,1) both }
+/* el texto llega con su contraste completo a la mitad del viaje: nada se queda medio transparente */
+@keyframes upVtSaleIzq{ to{ transform:translateX(-28px); opacity:0 } }
+@keyframes upVtSaleDer{ to{ transform:translateX(28px); opacity:0 } }
+@keyframes upVtEntraDer{ from{ transform:translateX(36px); opacity:0 } 45%{ opacity:1 } }
+@keyframes upVtEntraIzq{ from{ transform:translateX(-36px); opacity:0 } 45%{ opacity:1 } }
+/* lo que se va sin tener a dónde ir sale de lado; lo que llega sin venir de ningún lado crece desde abajo */
+::view-transition-old(*):only-child{ animation:upVtFuera .2s cubic-bezier(.4,0,1,1) both }
+::view-transition-new(*):only-child{ animation:upVtDentro .24s cubic-bezier(.2,.8,.2,1) both }
+@keyframes upVtFuera{ to{ transform:translateX(45%) scale(.96); opacity:0 } }
+@keyframes upVtDentro{ from{ transform:translateY(14px) scale(.96); opacity:0 } 50%{ opacity:1 } }
+/* una pantalla que se vuelve a pintar por un cambio NO vuelve a entrar: se transforma desde la anterior */
+.up-quieto > *, .up-quieto .cifra, .up-quieto .lista-c > .item, .up-quieto .atajos a, .up-quieto .up-nivel span,
+.up-quieto .up-hero__foto, .up-quieto .up-hero__sol, .up-quieto .up-hero__marca, .up-quieto .up-hero__eti, .up-quieto .up-hero__saludo,
+.up-quieto .up-hero__t, .up-quieto .up-hero__s, .up-quieto .up-cab__t, .up-quieto .up-cab small, .up-quieto .up-cab__arte,
+.up-quieto .up-arte .a-traza, .up-quieto .up-arte .a-llena, .up-quieto .up-arte .a-barra, .up-quieto .up-arte .a-llega{ animation:none !important }
+.up-quieto .up-arte .a-traza{ stroke-dashoffset:0 } .up-quieto .up-hero__foto{ transform:none }
+/* lo que se abre se despliega desde su renglón (y con su alto, donde el navegador sabe animarlo) */
+@media (prefers-reduced-motion: no-preference){
+  details.nuevo[open] > :not(summary), .item details[open] > :not(summary){ animation:upDespliega .24s cubic-bezier(.2,.8,.2,1) both }
+  @keyframes upDespliega{ from{ clip-path:inset(0 0 100% 0); transform:translateY(-10px) } to{ clip-path:inset(0 0 -40px 0) } }
+  details.up-cierra > :not(summary){ animation:upPliega .18s cubic-bezier(.4,0,1,1) both !important }
+  @keyframes upPliega{ to{ clip-path:inset(0 0 100% 0); transform:translateY(-10px) } }
+  @supports (interpolate-size: allow-keywords){
+    :root{ interpolate-size:allow-keywords }
+    details.nuevo::details-content, .item details::details-content{ block-size:0; overflow:clip; transition:block-size .24s cubic-bezier(.2,.8,.2,1), content-visibility .24s allow-discrete }
+    details.nuevo[open]::details-content, .item details[open]::details-content{ block-size:auto }
+  }
+  .up-cambia{ animation:upMsj .2s cubic-bezier(.2,.8,.2,1) both } @keyframes upMsj{ from{ transform:translateY(8px) } }
+  .up-precio b.up-cambia{ animation:upPrecio .22s cubic-bezier(.2,.8,.2,1) both } @keyframes upPrecio{ from{ transform:translateY(35%) scale(.92) } }
+}
 </style>
 </head>
 <body>
@@ -401,6 +501,8 @@ const DIAS_L = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes',
 const fechaLarga = (s) => { const d = new Date(s + 'T12:00:00'), n = DIAS_L[d.getDay()]; return `${n[0].toUpperCase() + n.slice(1)} ${d.getDate()} de ${MESES_L[d.getMonth()]}`; };
 const saludo = () => { const h = new Date().getHours(); return h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches'; };
 const cuenta = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
+/* «pzas» es como lo guarda el motor (motor.js es copia del servidor y no se toca); en pantalla va la palabra entera */
+const unidad = (u) => ({ pzas: 'piezas', pza: 'pieza' })[u] || u;
 const heroHoy = (t) => `<header class="up-hero">
   <img class="up-hero__foto" src="marca/ciudad.webp" alt="" width="900" height="502" decoding="async">
   <img class="up-hero__sol" src="marca/sol.webp" alt="" width="512" height="396">
@@ -423,43 +525,161 @@ let actual = q.get('p') || 'hoy';
 /* ── movimiento y acabado ── */
 let tAviso;
 function avisa(texto){ const a = document.getElementById('upAviso'); a.textContent = texto; a.classList.add('ve'); clearTimeout(tAviso); tAviso = setTimeout(() => a.classList.remove('ve'), 3200); }
-function moverLuz(){ const b = barra.querySelector('[aria-current="page"]'), l = document.getElementById('upLuz'); if(!b || !l) return; l.style.width = b.offsetWidth + 'px'; l.style.transform = `translateX(${b.offsetLeft}px)`; }
+function moverLuz(){ const b = barra.querySelector('[aria-current="page"]'), l = document.getElementById('upLuz'); if(!b || !l) return; l.style.width = b.offsetWidth + 'px'; l.style.transform = `translateX(${b.offsetLeft}px)`;
+  /* con letra grande la barra se desliza de lado: la pestaña en la que estás siempre queda a la vista */
+  if(barra.scrollWidth > barra.clientWidth + 1) barra.scrollTo({ left: b.offsetLeft - (barra.clientWidth - b.offsetWidth) / 2, behavior: QUIETO.matches ? 'auto' : 'smooth' }); }
 addEventListener('resize', moverLuz);
-function acabado(el){
+
+/* ── NADA APARECE DE LA NADA (23 nov) ──
+   transicion(hacer, lado): corre `hacer` (que cambia la pantalla) dentro de una View Transition; sin ella, o con
+   «reducir movimiento», lo corre y ya. claves(): qué cosas de la pantalla son «la misma» antes y después (la tarjeta
+   de cada servicio, cada cifra, cada título), para que viajen a su lugar en vez de desaparecer y volver a salir. */
+const QUIETO = matchMedia('(prefers-reduced-motion: reduce)');
+const puedeVT = () => !!document.startViewTransition && !QUIETO.matches && !document.hidden;
+const nombreVT = (s) => 'up-' + String(s).normalize('NFD').replace(/[^\w-]/g, '_').slice(0, 60);
+function claves(raiz){
+  const m = new Map(), poner = (e, k) => { if(!m.has(k) && m.size < 40) m.set(k, e); };
+  raiz.querySelectorAll('.cifra').forEach((e, i) => poner(e, 'up-cifra-' + i));
+  raiz.querySelectorAll('.item[data-id]').forEach(e => poner(e, nombreVT('i-' + e.dataset.id)));
+  raiz.querySelectorAll('h2').forEach(e => poner(e, nombreVT('h-' + (e.firstChild?.textContent || '').trim())));
+  raiz.querySelectorAll('details.nuevo').forEach((e, i) => poner(e, 'up-d-' + i));
+  raiz.querySelectorAll('.vacio').forEach((e, i) => poner(e, 'up-v-' + i));
+  raiz.querySelectorAll('.filtro, .atajos').forEach((e, i) => poner(e, 'up-b-' + i));
+  return m;
+}
+const nombrar = (raiz) => { for(const [k, e] of claves(raiz)) e.style.viewTransitionName = k; };
+const desnombrar = (raiz) => raiz.querySelectorAll('[style*="view-transition-name"]').forEach(e => { e.style.viewTransitionName = ''; });
+let vtTurno = 0;
+async function transicion(hacer, lado = ''){
+  if(!puedeVT()){ hacer(); return null; }
+  const mio = ++vtTurno, h = document.documentElement;
+  if(lado) h.dataset.upVt = lado; else delete h.dataset.upVt;
+  const t = document.startViewTransition(hacer);
+  t.ready.catch(() => {});
+  t.finished.catch(() => {}).finally(() => { if(mio === vtTurno) delete h.dataset.upVt; });
+  await t.updateCallbackDone.catch(() => {});
+  return t;
+}
+/* FLIP a mano donde no hay View Transitions: cada cosa sale de donde estaba y llega a donde quedó, sólo con transform */
+function flip(antes, raiz){
+  for(const [k, e] of claves(raiz)){
+    const r1 = e.getBoundingClientRect(), r0 = antes.get(k);
+    if(r1.bottom < 0 || r1.top > innerHeight) continue;
+    if(r0){ const dx = r0.left - r1.left, dy = r0.top - r1.top; if(Math.abs(dx) + Math.abs(dy) > 1) e.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.2,.8,.2,1)' }); }
+    else e.animate([{ transform: 'translateY(14px) scale(.97)' }, { transform: 'none' }], { duration: 240, easing: 'cubic-bezier(.2,.8,.2,1)' });
+  }
+}
+/* lo que hay que recordar de la pantalla de antes para que la nueva salga de ahí */
+function fotografia(raiz){
+  const rects = new Map(); for(const [k, e] of claves(raiz)) rects.set(k, e.getBoundingClientRect());
+  const cifras = [...raiz.querySelectorAll('.cifra b')].map(b => b.dataset.final || b.textContent);
+  const niveles = new Map([...raiz.querySelectorAll('.item[data-id] .up-nivel span')].map(s => [s.closest('[data-id]').dataset.id, parseFloat(s.style.getPropertyValue('--n')) || 0]));
+  return { rects, cifras, niveles };
+}
+
+function acabado(el, foto, conVT){
   /* cada tarjeta entra un poco después que la anterior */
   el.querySelectorAll('.cifras, .lista-c, .atajos').forEach(g => [...g.children].forEach((h, i) => h.style.setProperty('--up-i', Math.min(i, 9))));
   moverLuz();
-  /* las cifras suben contando */
-  el.querySelectorAll('.cifra b').forEach(b => { const m = /^(\$?)([\d,]+)$/.exec(b.textContent.trim()); if(!m) return; const n = Number(m[2].replace(/,/g, '')); if(n < 1) return;
-    const t0 = performance.now() + (el.style.getPropertyValue('--up-t0') ? 1700 : 0), dura = 450 + Math.min(n, 20) * 18, final = b.textContent;
-    (function paso(t){ const k = Math.min(1, Math.max(0, (t - t0) / dura)); b.textContent = k < 1 ? m[1] + Math.round(n * (1 - Math.pow(1 - k, 3))).toLocaleString('en-US') : final; if(k < 1) requestAnimationFrame(paso); })(t0); });
+  if(foto && !conVT && !QUIETO.matches) flip(foto.rects, el);
+  /* el nivel de cada insumo baja o sube desde donde estaba, no desde cero */
+  if(foto && !QUIETO.matches) el.querySelectorAll('.item[data-id] .up-nivel span').forEach(s => { const n0 = foto.niveles.get(s.closest('[data-id]').dataset.id), n1 = parseFloat(s.style.getPropertyValue('--n')) || 0;
+    if(n0 != null && n0 !== n1) s.animate([{ transform: `scaleX(${n0})` }, { transform: `scaleX(${n1})` }], { duration: 420, easing: 'cubic-bezier(.2,.8,.2,1)' }); });
+  /* las cifras suben contando: desde cero al entrar, y desde lo que decían cuando algo cambió */
+  el.querySelectorAll('.cifra b').forEach((b, i) => { const m = /^(\$?)([\d,]+)$/.exec(b.textContent.trim()); if(!m) return; const n = Number(m[2].replace(/,/g, ''));
+    const previo = foto ? /^(\$?)([\d,]+)$/.exec(String(foto.cifras[i] || '').trim()) : null, desde = previo ? Number(previo[2].replace(/,/g, '')) : 0;
+    if(n === desde || (!previo && n < 1) || (foto && QUIETO.matches)) return;
+    const t0 = performance.now() + (el.style.getPropertyValue('--up-t0') ? 1700 : 0), dura = foto ? 380 : 450 + Math.min(n, 20) * 18, final = b.textContent; b.dataset.final = final;
+    (function paso(t){ const k = Math.min(1, Math.max(0, (t - t0) / dura)); b.textContent = k < 1 ? m[1] + Math.round(desde + (n - desde) * (1 - Math.pow(1 - k, 3))).toLocaleString('en-US') : final; if(k < 1) requestAnimationFrame(paso); })(t0); });
 }
+const ORDEN = ['hoy', 'servicios', 'inventario', 'vehiculo', 'cotizar', 'numeros'];
+let turno = 0;
 async function ir(p){
+  const mio = ++turno, primera = !window.__app, antes = actual, mismo = !primera && p === antes;
   actual = p; barra.querySelectorAll('button').forEach(b => b.dataset.p === p ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
-  /* el contenedor se recrea en cada pantalla: así no se juntan oyentes viejos (CLAUDE.md, «innerHTML deja la pantalla limpia») */
-  const primera = !window.__app, viejo = raiz(), nuevo = viejo.cloneNode(false); viejo.replaceWith(nuevo); window.__app = nuevo;
+  moverLuz();
+  /* el contenedor se recrea en cada pantalla: así no se juntan oyentes viejos (CLAUDE.md, «innerHTML deja la pantalla limpia»).
+     Se arma escondido ANTES del de ahora (así un getElementById encuentra el nuevo) y se cambia de un jalón cuando ya está listo:
+     la pantalla vieja nunca se queda en blanco mientras llegan los datos. */
+  const nuevo = raiz().cloneNode(false); nuevo.hidden = true; raiz().before(nuevo);
   /* la primera pantalla entra cuando sube la cortina del logo; las demás, de inmediato */
   if(primera && document.documentElement.classList.contains('up-abre')) nuevo.style.setProperty('--up-t0', '1.7s'); else nuevo.style.removeProperty('--up-t0');
-  await PANTALLAS[p](nuevo); pintaIconos(nuevo); pintaIconos(barra); pintaRed(); acabado(nuevo);
+  /* entra con su animación la primera vez (o en un navegador sin transiciones); si es la misma pantalla, se transforma desde la de antes */
+  nuevo.classList.toggle('up-quieto', !primera && (mismo || puedeVT()));
+  await PANTALLAS[p](nuevo);
+  if(mio !== turno){ nuevo.remove(); return; }
+  pintaIconos(nuevo); pintaIconos(barra);
+  const viejo = raiz(), conVT = !primera && puedeVT(), foto = mismo ? fotografia(viejo) : null;
+  if(conVT && mismo) nombrar(viejo);
+  const cambiar = () => { viejo.remove(); nuevo.hidden = false; window.__app = nuevo; if(!mismo && !primera) scrollTo(0, 0); if(conVT && mismo) nombrar(nuevo); pintaRed(); };
+  if(conVT){ const t = await transicion(cambiar, mismo ? '' : ORDEN.indexOf(p) > ORDEN.indexOf(antes) ? 'der' : 'izq'); t?.finished.catch(() => {}).finally(() => desnombrar(nuevo)); }
+  else cambiar();
+  acabado(nuevo, foto, conVT);
   /* los globitos de la barra van al día en cualquier pantalla, no sólo en «Hoy» */
   if(p !== 'hoy') api('GET', '/api/tablero').then(t => { if(t.bien){ marca('nHoy', t.servicios_hoy.length + t.atrasados.length + t.seguimientos.length); marca('nInv', t.insumos_bajos.length); marca('nVeh', t.vehiculo.length); } });
 }
 const raiz = () => window.__app || app;
 
+/* los letreros que cambian («Guardando…» → «Listo») y el precio de Cotizar se deslizan a su lugar en vez de brincar */
+let precioVisto = '';
+new MutationObserver((ms) => { if(QUIETO.matches) return; const vistos = new Set();
+  for(const m of ms){
+    const n = m.target.nodeType === 1 ? m.target : m.target.parentElement, msj = n?.closest?.('.msj'), precio = msj ? null : n?.querySelector?.('.up-precio b');
+    const e = msj || (precio && precio.textContent !== precioVisto ? precio : null);
+    if(!e || vistos.has(e) || !e.textContent.trim()) continue; vistos.add(e); if(precio) precioVisto = precio.textContent;
+    e.classList.remove('up-cambia'); void e.offsetWidth; e.classList.add('up-cambia'); } })
+  .observe(document.body, { subtree: true, childList: true, characterData: true });
+/* lo que se cierra se pliega (donde el navegador no sabe animar el alto de un <details>) */
+const ALTO_ANIMA = CSS.supports?.('interpolate-size', 'allow-keywords');
+document.addEventListener('click', (e) => {
+  const s = e.target.closest('details.nuevo > summary, .item details > summary'), d = s?.parentElement;
+  if(!d || !d.open || QUIETO.matches || ALTO_ANIMA) return;
+  e.preventDefault(); d.classList.add('up-cierra'); setTimeout(() => { d.classList.remove('up-cierra'); d.open = false; }, 180);
+});
+
+const ESTADO = { pendiente: 'Pendiente', hecho: 'Hecho · por cobrar', cerrado: 'Cobrado', cancelado: 'Cancelado' };
 const citaItem = (c, acciones = true) => `<li class="item" data-id="${c.id}">
   <div class="t"><b>${esc(c.cliente)}</b><span>${dia(c.fecha)}${c.hora ? ' · ' + esc(c.hora) : ''}</span></div>
   <p>${[c.plaga && esc(c.plaga), c.zona && esc(c.zona), c.direccion && esc(c.direccion), c.tecnico && 'Técnico: ' + esc(c.tecnico)].filter(Boolean).join(' · ') || 'Sin detalles'}</p>
-  <div class="acc">${c.precio != null ? `<span class="chip">${c.precio === 0 ? 'Garantía · sin costo' : pesos(c.precio)}</span>` : ''}<span class="chip ${c.estado === 'pendiente' ? 'aviso' : c.estado === 'cerrado' ? 'ok' : ''}">${c.estado === 'hecho' ? 'Hecho · por cobrar' : c.estado}</span>
+  <div class="acc">${c.precio != null ? `<span class="chip">${c.precio === 0 ? 'Garantía · sin costo' : pesos(c.precio)}</span>` : ''}<span class="chip ${c.estado === 'pendiente' ? 'aviso' : c.estado === 'cerrado' ? 'ok' : ''}">${ESTADO[c.estado] || esc(c.estado)}</span>
     ${c.telefono ? `<a class="chip" href="https://wa.me/52${esc(String(c.telefono).replace(/\D/g, '').slice(-10))}">WhatsApp</a>` : ''}</div>
-  ${acciones ? `<div class="acc">${c.estado === 'pendiente' ? `<button class="btn" data-est="hecho">Ya se hizo</button><button class="btn b2" data-est="cancelado">Cancelar</button>` : ''}${c.estado === 'hecho' ? `<button class="btn" data-est="cerrado">Ya se cobró</button>` : ''}</div>` : ''}</li>`;
+  ${acciones ? `<div class="acc">${c.estado === 'pendiente' ? `<button class="btn" data-est="hecho">Ya se hizo</button><button class="btn b2" data-est="cancelado">Cancelar servicio</button>` : ''}${c.estado === 'hecho' ? `<button class="btn" data-est="cerrado">Ya se cobró</button>` : ''}</div>` : ''}</li>`;
+/* cancelar no tiene vuelta: antes se pregunta. El botón se convierte en «Sí, cancelarlo» y el de al lado en «No» */
+function preguntar(tarjeta, b){
+  const acc = b.closest('.acc'), otro = [...acc.querySelectorAll('.btn')].find(x => x !== b);
+  b.style.viewTransitionName = 'up-si'; if(otro) otro.style.viewTransitionName = 'up-no'; tarjeta.style.viewTransitionName = 'up-tarjeta';
+  transicion(() => {
+    if(otro) otro.hidden = true; b.dataset.seguro = '1'; b.dataset.texto = b.textContent; b.textContent = 'Sí, cancelarlo'; b.classList.replace('b2', 'up-peligro');
+    acc.insertAdjacentHTML('beforebegin', `<p class="up-pregunta" style="view-transition-name:up-preg">¿Seguro que quieres cancelar el servicio de ${esc(tarjeta.querySelector('.t b')?.textContent || 'este cliente')}?</p>`);
+    acc.insertAdjacentHTML('beforeend', '<button class="btn b2" type="button" data-no style="view-transition-name:up-no">No, déjalo así</button>');
+  }).then(t => (t?.finished || Promise.resolve()).catch(() => {}).finally(() => desnombrar(tarjeta.parentElement || tarjeta)));
+}
+function noPreguntar(tarjeta){
+  const b = tarjeta.querySelector('[data-seguro]'), no = tarjeta.querySelector('[data-no]'), otro = tarjeta.querySelector('.acc .btn[hidden]');
+  if(b) b.style.viewTransitionName = 'up-si'; if(no) no.style.viewTransitionName = 'up-no'; tarjeta.style.viewTransitionName = 'up-tarjeta';
+  transicion(() => {
+    tarjeta.querySelector('.up-pregunta')?.remove(); no?.remove(); if(otro){ otro.hidden = false; otro.style.viewTransitionName = 'up-no'; }
+    if(b){ delete b.dataset.seguro; b.textContent = b.dataset.texto || 'Cancelar servicio'; b.classList.replace('up-peligro', 'b2'); }
+  }).then(t => (t?.finished || Promise.resolve()).catch(() => {}).finally(() => desnombrar(tarjeta.parentElement || tarjeta)));
+}
+/* un error se queda escrito en la misma tarjeta, con qué pasó: no en una ventanita que se cierra y se olvida */
+function errorEn(tarjeta, texto){
+  if(!tarjeta) return avisa(texto);
+  let p = tarjeta.querySelector('.up-error'); if(!p){ p = document.createElement('p'); p.className = 'up-error'; p.setAttribute('role', 'alert'); tarjeta.append(p); }
+  p.textContent = 'No se pudo: ' + (texto || 'intenta otra vez.');
+}
 const conAcciones = (el) => el.addEventListener('click', async (e) => {
-  const b = e.target.closest('[data-est],[data-seg]'); if(!b) return;
+  const b = e.target.closest('[data-est],[data-seg],[data-no]'); if(!b) return;
+  const tarjeta = b.closest('.item');
+  if(b.matches('[data-no]')) return noPreguntar(tarjeta);
+  if(b.dataset.est === 'cancelado' && !b.dataset.seguro) return preguntar(tarjeta, b);
   const id = b.closest('[data-id]').dataset.id; b.disabled = true;
   const j = b.dataset.est ? await api('POST', '/api/citas/estado', { id, estado: b.dataset.est }) : await api('POST', '/api/citas/seguimiento', { id, sigue_plaga: b.dataset.seg === 'sigue' });
-  if(!j.bien){ b.disabled = false; alert(j.error); return; }
+  if(!j.bien){ b.disabled = false; errorEn(tarjeta, j.error); return; }
   avisa((b.dataset.est === 'hecho' ? `Hecho. Seguimiento el ${dia(j.cita?.seguimiento?.fecha)}.` : b.dataset.est === 'cerrado' ? 'Cobrado.' : b.dataset.est === 'cancelado' ? 'Cancelado.'
     : j.garantia ? `Garantía agendada para el ${dia(j.garantia.fecha)}.` : 'Seguimiento cerrado.') + (j.pendiente ? ' Se envía al volver la señal.' : ''));
-  const tarjeta = b.closest('.item'); if(tarjeta){ tarjeta.classList.add('up-sale'); await new Promise(r => setTimeout(r, 230)); }
+  /* con View Transitions la tarjeta misma viaja a su lugar nuevo (o sale de lado); sin ellas, sale de lado y lo demás sube */
+  if(tarjeta && !puedeVT() && !QUIETO.matches){ tarjeta.classList.add('up-sale'); await new Promise(r => setTimeout(r, 230)); }
   ir(actual);
 });
 
@@ -485,8 +705,8 @@ const PANTALLAS = {
       ${t.seguimientos.length ? `<ul class="lista-c" id="lSeg">${t.seguimientos.map(c => `<li class="item" data-id="${c.id}"><div class="t"><b>${esc(c.cliente)}</b><span>tocaba el ${dia(c.seguimiento.fecha)}</span></div>
         <p>Pregúntale si ya no ha visto ${esc(c.plaga || 'la plaga')}. Si sigue, la garantía de tu página: regresas sin costo.</p>
         <div class="acc"><button class="btn" data-seg="bien">Ya no hay plaga</button><button class="btn b2" data-seg="sigue">Sigue: agendar garantía</button>${c.telefono ? `<a class="btn b2" href="https://wa.me/52${esc(String(c.telefono).replace(/\D/g, '').slice(-10))}">WhatsApp</a>` : ''}</div></li>`).join('')}</ul>` : '<p class="vacio">Ninguna toca hoy. Se agendan solas 15 días después de cada servicio.</p>'}
-      ${t.insumos_bajos.length ? `<h2>Se está acabando <span class="n">${t.insumos_bajos.length}</span></h2><ul class="lista-c">${t.insumos_bajos.map(i => `<li class="item up-ojo"><div class="t"><b>${esc(i.nombre)}</b><span>quedan ${i.cantidad} ${esc(i.unidad)}</span></div><p>Tu mínimo es ${i.minimo} ${esc(i.unidad)}.</p></li>`).join('')}</ul>` : ''}
-      ${t.vehiculo.length ? `<h2>Vehículo <span class="n">${t.vehiculo.length}</span></h2><ul class="lista-c">${t.vehiculo.map(v => `<li class="item"><div class="t"><b>${esc(v.vehiculo)} · ${esc(v.tipo)}</b><span>${v.dias != null ? (v.dias < 0 ? `venció hace ${-v.dias} d` : `en ${v.dias} d`) : `faltan ${v.faltanKm} km`}</span></div></li>`).join('')}</ul>` : ''}
+      ${t.insumos_bajos.length ? `<h2>Se está acabando <span class="n">${t.insumos_bajos.length}</span></h2><ul class="lista-c">${t.insumos_bajos.map(i => `<li class="item up-ojo"><div class="t"><b>${esc(i.nombre)}</b><span>quedan ${i.cantidad} ${esc(unidad(i.unidad))}</span></div><p>Hay que comprar: tu mínimo es ${i.minimo} ${esc(unidad(i.unidad))}.</p></li>`).join('')}</ul>` : ''}
+      ${t.vehiculo.length ? `<h2>Vehículo <span class="n">${t.vehiculo.length}</span></h2><ul class="lista-c">${t.vehiculo.map(v => `<li class="item"><div class="t"><b>${esc(v.vehiculo)} · ${esc(v.tipo)}</b><span>${v.dias != null ? (v.dias < 0 ? `se pasó hace ${cuenta(-v.dias, 'día', 'días')}` : v.dias === 0 ? 'hoy' : `en ${cuenta(v.dias, 'día', 'días')}`) : `faltan ${v.faltanKm} km`}</span></div></li>`).join('')}</ul>` : ''}
       ${t.por_cobrar.length ? `<h2>Por cobrar <span class="n">${t.por_cobrar.length}</span></h2><ul class="lista-c" id="lCob">${t.por_cobrar.map(c => citaItem(c)).join('')}</ul>` : ''}`;
     conAcciones(el);
   },
@@ -506,7 +726,7 @@ const PANTALLAS = {
           <label>Nota<textarea name="nota"></textarea></label>
           <button class="btn" type="submit">Agendar</button><p class="msj" role="status"></p>
         </form></details>
-      <div class="filtro" role="group" aria-label="Qué servicios ver">${[['pendiente', 'Pendientes'], ['hecho', 'Por cobrar'], ['cerrado', 'Cerrados'], ['cancelado', 'Cancelados']].map(([v, t]) => `<button type="button" data-f="${v}" aria-pressed="${v === filtro}">${t}</button>`).join('')}</div>
+      <div class="filtro" role="group" aria-label="Qué servicios ver">${[['pendiente', 'Pendientes'], ['hecho', 'Por cobrar'], ['cerrado', 'Cobrados'], ['cancelado', 'Cancelados']].map(([v, t]) => `<button type="button" data-f="${v}" aria-pressed="${v === filtro}">${t}</button>`).join('')}</div>
       ${lista.length ? `<ul class="lista-c">${lista.map(c => citaItem(c)).join('')}</ul>` : '<p class="vacio">Nada aquí.</p>'}`;
     const desde = q.get('agendar'); if(desde){ q.delete('agendar');
       const n = await api('GET', '/api/numeros'), c = n.cotizaciones?.find(x => x.codigo === desde);
@@ -522,16 +742,16 @@ const PANTALLAS = {
     el.innerHTML = cab('Inventario', `${j.insumos.length} insumo${j.insumos.length === 1 ? '' : 's'} · ${j.insumos.filter(i => i.bajo).length} por acabarse`) + `
       <details class="nuevo"><summary><span data-ic="plus"></span>Agregar un insumo</summary>
         <form class="f" id="fIns"><label>Nombre<input name="nombre" required placeholder="Gel cucarachicida"></label>
-          <div class="dos"><label>Registro (COFEPRIS)<input name="registro" placeholder="RSCO-…"></label><label>Unidad<select name="unidad"><option>pzas</option><option>g</option><option>kg</option><option>ml</option><option>L</option><option>bloques</option><option>cajas</option></select></label></div>
+          <div class="dos"><label>Registro sanitario (el «RSCO» de la etiqueta)<input name="registro" placeholder="RSCO-…"></label><label>Se cuenta en<select name="unidad"><option>piezas</option><option>g</option><option>kg</option><option>ml</option><option>L</option><option>bloques</option><option>cajas</option></select></label></div>
           <label>Avísame cuando queden<input name="minimo" inputmode="decimal" placeholder="10"></label>
           <button class="btn" type="submit">Agregar</button><p class="msj" role="status"></p></form></details>
       ${j.insumos.length ? `<ul class="lista-c">${j.insumos.map(i => `<li class="item${i.bajo ? ' up-ojo' : ''}" data-id="${i.id}">
-        <div class="t"><b>${esc(i.nombre)}</b><span>${i.cantidad} ${esc(i.unidad)}</span></div>
+        <div class="t"><b>${esc(i.nombre)}</b><span>${i.cantidad} ${esc(unidad(i.unidad))}</span></div>
         ${i.minimo ? `<div class="up-nivel ${i.bajo ? 'bajo' : ''}" aria-hidden="true"><span style="--n:${Math.min(1, i.cantidad / (i.minimo * 3)).toFixed(3)}"></span></div>` : ''}
         <div class="acc">${i.bajo ? '<span class="chip aviso">Se está acabando</span>' : ''}${i.registro ? `<span class="chip">${esc(i.registro)}</span>` : '<span class="chip aviso">Falta su registro</span>'}${i.minimo != null ? `<span class="chip">mínimo ${i.minimo}</span>` : ''}</div>
-        <form class="f mov" style="padding:0"><label>Motivo<input name="motivo" placeholder="Compra, servicio de Ana…"></label><label>Cantidad<input name="delta" inputmode="decimal" placeholder="+10 o −2" required></label>
-          <div class="acc" style="grid-column:1/-1"><button class="btn b2" type="submit" name="sentido" value="1">Entró</button><button class="btn b2" type="submit" name="sentido" value="-1">Salió</button></div><p class="msj" role="status" style="grid-column:1/-1"></p></form>
-        ${i.movimientos.length ? `<p>Último: ${i.movimientos.at(-1).delta > 0 ? '+' : ''}${i.movimientos.at(-1).delta} · ${esc(i.movimientos.at(-1).motivo)}</p>` : ''}</li>`).join('')}</ul>` : '<p class="vacio">Todavía no hay insumos. Agrega los productos que usas, con su registro: la carpeta de las plantas los pide.</p>'}`;
+        <form class="f mov" style="padding:0"><label>Motivo<input name="motivo" placeholder="Compra, servicio de Ana…"></label><label>Cantidad<input name="delta" inputmode="decimal" placeholder="¿Cuántos?" required></label>
+          <div class="acc" style="grid-column:1/-1"><button class="btn b2" type="submit" name="sentido" value="1">+ Entró</button><button class="btn b2" type="submit" name="sentido" value="-1">− Salió</button></div><p class="msj" role="status" style="grid-column:1/-1"></p></form>
+        ${i.movimientos.length ? `<p>Lo último: ${((m) => `${m.delta > 0 ? 'entraron' : 'salieron'} ${Math.abs(m.delta)}${m.motivo ? ' · ' + esc(m.motivo) : ''}`)(i.movimientos.at(-1))}</p>` : ''}</li>`).join('')}</ul>` : '<p class="vacio">Todavía no hay insumos. Agrega los productos que usas, con su registro: la carpeta de las plantas los pide.</p>'}`;
     formEnvio(el.querySelector('#fIns'), (d) => api('POST', '/api/insumos', d));
     el.querySelectorAll('form.mov').forEach(f => f.addEventListener('submit', async (e) => {
       e.preventDefault(); const msj = f.querySelector('.msj'), d = Object.fromEntries(new FormData(f));
@@ -702,7 +922,7 @@ const PANTALLAS = {
         <details class="nuevo"><summary><span data-ic="wrench"></span>Apuntar una revisión</summary>
           <form class="f" data-v="${v.id}"><div class="dos"><label>Qué se hizo<select name="tipo">${TIPOS.map(t => `<option>${t}</option>`).join('')}</select></label><label>Fecha<input name="fecha" type="date" required value="${hoyISO()}"></label></div>
             <div class="dos"><label>Kilometraje<input name="km" inputmode="numeric"></label><label>Costo<input name="costo" inputmode="decimal"></label></div>
-            <div class="dos"><label>Próxima: fecha<input name="proxima_fecha" type="date"></label><label>Próxima: km<input name="proxima_km" inputmode="numeric"></label></div>
+            <div class="dos"><label>Próxima revisión: fecha<input name="proxima_fecha" type="date"></label><label>Próxima revisión: a los km<input name="proxima_km" inputmode="numeric"></label></div>
             <label>Nota<input name="nota"></label><button class="btn" type="submit">Guardar</button><p class="msj" role="status"></p></form></details>`).join('') || '<p class="vacio">Agrega la camioneta para llevar aceite, llantas, verificación y seguro.</p>'}`;
     formEnvio(el.querySelector('#fVeh'), (d) => api('POST', '/api/vehiculos', d));
     el.querySelectorAll('form[data-v]').forEach(f => formEnvio(f, (d) => api('POST', '/api/vehiculos/revision', { ...d, vehiculo: f.dataset.v })));
