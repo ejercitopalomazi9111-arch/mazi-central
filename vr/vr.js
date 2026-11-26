@@ -22,7 +22,7 @@ import { crearLimites, toparCabeza } from './limites.js';
 import { crearPredictor } from './prediccion.js';
 
 /* ── ajustes: se guardan en el teléfono (sólo comodidad; si se borran, salen los de fábrica) ── */
-const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true, menuTam: 1, menuDist: 1, fondo: 0, seis: false, puntos: true, limites: true, zona: 1, tonos: true, estable: 720, enfriar: 250 };
+const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true, menuTam: 1, menuDist: 1, fondo: 0, seis: false, puntos: true, limites: true, zona: 1, tonos: true, estable: 720, enfriar: 250, arcore: true };
 const AJ = { ...FABRICA };
 try{ Object.assign(AJ, JSON.parse(localStorage.getItem('mazivr.ajustes') || '{}')); }catch{}
 /* LO GUARDADO NO TAPA UN VALOR NUEVO DE FÁBRICA (Carlos, 26 nov: «ninguno de los cambios de 200 ms está activo»): los Ajustes
@@ -120,6 +120,15 @@ const video = document.createElement('video'); video.playsInline = true; video.m
    jalaban en el cuarto virtual (sin la mixta) */
 video.style.cssText = 'position:fixed; left:0; bottom:0; width:2px; height:2px; opacity:.01; pointer-events:none; z-index:0';
 (document.body ? document.body.appendChild(video) : addEventListener('DOMContentLoaded', () => document.body.appendChild(video)));
+/* ── ARCORE (arcore.js): con la sesión «immersive-ar» abierta, la pose sale de ARCore, la cámara también, y lo pintado va
+   al búfer de la sesión. Sin ella, todo sigue como siempre ── */
+export const ar = { activo: false, pose: null, frame: null, rt: null, tex: null, campo: 0, ancho: 4, alto: 3, origen: null, camaraVista: false, conCamara: false, piso: false };
+/* la fuente para las manos cuando la cámara la tiene ARCore (un lienzo chico que llena arcore.js) */
+export const fuenteManos = { activa: false, canvas: null, videoWidth: 0, videoHeight: 0, readyState: 0, currentTime: 0 };
+let camAntesAR = null;
+export function usarCamaraAR(tex){ camAntesAR = camTex; camTex = tex; pared.material.map = tex; pared.material.color.set(0xffffff); pared.material.needsUpdate = true; ponerMixta(AJ.mixta); }
+export function dejarCamaraAR(){ camTex = camAntesAR; pared.material.map = camTex; pared.material.needsUpdate = true; if(!camTex) pared.visible = false; ar.camaraVista = false; }
+export function cuadroExterno(t){ if(!rtI) return; /* la sesión de AR puede dar su primer cuadro antes de arrancar() (sin ojos medidos todavía) */ try{ cuadro(t); }catch(e){ fallo('E-MOTOR', 'cuadro', e); } }
 let camTex = null, camNuevo = true, camPintado = 0, camT = -1, flujo = null, ultra = false, camVIO = false;
 /* lo que abre la cámara de lado. En Android casi nunca se reconoce la gran angular por su nombre y la imagen salía como
    una ventanita en medio de la vista (foto de Carlos, 18 nov): si la cámara abre menos que el ojo, se estira hasta
@@ -127,7 +136,7 @@ let camTex = null, camNuevo = true, camPintado = 0, camT = -1, flujo = null, ult
 const ojoH = () => 2 * Math.atan(Math.tan(AJ.campo * Math.PI / 360) * Math.max(.5, (W / 2) / Math.max(1, H))) * 180 / Math.PI;
 /* con 6DoF la imagen va a su campo REAL (el de la lente principal): así los puntitos y lo 3D caen justo sobre tus cosas */
 const campoVIO = () => { const k = camVIO && seis?.vio?.intrinsecos?.(640, 480); return k ? 2 * Math.atan(320 / k.fx) * 180 / Math.PI : 0; };
-export const campoCamara = () => AJ.camCampo || campoVIO() || (ultra ? 104 : Math.max(69, Math.min(110, ojoH())));
+export const campoCamara = () => (ar.activo && ar.camaraVista && ar.campo) || AJ.camCampo || campoVIO() || (ultra ? 104 : Math.max(69, Math.min(110, ojoH())));
 const pared = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0x000000, depthWrite: false, depthTest: false, toneMapped: false }));
 pared.renderOrder = -10; pared.position.z = -20; pared.visible = false; cabeza.add(pared);
 /* los puntitos del rastreo (nube.js): los que sigue la cámara, sobre la imagen; y el mapa del cuarto que se va dibujando */
@@ -219,7 +228,7 @@ async function ponerFlujo(){
 export async function reabrirCamara(){ flujo?.getTracks().forEach((t) => t.stop()); flujo = null; return abrirCamara(); }
 function medirPared(){
   const d = -pared.position.z, ancho = 2 * d * Math.tan(campoCamara() * Math.PI / 360);
-  const asp = video.videoWidth && video.videoHeight ? video.videoWidth / video.videoHeight : 16 / 9;
+  const asp = ar.activo && ar.camaraVista ? ar.ancho / Math.max(1, ar.alto) : video.videoWidth && video.videoHeight ? video.videoWidth / video.videoHeight : 16 / 9;
   pared.scale.set(ancho, ancho / asp, 1); pared.rotation.z = AJ.camVoltear ? Math.PI : 0;
 }
 function ponerMixta(si){
@@ -278,6 +287,15 @@ let guinada = 0;                                             // el giro extra: s
 const qCab = new THREE.Quaternion(), qG = new THREE.Quaternion(), yUp = new THREE.Vector3(0, 1, 0);
 export const sim = { yaw: 0, pitch: 0 };                            // sin giroscopio (pruebas y computadora): ratón y flechas
 function leerCabeza(){
+  /* CON ARCORE: dónde está y hacia dónde ve el teléfono lo dice el sistema (ya viene predicho para cuando se vea).
+     La posición cuenta desde donde estabas al abrir la sesión: el menú queda enfrente igual que siempre */
+  if(ar.activo && ar.pose){
+    const t = ar.pose.transform, o = t.orientation, p = t.position;
+    if(!ar.origen) ar.origen = new THREE.Vector3(p.x, p.y, p.z);
+    cabeza.quaternion.set(o.x, o.y, o.z, o.w); cabeza.position.set(p.x - ar.origen.x, p.y - ar.origen.y, p.z - ar.origen.z);
+    rig.quaternion.copy(qG.setFromAxisAngle(yUp, guinada));
+    return;
+  }
   if(ori.hay){
     const D = THREE.MathUtils.DEG2RAD; eul.set(ori.b * D, ori.a * D, -ori.g * D, 'YXZ');
     qCab.setFromEuler(eul); qCab.multiply(q1); qCab.multiply(q0.setFromAxisAngle(zee, -angPantalla()));
@@ -760,7 +778,8 @@ function cuadro(t){
   /* la mira sólo cuando estás viendo un botón (Carlos, 18 nov: «si no estoy mirando a ningún botón, que el cursor desaparezca, es molesto») */
   mira.visible = !extra.rayo && !!viendo;
   if(aviso.malla.visible && performance.now() > avisoHasta) aviso.malla.visible = false;
-  if(pared.visible){ medirPared();
+  if(pared.visible && ar.activo){ medirPared(); }
+  else if(pared.visible){ medirPared();
     /* camNuevo === null: sin aviso de cuadros (navegador viejo), se repinta siempre */
     /* RESPALDO (Carlos, 19 nov: «la realidad mixta anda valiendo verga», cámara en negro): en el iPhone el aviso de cuadro
        nuevo (requestVideoFrameCallback) puede no llegar NUNCA con el video escondido de 2 px, y la cámara se quedaba en su
@@ -774,11 +793,12 @@ function cuadro(t){
 
   /* dos ojos a dos texturas, y el pase del lente a la pantalla */
   rig.updateMatrixWorld(true);
-  if(modo.mono){ render.setRenderTarget(null); render.render(escena, cabeza); for(const f of trasCuadro) f([cabeza], W, H); capaEncima.style.display = 'none'; return; }
+  const destino = ar.activo ? ar.rt : null;   /* con ARCore, al búfer de la sesión */
+  if(modo.mono){ render.setRenderTarget(destino); render.render(escena, cabeza); for(const f of trasCuadro) f([cabeza], W, H); capaEncima.style.display = 'none'; return; }
   estereo.update(cabeza);
   render.setRenderTarget(rtI); render.render(escena, estereo.cameraL);
   render.setRenderTarget(rtD); render.render(escena, estereo.cameraR);
-  render.setRenderTarget(null); render.render(paseEsc, paseCam);
+  render.setRenderTarget(destino); render.render(paseEsc, paseCam);
   for(const f of trasCuadro) f([estereo.cameraL, estereo.cameraR], W / 2, H);
   ponerEncima([estereo.cameraL, estereo.cameraR], W / 2, H);
 }
@@ -816,7 +836,8 @@ function ponerEncima(camaras, ancho, alto){
 export function arrancar(){
   medir(); addEventListener('resize', medir); screen.orientation?.addEventListener?.('change', medir);
   ponerMixta(AJ.mixta && !!camTex);
-  render.setAnimationLoop((t) => { try{ cuadro(t); }catch(e){ fallo('E-MOTOR', 'cuadro', e); } });
+  /* con ARCore el ciclo lo marca la sesión (arcore.js), no la ventana */
+  if(!ar.activo) render.setAnimationLoop((t) => { try{ cuadro(t); }catch(e){ fallo('E-MOTOR', 'cuadro', e); } });
 }
 export const hayControl = () => padVisto;
 export const hayGiro = () => ori.hay;   /* ¿la cabeza la mueve el giroscopio de verdad? (sin él, la mueve el ratón) */

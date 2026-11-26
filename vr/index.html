@@ -35,6 +35,8 @@
   #version.nueva{ color:#fff }
   #gira{ position:fixed; inset:0; z-index:6; display:none; place-items:center; background:#0B0513; font-size:22px; font-weight:800; text-align:center; padding:30px }
   @media (orientation: portrait){ body.dentro #gira{ display:grid } }
+  /* con ARCore la página va de capa encima (dom-overlay): fondo transparente para que se vea lo pintado */
+  html.en-ar, html.en-ar body{ background: transparent !important; }
 </style>
 </head>
 <body>
@@ -44,7 +46,7 @@
     <img src="../marca/paloma-2026/logo-icono.svg" alt="">
     <h1>Mazi <em>VR</em></h1>
     <p id="version"></p>
-    <div class="estado"><span id="eControl">Control</span><span id="eVideos">Archivos</span><span id="eGuardado">Sin internet</span></div>
+    <div class="estado"><span id="eControl">Control</span><span id="eAR">Sin ARCore</span><span id="eVideos">Archivos</span><span id="eGuardado">Sin internet</span></div>
     <button class="boton" id="bEntrar" type="button">Entrar</button>
     <button class="boton sec" id="bPantalla" type="button">Sin visor</button>
     <p id="ultimoError" hidden style="font-size:13px; color:#C9B6DA; max-width:420px; overflow-wrap:anywhere"></p>
@@ -66,6 +68,7 @@ import { montarMonarca } from './monarca/monarca.js';
 import { montarFisica } from './fisica/fisica.js';
 import { crearPantallaWeb } from './pantalla.js';
 import { crearAgarre, crearMoverConControl } from './agarre.js';
+import { arPosible, iniciarAR } from './arcore.js';
 const { THREE, B } = V;
 V.iconos(ICONOS);
 const web = crearPantallaWeb(V); window.__web = web;
@@ -89,7 +92,7 @@ try{ const L = JSON.parse(localStorage.getItem('mazivr.errores') || '[]'), u = L
 /* LA VERSIÓN (Carlos, 19 nov: «un mensajito que diga la versión en la que estás y que se actualizó»). Va igual que la
    de sw.js (pruebas-sinred.mjs lo revisa). La primera vez que se abre una versión nueva dice «actualizada»; y si el
    trabajador de fondo ya trae una más nueva que esta página, recarga sola (sólo en la entrada, una vez) */
-const VERSION = 46;
+const VERSION = 47;
 { let antes = 0; try{ antes = +localStorage.getItem('mazivr.version') || 0; if(antes !== VERSION) localStorage.setItem('mazivr.version', VERSION); }catch{}
   const el = $('#version'); el.textContent = antes < VERSION ? `v${VERSION} · actualizada` : `v${VERSION}`; el.classList.toggle('nueva', antes < VERSION); }
 const versionSW = (n) => { if(!(n > VERSION) || document.body.classList.contains('dentro')) return;
@@ -110,19 +113,28 @@ setInterval(() => { if(!document.body.classList.contains('dentro') || document.f
   if(p?.buttons.some((b) => b.pressed)) try{ document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }).catch(() => {}); }catch{} }, 250);
 /* sin visor: una sola vista y se toca la pantalla para elegir (el mismo motor) */
 $('#bPantalla').addEventListener('click', () => { V.ponerPantalla(true); $('#bEntrar').click(); });
+/* ¿este teléfono abre ARCore desde la página? (Chrome de Android con ARCore). Se pregunta al cargar: al tocar «Entrar» la
+   sesión se pide en el MISMO instante, sin esperar nada (el navegador sólo la abre con un gesto) */
+let conAR = false; arPosible().then((s) => { conAR = s; if(s){ $('#eAR')?.classList.add('si'); if($('#eAR')) $('#eAR').textContent = 'ARCore'; } });
 $('#bEntrar').addEventListener('click', async () => {
   $('#bEntrar').disabled = true;
+  /* ARCORE DE FÁBRICA (Carlos, 26 nov: «pónselo ya de predefinido»): 6DoF del sistema, como Pokémon GO. Si no se puede o
+     falla, se entra como siempre */
+  const pedidoAR = conAR && V.AJ.arcore !== false && !V.modo.mono ? iniciarAR(V) : Promise.resolve(false);
   /* lo que exige el toque va primero y sin esperar a nada más */
   /* Android: a pantalla completa y acostado (si no, se queda la barra del navegador y la vista sale como «pantalla
      individual»). En el iPhone no existe para páginas: ahí se usa «Agregar a inicio» */
-  try{ const p = document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); p?.then(() => screen.orientation?.lock?.('landscape')).catch(() => {}); }catch{}
+  if(!conAR || V.AJ.arcore === false) try{ const p = document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); p?.then(() => screen.orientation?.lock?.('landscape')).catch(() => {}); }catch{}
   /* la voz del teléfono (respaldo del narrador) sólo habla después de hablar una vez dentro de un toque */
   try{ const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); }catch{}
   web.desbloquear(); window.__musica?.desbloquear?.();      /* los videos de la web sólo suenan si ya sonaron una vez con un toque */
   V.despertarAudio();
   try{ if(typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) await DeviceOrientationEvent.requestPermission(); }catch{}
   /* la cámara se abre por detrás: el visor no la espera (la realidad mixta y las manos se prenden cuando llega) */
-  const camara = V.abrirCamara();
+  const enAR = await pedidoAR;
+  /* con ARCore la cámara la da la sesión (si el teléfono deja leerla); sin ella, la de siempre */
+  const camara = enAR ? V.ar.camaraLista : V.abrirCamara();
+  if(enAR) V.ar.alSalir = () => { V.abrirCamara(); };
   try{ navigator.wakeLock?.request('screen').catch(() => {}); }catch{}
   document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') try{ navigator.wakeLock?.request('screen').catch(() => {}); }catch{} });
   $('#bEntrar').textContent = 'Un momento…';
@@ -133,7 +145,7 @@ $('#bEntrar').addEventListener('click', async () => {
   if(new URLSearchParams(location.search).has('monarca')){ window.__monarca.exposicion(true); V.ir('monarca'); }
   /* las manos cargan después (el modelo pesa ~8 MB): el visor ya se puede usar mientras */
   /* 6DoF guardado en Ajustes: se prende en cuanto hay cámara */
-  if(V.AJ.seis) camara.then((ok) => ok && V.ponerSeis(true));
+  if(V.AJ.seis && !enAR) camara.then((ok) => ok && V.ponerSeis(true));
   /* prueba sin teléfono: ?demo6 mete la caminata grabada de un iPhone al 6DoF del motor (vr/pruebas-seis-motor.mjs) */
   const q6 = new URLSearchParams(location.search).get('demo6');
   if(q6){ const vd = document.createElement('video'); vd.muted = true; vd.playsInline = true; vd.src = `espacial/demo/${q6}.mp4`; vd.style.cssText = 'position:fixed;width:2px;height:2px;opacity:.01;left:0;top:0'; document.body.appendChild(vd);
@@ -259,6 +271,7 @@ async function montar(){
     ['Manos', 'manos', 0, 1, 1, (v) => v ? 'Sí' : 'No'],
     ['Mano 3D', 'manoModelo', 0, 1, 1, (v) => v !== false ? 'Sí' : 'No'],
     ['Fondo', 'fondo', 0, 1, 1, (v) => v ? 'Espacio' : 'Tem Shop'],
+    ['ARCore', 'arcore', 0, 1, 1, (v) => v !== false ? 'Sí' : 'No'],
     ['6DoF', 'seis', 0, 1, 1, (v) => v ? 'Sí' : 'No'],
     ['Puntos', 'puntos', 0, 1, 1, (v) => v ? 'Sí' : 'No'],
     ['Límites', 'limites', 0, 1, 1, (v) => v ? 'Sí' : 'No'],
@@ -269,7 +282,7 @@ async function montar(){
     ['Borrar mapa', null],
     ['De fábrica', null],
   ];
-  const SIONO = new Set(['camVoltear', 'manos', 'manoModelo', 'fondo', 'seis', 'puntos', 'limites', 'tonos']);
+  const SIONO = new Set(['camVoltear', 'manos', 'manoModelo', 'fondo', 'seis', 'puntos', 'limites', 'tonos', 'arcore']);
   let fila = 0;
   const PX = 420, ALTO = 2.1, hoja = new V.Panel(1.5, ALTO, PX); hoja.malla.position.set(0, .05, -2.0); aj.grupo.add(hoja.malla);
   const yFila = (i) => 136 + i * 52;
