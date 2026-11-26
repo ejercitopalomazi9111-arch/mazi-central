@@ -1,6 +1,6 @@
 /* El motor del simulador de física contra las fórmulas del libro (y casos que se resuelven a mano).
      node vr/pruebas-fisica.mjs */
-import { estado, resumen, tiempoVuelo, trayectoria, GRAVEDADES } from './fisica/motor.js';
+import { estado, resumen, tiempoVuelo, trayectoria, GRAVEDADES, simular, enInstante, OBJETOS, LUGARES, kArrastre, vTerminal } from './fisica/motor.js';
 let ok = 0, mal = 0; const sí = (c, t) => { c ? ok++ : mal++; console.log(c ? '✓' : '✗', t); };
 const cerca = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
 /* MRU: 3 m/s durante 4 s = 12 m */
@@ -31,4 +31,40 @@ sí(cerca(lunaVs, g / GRAVEDADES.luna, 1e-9), `en la Luna llega ${lunaVs.toFixed
 /* la trayectoria termina en el piso y nunca baja de él */
 const tr = trayectoria('parabolico', { v0: 20, angulo: 60 }, 80);
 sí(tr.every((s) => s.y >= 0) && cerca(tr.at(-1).y, 0, 1e-9) && cerca(tr.at(-1).x, al(60), 1e-9), 'la curva sale del piso, sube, baja y termina en el piso, en el alcance');
+
+/* ── con aire ── */
+const B = OBJETOS.balon, P = OBJETOS.piedra;
+/* sin aire, el paso a paso da lo mismo que las fórmulas (a menos de 1 mm) */
+const sv = simular('parabolico', { v0: 20, angulo: 30, g, rho: 0, objeto: B });
+sí(cerca(sv.alcance, al(30), 1e-3) && cerca(sv.tVuelo, rp.tVuelo, 1e-4) && cerca(sv.hMax, rp.hMax, 1e-3), `sin aire, el paso a paso da el alcance del libro (${sv.alcance.toFixed(4)} contra ${al(30).toFixed(4)} m)`);
+const sc = simular('caida', { h: 20, g, rho: 0, objeto: B });
+sí(cerca(sc.tVuelo, Math.sqrt(40 / g), 1e-4) && cerca(sc.vFinal, Math.sqrt(2 * g * 20), 1e-3), 'sin aire, la caída paso a paso cae en √(2h/g) y llega a √(2gh)');
+/* con aire llega menos lejos, y el balón (ligero y grande) pierde más que la piedra */
+const ca = (o, rho = 1.225) => simular('parabolico', { v0: 20, angulo: 45, g, rho, objeto: o }).alcance;
+sí(ca(B) < al(45) && ca(P) < al(45) && ca(B) < ca(P), `con aire el balón llega a ${ca(B).toFixed(1)} m y la piedra a ${ca(P).toFixed(1)} m (sin aire ${al(45).toFixed(1)} m)`);
+/* más denso el aire, menos llega */
+sí(ca(B, 5) < ca(B, 1.225) && ca(B, 65) < ca(B, 5), 'más denso el aire, más corto el tiro (Venus casi no lo deja avanzar)');
+/* el tiro más lejano con aire es a menos de 45° */
+const mejor = [30, 35, 40, 45, 50].map((a) => [a, simular('parabolico', { v0: 25, angulo: a, g, rho: 1.225, objeto: B }).alcance]).sort((x, y) => y[1] - x[1])[0][0];
+sí(mejor < 45, `con aire, el ángulo que llega más lejos ya no es 45° (aquí ${mejor}°)`);
+/* velocidad terminal: una caída larga se acerca a √(g/k) y no la pasa */
+const vt = vTerminal(B, 1.225, g), larga = simular('caida', { h: 2000, g, rho: 1.225, objeto: B });
+sí(larga.vFinal < vt && larga.vFinal > vt * .99, `velocidad terminal del balón ${vt.toFixed(1)} m/s; tras 2 km de caída va a ${larga.vFinal.toFixed(1)} m/s`);
+/* en la Luna (sin aire) no importa el objeto */
+const lu = (o) => simular('parabolico', { v0: 10, angulo: 45, g: LUGARES.luna.g, rho: LUGARES.luna.rho, objeto: o }).alcance;
+sí(cerca(lu(B), lu(P), 1e-9), 'en la Luna, sin aire, el balón y la piedra caen igual (como el martillo y la pluma del Apolo 15)');
+/* termina exacto en el piso y enInstante lo encuentra */
+const fin = enInstante(sv, sv.tVuelo + 1), mit = enInstante(sv, sv.tVuelo / 2);
+sí(cerca(fin.y, 0, 1e-9) && mit.y > 0 && cerca(mit.x, sv.alcance / 2, 1e-3), 'termina en y = 0 y a la mitad del tiempo va a la mitad del alcance (sin aire)');
+sí(kArrastre(B, 0) === 0 && vTerminal(B, 0, g) === Infinity, 'sin aire no hay arrastre');
+
+/* ── rebote ── */
+const rb = (o) => simular('parabolico', { v0: 15, angulo: 45, g, rho: 0, objeto: o, rebote: true });
+const rB = rb(B), rP = rb(P), sinR = simular('parabolico', { v0: 15, angulo: 45, g, rho: 0, objeto: B });
+sí(rB.botes > rP.botes && rB.alcance > rP.alcance && cerca(rB.primero, sinR.alcance, 1e-3), `con rebote el balón da ${rB.botes} botes y la piedra ${rP.botes}; el primer bote cae donde caería sin rebote (${rB.primero.toFixed(2)} m)`);
+/* cada bote sube e² veces lo que subió el anterior (sin aire) */
+const picos = []; let subiendo = false; rB.puntos.forEach((q, i) => { const n = rB.puntos[i + 1]; if(n && q.vy > 0 && n.vy <= 0) picos.push(q.y); });
+sí(picos.length >= 3 && cerca(picos[1] / picos[0], B.e ** 2, .02), `cada bote sube e² del anterior (${(picos[1] / picos[0]).toFixed(3)} contra ${(B.e ** 2).toFixed(3)})`);
+sí(rB.puntos.every((q) => q.y >= -1e-9) && rB.puntos.every((q, i) => !i || q.t >= rB.puntos[i - 1].t), 'con rebote nunca atraviesa el piso y el tiempo siempre avanza');
+const mitad = enInstante(rB, rB.tPrimero + .01); sí(mitad.vy > 0, 'justo después del primer bote va de subida');
 console.log(`${ok} bien · ${mal} mal`); process.exit(mal ? 1 : 0);
