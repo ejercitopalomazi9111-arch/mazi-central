@@ -5,6 +5,9 @@
  *     abajo de 15 px (la barra de abajo, 12 px con su ícono). Un señor de 90 años y un niño (Luis, 23 nov).
  * 2 · SIN INTERNET DE VERDAD: carga con señal contra un servidor de mentiras, corta la red, recarga
  *     (tiene que abrir), marca un servicio como hecho, y al volver la señal comprueba que llegó.
+ * 4 · FÁCIL DE USAR: objetivos de 48 px, letra al 200 %, «reducir movimiento», transiciones.
+ * 5 · LOS RECORRIDOS: agendar paso a paso, hacer y cobrar, cobrar, salió/entró y mandar la cotización; cada cosa se
+ *     convierte en su siguiente paso en el mismo lugar, con «Atrás» por el mismo camino.
  * 3 · COTIZAR · LA DISTANCIA: «Calcular» llena los km de la zona y «La camioneta sale de» se guarda. El servidor de
  *     mentiras usa el mismo distancia.js del bot con un mapa de mentiras: no sale a internet. */
 import http from 'node:http';
@@ -83,9 +86,9 @@ for (const ancho of [320, 390, 414]) {
   if (ancho === 390) {
     ok('la franja dice que son datos de muestra', /Datos de muestra/.test(await pg.locator('#red').innerText()));
     await pg.click('.barra-inf [data-p="hoy"]'); await pg.waitForTimeout(300);
-    const antes = await pg.locator('[data-est="hecho"]').count();
-    await pg.locator('[data-est="hecho"]').first().click(); await pg.waitForTimeout(600);
-    ok('en la muestra «Ya se hizo» sí hace algo', await pg.locator('[data-est="hecho"]').count() === antes - 1);
+    const antes = await pg.locator('[data-hice]').count();
+    await pg.locator('[data-hice]').first().click(); await pg.waitForTimeout(450); await pg.locator('[data-cobrar="despues"]').first().click(); await pg.waitForTimeout(700);
+    ok('en la muestra «Ya lo hice» → «Me paga después» sí hace algo', await pg.locator('[data-hice]').count() === antes - 1);
     await pg.screenshot({ path: process.env.CAPTURA || '/tmp/centro-muestra.png' });
   }
   await ctx.close();
@@ -107,9 +110,9 @@ console.log('\n2 · Sin internet de verdad');
   ok('sin señal la página ABRE y enseña los servicios guardados', abrio, await pg.locator('body').innerText().then(t => t.slice(0, 120)).catch(() => 'no cargó'));
   ok('y lo dice: «Sin internet. Ves lo guardado…»', /Sin internet\. Ves lo guardado/.test(await pg.locator('#red').innerText().catch(() => '')));
   const cliente = await pg.locator('li.item:has([data-est="hecho"]) b').first().innerText();
-  await pg.locator('[data-est="hecho"]').first().click(); await pg.waitForTimeout(900);
+  await pg.locator('[data-hice]').first().click(); await pg.waitForTimeout(500); await pg.locator('[data-cobrar="despues"]').first().click(); await pg.waitForTimeout(900);
   const franja = await pg.locator('#red').innerText();
-  ok('marcar «Ya se hizo» sin señal: queda como 1 cambio por enviar', /1 cambio por enviar/.test(franja) && franja.includes(cliente), franja.replace(/\s+/g, ' ').slice(0, 160));
+  ok('«Ya lo hice» → «Me paga después» sin señal: queda como 1 cambio por enviar', /1 cambio por enviar/.test(franja) && franja.includes(cliente), franja.replace(/\s+/g, ' ').slice(0, 160));
   const idCita = [...alm.values()].find(c => c.cliente === cliente)?.id;
   ok('el servidor todavía no sabe nada', alm.get('cita:' + idCita).estado === 'pendiente');
   await pg.click('.barra-inf [data-p="servicios"]'); await pg.waitForTimeout(500);
@@ -167,7 +170,7 @@ console.log('\n4 · Fácil de usar y nada aparece de golpe');
     ok('y «Sí, cancelarlo» sí cancela', await pg.locator('[data-est="cancelado"]').count() === pendientes - 1);
     const vt0 = await pg.evaluate(() => window.__vt);
     await pg.click('.barra-inf [data-p="inventario"]'); await pg.waitForTimeout(500);
-    await pg.locator('form.mov [name=delta]').first().fill('2'); await pg.locator('form.mov button[value="-1"]').first().click(); await pg.waitForTimeout(120);
+    await pg.locator('[data-mov="-1"]').first().click(); await pg.waitForTimeout(450); await pg.locator('.up-mov [data-rapido="2"]').click(); await pg.locator('.up-mov [data-mover]').click(); await pg.waitForTimeout(120);
     const nivel = await aMano(pg); await pg.waitForTimeout(600);
     ok('cambiar de pestaña y sacar un insumo se transforman (View Transition) y el nivel baja desde donde estaba', await pg.evaluate(() => window.__vt) >= vt0 + 2 && nivel >= 1, `transiciones ${await pg.evaluate(() => window.__vt) - vt0}, animaciones a mano ${nivel}`);
     ok('sin errores de página al transformar', !pg.errores.length, pg.errores.slice(0, 2).join(' | '));
@@ -184,7 +187,7 @@ console.log('\n4 · Fácil de usar y nada aparece de golpe');
     const { ctx, pg } = await contexto({ reducedMotion: 'reduce' });
     await pg.locator('#lHoy [data-est="hecho"]').first().click(); await pg.waitForTimeout(150);
     const n1 = await aMano(pg); await pg.click('.barra-inf [data-p="inventario"]'); await pg.waitForTimeout(400);
-    await pg.locator('form.mov [name=delta]').first().fill('1'); await pg.locator('form.mov button[value="-1"]').first().click(); await pg.waitForTimeout(150);
+    await pg.locator('[data-mov="-1"]').first().click(); await pg.waitForTimeout(300); await pg.locator('.up-mov [data-mover]').click(); await pg.waitForTimeout(150);
     const n2 = await aMano(pg), vt = await pg.evaluate(() => window.__vt);
     ok('con «reducir movimiento» no corre ninguna transición nueva: ni View Transitions ni FLIP ni el nivel', vt === 0 && n1 === 0 && n2 === 0, `transiciones ${vt}, animaciones ${n1}/${n2}`);
     await ctx.close();
@@ -200,6 +203,83 @@ console.log('\n4 · Fácil de usar y nada aparece de golpe');
       if (m.desborde > 0) fallas.push(`${p}: se desborda ${m.desborde}px`); if (!m.aLaVista) fallas.push(`${p}: su pestaña quedó fuera de la barra`);
     }
     ok('con la letra al 200 % nada se sale de lado y la pestaña en la que estás queda a la vista', !fallas.length, fallas.join(' | '));
+    await ctx.close();
+  }
+}
+console.log('\n5 · Los recorridos: cada cosa se convierte en su siguiente paso (Carlos, 26 nov: «hablo del FLUJO»)');
+{
+  const abrir = async () => { const ctx = await nav.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, serviceWorkers: 'block' });
+    await ctx.addInitScript(() => { sessionStorage.setItem('up-visto', '1'); window.__vt = 0; const o = Document.prototype.startViewTransition; if (o) Document.prototype.startViewTransition = function (f) { window.__vt++; return o.call(this, f); }; });
+    const pg = await ctx.newPage(); pg.errores = []; pg.on('pageerror', e => pg.errores.push(e.message));
+    await pg.goto(URL_SITIO + '?muestra'); await pg.waitForSelector('[data-hice]'); await pg.waitForTimeout(400); return { ctx, pg }; };
+  const paso = (pg) => pg.locator('#asist .up-asist__paso').innerText();
+  {
+    const { ctx, pg } = await abrir();
+    await pg.click('.barra-inf [data-p="servicios"]'); await pg.waitForSelector('#bAgendar'); const vt0 = await pg.evaluate(() => window.__vt);
+    await pg.click('#bAgendar'); await pg.waitForTimeout(450);
+    ok('«Agendar un servicio» se convierte en el formulario (el botón se va, el panel queda en su lugar) y empieza en «Paso 1 de 5»', await pg.locator('#bAgendar').isHidden() && await pg.locator('#asist').isVisible() && /Paso 1 de 5/i.test(await paso(pg)) && await pg.evaluate(() => window.__vt) > vt0);
+    ok('el primer campo ya está listo para escribir', await pg.evaluate(() => document.activeElement?.name) === 'cliente');
+    await pg.click('#asist [type=submit]'); await pg.waitForTimeout(200);
+    ok('sin cliente no avanza y dice qué falta', /Paso 1 de 5/i.test(await paso(pg)) && /nombre del cliente/.test(await pg.locator('#asist .msj').innerText()));
+    await pg.keyboard.type('Cliente de prueba'); await pg.click('#asist [type=submit]'); await pg.waitForTimeout(450);
+    ok('«Siguiente» pasa a «¿Qué plaga tiene?» (paso 2)', /Paso 2 de 5/i.test(await paso(pg)) && /Qué plaga/.test(await pg.locator('#asist').innerText()));
+    await pg.click('#asist [data-plaga="Hormigas"]'); await pg.waitForTimeout(450);
+    ok('tocar la plaga ya la escoge y pasa a «¿Dónde es?» en un solo toque', /Paso 3 de 5/i.test(await paso(pg)));
+    await pg.click('#asist [data-atras-paso]'); await pg.waitForTimeout(450);
+    ok('«Atrás» regresa por el mismo camino, con lo escogido marcado', /Paso 2 de 5/i.test(await paso(pg)) && await pg.getAttribute('#asist [data-plaga="Hormigas"]', 'aria-pressed') === 'true');
+    await pg.click('#asist [data-plaga="Hormigas"]'); await pg.waitForTimeout(400); await pg.fill('#asist [name=zona]', 'Juriquilla'); await pg.click('#asist [type=submit]'); await pg.waitForTimeout(400);
+    await pg.fill('#asist [name=hora]', '18:00'); await pg.click('#asist [type=submit]'); await pg.waitForTimeout(400);
+    ok('el último paso dice todo lo que se va a agendar antes de guardarlo', /Paso 5 de 5/i.test(await paso(pg)) && /Cliente de prueba · Hormigas · Juriquilla/.test(await pg.locator('#asist .up-resumen').innerText()));
+    await pg.fill('#asist [name=precio]', '700'); await pg.click('#asist [type=submit]'); await pg.waitForTimeout(900);
+    const tarjeta = pg.locator('li.item[data-cliente="Cliente de prueba"]');
+    ok('al «Agendar», el formulario se vuelve la tarjeta del servicio en su lugar de la lista, a la vista', await tarjeta.count() === 1 && await tarjeta.isVisible() && await pg.locator('#bAgendar').isVisible() && await pg.locator('#asist').isHidden() && await pg.evaluate(() => { const r = document.querySelector('li.item[data-cliente="Cliente de prueba"]').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; }));
+    ok('sin errores de página al agendar', !pg.errores.length, pg.errores.join(' | '));
+    await ctx.close();
+  }
+  {
+    const { ctx, pg } = await abrir();
+    const card = pg.locator('#lHoy li.item'), id = await card.getAttribute('data-id');
+    let toques = 0;
+    await pg.click('#lHoy [data-hice]'); toques++; await pg.waitForTimeout(450);
+    ok('«Ya lo hice» se convierte, en la misma tarjeta, en «¿Cuánto te pagó?» con el precio puesto', await pg.locator('#lHoy .up-cobro').isVisible() && await pg.inputValue('#lHoy [name=cobro]') === '500' && /Ya me pagó \$500/.test(await pg.locator('#lHoy [data-cobrar="pagado"]').innerText()));
+    await pg.click('#lHoy [data-atras]'); await pg.waitForTimeout(450);
+    ok('«Atrás» lo regresa a «Ya lo hice»', await pg.locator('#lHoy [data-hice]').isVisible() && !(await pg.locator('#lHoy .up-cobro').count()));
+    await pg.click('#lHoy [data-hice]'); await pg.waitForTimeout(450); await pg.fill('#lHoy [name=cobro]', '550');
+    ok('el botón dice lo que va a pasar: «Ya me pagó $550»', /Ya me pagó \$550/.test(await pg.locator('#lHoy [data-cobrar="pagado"]').innerText()));
+    await pg.click('#lHoy [data-cobrar="pagado"]'); toques++; await pg.waitForTimeout(900);
+    ok('«Ya me pagó»: la tarjeta viaja a «Cobrado hoy» con lo que cobró, y la cifra del día lo cuenta', await pg.locator(`#lCobrado li.item[data-id="${id}"]`).count() === 1 && /Cobrado \$550/.test(await pg.locator(`#lCobrado li.item[data-id="${id}"]`).innerText()) && /\$550/.test(await pg.locator('.cifra').first().innerText()));
+    ok('y se agendó sola su revisión (lo dice el aviso)', /Su revisión quedó el/.test(await pg.locator('#upAviso').innerText()));
+    ok(`servicio hecho y cobrado en ${toques} toques`, toques === 2);
+    const otra = await pg.locator('#lHoy li.item').getAttribute('data-id');
+    await pg.click('#lHoy [data-hice]'); await pg.waitForTimeout(400); await pg.click('#lHoy [data-cobrar="despues"]'); await pg.waitForTimeout(900);
+    ok('«Me paga después»: la tarjeta pasa a «Por cobrar»', await pg.locator(`#lCob li.item[data-id="${otra}"]`).count() === 1);
+    await pg.click(`#lCob li.item[data-id="${otra}"] [data-cobrar="pagado"]`); await pg.waitForTimeout(900);
+    ok('y de «Por cobrar» a «Cobrado hoy» con un solo toque', await pg.locator(`#lCobrado li.item[data-id="${otra}"]`).count() === 1 && !(await pg.locator(`#lCob li.item[data-id="${otra}"]`).count()));
+    ok('sin errores de página al cobrar', !pg.errores.length, pg.errores.join(' | '));
+    await ctx.close();
+  }
+  {
+    const { ctx, pg } = await abrir();
+    await pg.click('.barra-inf [data-p="servicios"]'); await pg.waitForSelector('[data-f="hecho"]');
+    const porCobrar = Number((await pg.locator('[data-f="hecho"] .n').innerText()).trim());
+    await pg.locator('[data-hice]').first().click(); await pg.waitForTimeout(400); await pg.locator('[data-cobrar="despues"]').first().click(); await pg.waitForTimeout(900);
+    ok('en «Servicios», la tarjeta que se va se encoge en su filtro y el filtro la cuenta («Por cobrar» +1)', Number((await pg.locator('[data-f="hecho"] .n').innerText()).trim()) === porCobrar + 1);
+    await pg.click('.barra-inf [data-p="inventario"]'); await pg.waitForSelector('[data-mov]');
+    const id = await pg.locator('li.item[data-id]').first().getAttribute('data-id'), antes = Number(await pg.locator(`li[data-id="${id}"] [data-cuenta]`).innerText());
+    await pg.click(`li[data-id="${id}"] [data-mov="-1"]`); await pg.waitForTimeout(450);
+    ok('«Salió» se convierte en un paso corto: «¿Cuántos salieron?» con − / + y 1, 2, 5, 10', /¿Cuántos salieron\?/.test(await pg.locator(`li[data-id="${id}"] .up-mov`).innerText()) && await pg.locator(`li[data-id="${id}"] [data-rapido]`).count() === 4);
+    await pg.click(`li[data-id="${id}"] [data-rapido="2"]`);
+    ok('el botón dice lo que va a pasar: «Listo: salieron 2»', /Listo: salieron 2/.test(await pg.locator(`li[data-id="${id}"] [data-mover]`).innerText()));
+    await pg.click(`li[data-id="${id}"] [data-mover]`); await pg.waitForTimeout(900);
+    ok('al confirmar, la misma tarjeta vuelve a «Salió / Entró» con 2 menos', Number(await pg.locator(`li[data-id="${id}"] [data-cuenta]`).innerText()) === antes - 2 && await pg.locator(`li[data-id="${id}"] [data-mov="-1"]`).isVisible());
+    await pg.click('.barra-inf [data-p="cotizar"]'); await pg.waitForSelector('#hoja');
+    await pg.fill('[name=cliente]', 'Casa de prueba'); await pg.locator('#renglones [name=cantidad]').first().fill('2'); await pg.waitForTimeout(400);
+    const precio = await pg.locator('.up-precio b').innerText();
+    await pg.click('#hoja'); await pg.waitForTimeout(600);
+    ok('«Mandar al cliente»: el cuadro del precio se vuelve la hoja que va a ver el cliente, con su nombre y el mismo precio', await pg.locator('#total .up-hojita').isVisible() && /Para Casa de prueba/.test(await pg.locator('#total').innerText()) && (await pg.locator('.up-hojita__total b').innerText()) === precio, precio);
+    await pg.click('#total [data-cambios]'); await pg.waitForTimeout(500);
+    ok('«Hacer cambios» lo regresa al precio', await pg.locator('#total .up-precio').isVisible() && !(await pg.locator('#total .up-hojita').count()));
+    ok('sin errores de página en los recorridos', !pg.errores.length, pg.errores.join(' | '));
     await ctx.close();
   }
 }

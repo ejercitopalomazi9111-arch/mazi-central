@@ -27,7 +27,7 @@ volver la señal **nunca se pierde callado**.
 
 ```
 node urban-pest/centro/pruebas.mjs            # el motor sin red: 32 comprobaciones
-node urban-pest/centro/pruebas-pantalla.mjs   # la pantalla con Playwright, sin internet de verdad, «Calcular» y uso fácil: 31
+node urban-pest/centro/pruebas-pantalla.mjs   # la pantalla con Playwright, sin internet de verdad, «Calcular», uso fácil y los recorridos: 56
 ```
 
 Si `pruebas.mjs` dice que `motor.js` ya no es copia exacta, es que cambiaron las reglas del
@@ -111,4 +111,20 @@ de la nada: todo se transforma en su siguiente fase». Medido con Playwright a 3
   (la entrada corta de cada pantalla, el logo) sigue como se decidió el 14 nov: reduce, no apaga.
 - Las pruebas (`pruebas-pantalla.mjs`, parte 4) lo vigilan: objetivos de 48 px, texto de 15 px, que «Cancelar» pregunte,
   que las transiciones corran, que con «reducir movimiento» no corra ninguna y que con la letra al 200 % nada se salga.
+
+## Los recorridos: cada cosa se convierte en su siguiente paso (26 nov)
+
+Carlos: «no hablo de la letra; hablo del FLUJO… y hazlo muy bonito». Lo que se toca se transforma EN SU LUGAR (View
+Transitions con el mismo `view-transition-name` antes y después, recortado a su borde; FLIP donde no hay):
+
+| Recorrido | Cómo va | Toques (antes → ahora, con los mismos datos) |
+|---|---|---|
+| Agendar | el botón naranja «Agendar un servicio» crece y se vuelve un panel marino de 5 pasos: ¿para quién? → ¿qué plaga? (un toque) → ¿dónde? → ¿cuándo? (Hoy / Mañana / pasado, un toque) → ¿cuánto? con el resumen. Al «Agendar», el panel se encoge y se vuelve la tarjeta en su lugar de la lista, a la vista y marcada | 10 → 10 (ya no se escribe la plaga ni se abre el calendario; una pregunta por paso) |
+| Hacer y cobrar | la tarjeta de hoy se abre en su detalle (Llamar, WhatsApp, Cómo llegar). «Ya lo hice» se vuelve «¿Cuánto te pagó?» con el precio puesto; «Ya me pagó $500» o «Me paga después». La tarjeta viaja a «Cobrado hoy» o a «Por cobrar» y su revisión de 15 días se agenda sola | 2 → 2 (y ahora apunta cuánto pagó) |
+| Cobrar | en «Por cobrar», «Ya me pagó $500»: un toque y la tarjeta viaja a «Cobrado hoy»; la cifra del día cuenta | 1 → 1 |
+| Cotizar | el precio se arma a la vista (cuenta desde lo que decía); «Mandar al cliente» convierte el cuadro del precio en la hoja que va a ver el cliente, con «Mandar por WhatsApp» y «Hacer cambios» | 5 → 5 |
+| Inventario | «Salió» / «Entró» se vuelve un paso corto: ¿cuántos? con − / + y 1, 2, 5, 10; la barrita y el número bajan desde donde estaban | 3 → 4 (sin teclado: 1, 2, 5, 10 de un toque) |
+
+En Servicios, la tarjeta que deja la lista se encoge en su filtro («Por cobrar 2»). Siempre UNA acción naranja por
+paso y «Atrás» por el mismo camino. Las tiras cuadro por cuadro se sacan con Playwright (ver la parte 5 de las pruebas).
 
