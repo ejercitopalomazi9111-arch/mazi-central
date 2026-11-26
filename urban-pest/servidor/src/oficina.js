@@ -79,7 +79,7 @@ export class Oficina {
     if(plagaDicha) conv.datos.plaga = plagaDicha;
 
     /* 5 · REFLEJO */
-    const r = elReflejo(m.texto, cfg.casos, conv.datos);
+    const r = elReflejo(m.texto, cfg.casos, conv.datos, conv.mensajes);
     if(r){
       const texto = llenar(r.caso.respuesta, conv.datos);
       await this.decir(conv, texto, { via: 'reflejo', caso: r.caso.id, confianza: r.confianza });
@@ -91,7 +91,8 @@ export class Oficina {
        Carlos, 17 nov: en cada mensaje le volvía a dar el precio, cada vez un poco distinto ($778.80, $752.89, $766.36), y una
        hoja nueva cada vez; a «¿por qué no pediste metros?» le contestó con el precio. Ya dicho el precio, no se mueve si el
        cliente no da un dato nuevo, y a la IA se le dice que ya se lo dijo: que conteste lo que le preguntan. */
-    const datoNuevo = traeDatos(m.texto) || /\b(chic|median|grand|recamar|cuart|bano|pati|jardin|sala|comedor|plant|pis|coloni|zona|depa|casa|negocio|industria)/.test(normal(m.texto));
+    const lugar1 = lugarDe([{ de: 'cliente', texto: m.texto }]);
+    const datoNuevo = traeDatos(m.texto) || /\b(chic|median|grand|recamar|cuart|bano|pati|jardin|sala|comedor|plant|pis|coloni|zona|depa|casa|negocio|industria)/.test(normal(m.texto)) || !!lugar1.tipo || lugar1.varias;
     if(cfg.tarifas && (conv.precioDicho == null || !conv.cotizacion || datoNuevo)) await this.ubica(conv, cfg);
     let cot = cfg.tarifas ? (conv.precioDicho != null && conv.cotizacion && !datoNuevo ? conv.cotizacion : this.cotiza(conv, cfg.tarifas, cfg.medidas)) : null;
     /* con un dato nuevo que casi no lo mueve («chica» → «2 cuartos 1 baño»: $778.80 → $752.89) se queda el que ya se le dijo:
@@ -105,12 +106,16 @@ export class Oficina {
       /* si cambió de colonia («perdón, es en Juriquilla, no en el Centro»), el lugar y los km se vuelven a sacar y la
          cotización también: antes los km de la primera zona se quedaban pegados */
       const otraZona = !!cot && !!conv.datos.zona && normal(antes.zona || '') !== normal(conv.datos.zona);
+      /* …o la IA acaba de decir qué tipo de lugar es: la cotización se calculó antes y hay que rehacerla (prueba por tipo,
+         23 nov: «hospital de 50 m²» → la IA dijo industria y la hoja salía sin «se confirma con una visita») */
+      const otroTipo = !!cot && conv.datos.tipo !== antes.tipo;
       if(cfg.tarifas && (!cot || otraZona)) await this.ubica(conv, cfg);
-      let nueva = cfg.tarifas && (!cot || otraZona) ? this.cotiza(conv, cfg.tarifas, cfg.medidas) : null;
-      /* «centro» → «el centro»: la misma zona escrita distinto no es motivo para preguntarle otra vez a la IA */
-      if(nueva && cot && nueva.desde === cot.desde && nueva.lugar?.nombre === cot.lugar?.nombre) nueva = null;
+      let nueva = cfg.tarifas && (!cot || otraZona || otroTipo) ? this.cotiza(conv, cfg.tarifas, cfg.medidas) : null;
+      /* el mismo precio, el mismo lugar y la misma respuesta («centro» → «el centro», o sólo cambia lo de la visita): lo que
+         contestó la IA sigue valiendo; se queda la cotización nueva sin volver a preguntarle */
+      if(nueva && cot && nueva.desde === cot.desde && nueva.atiende === cot.atiende && nueva.lugar?.nombre === cot.lugar?.nombre){ cot = nueva; nueva = null; }
       /* con lo que acaba de decir ya se puede cotizar: se le pregunta otra vez, ya con el precio */
-      if(nueva){ cot = nueva; const p2 = await this.pensar({ env: this.env, negocio: cfg.negocio, casos: cfg.casos, historial: conv.mensajes, cotizacion: paraIA(cot) }); if(p2.bien) p = { ...p2, datos: p.datos }; }
+      else if(nueva){ cot = nueva; const p2 = await this.pensar({ env: this.env, negocio: cfg.negocio, casos: cfg.casos, historial: conv.mensajes, cotizacion: paraIA(cot) }); if(p2.bien) p = { ...p2, datos: p.datos }; }
       /* acaba de decir una plaga que no tiene precio automático (ratas, termitas…): que no siga pidiendo el tamaño */
       else if(!cot && !sinPrecioAuto(antes, cfg.tarifas) && sinPrecioAuto(conv.datos, cfg.tarifas)){ const p2 = await this.pensar({ env: this.env, negocio: cfg.negocio, casos: cfg.casos, historial: conv.mensajes, cotizacion: null, sinPrecio: sinPrecioAuto(conv.datos, cfg.tarifas) }); if(p2.bien) p = { ...p2, datos: p.datos }; }
     }
@@ -142,12 +147,13 @@ export class Oficina {
       const d = conv.datos || {}, sp = sinPrecioAuto(d, cfg.tarifas);
       texto = cot && cot.atiende !== 'si' ? (cot.enorme ? 'Por el tamaño del lugar, el precio te lo da el encargado después de revisar tu caso. Ya le aviso.'
           : cot.lejos ? 'Sí vamos hasta allá; por la distancia, el precio te lo confirma el encargado. Ya le paso tus datos.'
+          : cot.varias ? 'Para varias casas o departamentos, el precio te lo da el encargado después de revisar tu caso. Ya le aviso.'
           : 'Para tu zona el encargado revisa tu caso y te avisa. Ya le paso tus datos.')
         : !d.plaga ? 'Para darte el precio dime qué plaga es. Si no sabes el nombre, cuéntame cómo es: tamaño, color y dónde la ves.'
         : sp ? `${sp[0].toUpperCase() + sp.slice(1)} sí las atendemos; el precio te lo da el encargado. Ya le aviso.`
-        : PREGUNTA_TAMANO;
+        : esCasa(conv) ? PREGUNTA_TAMANO : PREGUNTA_METROS;
       if(sp) p.necesita_dueno = true, p.motivo = p.motivo || `Pide precio de ${sp}`;
-      if(cot && cot.atiende !== 'si') p.necesita_dueno = true, p.motivo = p.motivo || (cot.enorme ? 'Lugar muy grande: dale tú el precio.' : cot.lejos ? 'Lejos de la ciudad: dale tú el precio.' : 'Fuera de la zona: decide tú.');
+      if(cot && cot.atiende !== 'si') p.necesita_dueno = true, p.motivo = p.motivo || (cot.atiende === 'caso-por-caso' ? motivoCaso(cot) : 'Fuera de la zona: decide tú.');
     }
     if(!texto){
       await this.decir(conv, 'Gracias por escribir. En un momento te contesta el encargado.', { via: 'respaldo', error: 'La IA escribió un precio que el sistema no calculó: ' + p.respuesta.slice(0, 160) });
@@ -158,7 +164,10 @@ export class Oficina {
     /* Carlos, 17 nov: «que sí pida metros». La IA a veces se los brincaba y preguntaba directo «¿chica, mediana o
        grande?» (prueba en vivo, 18 nov). Si pregunta el tamaño de una casa sin haber pedido nunca los metros, sale la
        pregunta de la casa: primero los metros y, si no los sabe, el cuestionario. */
-    if(!cot && !conv.pidioMetros && !(conv.datos?.m2 > 0) && (conv.datos?.tipo || 'casa') === 'casa' && hizoCuestionario(texto) && !/metros/i.test(texto)) texto = PREGUNTA_TAMANO;
+    /* …y a un restaurante, un hotel o un condominio no se le pregunta por «tu casa» ni sus recámaras: se le piden los metros
+       del lugar (prueba por tipo, 23 nov: a un hotel de 36 habitaciones se le hizo el cuestionario de una casa) */
+    if(!cot && !(conv.datos?.m2 > 0) && hizoCuestionario(texto) && !esCasa(conv)) texto = PREGUNTA_METROS;
+    else if(!cot && !conv.pidioMetros && !(conv.datos?.m2 > 0) && (conv.datos?.tipo || 'casa') === 'casa' && hizoCuestionario(texto) && !/metros/i.test(texto)) texto = PREGUNTA_TAMANO;
     if(!cot && /metros/i.test(texto)) conv.pidioMetros = true;
     /* La última compuerta antes de salir (seguridad, 23 nov): lo que escribió la IA no puede prometer descuentos ni cosas gratis
        ni hablar de cómo funciona por dentro, por mucho que el cliente la haya empujado. Si lo intenta, sale el aviso al
@@ -186,8 +195,7 @@ export class Oficina {
     /* el aviso al dueño lleva el lugar (y sus km, que son suyos) cuando la distancia es la razón */
     const donde = cot?.lugar && (cot.lejos || cot.atiende !== 'si') ? ` (${notaDistancia(cot.lugar, cot.distancia?.km, cot.distancia?.por)})` : '';
     if(p.necesita_dueno) await this.aviso(conv, (p.motivo || 'La IA pide que lo veas tú.') + donde);
-    else if(cot?.lejos) await this.aviso(conv, `Cliente lejos de la ciudad y sin km de carretera${cfg.salida ? ' (el mapa no contestó)' : ' (falta de dónde sale la camioneta)'}: dale tú el precio.` + donde);
-    else if(cot?.atiende === 'caso-por-caso') await this.aviso(conv, 'Casa grande fuera de la zona: decide si se atiende y cuánto cobrar de traslado.' + donde);
+    else if(cot?.atiende === 'caso-por-caso') await this.aviso(conv, (cot.lejos ? `Cliente lejos de la ciudad y sin km de carretera${cfg.salida ? ' (el mapa no contestó)' : ' (falta de dónde sale la camioneta)'}: dale tú el precio.` : motivoCaso(cot)) + donde);
     await guarda(); return { hecho: 'cerebro', dueno: !!p.necesita_dueno };
   }
 
@@ -236,14 +244,16 @@ export class Oficina {
     let m2 = d.m2, m2Estimado = false;
     /* si la IA no apuntó los metros pero el cliente sí los escribió («mide 2500 m2»), se toman de su mensaje */
     if(!(m2 > 0)) for(const msj of [...(conv.mensajes || [])].reverse().filter(x => x.de === 'cliente')){
-      const r = String(msj.texto || '').match(/(\d[\d,\.]*)\s*(m2|m²|mts2?|metros(?:\s+cuadrados)?)/i);
-      if(r){ const x = Number(r[1].replace(/,/g, '')); if(x > 0){ m2 = d.m2 = x; break; } }
+      const x = metrosDe(msj.texto); if(x > 0){ m2 = d.m2 = x; break; }
     }
+    /* qué es el lugar, por lo que dijo, si la IA no lo apuntó: un hotel no es «casa» (y no se mide como una) */
+    const sitio = lugarDe(conv.mensajes);
+    if(!d.tipo && sitio.tipo) d.tipo = sitio.tipo;
     /* no sabe los metros: se estiman con lo que contó (sólo casas; negocio e industria se visitan).
        Carlos, 17 nov: «que sí pida metros y si no los sabe que le haga el pequeño cuestionario de cuartos». Con sólo «es
        chica» ya no se cotiza de golpe: falta que diga cuántas recámaras (o los metros). Si ya se le hizo el cuestionario y
        contestó a medias, se cotiza con lo que dio: no se le pregunta dos veces. Sala y comedor los cuenta el medidor solo. */
-    if(!(m2 > 0) && (d.tipo || 'casa') === 'casa'){
+    if(!(m2 > 0) && (d.tipo || 'casa') === 'casa' && !sitio.varias){
       const dt = delTexto(conv.mensajes);
       if(d.recamaras == null && dt.recamaras) d.recamaras = dt.recamaras;
       if(!d.tamano && dt.tamano) d.tamano = dt.tamano;
@@ -252,6 +262,9 @@ export class Oficina {
       if(e.bien){ m2 = e.m2; m2Estimado = true; conv.estimacion = e; }
     }
     const c = cotizar({ plaga: d.plaga && normal(d.plaga), m2, m2Estimado, km, kmEstimado, kmPor, lejos, lugar, tipo: d.tipo || 'casa' }, tarifas);
+    /* varias casas o departamentos («fraccionamiento de 62 casas, cada una de 135 m²»): el precio sería el de UNA. Lo ve el
+       encargado (prueba por tipo, 23 nov: salía el precio de una sola casa, y su hoja, para 62 casas) */
+    if(c.bien && sitio.varias) return { ...c, atiende: 'caso-por-caso', varias: true, visita: true, nota: c.nota + ' Son varias casas o departamentos: el precio lo da el encargado.' };
     return c.bien ? c : null;
   }
 
@@ -314,13 +327,18 @@ export function sinDatosDelDueno(texto, negocio = {}, env = {}){
     empresa, mascotas) NO contesta si el mensaje ya trae datos para cotizar —la plaga, los metros, los cuartos—. Antes,
     «cuánto sale un depa de 80 metros en Milenio x cucarachas» recibía «¿qué plaga tienes?»: el cliente siente que no lo
     leyeron. Con datos, contesta la IA (que ve las mismas respuestas aprobadas) y además cotiza. */
-export const traeDatos = (t) => !!aPlaga(t) || /\d+\s*(m2|m²|mts?\b|metros)|\brec[aá]maras?\b|\bcuartos?\b|\bpisos?\b|\bplantas?\b/i.test(String(t || ''));
+export const traeDatos = (t) => !!aPlaga(t) || metrosDe(t) != null || /\d+\s*(m2|m²|mts?\b|metros)|\brec[aá]maras?\b|\bcuartos?\b|\bpisos?\b|\bplantas?\b/i.test(String(t || ''));
 /* …y lo mismo si ya los dio ANTES en la plática: «tengo cucarachas» → «¿y cuánto sale?» no se contesta «¿qué plaga tienes?» */
 const yaDioDatos = (d = {}) => !!(d.plaga || d.m2 || d.recamaras || d.tamano || d.zona);
-export function elReflejo(texto, casos, datos){
+/** `mensajes` (opcional): la plática hasta aquí, para saber si el lugar es una casa */
+export function elReflejo(texto, casos, datos, mensajes){
   const r = reflejo(texto, casos);
   if(!r) return null;
   if(r.caso.conDatosALaIA && (traeDatos(texto) || yaDioDatos(datos))) return null;
+  /* una respuesta hecha para casas («¿tu casa la considerarías chica, mediana o grande?») no se le da a un restaurante, un
+     hotel o un condominio: contesta la IA, que sí sabe de qué lugar habla (prueba por tipo, 23 nov). Se mira la respuesta y
+     no el id del caso: así vale también si el dueño la edita. */
+  if(/\btu casa\b|rec[aá]maras/i.test(r.caso.respuesta) && !esCasa({ datos, mensajes: mensajes || [{ de: 'cliente', texto }] })) return null;
   /* un mensaje que nombra una plaga y sólo se PARECE a un caso, contesta la IA: «tengo termitas en los muebles de madera»
      se parecía a «tengo que mover los muebles» y recibía cómo preparar la casa (prueba en vivo, 17 nov) */
   if(r.confianza < 1 && aPlaga(texto)) return null;
@@ -341,6 +359,32 @@ export function delTexto(mensajes = []){
   return d;
 }
 
+/** Los metros que escribió el cliente: «120 m2», «1,200 metros», «24.100 m²» (miles con punto), «3 mil metros». null si no hay.
+    Antes «24.100 m²» se leía 24.1 m²: una planta de alimentos salía en unos cientos de pesos, con su hoja (prueba por tipo, 23 nov). */
+export function metrosDe(t){
+  const r = String(t || '').match(/(\d[\d,.]*)\s*(mil\s+)?(m2|m²|mts2?|metros(?:\s+cuadrados)?)/i);
+  if(!r) return null;
+  const s = r[1].replace(/[.,]+$/, ''), x = Number(/^[1-9]\d{0,2}(\.\d{3})+$/.test(s) ? s.replace(/\./g, '') : s.replace(/,/g, '')) * (r[2] ? 1000 : 1);
+  return x > 0 ? x : null;
+}
+
+/* Qué es el lugar, por lo que dijo el cliente (por si la IA no lo apuntó). Sirve para dos cosas: a un restaurante, un hotel
+   o una escuela no se le habla de «tu casa» ni de recámaras, y «hotel de 33 cuartos» no se mide como una casa de 33
+   recámaras (prueba por tipo, 23 nov). Si la IA ya dijo que es casa, manda la IA; «varias casas» vale siempre. */
+const ES_INDUSTRIA = /\b(naves?|fabricas?|plantas? (de alimentos|de produccion|de manufactura|procesadora|industrial|empacadora|productora)|parque industrial|industria\w*|maquiladora|empacadora|procesadora)\b/;
+const ES_NEGOCIO = /\b(restaurant(e|es)?|fondas?|taquerias?|cocina economica|cafeterias?|bar|cantina|antro|hotel(es)?|motel(es)?|hostal|hospital(es)?|clinicas?|consultorios?|laboratorios?|farmacias?|escuelas?|colegios?|kinder|guarderias?|primaria|secundaria|preparatoria|universidad|oficinas?|despacho|bodegas?|almacen(es)?|negocios?|empresas?|locales comerciales|local comercial|(mi|el|un|nuestro) local|tiendas?|abarrotes|supermercado|minisuper|panaderias?|tortillerias?|carnicerias?|gimnasio|salon de (eventos|fiestas|belleza)|iglesia|templo|asilo|plaza comercial|centro comercial)\b/;
+/* varias casas o departamentos: un condominio o un fraccionamiento que administra, o «40 casas», «12 departamentos» */
+const VARIAS = /\b([2-9]|\d{2,4}|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|varias|muchas)\s+(casas|departamentos|deptos|depas|viviendas|locales|unidades)\b|\badministr\w*\s+(de\s+)?((un|una|el|la|del)\s+)?(condominio|fraccionamiento|edificio|privada|coto|residencial|unidad habitacional)/;
+export function lugarDe(mensajes = []){
+  const t = mensajes.filter(m => m.de === 'cliente').map(m => normal(m.texto || '')).join(' \n ');
+  return { varias: VARIAS.test(t), tipo: ES_INDUSTRIA.test(t) ? 'industria' : ES_NEGOCIO.test(t) ? 'negocio' : null };
+}
+/** ¿es UNA casa (o depa)? Lo que dijo la IA manda; si no dijo, lo que dijo el cliente; y varias casas nunca son una. */
+export const esCasa = (conv = {}) => { const l = lugarDe(conv.mensajes); return !l.varias && (conv.datos?.tipo || l.tipo || 'casa') === 'casa'; };
+/* lo que le llega al dueño cuando el bot no puede dar el precio (antes, a todo le decía «casa grande fuera de la zona») */
+const motivoCaso = (c) => c.enorme ? 'Lugar muy grande: dale tú el precio.' : c.lejos ? 'Lejos de la ciudad: dale tú el precio.' : c.varias ? 'Son varias casas o departamentos (condominio o fraccionamiento): dale tú el precio.'
+  : 'Casa grande fuera de la zona: decide si se atiende y cuánto cobrar de traslado.';
+
 /** La plaga que dijo (si dijo) y que NO tiene precio automático en sus tarifas: ratas, termitas, chinches… La cotiza él. */
 export function sinPrecioAuto(d = {}, tarifas){
   if(!d?.plaga || !tarifas?.plagas) return null;
@@ -356,6 +400,8 @@ export const noQuiere = (t) => /\b(no quiero( nada)?(?! (que|q|k|a|al|el|la|los|
 
 /* la pregunta del tamaño: primero los metros, y si no, el cuestionario corto (sala y comedor no se preguntan: toda casa tiene) */
 export const PREGUNTA_TAMANO = 'Para darte el precio, ¿sabes cuántos metros mide tu casa? Si no, dime cuántas recámaras y baños tiene, si la considerarías chica, mediana o grande, y en qué colonia está.';
+/* …y la de un negocio, una industria o un condominio: los metros del lugar, sin recámaras */
+export const PREGUNTA_METROS = 'Para darte el precio, ¿cuántos metros cuadrados mide más o menos el lugar, y en qué colonia o zona está?';
 /** el bot ya le preguntó las recámaras o el tamaño (la IA o la pregunta de arriba) */
 export const hizoCuestionario = (t) => /rec[aá]maras|chic[ao],? median[ao] o grande/i.test(String(t || ''));
 

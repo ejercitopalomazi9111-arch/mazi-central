@@ -59,7 +59,10 @@ export function cotizar(p, t){
   if(!(p.km >= 0)) falta.push('zona o distancia');
   if(falta.length) return { bien: false, falta };
 
-  const tipo = (t.tipos || {})[p.tipo || 'casa'] || { factor: 1 };
+  /* La industria se confirma con visita aunque las tarifas no traigan `tipos` (prueba por tipo, 23 nov: las que salen de su
+     Excel no los traen, y a una nave de 3,000 m² le llegaba la hoja sin «se confirma con una visita»). Lo que digan las
+     tarifas manda: `tipos.industria.visita: false` lo apaga. */
+  const tipo = { ...TIPOS_DE_FABRICA[p.tipo || 'casa'], ...(t.tipos || {})[p.tipo || 'casa'] };
   const deExcel = t.formula?.tipo === 'excel' && t.formula.x > 0 && t.formula.entre > 0;
   /* el material: el de esa plaga, por metro. Con su Excel, los litros van a 2 decimales ANTES de calcular: así lo que
      se le enseña al dueño («3.43 L») es exactamente lo que entró a la cuenta, y en su Excel le da lo mismo. */
@@ -130,6 +133,7 @@ export function cotizar(p, t){
   };
 }
 
+const TIPOS_DE_FABRICA = { industria: { visita: true } };
 /* a la decena hacia arriba: $487 → $490 (sólo con las tarifas de antes; con su Excel va al centavo, como su hoja) */
 const redondear = (n) => Math.ceil(n / 10) * 10;
 const r2 = (n) => Math.round(n * 100) / 100;
