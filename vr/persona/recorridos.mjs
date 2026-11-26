@@ -101,6 +101,40 @@ if((CUAL === 'fisica' || CUAL === 'todo') && await vista() === 'fisica'){
   await foto('fisica-toque');
   await mano('apunta', null); await dormir(300);
 }
+/* ── 3. MONARCH: como un alumno con el visor puesto (el operador elige el idioma y toca Listo con su mano) ── */
+if(CUAL === 'monarca' || CUAL === 'todo'){
+  await mano('apunta', null);
+  await p.evaluate(() => { window.__monarca.exposicion(true); __vr.ir('monarca'); window.__elegibles = () => __vr.elegiblesAhora(); });
+  await dormir(1500); await foto('monarca-idioma');
+  await elegir('Español'); sí(await p.evaluate(() => __monarca.estado.fase === 'listo'), 'pellizcando «Español» se elige el idioma');
+  await elegir('Listo'); sí(await p.evaluate(() => __monarca.estado.fase === 'cuenta'), 'pellizcando «Listo» empieza la cuenta');
+  await mano('apunta', null);
+  await p.waitForFunction(() => __monarca.estado.fase === 'tutorial', null, { timeout: 9000 }).catch(() => {});
+  sí(await p.evaluate(() => __monarca.estado.fase === 'tutorial'), 'tras la cuenta empieza el tutorial');
+  /* paso «mirar»: voltear a la izquierda y a la derecha */
+  await dormir(3500);
+  await p.evaluate(async () => { for(const y of [.0, .4, .8, .4, 0, -.4, -.8, -.4, 0]){ __vr.sim.yaw = y; await new Promise((r) => setTimeout(r, 250)); } });
+  await dormir(800);
+  sí(await p.evaluate(() => __monarca.tutorial.paso !== 'mirar'), `voltear a los lados cumple «mirar» (va en «${await p.evaluate(() => __monarca.tutorial.paso)}»)`);
+  await dormir(1500); await foto('tutorial-maestro-levantar');
+  sí(await p.evaluate(() => !!__monarca.tutorial.maestro()?.grupo.visible), 'el maestro de gestos (mano fantasma) enseña qué hacer');
+  /* «manos»: levanto la mano abierta frente a mí */
+  await p.evaluate(() => { __vr.sim.yaw = 0; __vr.sim.pitch = 0; });
+  await mano('abierta', [0.1, -0.15, -1], { palma: 'frente' }); await dormir(1200);
+  sí(await p.evaluate(() => ['apuntar', 'elegir', null].includes(__monarca.tutorial.paso)), `levantar la mano cumple «manos» (va en «${await p.evaluate(() => __monarca.tutorial.paso)}»)`);
+  await dormir(2500); await foto('tutorial-maestro-apuntar');
+  /* «apuntar» y «elegir»: el botón de práctica */
+  const pr = await p.evaluate(() => { const b = __monarca.tutorial.elegibles()[0]; return b ? b.getWorldPosition(new __vr.THREE.Vector3()).toArray() : null; });
+  sí(!!pr, 'sale el botón de práctica');
+  if(pr){ await mirarA(pr); await mano('apunta', pr); await dormir(900);
+    sí(await p.evaluate(() => __monarca.tutorial.paso === 'elegir' || !__monarca.tutorial.activo), 'apuntarle cumple «apuntar»');
+    await dormir(2500); await foto('tutorial-maestro-pellizcar');
+    await pose('pellizco'); await dormir(400); await pose('apunta'); await dormir(600);
+    sí(await p.evaluate(() => !__monarca.tutorial.activo || __monarca.tutorial.hechos.includes('elegir')), `pellizcarlo termina el tutorial (hechos: ${await p.evaluate(() => __monarca.tutorial.hechos.join(', '))})`); }
+  await mano('apunta', null);
+  await p.waitForFunction(() => __monarca.estado.fase === 'escenas', null, { timeout: 20000 }).catch(() => {});
+  sí(await p.evaluate(() => __monarca.estado.fase === 'escenas'), 'y empieza la historia'); await foto('monarca-bienvenida');
+}
 await mano('apunta', null);
 sí(errores.length === 0, 'sin errores' + (errores.length ? ': ' + errores.slice(0, 3).join(' | ') : ''));
 console.log(`\n${ok} bien · ${mal} mal`); if(fallas.length) console.log('Lo que no le salió a la persona:\n  - ' + fallas.join('\n  - '));
