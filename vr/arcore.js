@@ -74,9 +74,11 @@ export function iniciarAR(V){
       let pedidos = 0, llegados = 0, pintados = 0, tirados = 0, ultimo = 0, llegoEn = 0, ocupado = false, ocupadoDesde = 0;
       /* decodificar: con <img> (lo más seguro dentro del WebView del App Clip) y un tope de 1.5 s, para que un cuadro atorado
          no deje a todos los demás tirados para siempre (27 nov: «actualiza una vez la imagen y después así se queda») */
+      /* el JPEG se decodifica con <img> (WebKit lo hace fuera del hilo principal con decode()); medido el 27 nov: 1920×1440 en
+         2-20 ms por cualquiera de los caminos, y con la página ocupada <img> fue el que más cuadros dejó pasar */
+      async function jpeg(dato){ const img = new Image(); img.src = 'data:image/jpeg;base64,' + dato; await img.decode(); return img; }
       function decodificar(dato, f){
-        if(typeof dato === 'string'){ const img = new Image(); img.src = 'data:image/jpeg;base64,' + dato;
-          return Promise.race([img.decode().then(() => img), new Promise((_, no) => setTimeout(() => no(new Error('el JPEG tardó más de 1.5 s')), 1500))]); }
+        if(typeof dato === 'string') return Promise.race([jpeg(dato), new Promise((_, no) => setTimeout(() => no(new Error('el JPEG tardó más de 1.5 s')), 1500))]);
         if(dato instanceof ImageData) return createImageBitmap(dato);
         const bytes = new Uint8Array(dato), w = f.width, h = f.height;   /* bytes crudos: el plano de brillo (Y), en grises */
         if(!w || !h || bytes.length < w * h) return Promise.reject(new Error(`cuadro de cámara raro: ${w}×${h}, ${bytes.length} bytes`));
@@ -92,10 +94,16 @@ export function iniciarAR(V){
           const F = V.fuenteManos; F.canvas = mini; F.videoWidth = mw; F.videoHeight = mh; F.readyState = 4; F.currentTime += 1 / 30; F.activa = true; }
         img.close?.();
         if(!ar.camaraVista){ ar.camaraVista = true; V.usarCamaraAR(texV); hecho.resolver(true); V.hud?.('Cámara lista', 1.6); }
+        /* la foto, donde estaba la cabeza cuando se tomó (vr.js, «LA CÁMARA FIJA AL MUNDO») */
+        if(V.AJ.reproyectar !== false) V.fijarPared?.(V.poseCabezaEn?.(f.t) || null);
+        ar.retraso = Math.round(performance.now() - f.t);
         pintados++;
       }
       function llego(f){
         llegados++; llegoEn = performance.now();
+        /* cuándo se TOMÓ: la hora de ARKit ya pasada al reloj de la página; si Variant todavía no la sabe (da la hora de llegada),
+           se estima 80 ms antes de llegar */
+        const ts = f.ts, ok = typeof ts === 'number' && ts < llegoEn - 2 && llegoEn - ts < 1500; f.t = ok ? ts : llegoEn - 80;
         if(ocupado && performance.now() - ocupadoDesde < 2000){ tirados++; return; }   /* todavía se dibuja el anterior: éste se tira */
         ocupado = true; ocupadoDesde = performance.now();
         pintar(f).catch((e) => V.fallo?.('E-AR-CAM', 'cuadro de cámara del iPhone', e)).finally(() => { ocupado = false; });
@@ -109,13 +117,14 @@ export function iniciarAR(V){
         catch(e){ V.fallo?.('E-AR-CAM', 'pedir la cámara al App Clip', e); } };
       if(directo){
         W.addEventListener('cv_data', (r) => { const b = r.detail?._buffers?.[0]; if(!b) return;
-          llego({ width: b.size?.width, height: b.size?.height, data: b._buffer ?? b.buffer });
+          llego({ width: b.size?.width, height: b.size?.height, data: b._buffer ?? b.buffer, ts: r.detail._timestamp ?? r.detail.timestamp });
           try{ r.detail.release?.(); }catch{}
           setTimeout(pedir, Math.max(0, 33 - (performance.now() - ultimo))); });
         try{ W._startSendingComputerVisionData?.(); }catch{}
+        setTimeout(pedir, 15);   /* dos pedidos en camino: mientras uno viaja del lado del teléfono, el otro ya viene */
       }
       const vigia = setInterval(() => { if(!ar.activo){ clearInterval(vigia); return; } if(performance.now() - Math.max(llegoEn, ultimo) > 500) pedir(); }, 250);
-      ar.camaraVariant = () => ({ directo: !!directo, pedidos, llegados, pintados, tirados });
+      ar.camaraVariant = () => ({ directo: !!directo, pedidos, llegados, pintados, tirados, retraso: ar.retraso });
       pedir();
       /* si en 6 s no llegó ningún cuadro, se dice (sin cámara siguen el AR y el giroscopio) */
       setTimeout(() => { if(!pintados){ hecho.resolver(false); V.hud?.('Sin cámara en el App Clip', 2.4); } }, 6000);
@@ -135,7 +144,7 @@ export function iniciarAR(V){
           if(!ar.camaraVista){ ar.camaraVista = true; V.usarCamaraAR(tex); hecho.resolver(true); }
           if(V.AJ.manos && (++n % 2 === 0)) copiarParaManos(); }catch(e){ V.fallo?.('E-AR', 'cámara de ARCore', e); } }
       }
-      V.cuadroExterno(t);
+      V.cuadroExterno(t); if(ar.enLienzo) V.guardarPoseCabeza?.();
     };
     s.requestAnimationFrame(paso);
     s.addEventListener('end', () => {

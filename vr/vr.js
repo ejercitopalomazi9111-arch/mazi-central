@@ -127,7 +127,7 @@ export const ar = { activo: false, pose: null, frame: null, rt: null, tex: null,
 export const fuenteManos = { activa: false, canvas: null, videoWidth: 0, videoHeight: 0, readyState: 0, currentTime: 0 };
 let camAntesAR = null;
 export function usarCamaraAR(tex){ camAntesAR = camTex; camTex = tex; pared.material.map = tex; pared.material.color.set(0xffffff); pared.material.needsUpdate = true; ponerMixta(AJ.mixta); }
-export function dejarCamaraAR(){ camTex = camAntesAR; pared.material.map = camTex; pared.material.needsUpdate = true; if(!camTex) pared.visible = false; ar.camaraVista = false; }
+export function dejarCamaraAR(){ fijarPared(null); camTex = camAntesAR; pared.material.map = camTex; pared.material.needsUpdate = true; if(!camTex) pared.visible = false; ar.camaraVista = false; }
 export function cuadroExterno(t){ if(!rtI) return; /* la sesión de AR puede dar su primer cuadro antes de arrancar() (sin ojos medidos todavía) */ try{ cuadro(t); }catch(e){ fallo('E-MOTOR', 'cuadro', e); } }
 let camTex = null, camNuevo = true, camPintado = 0, camT = -1, flujo = null, ultra = false, camVIO = false;
 /* lo que abre la cámara de lado. En Android casi nunca se reconoce la gran angular por su nombre y la imagen salía como
@@ -139,6 +139,19 @@ const campoVIO = () => { const k = camVIO && seis?.vio?.intrinsecos?.(640, 480);
 export const campoCamara = () => (ar.activo && ar.camaraVista && ar.campo) || AJ.camCampo || campoVIO() || (ultra ? 104 : Math.max(69, Math.min(110, ojoH())));
 const pared = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0x000000, depthWrite: false, depthTest: false, toneMapped: false }));
 pared.renderOrder = -10; pared.position.z = -20; pared.visible = false; cabeza.add(pared);
+/* LA CÁMARA FIJA AL MUNDO (27 nov, Carlos con el App Clip: «la cámara tarda mucho en cambiar de frame… puede marear muchísimo»):
+   cuando la imagen de la cámara llega tarde (el App Clip la pasa como fotos sueltas), pegada a la cabeza se arrastra contigo al
+   girar: el mundo se mueve con tu cara y eso marea. Fijada al mundo, cada foto se pone donde estaba tu cabeza CUANDO SE TOMÓ:
+   al girar, la foto se queda en su lugar (como lo de verdad) hasta que llega la siguiente. Es la reproyección de los visores */
+const anclaPared = new THREE.Group(); anclaPared.matrixAutoUpdate = false; escena.add(anclaPared);
+const histCabeza = Array.from({ length: 120 }, () => ({ t: -1e9, m: new THREE.Matrix4() })); let histN = 0;
+export function guardarPoseCabeza(){ const h = histCabeza[histN++ % histCabeza.length]; h.t = performance.now(); h.m.copy(cabeza.matrixWorld); }
+export function poseCabezaEn(t){ let mejor = null, d = Infinity; for(const h of histCabeza){ const x = Math.abs(h.t - t); if(x < d){ d = x; mejor = h; } } return mejor && d < 1000 ? mejor.m : null; }
+export function fijarPared(m){
+  if(!m){ if(pared.parent !== cabeza){ cabeza.add(pared); } return; }
+  if(pared.parent !== anclaPared) anclaPared.add(pared);
+  anclaPared.matrix.copy(m); anclaPared.matrixWorldNeedsUpdate = true;
+}
 /* los puntitos del rastreo (nube.js): los que sigue la cámara, sobre la imagen; y el mapa del cuarto que se va dibujando */
 export const nube = crearNube({ THREE, escena, rig, pared });
 /* OBSTÁCULOS Y ZONA SEGURA (limites.js), con ese mismo mapa: puntos rojos en lo que tienes cerca y la pared morada de la

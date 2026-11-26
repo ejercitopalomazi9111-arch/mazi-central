@@ -377,7 +377,8 @@ export function montarMonarca(V){
 
   /* ── cada cuadro ── */
   let rutaK = -1, tSub = 0;
-  m.cuadro = () => {
+  let cuadrosMonarca = 0;
+  m.cuadro = () => { cuadrosMonarca++;
     const t = ahora(), E = ESCENAS[st.escena];
     if(maestroH && st.fase === 'escenas'){ const conMariposas = ['bienvenida', 'mariposa', 'flores', 'final'].includes(E?.id) && !narr.ocupado && t - escenaEn > 8 && (eco.posadas || 0) + (eco.atrapadas || 0) === posadasAlEntrar;
       if(conMariposas){ if(maestroH.activo !== 'palma') maestroH.mostrar('palma'); maestroH.cuadro(); } else if(maestroH.activo) maestroH.ocultar(); }
@@ -457,7 +458,18 @@ export function montarMonarca(V){
   };
   const espejo = crearEspejo(V, { alOrden: (o) => ordenes[o.accion]?.(o),
     estado: () => ({ fase: st.fase, escena: st.escena, idioma: st.idioma, titulo: st.fase === 'escenas' ? L(ESCENAS[st.escena].titulo) : '',
-      escenas: ESCENAS.map((e) => tr(e.titulo, st.idioma)), habla: !!narr.ocupado }) });
+      escenas: ESCENAS.map((e) => tr(e.titulo, st.idioma)), habla: !!narr.ocupado, diag: diagnostico() }) });
+  /* EL DIAGNÓSTICO PARA EL DOCENTE (27 nov, Carlos: en el App Clip «las manos tardan eones», «las manos en Monarch dejan de
+     funcionar»): cuadros por segundo, fotos de cámara por segundo, cuánto tardan en llegar y cuántas manos se ven, una vez por
+     segundo en la pantalla del docente. Así se mide en el teléfono de verdad, no se adivina */
+  let diagT = 0, diagCuadros = 0, diagPint = 0, diagVal = null;
+  function diagnostico(){
+    const t = performance.now(); if(diagVal && t - diagT < 1000) return diagVal;
+    const s = (t - diagT) / 1000 || 1, cv = V.ar?.camaraVariant?.(), pint = cv?.pintados ?? 0, M = window.__manos;
+    diagVal = { fps: Math.round((cuadrosMonarca - diagCuadros) / s), cam: cv ? Math.round((pint - diagPint) / s) : null, retraso: cv?.retraso ?? null,
+      manos: (V.extra.manos || []).length, mp: M ? (M.listo ? M.ms : (M.error ? 'error' : 'cargando')) : 'apagadas', ar: !!V.ar?.activo };
+    diagT = t; diagCuadros = cuadrosMonarca; diagPint = pint; return diagVal;
+  }
   m.espejo = espejo; m.ordenes = ordenes;
 
   /* ── entrar y salir: se apaga el cuarto del motor y la mixta; al salir, todo vuelve ── */
