@@ -14,6 +14,7 @@
 export { Sala } from './sala.js';
 import { traer as traerInkwell } from './inkwell.js';
 import { buscarYouTube } from './youtube.js';
+import { navegar } from './web.js';
 import { esColeccion } from './pinguinos.js';
 export { Coleccion } from './pinguinos.js';
 export { Comunidad } from './comunidad.js';
@@ -117,6 +118,10 @@ export default {
     if(url.pathname === '/api/salud') return conCORS(Response.json({ bien:true }), pedido);
 
     /* MAZI VR: buscar en YouTube desde el visor (youtube.js); sólo regresa la lista, el video lo da el embed oficial */
+    /* MAZI VR: el navegador (web.js): la página limpia, sin scripts, servida desde nuestra dirección. Sin CORS: es para
+       mostrarse en el marco del visor, no para leerse desde otro sitio */
+    if(url.pathname === '/api/sala/vr/web') return await navegar(url, pedido);
+
     if(url.pathname === '/api/sala/vr/buscar'){
       if(pedido.method !== 'GET') return conCORS(Response.json({ bien:false, error:'Sólo GET.' }, { status:405 }), pedido);
       return conCORS(await buscarYouTube(url), pedido);

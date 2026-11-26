@@ -194,7 +194,7 @@ async function montar(){
     ['Juegos', 'gamepad-2', () => V.ir('juegos')],
     ['Cine', 'clapperboard', () => V.ir('cine')],
     ['Leer', 'book-open', () => V.ir('leer')],
-    ['La Sala', 'users', () => V.hud('Pronto'), 'Pronto'],
+    ['Internet', 'globe', () => { V.ir('cine'); window.__cine?.internet(); }],
     ['Mixta', 'scan-eye', () => { if(!V.hayCamara()){ V.hud('Sin cámara'); return; } V.ponerMixta(!V.AJ.mixta); V.hud(V.AJ.mixta ? 'Realidad mixta' : 'Realidad virtual'); }],
     ['Ajustes', 'settings', () => V.ir('ajustes')],
   ];
