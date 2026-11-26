@@ -36,8 +36,13 @@ export function iniciarAR(V){
     const rt = new THREE.WebGLRenderTarget(capa.framebufferWidth, capa.framebufferHeight, { depthBuffer: false });
     render.setRenderTargetFramebuffer(rt, capa.framebuffer);
     ar.rt = rt; ar.sesion = s; ar.activo = true; ar.conCamara = !!binding; ar.origen = null;
-    /* el lienzo de la página no se ve en la sesión (lo de encima, la web y los avisos, sí: dom-overlay) */
-    render.domElement.style.visibility = 'hidden'; document.documentElement.classList.add('en-ar');
+    /* el lienzo de la página no se ve en la sesión (lo de encima, la web y los avisos, sí: dom-overlay)…
+       …SALVO en el iPhone con el App Clip de Variant (27 nov, Carlos: «es solamente una cámara completamente normal que hace un
+       sonido cuando… me quedo viendo a un lugar»): ahí la capa no tiene búfer propio (`framebuffer` es null = el del LIENZO de
+       la página) y lo que se ve encima de la cámara es ese lienzo. Esconderlo dejaba la cámara sola con Mazi VR corriendo atrás */
+    ar.enLienzo = capa.framebuffer == null;
+    if(!ar.enLienzo) render.domElement.style.visibility = 'hidden';
+    document.documentElement.classList.add('en-ar'); if(ar.enLienzo) document.documentElement.classList.add('en-ar-lienzo');
     /* la imagen de la cámara: una textura externa (la de ARCore, válida sólo dentro del cuadro) */
     const tex = new THREE.ExternalTexture(); tex.colorSpace = THREE.SRGBColorSpace; ar.tex = tex;
     /* para las manos: la cámara en chiquito (320 px) a un lienzo, cada 2 cuadros */
@@ -74,7 +79,7 @@ export function iniciarAR(V){
     s.requestAnimationFrame(paso);
     s.addEventListener('end', () => {
       ar.activo = false; ar.pose = null; ar.frame = null; V.fuenteManos.activa = false;
-      render.domElement.style.visibility = ''; document.documentElement.classList.remove('en-ar');
+      render.domElement.style.visibility = ''; document.documentElement.classList.remove('en-ar', 'en-ar-lienzo');
       V.dejarCamaraAR(); V.hud?.('Salió de AR', 2);
       render.setAnimationLoop((tt) => V.cuadroExterno(tt));
       ar.alSalir?.();

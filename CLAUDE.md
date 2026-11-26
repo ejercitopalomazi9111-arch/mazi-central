@@ -671,6 +671,8 @@ dependemos.
    | el script de Variant Launch con `redirect=true` «prepara» el iPhone para AR | en cuanto carga, SE LLEVA la página a launchar.app, y esa página sólo espera la barra de Apple con «Abrir», que no sale si se entró desde el ícono de la pantalla de inicio | Carlos se quedaba en «Tap Open App Clip to launch AR» sin botones. Va con `redirect=false`, el botón «AR» abre `directAppClipUrl` (appclip.apple.com, viene en la respuesta de su `/sdk/init`) y desde el ícono con `window.open` |
    | dentro del App Clip de AR el teléfono gira como en Safari | se queda en VERTICAL: el aviso «Gira el teléfono» tapaba todo y no se podía hacer nada | ahora en vertical con visor la vista se dibuja acostada (`acostado` en `vr/vr.js`: el pase del lente gira 90°, la cabeza y la pose de ARKit se giran, las marcas de las manos y la cámara también) |
 
+   | en una sesión `immersive-ar` el lienzo de la página se esconde porque se pinta en el búfer de la capa | eso es Chrome de Android; el App Clip de Variant (polyfill sobre ARKit) da `capa.framebuffer = null`: el búfer ES el lienzo, y lo que se ve encima de la cámara es la página | en el iPhone sólo se veía la cámara, con Mazi VR corriendo atrás (sonaba al mirar). `ar.enLienzo` en `vr/arcore.js`; la prueba falsa de AR traía `framebuffer = null` y por eso imitaba al iPhone sin que nadie lo notara |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 13. **CERO PARPADEO. Nunca, jamás, de los jamases** (Carlos, 14 nov, por el ajedrez de CARYMO). Tocar algo o que

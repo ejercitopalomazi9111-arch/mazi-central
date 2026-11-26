@@ -857,7 +857,7 @@ function cuadro(t){
 
   /* dos ojos a dos texturas, y el pase del lente a la pantalla */
   rig.updateMatrixWorld(true);
-  const destino = ar.activo ? ar.rt : null;   /* con ARCore, al búfer de la sesión */
+  const destino = ar.activo && !ar.enLienzo ? ar.rt : null;   /* con ARCore, al búfer de la sesión; con el App Clip del iPhone, al lienzo (arcore.js) */
   if(modo.mono){ render.setRenderTarget(destino); render.render(escena, cabeza); for(const f of trasCuadro) f([cabeza], W, H); capaEncima.style.display = 'none'; return; }
   estereo.update(cabeza);
   render.setRenderTarget(rtI); render.render(escena, estereo.cameraL);
