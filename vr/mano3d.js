@@ -178,6 +178,7 @@ export async function crearManos3D(V, padre){
       for(const nom of NOMBRES){ const b = m.huesos[nom], x = ps.huesos[nom]; b.position.copy(x.p); b.quaternion.copy(x.q); b.scale.setScalar(ps.escala); }
       const mat = mixta ? m.mats.si : m.mats.no; if(m.malla && m.malla.material !== mat) m.malla.material = mat;
       m.raiz.visible = true;
+      return ps.huesos['index-finger-tip'].p;   /* la punta del índice DEL MODELO (la que ves): de ahí apunta y con ella se toca */
     },
     esconder(k){ const r = ranuras[k]; if(r){ r.izq.raiz.visible = false; r.der.raiz.visible = false; r.izq.tams = r.der.tams = null; } },   /* otra mano que entra se vuelve a medir */
     ranuras, reposo,

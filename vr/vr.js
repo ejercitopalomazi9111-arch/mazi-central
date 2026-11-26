@@ -22,13 +22,13 @@ import { crearLimites, toparCabeza } from './limites.js';
 import { crearPredictor } from './prediccion.js';
 
 /* ── ajustes: se guardan en el teléfono (sólo comodidad; si se borran, salen los de fábrica) ── */
-const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true, menuTam: 1, menuDist: 1, fondo: 0, seis: false, puntos: true, limites: true, zona: 1, tonos: true, estable: 720, enfriar: 250, arcore: true };
+const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true, menuTam: 1, menuDist: 1, fondo: 0, seis: false, puntos: true, limites: true, zona: 1, tonos: true, estable: 150, enfriar: 250, arcore: true };
 const AJ = { ...FABRICA };
 try{ Object.assign(AJ, JSON.parse(localStorage.getItem('mazivr.ajustes') || '{}')); }catch{}
 /* LO GUARDADO NO TAPA UN VALOR NUEVO DE FÁBRICA (Carlos, 26 nov: «ninguno de los cambios de 200 ms está activo»): los Ajustes
    se guardan ENTEROS, así que un teléfono que ya había guardado algo conservaba el valor viejo para siempre. Cada que cambia
    un valor de fábrica que importa, sube `aj` y aquí se pone el nuevo a quien traía el viejo. */
-if((AJ.aj || 0) < 2){ AJ.estable = FABRICA.estable; AJ.aj = 2; }
+if((AJ.aj || 0) < 3){ AJ.estable = FABRICA.estable; AJ.aj = 3; }   /* 3 (26 nov): «si hago el clic, ya se debería de seleccionar inmediatamente»: 150 ms sólo contra el temblor */
 const guardar = () => { try{ localStorage.setItem('mazivr.ajustes', JSON.stringify(AJ)); }catch{} };
 
 /* ── ERRORES QUE DICEN QUÉ, DÓNDE Y CUÁNDO (Carlos, 19 nov: «que el código de error sea tan claro que sepas exactamente
@@ -614,6 +614,7 @@ export const ahora = () => vista;
 const ray = new THREE.Raycaster(); const centro = new THREE.Vector2(0, 0);
 let foco = null, focoDesde = 0, focoPorFlechas = -1e9, ultimoGiro = new THREE.Quaternion();
 function elegibles(){ const L = vistas[vista]?.elegibles?.() || []; return atras.visible ? [...L, atras] : L; }
+export const elegiblesAhora = () => elegibles();   /* lo que se puede elegir ahora (la persona simulada lo usa) */
 const historialMira = []; let xManoAntes = false, clicPendiente = null;
 let mirarBloqueado = true;                                   // al abrir una vista, lo que ya tenías enfrente no se elige solo
 /* …hasta que la cabeza se mueva. Antes sólo se soltaba al pasar de un botón a OTRO: si llegabas a «Atrás» desde el vacío,
@@ -642,6 +643,16 @@ function cercaDe(o, r, m){
   _r.copy(r).applyMatrix4(_inv.copy(o.matrixWorld).invert()); if(!_r.intersectPlane(_pl, _p)) return false;
   const k = o.getWorldScale(_p.clone()).x || 1, mm = m / k;
   return Math.abs(_p.x) <= g.width / 2 + mm && Math.abs(_p.y) <= g.height / 2 + mm;
+}
+/* ¿la punta del dedo (mundo) está dentro de alguno? Se mide en el espacio de cada uno (su caja, con margen) */
+const pDedo = new THREE.Vector3();
+function tocando(dedo, L){
+  let mejor = null, md = Infinity;
+  for(const o of L){ if(!o.visible || !o.geometry) continue; const g = o.geometry; if(!g.boundingBox) g.computeBoundingBox();
+    pDedo.copy(dedo); o.worldToLocal(pDedo); const b = g.boundingBox, sx = o.getWorldScale(new THREE.Vector3()), mx = .015 / (sx.x || 1), my = .015 / (sx.y || 1), mz = .06 / (sx.z || 1);
+    if(pDedo.x < b.min.x - mx || pDedo.x > b.max.x + mx || pDedo.y < b.min.y - my || pDedo.y > b.max.y + my || pDedo.z < b.min.z - mz || pDedo.z > b.max.z + mz) continue;
+    const dz = Math.abs(pDedo.z - (b.min.z + b.max.z) / 2); if(dz < md){ md = dz; mejor = o; } }
+  return mejor;
 }
 function darFoco(o){ if(foco === o) return; if(o) tono('foco'); if(o && primerFoco === 'pendiente') primerFoco = o; else if(primerFoco !== 'pendiente') primerFoco = null; if(foco || !o) mirarBloqueado = false; foco?.userData.panel?.foco?.(false); foco = o; focoDesde = performance.now(); o?.userData.panel?.foco?.(true); }   /* sin «tiuk» al ver algo (Carlos, 19 nov) */
 function moverFoco(dx, dy){
@@ -703,7 +714,13 @@ function cuadro(t){
   if(mirar.activo && L.length && !modo.mono){
     const flechasRecientes = performance.now() - focoPorFlechas < 4000 && cabeza.quaternion.angleTo(ultimoGiro) < .12;
     /* cada mano con su rayo: cada uno sabe a qué le pega; el foco lo da el principal (o la mira, sin manos) */
-    for(const R of extra.rayos || []){ ray.set(R.origen, R.dir); let hh = ray.intersectObjects(L, false)[0];
+    for(const R of extra.rayos || []){
+      /* TOCAR CON EL ÍNDICE (Carlos, 26 nov: «si el modelo de mi mano está tocando el botón con el dedo índice, debería
+         estar ya brillando… y si hago el clic, ya se debería de seleccionar inmediatamente»): si la punta del dedo está
+         dentro de un botón (a 6 cm de su cara, con 1.5 cm de margen), ése es el que se toca, gane o no el rayo */
+      const tocado = R.dedo ? tocando(R.dedo, L) : null; R.toque = !!tocado;
+      if(tocado){ extra.toqueEn = performance.now(); R.hit = R.dedo.clone(); R.objeto = tocado; if(R.mano){ R.mano.objetoAntes = tocado; R.mano.objetoEn = performance.now(); } continue; }
+      ray.set(R.origen, R.dir); let hh = ray.intersectObjects(L, false)[0];
       /* (el imán de 5° se quitó el 19 nov: Carlos, «estaba mejor antes del imán») */
       R.hit = hh ? hh.point.clone() : null; R.objeto = hh?.object || null;
       if(R.objeto && R.mano){ R.mano.objetoAntes = R.objeto; R.mano.objetoEn = performance.now(); } }
@@ -711,6 +728,7 @@ function cuadro(t){
     if(extra.rayo){ h = extra.rayo.objeto !== undefined ? (extra.rayo.objeto ? { object: extra.rayo.objeto } : null) : (ray.set(extra.rayo.origen, extra.rayo.dir), ray.intersectObjects(L, false)[0]);
       if(h && !extra.rayo.hit && h.point) extra.rayo.hit = h.point.clone(); }
     else { ray.setFromCamera(centro, cabeza); h = ray.intersectObjects(L, false)[0]; }
+    { const tq = (extra.rayos || []).find((R) => R.toque); if(tq){ h = { object: tq.objeto }; } }   /* lo que tocas con el dedo manda */
     /* MARGEN PARA NO SOLTAR (Carlos, 19 nov: «todavía no puedo manejar ajustes con la vista»): los renglones de Ajustes miden
        ~3° y la cabeza con el visor tiembla más que eso; el foco brincaba al renglón de al lado y el reloj de mirar fijo volvía
        a empezar. Si lo que tienes enfocado sigue a menos de `pegajoso` metros del rayo (en su propio plano), se queda.
@@ -726,7 +744,7 @@ function cuadro(t){
   const xMano = !!extra.botones?.[B.X], clicMano = xMano && !xManoAntes; xManoAntes = xMano;
   if(clicMano && !usado.x && extra.rayo){
     /* el clic va a lo que apunta LA MANO QUE PELLIZCA (su rayo ya está congelado en hacia dónde apuntaba antes de juntar los dedos) */
-    const quien = (extra.rayos || []).find((R) => R.pellizco && R.objeto)
+    const quien = (extra.rayos || []).filter((R) => R.pellizco && (R.mano?.fijo?.objeto || R.objeto)).map((R) => ({ objeto: R.mano?.fijo?.objeto && L.includes(R.mano.fijo.objeto) ? R.mano.fijo.objeto : R.objeto, R }))[0]
       || (extra.rayos || []).filter((R) => R.mano?.agarro && ahoraMs - R.mano.agarro < 250).map((R) => ({ objeto: R.mano.objetoAntes }))[0];
     const antes = quien ? null : historialMira.find(([t, o]) => ahoraMs - t <= 260 && ahoraMs - t >= 90 && o);
     /* PELLIZCAR EL AIRE NO ELIGE NADA (Carlos, 19 nov: en MONARCH «se aburren, juegan con sus manos y omiten el video por
@@ -738,8 +756,9 @@ function cuadro(t){
     const est = AJ.estable ?? 200;
     /* cerrar la mano ENTERA sobre algo (agarrar) ya es deliberado: cuenta lo que la mano apuntaba antes de cerrarse.
        El pellizco y lo que se veía un instante antes sí tienen que llevar AJ.estable ms apuntando a eso */
-    const dePellizco = (extra.rayos || []).some((R) => R.pellizco && R.objeto === o), deAgarre = !!quien?.objeto && !dePellizco;
-    const estable = o && (deAgarre || (o === foco ? ahoraMs - focoDesde >= est : historialMira.filter(([t]) => ahoraMs - t <= est + 90 && ahoraMs - t >= 90).every(([, x]) => x === o)));
+    const dePellizco = (extra.rayos || []).some((R) => R.pellizco && (R.objeto === o || R.mano?.fijo?.objeto === o)), deAgarre = !!quien?.objeto && !dePellizco;
+    const porToque = (extra.rayos || []).some((R) => R.toque && R.objeto === o);   /* tocándolo con el dedo: al instante */
+    const estable = o && (deAgarre || porToque || (o === foco ? ahoraMs - focoDesde >= est : historialMira.filter(([t]) => ahoraMs - t <= est + 90 && ahoraMs - t >= 90).every(([, x]) => x === o)));
     if(o && estable && ahoraMs - ultimaEleccion > 350){ darFoco(o); activar(o); }
     /* PELLIZCO TEMPRANO (Carlos, 26 nov: «que se seleccione inmediatamente, pero que sí te dé un pequeño tiempo de espera»):
        no se tira: si sigues apuntando a lo mismo, se elige en cuanto se cumple la espera. Si te mueves a otra cosa, se olvida. */

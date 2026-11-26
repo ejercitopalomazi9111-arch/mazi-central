@@ -203,7 +203,7 @@ export function montarFisica(V){
       else { ajusta(valor, d.tam || H * .5); x.fillStyle = d.color || TEXTO; x.fillText(valor, W / 2, H / 2 + 2); }
       p.listo();
     };
-    p.poner = (d) => { const a = JSON.stringify(d); if(a === p._llave) return; p._llave = a; p.dice = d; p.pintar(); };
+    p.poner = (d) => { const a = JSON.stringify(d); if(a === p._llave) return; p._llave = a; p.dice = d; p.titulo = d.valor; p.pintar(); };   /* titulo: lo que dice (lectores y la persona simulada) */
     p.foco = (f) => { if(p._f === f) return; p._f = f; p.pintar(); };
     p.malla.userData.accion = accion; if(repetir) p.malla.userData.repetir = true;
     botones.push(p.malla); menu.add(p.malla); return p;
@@ -213,7 +213,7 @@ export function montarFisica(V){
   function Renglon(menos, mas, centro, { flechas = ['‹', '›'] } = {}){
     const r = { a: Boton(FLECHA, ALTO_R, menos, { repetir: true }), c: Boton(ANCHO_M - 2 * FLECHA - 2 * HUECO, ALTO_R, centro || mas), b: Boton(FLECHA, ALTO_R, mas, { repetir: true }) };
     r.a.poner({ valor: flechas[0], tam: 64 }); r.b.poner({ valor: flechas[1], tam: 64 });
-    r.poner = (arriba, valor, color) => r.c.poner({ arriba, valor, color });
+    r.poner = (arriba, valor, color) => { r.c.poner({ arriba, valor, color }); r.c.titulo = `${arriba}: ${valor}`; r.a.titulo = `${arriba} ${r.a.dice.valor}`; r.b.titulo = `${arriba} ${r.b.dice.valor}`; };
     r.mostrar = (si) => { [r.a, r.b, r.c].forEach((p) => { p.malla.visible = si; }); };
     r.en = (y) => { enCurva(r.a.malla, -ANCHO_M / 2 + FLECHA / 2, y); enCurva(r.c.malla, 0, y); enCurva(r.b.malla, ANCHO_M / 2 - FLECHA / 2, y); };
     r.alto = ALTO_R; return r;
