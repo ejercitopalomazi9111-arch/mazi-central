@@ -24,7 +24,6 @@ import { crearTutorial } from '../tutorial.js';
 import { crearCiclo } from './ciclo.js';
 import { crearMaceta } from './maceta.js';
 import { crearEspejo } from '../espejo.js';
-import { crearMaestro } from '../maestro.js';
 import { t as tr, UI, ESCENAS, PREGUNTAS, MATERIAS, NOMBRE_MATERIA, FUNCIONA, CONTAMOS, CREDITOS } from './guion.js';
 
 const AQUI = (f) => new URL(f, import.meta.url).href;
@@ -82,11 +81,18 @@ export function montarMonarca(V){
 
   /* ── los botones: píldoras flotantes; al recibir el foco se encienden (y avisan al tutorial) ── */
   let botones = [];
-  function boton(texto, accion, ancho = .5){
-    const p = new V.Panel(ancho, .16, 520); p.titulo = texto;
-    const pintar = (f) => { const { x, cv } = p, w = cv.width, h = cv.height; x.clearRect(0, 0, w, h); V.redondo(x, 4, 4, w - 8, h - 8, (h - 8) / 2);
+  function boton(texto, accion, ancho = .5, { alto = .16 } = {}){
+    const p = new V.Panel(ancho, alto, 520); p.titulo = texto;
+    /* la letra: la más grande que quepa en uno o dos renglones (antes, un texto largo bajaba a 28 px en un renglón) */
+    const pintar = (f) => { const { x, cv } = p, w = cv.width, h = cv.height; x.clearRect(0, 0, w, h); V.redondo(x, 4, 4, w - 8, h - 8, Math.min((h - 8) / 2, 40));
       x.fillStyle = f ? '#3A1A5C' : '#24123A'; x.fill(); x.lineWidth = f ? 7 : 3; x.strokeStyle = f ? MORADO : '#3C2652'; x.stroke();
-      x.fillStyle = '#F4EEF2'; x.font = `800 ${texto.length > 22 ? 28 : 36}px system-ui, -apple-system, sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(texto, w / 2, h / 2 + 2); p.listo(); };
+      x.fillStyle = '#F4EEF2'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      const dos = h > 100; let tam = dos ? 50 : 36, rs = [texto];
+      for(; tam > 22; tam -= 2){ x.font = `800 ${tam}px system-ui, -apple-system, sans-serif`;
+        if(x.measureText(texto).width <= w - 50){ rs = [texto]; break; }
+        if(dos){ const pal = texto.split(' '); let mejor = null; for(let c = 1; c < pal.length; c++){ const a = pal.slice(0, c).join(' '), b = pal.slice(c).join(' '); const m = Math.max(x.measureText(a).width, x.measureText(b).width); if(!mejor || m < mejor[0]) mejor = [m, a, b]; }
+          if(mejor && mejor[0] <= w - 50 && tam * 2.3 <= h - 10){ rs = [mejor[1], mejor[2]]; break; } } }
+      rs.forEach((r, j) => x.fillText(r, w / 2, h / 2 + 2 + (j - (rs.length - 1) / 2) * tam * 1.12)); p.listo(); };
     p.foco = (f) => { if(p._f === f) return; p._f = f; pintar(f); if(f) p.malla.userData.alFoco?.(); }; p._f = false; pintar(false);
     p.malla.userData.accion = () => { V.sonar('toque', .3); ev('boton'); accion(); };
     p.malla.userData.retitular = (t) => { texto = t; p.titulo = t; pintar(p._f); };
@@ -97,8 +103,9 @@ export function montarMonarca(V){
     /* si no caben en 1.9 m (lo que se ve cómodo de frente), se parten en filas de arriba hacia abajo */
     const filas = [[]]; let an = 0;
     for(const b of lista){ const w = b.geometry.parameters.width + .06; if(an + w > 1.96 && filas.at(-1).length){ filas.push([]); an = 0; } filas.at(-1).push(b); an += w; }
+    const paso = Math.max(.16, ...lista.map((b) => b.geometry.parameters.height)) + .05;   /* botones altos: filas más separadas */
     filas.forEach((fila, k) => { const ancho = fila.reduce((s, b) => s + b.geometry.parameters.width + .06, -.06);
-      let x = -ancho / 2; for(const b of fila){ const w = b.geometry.parameters.width; b.position.set(x + w / 2, y - k * .2, -2.1); x += w + .06; m.grupo.add(b); } });
+      let x = -ancho / 2; for(const b of fila){ const w = b.geometry.parameters.width; b.position.set(x + w / 2, y - k * paso, -2.1); x += w + .06; m.grupo.add(b); } });
   }
 
   /* ── la monarca: el ejemplar escaneado, y una colonia de copias si el ecosistema no pudiera armarse ── */
@@ -205,7 +212,14 @@ export function montarMonarca(V){
   /* ── la maceta: sembrar con tus manos (maceta.js) ── */
   const maceta = crearMaceta({ THREE, V, grupo: m.grupo, aqui: AQUI, eco, idioma: () => st.idioma,
     cargar: (u) => new GLTFLoader().loadAsync(u),
-    decir: (id) => { if(st.voz) { if(narr.actual && narr.actual.startsWith('e-')) narr.interrumpir(id); else narr.decir([id]); } },
+    /* LOS TIEMPOS DE LA VOZ (27 nov, Carlos: «se está saturando de audios… mide bien los tiempos»): una corrección («ésa no»,
+       «primero lo primero», «tardas») NUNCA corta lo que se está diciendo y no se repite antes de 8 s; los pasos («ahora la
+       pala») sí entran, pero esperan a que termine la frase que va (no la cortan) salvo que sea una explicación larga */
+    decir: (id) => { if(!st.voz) return; const t = performance.now(), correccion = /^(k-otra|k-primero|r-tarda)/.test(id);
+      if(correccion){ if(narr.ocupado || t - (m.ultimaCorreccion || 0) < 8000) return; m.ultimaCorreccion = t; narr.decir([id]); return; }
+      if(narr.actual && narr.actual.startsWith('e-')) narr.interrumpir(id);
+      else if(narr.ocupado && !/^(k-otra|k-primero|r-tarda)/.test(narr.actual || '')) narr.encolar ? narr.encolar(id) : narr.decir([id]);
+      else narr.decir([id]); },
     /* la planta que crece: la variedad más llena de las flores (la que tiene más vértices) */
     flor: () => { const v = [...variedades].sort((a, b) => b.geometry.attributes.position.count - a.geometry.attributes.position.count)[0]; if(!v) return null; const f = new THREE.Group(); const c = v.clone(); c.scale.setScalar(1.25); f.add(c); return f; },
     alTerminar: () => { if(ESCENAS[st.escena]?.id === 'maceta') ponerBotones([boton(L(UI.siguiente), () => mostrar(st.escena + 1)), vozBoton()], -.2); } });
@@ -253,7 +267,7 @@ export function montarMonarca(V){
   let t0 = 0;
   function limpiarEscena(){ rot.limpiar(); ponerEtapas(null); ciclo.parar(); maceta.parar(); quitarLugares(); flores.visible = false; objetivo = null; mapaP.malla.visible = false; mariposa.visible = colonia.visible = false; eco.guiar(null); }
   /* la mano fantasma también enseña en la historia: «palma arriba» para que se te pose una mariposa (si nadie lo ha hecho) */
-  let maestroH = null; crearMaestro(V, m.grupo).then((x) => { maestroH = x; }).catch(() => {});
+  const maestroH = null;   /* (27 nov, Carlos: «la mano fantasma sólo en Monarch en el tutorial») fuera de las escenas */
   let escenaEn = 0, posadasAlEntrar = 0;
   eco.alAtrapar = () => { if(!tocoEco){ tocoEco = true; reaccionar('r-tocar-mariposa'); } };
   function mostrar(i, pre = []){
@@ -295,25 +309,32 @@ export function montarMonarca(V){
     }
     if(E.id === 'final'){ const extra = ev('final', { puntos: st.puntos, total: PREGUNTAS.length });
       narr.decir([...pre, 'e-final', st.puntos === PREGUNTAS.length ? 'r-perfecto' : st.puntos === 0 ? 'r-cero' : 'r-medio', ...(extra ? [extra] : [])]);
-      ponerBotones([boton(`${st.puntos} ${L(UI.de)} ${PREGUNTAS.length}`, () => reaccionar(ev('puntaje')), .36),
-        boton(L(UI.materias), () => { rot.mensaje(L(UI.materias), MATERIAS.map(([k, d]) => `${L(NOMBRE_MATERIA[k])}: ${L(d)}`), { chico: true }); narr.decir(['r-materias']); }, .4),
-        boton(L(UI.funciona), () => { rot.mensaje(L(UI.funciona), L(FUNCIONA), { chico: true }); narr.decir(['r-como-funciona']); }, .46),
-        boton(L(UI.contamos), () => { rot.mensaje(L(UI.contamos), L(CONTAMOS), { chico: true }); narr.decir(['r-como-contamos']); }, .58),
-        boton(L(UI.creditos), () => { rot.mensaje(L(UI.creditos), L(CREDITOS), { chico: true }); narr.decir([ev('creditos') || 'r-creditos']); }, .4),
-        boton(L(UI.otraVez), () => reiniciar(), .36)]); return; }
+      ponerBotones([boton(`${st.puntos} ${L(UI.de)} ${PREGUNTAS.length}`, () => reaccionar(ev('puntaje')), .58, { alto: .2 }),
+        boton(L(UI.materias), () => { info('materias', MATERIAS.map(([k, d]) => `${L(NOMBRE_MATERIA[k])}: ${L(d)}`), () => narr.decir(['r-materias'])); }, .58, { alto: .2 }),
+        boton(L(UI.funciona), () => { info('funciona', L(FUNCIONA), () => narr.decir(['r-como-funciona'])); }, .58, { alto: .2 }),
+        boton(L(UI.contamos), () => { info('contamos', L(CONTAMOS), () => narr.decir(['r-como-contamos'])); }, .58, { alto: .2 }),
+        boton(L(UI.creditos), () => { info('creditos', L(CREDITOS), () => narr.decir([ev('creditos') || 'r-creditos'])); }, .58, { alto: .2 }),
+        boton(L(UI.otraVez), () => reiniciar(), .58, { alto: .2 })]); return; }
     decir();
     ponerBotones([...(i > 0 ? [boton(L(UI.atras), () => mostrar(i - 1), .36)] : []), boton(L(E.boton || UI.siguiente), siguiente), vozBoton()], E.id === 'ciclo' ? -.76 : -.42);
+  }
+  /* un mensaje largo del final: la primera vez dice la voz; tocar otra vez el mismo botón pasa a la página siguiente */
+  let infoAbierta = null;
+  function info(clave, lineas, voz){
+    const P = rot.paginas, sigue = infoAbierta === clave && P;
+    rot.mensaje(L(UI[clave]), lineas, { chico: true, hasta: -.28, pagina: sigue ? P.pg + 1 : 0 });
+    if(!sigue){ infoAbierta = clave; voz(); }
   }
   function preguntar(pre = []){
     const E = ESCENAS[st.escena], q = PREGUNTAS[st.pregunta], n = st.pregunta + 1;
     if(!q){ mostrar(st.escena + 1); return; }
-    rot.mensaje(`${L(E.titulo)} · ${n} ${L(UI.de)} ${PREGUNTAS.length}`, [L(q[0])]); narr.decir([...pre, 'q-' + n]); ev('pregunta');
+    rot.mensaje(`${L(E.titulo)} · ${n} ${L(UI.de)} ${PREGUNTAS.length}`, [L(q[0])], { hasta: -.14 }); narr.decir([...pre, 'q-' + n]); ev('pregunta');
     ponerBotones(q[1].map((op, k) => boton(L(op), () => {
       const bien = k === q[2]; if(bien) st.puntos++; V.sonar(bien ? 'ding' : 'toque', .35);
       const sinLeer = ev('respuesta');
       rot.mensaje(L(bien ? UI.correcto : UI.casi), [bien ? L(q[1][k]) : `${L(UI.era)}: ${L(q[1][q[2]])}`]); narr.decir([bien ? turno('r-bien', 4) : `q-${n}-mal`, ...(sinLeer ? [sinLeer] : [])]);
       ponerBotones([boton(L(UI.siguiente), () => { st.pregunta++; preguntar(); })]);
-    }, .7)), -.3);
+    }, .92, { alto: .26 })), -.3);   /* (27 nov, Carlos: «las opciones del cuestionario se ven muy chicas») */
   }
   /* «Otra vez»: para la siguiente persona, el operador vuelve a elegir idioma */
   function reiniciar(){ const otra = st.escena ? ev('otraVez') : null; m.ultimoOtraVez = otra; st.puntos = 0; st.pregunta = 0; st.eleccion = null; st.cuerpo = null; st.escena = 0; memo.reiniciar(); pedirIdioma(); }
@@ -342,7 +363,13 @@ export function montarMonarca(V){
     const palabras = pr.texto.split(' '), n = Math.min(palabras.length, Math.ceil(palabras.length * Math.min(1, pr.f * 1.08 + .04)));
     const clave = pr.id + '|' + n; if(clave !== subPuesto){ subPuesto = clave; pintarSub(pr.texto, n); }
     V.cabeza.getWorldPosition(subC); V.cabeza.getWorldQuaternion(subQ);
-    subD.set(0, -.32, -1.6).applyQuaternion(subQ); subP.copy(subC).add(subD);
+    /* QUE NO TAPE LOS BOTONES (27 nov): el subtítulo va abajo de lo que ves; si en esa franja hay botones (las opciones del
+       cuestionario, los del final), se baja a DEBAJO del último (arriba tapaba la pregunta) */
+    let ang = -.2;   /* −0.32 m a 1.6 m */
+    for(const bt of botones){ if(!bt.parent) continue; const l = V.cabeza.worldToLocal(bt.getWorldPosition(subD)); if(l.z >= 0) continue;
+      const hz = Math.atan2(l.x, -l.z), d = -l.z, medio = bt.geometry.parameters.height / 2, abajo = Math.atan2(l.y - medio, d), arribaB = Math.atan2(l.y + medio, d);
+      if(Math.abs(hz) < .6 && arribaB > ang - .1 && abajo < ang + .1) ang = Math.min(ang, abajo - .11); }
+    subD.set(0, Math.tan(ang) * 1.6, -1.6).applyQuaternion(subQ); subP.copy(subC).add(subD);
     const k = subNuevo ? 1 : 1 - Math.exp(-(dt || 1 / 60) * 3.5); subNuevo = false;
     subt.malla.position.lerp(subP, k);
     subt.malla.up.copy(subUp); subt.malla.lookAt(subC);

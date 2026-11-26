@@ -39,6 +39,8 @@ const lado = await p.evaluate(async () => { const V = __vr, m = __monarca.subt.m
   await new Promise((r) => setTimeout(r, 2500)); const fin = m.position.clone();
   const meta = new V.THREE.Vector3(0, -.32, -1.6).applyQuaternion(V.cabeza.getWorldQuaternion(new V.THREE.Quaternion())).add(V.cabeza.getWorldPosition(new V.THREE.Vector3()));
   V.cabeza.rotation.y -= Math.PI / 2;
+  /* (27 nov) sólo de lado: la altura ya no es fija, baja para no tapar los botones */
+  fin.y = meta.y = 0;
   return { brinco: medio.distanceTo(antes), resta: fin.distanceTo(meta) }; });
 sí(lado.brinco < .6 && lado.resta < .15, `al voltear, el subtítulo te alcanza suave (primer cuadro ${lado.brinco.toFixed(2)} m, al final queda a ${lado.resta.toFixed(2)} m de su lugar)`);
 /* una reacción también sale en el subtítulo */

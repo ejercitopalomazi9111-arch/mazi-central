@@ -124,6 +124,72 @@ if(CUAL === 'menus'){
     await mano('apunta', null); await dormir(300);
   }
 }
+/* ── 2a. CLIC FANTASMA (Carlos, 27 nov): cruzar botones con el dedo y pellizcar al llegar NO elige el de en medio; mirar,
+   quitar la vista y volver NO elige al instante ── */
+if(CUAL === 'fantasma'){
+  await p.evaluate(() => { window.__elegibles = () => __vr.elegiblesAhora(); window.__depurar = true; });
+  const tits = await p.evaluate(() => __vr.elegiblesAhora().map((m) => [m.userData.panel?.titulo, m.getWorldPosition(new __vr.THREE.Vector3()).toArray()]).filter(([t]) => t));
+  /* tres botones en fila (misma altura, de izquierda a derecha) */
+  const fila = tits.filter(([, q]) => Math.abs(q[1] - tits[0][1][1]) < .08).sort((a, b) => a[1][0] - b[1][0]);
+  console.log('  fila', fila.map(([t]) => t).join(' · '));
+  for(let vuelta = 0; vuelta < (+process.env.VUELTAS || 4) && fila.length >= 3; vuelta++){
+    if(await vista() !== 'inicio'){ await p.evaluate(() => __vr.ir('inicio')); await dormir(900); }
+    const [A, B, C] = vuelta % 2 ? [fila[2], fila[1], fila[0]] : [fila[0], fila[1], fila[2]];
+    await p.evaluate(() => { __vr.sim.yaw = 0; __vr.sim.pitch = 0; }); await dormir(300);
+    await mano('apunta', A[1], { ms: 400 }); await dormir(700);
+    await mano('apunta', C[1], { ms: 260 + vuelta * 60 }); await pose('pellizco'); await dormir(700); await pose('apunta'); await dormir(300);
+    const v = await vista(); const eligio = await p.evaluate(() => { const u = __vr.eleccionesHechas.ultima || null; __vr.eleccionesHechas.ultima = null; return u; });
+    sí(!String(eligio || '').startsWith(B[0]), `cruzar de «${A[0]}» a «${C[0]}» y pellizcar al llegar no elige «${B[0]}» (eligió «${eligio || 'nada'}», está en «${v}»)`);
+    await mano('apunta', null);
+    for(let i = 0; i < 8 && process.env.DBG; i++){ await dormir(80); console.log('     tras bajar la mano', i, await vista(), await foco(), await p.evaluate(() => [__vr.extra.rayo ? 'rayo' : '-', __vr.eleccionesHechas.ultima, (__vr.extra.manos || []).length, JSON.stringify(__vr.relojMirar())].join(' '))); }
+    await dormir(400);
+  }
+  /* la mirada, sin manos */
+  if(await vista() !== 'inicio'){ await p.evaluate(() => __vr.ir('inicio')); await dormir(900); }
+  await mano('apunta', null);
+  const [T, Q] = fila[0] || tits[0];
+  await mirarA([Q[0] + .9, Q[1] + .5, Q[2]], 200); await dormir(3500);
+  const traza = async (n) => { if(process.env.DBG) console.log('   ', n, await vista(), await foco(), await p.evaluate(() => __vr.extra.rayo ? 'rayo' : '-')); };
+  await traza('antes');
+  await mirarA([Q[0] + .9, Q[1] + .5, Q[2]], 300); await dormir(500); await traza('fuera');
+  await mirarA(Q, 300); await traza('en'); await dormir(1000); await traza('1.0');
+  await mirarA([Q[0] + .9, Q[1] + .5, Q[2]], 200); await dormir(600); await traza('fuera2');
+  await mirarA(Q, 200); await dormir(500);
+  const v2 = await vista(); sí(v2 === 'inicio', `mirar «${T}» 1 s, quitar la vista y volver no lo elige al instante (está en «${v2}»)`);
+  await dormir(2600); const v3 = await vista(); sí(v3 !== 'inicio', `y mirarlo fijo 2.5 s seguidos sí lo elige (está en «${v3}»)`);
+}
+/* ── 2b. ATRÁS: pellizcando el botón en Objetos (donde pellizcar también agarra) y con la palma mirando abajo ── */
+if(CUAL === 'atras'){
+  await p.evaluate(() => { window.__elegibles = () => __vr.elegiblesAhora(); });
+  await p.evaluate(() => __vr.ir('objetos')); await dormir(2500);
+  await p.evaluate(() => { __vr.sim.yaw = 0; __vr.sim.pitch = 0; }); await dormir(300);
+  await elegir('Atrás'); const v1 = await vista(); await foto('atras-objetos');
+  sí(v1 !== 'objetos', `pellizcar «Atrás» en Objetos regresa (está en «${v1}»)`);
+  sí(!(await p.evaluate(() => __objetos?.estado?.().sostenidos?.length || 0)), 'y no agarró nada al pellizcar Atrás');
+  /* la palma: abierta, quieta, enfrente y abajo */
+  const palmaAbajo = async (pitch, ms) => { await p.evaluate((pi) => { __vr.sim.yaw = 0; __vr.sim.pitch = pi; }, pitch); await dormir(400);
+    const pt = await p.evaluate(() => { const V = __vr, T = V.THREE; return V.cabeza.localToWorld(new T.Vector3(0, -.05, -1)).toArray(); });
+    await mano('abierta', pt, { brazo: .38, palma: 'arriba' }); await dormir(ms); const v = await vista(); await mano('apunta', null); await dormir(400); return v; };
+  for(const [donde, ir] of [['juegos', 'juegos'], ['objetos', 'objetos'], ['fisica', 'fisica']]){
+    await p.evaluate((x) => __vr.ir(x), ir); await dormir(2500);
+    const quieta = await palmaAbajo(0, 3000); sí(quieta === donde, `palma abierta mirando AL FRENTE no saca de ${donde} (está en «${quieta}»)`);
+    await p.evaluate((x) => __vr.ir(x), ir); await dormir(1200);
+    const sale = await palmaAbajo(-.8, 3500); await foto('palma-' + donde); sí(sale !== donde, `palma abierta mirando ABAJO, quieta, saca de ${donde} (está en «${sale}»)`);
+  }
+  await p.evaluate(() => __vr.ir('monarca')); await dormir(4000);
+  const mon = await palmaAbajo(-.8, 3500); sí(mon === 'monarca', `en MONARCH la palma no saca (está en «${mon}»)`);
+}
+/* ── 2c. ESCRIBIR con el teclado del visor pellizcando cada tecla ── */
+if(CUAL === 'teclado'){
+  await p.evaluate(() => { window.__elegibles = () => __vr.elegiblesAhora(); });
+  await elegir('Internet'); sí(await vista() === 'teclado', `«Internet» abre el teclado (está en «${await vista()}»)`);
+  const palabra = 'hola';
+  for(const letra of palabra){ const t = await p.evaluate((l) => __teclado.elegibles().map((m) => m.userData.panel?.titulo).find((x) => x === l || x === l.toUpperCase()), letra); await elegir(t || letra); await mano('apunta', null); await dormir(250); }
+  const escrito = await p.evaluate(() => window.__teclado?.texto?.() ?? '');
+  console.log('  escrito:', JSON.stringify(escrito));
+  sí(String(escrito).toLowerCase().includes(palabra), `escribió «${palabra}» pellizcando tecla por tecla (quedó «${escrito}»)`);
+  await foto('teclado');
+}
 /* ── 3. MONARCH: como un alumno con el visor puesto (el operador elige el idioma y toca Listo con su mano) ── */
 if(CUAL === 'monarca' || CUAL === 'todo'){
   await mano('apunta', null);

@@ -615,7 +615,7 @@ const ray = new THREE.Raycaster(); const centro = new THREE.Vector2(0, 0);
 let foco = null, focoDesde = 0, focoPorFlechas = -1e9, ultimoGiro = new THREE.Quaternion();
 function elegibles(){ const L = vistas[vista]?.elegibles?.() || []; return atras.visible ? [...L, atras] : L; }
 export const elegiblesAhora = () => elegibles();   /* lo que se puede elegir ahora (la persona simulada lo usa) */
-const historialMira = []; let xManoAntes = false, clicPendiente = null;
+const historialMira = []; let xManoAntes = false, clicPendiente = null, fuenteFoco = 'mira', manosVistasEn = -1e9;
 let mirarBloqueado = true;                                   // al abrir una vista, lo que ya tenías enfrente no se elige solo
 /* …hasta que la cabeza se mueva. Antes sólo se soltaba al pasar de un botón a OTRO: si llegabas a «Atrás» desde el vacío,
    seguía bloqueado y sin control no había salida (Carlos, 18 nov) */
@@ -654,6 +654,11 @@ function tocando(dedo, L){
     const dz = Math.abs(pDedo.z - (b.min.z + b.max.z) / 2); if(dz < md){ md = dz; mejor = o; } }
   return mejor;
 }
+/* CUÁNTO TIEMPO SEGUIDO lleva cada mano apuntándole a lo mismo (27 nov, Carlos: «cuando pasas de un botón a otro, con el dedo
+   se pulsa el segundo botón por el que pasaste… eso nunca, jamás debe pasar por accidente»). El pellizco elegía «lo que
+   brilló hace 260 ms o lo que se vio en los últimos 700 ms»: al cruzar de un botón a otro, eso era el de en medio. Ahora
+   sólo cuenta algo a lo que la mano le estuvo apuntando de corrido (manos.js, al pellizcar) */
+function seguirObjeto(m, o){ if(!m) return; const t = performance.now(); if(m.objAhora !== o){ if(m.objAhora) m.previo = { o: m.objAhora, desde: m.objDesde, hasta: t }; m.objAhora = o || null; m.objDesde = t; } }
 function darFoco(o){ if(foco === o) return; if(o) tono('foco'); if(o && primerFoco === 'pendiente') primerFoco = o; else if(primerFoco !== 'pendiente') primerFoco = null; if(foco || !o) mirarBloqueado = false; foco?.userData.panel?.foco?.(false); foco = o; focoDesde = performance.now(); o?.userData.panel?.foco?.(true); }   /* sin «tiuk» al ver algo (Carlos, 19 nov) */
 function moverFoco(dx, dy){
   const L = elegibles(); if(!L.length) return;
@@ -673,7 +678,7 @@ function moverFoco(dx, dy){
 let ultimaEleccion = -1e9, pulso = null;
 export const eleccionesHechas = { n: 0 };   /* cuántas veces ha elegido algo la persona (la ayuda de la mano fantasma se calla después) */
 function activar(o){ if(!o) return;
-  const ahoraA = performance.now(); if(ahoraA - ultimaEleccion < (AJ.enfriar ?? 250)) return; ultimaEleccion = ahoraA; eleccionesHechas.n++;
+  const ahoraA = performance.now(); if(ahoraA - ultimaEleccion < (AJ.enfriar ?? 250)) return; ultimaEleccion = ahoraA; eleccionesHechas.n++; eleccionesHechas.ultima = o.userData.panel?.titulo || null; if(window.__depurar) eleccionesHechas.pila = new Error().stack;
   tono('elegir'); pulso = { o, t: ahoraA, esc: o.scale.clone() };
   /* lo que se repite mirándolo (las flechas de Ajustes): sin bloqueo, la siguiente vez a los 0.9 s */
   if(o.userData.repetir){ focoDesde = performance.now() - MIRAR_MS + 900; o.userData.accion?.(); return; }
@@ -720,10 +725,11 @@ function cuadro(t){
          estar ya brillando… y si hago el clic, ya se debería de seleccionar inmediatamente»): si la punta del dedo está
          dentro de un botón (a 6 cm de su cara, con 1.5 cm de margen), ése es el que se toca, gane o no el rayo */
       const tocado = R.dedo ? tocando(R.dedo, L) : null; R.toque = !!tocado;
-      if(tocado){ extra.toqueEn = performance.now(); R.hit = R.dedo.clone(); R.objeto = tocado; if(R.mano){ R.mano.objetoAntes = tocado; R.mano.objetoEn = performance.now(); } continue; }
+      if(tocado){ extra.toqueEn = performance.now(); R.hit = R.dedo.clone(); R.objeto = tocado; if(R.mano){ R.mano.objetoAntes = tocado; R.mano.objetoEn = performance.now(); } seguirObjeto(R.mano, tocado); continue; }
       ray.set(R.origen, R.dir); let hh = ray.intersectObjects(L, false)[0];
       /* (el imán de 5° se quitó el 19 nov: Carlos, «estaba mejor antes del imán») */
       R.hit = hh ? hh.point.clone() : null; R.objeto = hh?.object || null;
+      seguirObjeto(R.mano, R.objeto);
       if(R.objeto && R.mano){ R.mano.objetoAntes = R.objeto; R.mano.objetoEn = performance.now(); const V2 = R.mano.vistos || (R.mano.vistos = []); V2.push([R.objeto, performance.now()]); if(V2.length > 30) V2.shift(); } }
     let h;
     if(extra.rayo){ h = extra.rayo.objeto !== undefined ? (extra.rayo.objeto ? { object: extra.rayo.objeto } : null) : (ray.set(extra.rayo.origen, extra.rayo.dir), ray.intersectObjects(L, false)[0]);
@@ -739,6 +745,16 @@ function cuadro(t){
     if(h && (!flechasRecientes || extra.rayo)){ viendo = h.object; darFoco(viendo); }
   }
   if(!extra.rayo) extra.sobreBoton = false;
+  /* MIRAR, QUITAR LA VISTA Y VOLVER NO ELIGE (27 nov, Carlos: «si viste un botón, dejas de verlo y lo vuelves a ver, se
+     selecciona inmediatamente»): el foco se queda en el botón aunque ya no lo veas, y el reloj de mirar fijo seguía contando
+     desde la primera vez. Ahora el reloj vuelve a cero en cuanto no lo estás viendo */
+  if(viendo !== foco) focoDesde = performance.now();
+  /* …y también al cambiar de quién apunta: bajar la mano deja la mira en el mismo botón que apuntaba el dedo, y el reloj ya
+     llevaba segundos (la persona simulada lo cazó: quitó la mano y se metió sola a «Leer») */
+  { const f = extra.rayo ? 'mano' : 'mira'; if(f !== fuenteFoco){ fuenteFoco = f; focoDesde = performance.now(); } if(extra.rayo) manosVistasEn = performance.now(); }
+  /* y si la cámara te pierde la mano un momento (lo normal al pellizcar o al bajarla), mirar fijo no elige: a los 2 s de no
+     verla, lo que quedó enfrente se metía solo. Mirar fijo es para quien NO está usando las manos: 3 s sin manos */
+  if(!extra.rayo && performance.now() - manosVistasEn < 3000) focoDesde = performance.now();
   /* el clic con pellizco elige a lo que apuntabas UN INSTANTE ANTES: al juntar los dedos la mano se mueve y el rayo se
      brincaba de la tarjeta (Carlos, 18 nov: «haz que pellizcar sea un click») */
   const ahoraMs = performance.now(); historialMira.push([ahoraMs, viendo]); while(historialMira.length > 30) historialMira.shift();
@@ -760,11 +776,19 @@ function cuadro(t){
     const dePellizco = (extra.rayos || []).some((R) => R.pellizco && (R.objeto === o || R.mano?.fijo?.objeto === o)), deAgarre = !!quien?.objeto && !dePellizco;
     const porToque = (extra.rayos || []).some((R) => R.toque && R.objeto === o);   /* tocándolo con el dedo: al instante */
     const deFijo = (extra.rayos || []).some((R) => R.pellizco && R.mano?.fijo?.objeto === o);   /* lo que brillaba al cerrar los dedos: al instante */
-    const estable = o && (deAgarre || porToque || deFijo || (o === foco ? ahoraMs - focoDesde >= est : historialMira.filter(([t]) => ahoraMs - t <= est + 90 && ahoraMs - t >= 90).every(([, x]) => x === o)));
+    /* ESPERA PROPIA (27 nov, Carlos en la maceta: «con sólo rozar otro elemento lo toma como si quisiera usarlo… activa la
+       espera antes de pulsar»): un objeto con userData.espera (ms) no se elige al instante por tocarlo ni por pellizcarlo de
+       pasada: hay que llevar ese tiempo apuntándole; si no, el clic queda pendiente y sale en cuanto se cumple */
+    const espera = o?.userData?.espera || 0, yaEspero = !espera || (o === foco && ahoraMs - focoDesde >= espera);
+    /* con las manos: lo que elegiste al juntar los dedos (deFijo, ya revisado en manos.js) o algo a lo que la mano le lleva
+       apuntando 250 ms de corrido. Rozarlo de pasada (con el dedo o con el rayo) ya no basta */
+    const continuo = (extra.rayos || []).some((R) => R.mano ? R.mano.objAhora === o && ahoraMs - R.mano.objDesde >= 250 : R.objeto === o && o === foco && ahoraMs - focoDesde >= 250);
+    const conManos = (extra.rayos || []).length > 0;
+    const estable = o && yaEspero && conManos ? (deFijo || continuo) : o && yaEspero && (deAgarre || porToque || deFijo || (o === foco ? ahoraMs - focoDesde >= est : historialMira.filter(([t]) => ahoraMs - t <= est + 90 && ahoraMs - t >= 90).every(([, x]) => x === o)));
     if(o && estable && ahoraMs - ultimaEleccion > 350){ darFoco(o); activar(o); }
     /* PELLIZCO TEMPRANO (Carlos, 26 nov: «que se seleccione inmediatamente, pero que sí te dé un pequeño tiempo de espera»):
        no se tira: si sigues apuntando a lo mismo, se elige en cuanto se cumple la espera. Si te mueves a otra cosa, se olvida. */
-    else if(o){ extra.clicTemprano = ahoraMs; clicPendiente = { o, desde: ahoraMs }; }
+    else if(o && ahoraMs - ultimaEleccion > 350){ extra.clicTemprano = ahoraMs; clicPendiente = { o, desde: ahoraMs }; }   /* un pellizco justo después de elegir es el mismo clic repetido: no se guarda para después (salía doble) */
     usado.x = true; }
   /* MIRAR O APUNTAR FIJO 1.6 s ELIGE, SIEMPRE (Carlos, 18 nov: «si apunto hacia un elemento unos segundos, que se clique, además
      del pellizcar; y que se pueda seguir pulsando sólo quedándote viendo»): antes se apagaba con el control conectado o con
@@ -772,8 +796,9 @@ function cuadro(t){
   /* con L2 apretado estás moviendo o agrandando algo: mirar fijo no elige (si no, al acomodar el menú se metía a lo que veías) */
   if(control.apretado(B.L2)) focoDesde = performance.now();
   if(clicPendiente){ const ahoraP = performance.now();
-    if(viendo !== clicPendiente.o || foco !== clicPendiente.o || ahoraP - clicPendiente.desde > 1500) clicPendiente = null;   /* hay que SEGUIR apuntándole */
-    else if(ahoraP - focoDesde >= (AJ.estable ?? 720) && ahoraP - ultimaEleccion > 350){ const o = clicPendiente.o; clicPendiente = null; activar(o); } }
+    const esp = Math.max(AJ.estable ?? 720, 250, clicPendiente.o.userData?.espera || 0);   /* 250: lo mismo que pide el pellizco (de corrido) */
+    if(viendo !== clicPendiente.o || foco !== clicPendiente.o || ahoraP - clicPendiente.desde > Math.max(1500, esp + 900)) clicPendiente = null;   /* hay que SEGUIR apuntándole */
+    else if(ahoraP - focoDesde >= esp && ahoraP - ultimaEleccion > 350){ const o = clicPendiente.o; clicPendiente = null; activar(o); } }
   if(!viendo && primerFoco && primerFoco !== 'pendiente') primerFoco = null;   /* le quitaste la vista: ya cuenta */
   if(primerFoco && !primerEstricto && cabeza.quaternion.angleTo(giroAlBloquear) > .14) primerFoco = null;   /* giraste la cabeza: ya cuenta */
   /* CON LAS MANOS NO SE ELIGE SOLO (Carlos, 26 nov: «el asunto es que no se presionen automáticamente»): apuntar con la
@@ -875,8 +900,13 @@ export function alLente(u, v, der){
   for(let i = 0; i < 8; i++){ const r2 = ex * ex + ey * ey, f = (1 + k1 * r2 + k2 * r2 * r2) / esc; ex = tx / f; ey = ty / f; }
   return [cx + ex / asp, .5 + ey];
 }
+export const relojMirar = () => [Math.round(performance.now() - focoDesde), primerFoco?.userData?.panel?.titulo || String(primerFoco), mirarBloqueado, fijoAhora];
 export const focoActual = () => foco?.userData.panel?.titulo || null;
 export const focoObjeto = () => foco || null;
 /* lo que brillaba hace `ms` (al juntar los dedos la punta del índice baja y el rayo se resbala al de abajo ANTES de que se note el pellizco) */
+/* ¿brilló algún botón en los últimos `ms`? (al pellizcar la punta baja y el rayo se sale del botón ANTES de que se note el
+   pellizco; en Objetos y el lector eso hacía que el pellizco a Atrás se leyera como «agarrar» y no como clic) */
+export const brilloHace = (ms) => { const t = performance.now() - ms; return historialMira.some(([tt, o]) => o && tt >= t); };
+export const callarHud = () => { avisoHasta = 0; };
 export const focoHace = (ms) => { const t = performance.now() - ms; let r = null; for(const [tt, o] of historialMira){ if(tt <= t && o) r = o; } return r; };   /* lo que está brillando ahora (el pellizco elige ESO: es lo que ve la persona) */
 export const enfrente = (dist, alto = 0) => { const p = new THREE.Vector3(0, alto, -dist); return p; };

@@ -12,7 +12,6 @@
    crearMaceta({ THREE, V, grupo, cargar(gltf), aqui, decir(id), alTerminar, eco, flor() }) */
 export const PASOS = ['tierra', 'hoyo', 'semilla', 'cubrir', 'regar', 'crece', 'lista'];
 const HERRAMIENTA = { tierra: 'bolsa', hoyo: 'pala', semilla: 'semillero', cubrir: 'pala', regar: 'regadera' };
-import { crearMaestro } from '../maestro.js';
 export function crearMaceta({ THREE, V, grupo, cargar, aqui, decir = () => {}, alTerminar = () => {}, eco, flor = () => null, idioma = () => 'es' }){
   const M = { paso: null, mano: null, activo: false, listo: false, errores: 0 };
   const capa = new THREE.Group(); capa.visible = false; grupo.add(capa);
@@ -34,7 +33,7 @@ export function crearMaceta({ THREE, V, grupo, cargar, aqui, decir = () => {}, a
     const esc = 1.05 / Math.max(t.x, t.z); m.scale.setScalar(esc); m.position.set(-c.x * esc, MESA - b.max.y * esc, -.56 - c.z * esc);
     m.traverse((o) => { if(o.isMesh){ const v = o.material; o.material = new THREE.MeshBasicMaterial({ map: v.map || null, color: v.map ? 0xffffff : v.color }); } }); capa.add(m); }).catch(() => {});
   /* la mano fantasma enseña a qué pellizcar si te quedas atorado */
-  let maestro = null; crearMaestro(V, capa).then((m) => { maestro = m; }).catch(() => {});
+  const maestro = null;   /* (27 nov, Carlos) la mano fantasma sólo en el tutorial; aquí guía la mariposa */
   /* cada cosa: el modelo + una caja invisible que es la que se elige (el motor sólo elige mallas, no grupos) */
   M.armado = Promise.all(Object.entries(ARCHIVO).map(async ([k, f]) => {
     const g = await cargar(aqui(`medios/maceta/${f}.glb`)).catch(() => null);
@@ -134,7 +133,9 @@ export function crearMaceta({ THREE, V, grupo, cargar, aqui, decir = () => {}, a
       capa.worldToLocal(tmp);
       const r = cosas[M.mano].raiz;
       if(anim?.tipo === 'tomar'){ const k = ease(Math.min(1, (t - anim.t0) / .6)); r.position.lerpVectors(anim.desde, tmp, k); if(k >= 1) anim = null; }
-      else r.position.lerp(tmp, .35);
+      else { /* ESTABLE (27 nov): la palma que da la cámara tiembla un par de cm; lo que llevas no se mueve por menos de 1.2 cm y
+                el resto lo sigue suave */
+        const d = r.position.distanceTo(tmp); if(d > .012) r.position.lerp(tmp, d > .08 ? .3 : .14); }
       r.rotation.set(0, Math.sin(t * 1.3) * .08, 0);
       /* llevarla ENCIMA de la maceta la usa (como en la vida): a menos de 16 cm de la boca, por arriba */
       if(!anim){ const boca = bocaMaceta(); if(Math.hypot(r.position.x - boca.x, r.position.z - boca.z) < .16 && r.position.y > boca.y - .05) usar(M.mano); }
@@ -170,7 +171,9 @@ export function crearMaceta({ THREE, V, grupo, cargar, aqui, decir = () => {}, a
       a.setXYZ(i, boca.x - .06 + Math.sin(i * 7.1) * .02, boca.y + .14 - f * .16, boca.z + Math.cos(i * 3.3) * .02); }
     a.needsUpdate = true;
   }
-  M.elegibles = () => (M.activo && !M.listo ? Object.entries(cosas).filter(([k, c]) => c.raiz.visible && k !== M.mano).map(([, c]) => c.hit) : []);
+  /* (27 nov, Carlos: «con sólo rozar otro elemento lo toma… y corta lo que estaba diciendo») con algo en la mano sólo se
+     puede elegir la maceta (las demás herramientas ya no estorban al pasar), y cada una pide 450 ms apuntándole (espera) */
+  M.elegibles = () => (M.activo && !M.listo ? Object.entries(cosas).filter(([k, c]) => c.raiz.visible && k !== M.mano && (!M.mano || k === 'maceta')).map(([, c]) => { c.hit.userData.espera = 450; return c.hit; }) : []);
   M.capa = capa; M.cosas = cosas;
   return M;
 }

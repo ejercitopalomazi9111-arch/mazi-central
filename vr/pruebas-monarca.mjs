@@ -79,7 +79,9 @@ sí(fl.flores === 5 && fl.lugares === 0, `crecen las cinco flores y ya no quedan
 await tocar('Siguiente'); sí(await escena() === 'maceta', '«¡Listo!» → Tu maceta');
 /* LA MACETA (maceta.js): tierra → hoyo → semilla → cubrir → regar → crece; con la herramienta equivocada, el narrador lo dice */
 await p.evaluate(() => __monarca.maceta.armado); await p.waitForTimeout(300);
-await tocar('Pala'); sí(await p.evaluate(() => __monarca.maceta.paso === 'tierra' && !__monarca.maceta.mano) && (await dichos()).includes('k-primero'), 'la maceta: la herramienta que no va no se toma («primero lo primero»)');
+const hablaba = await p.evaluate(() => __monarca.narrador.actual);
+await tocar('Pala'); const habla = await p.evaluate(() => __monarca.narrador.actual);
+sí(await p.evaluate(() => __monarca.maceta.paso === 'tierra' && !__monarca.maceta.mano) && (!hablaba || habla === hablaba), `la maceta: la herramienta que no va no se toma, y el «ésa no» no corta lo que se está diciendo (${hablaba} → ${habla})`);
 for(const [h, w] of [['Tierra', 900], ['Maceta', 3600], ['Pala', 900], ['Maceta', 3600], ['Semillas', 900], ['Maceta', 3600], ['Pala', 900], ['Maceta', 3600], ['Regadera', 900], ['Maceta', 3600]]){ await tocar(h); await p.waitForTimeout(w); }
 await p.waitForFunction(() => __monarca.maceta.listo, null, { timeout: 12000 }).catch(() => {});
 sí(await p.evaluate(() => __monarca.maceta.listo && ['k-hoyo', 'k-semilla', 'k-cubrir', 'k-regar', 'k-crece', 'k-lista'].every((x) => __monarca.narrador.pedidos.includes(x))), 'la maceta completa: tierra, hoyo, semilla, cubrir, regar y la planta crece'); await cap('2d-maceta');

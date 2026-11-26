@@ -59,7 +59,7 @@ const pellizco = (apuntar) => p.evaluate(async ([t]) => { const V = __vr, T = V.
   let botones = [];
   const poner = () => { V.extra.rayo = R; V.extra.rayos = [R]; V.extra.botones = botones; }; V.alCuadro.push(poner);
   const cuadro = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-  await cuadro(); await cuadro();
+  await cuadro(); await cuadro(); await new Promise((r) => setTimeout(r, 350));   /* 27 nov: el pellizco elige lo que llevas apuntando de corrido 250 ms */
   R.pellizco = true; botones = Object.assign([], { [V.B.X]: true }); await cuadro(); await cuadro();
   R.pellizco = false; botones = []; await cuadro();
   V.alCuadro.splice(V.alCuadro.indexOf(poner), 1); V.extra.rayo = null; V.extra.rayos = []; V.extra.botones = []; await cuadro(); }, [apuntar]);

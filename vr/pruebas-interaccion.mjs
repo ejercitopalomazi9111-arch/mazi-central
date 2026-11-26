@@ -36,7 +36,7 @@ const pellizcar = (titulo, espera, veces = 1, entre = 0, despues = 0) => p.evalu
   if(despues) await dormir(despues);
   V.alCuadro.splice(V.alCuadro.indexOf(poner), 1); V.extra.rayo = null; V.extra.rayos = []; V.extra.botones = []; await cuadro(); }, [titulo, espera, veces, entre, despues]);
 const mano3d = () => p.evaluate(() => __vr.AJ.manoModelo !== false);
-let a = await mano3d(); await pellizcar('Mano 3D', 0);
+let a = await mano3d(); await pellizcar('Mano 3D', 0, 1, 0, 450);   /* 27 nov: cuenta al llevar 250 ms apuntándole (antes 150): pellizcar al llegar y quitarse ya no elige */
 sí(await mano3d() !== a, 'apuntar y pellizcar elige casi al instante (Carlos, 26 nov: «si hago el clic, ya se debería de seleccionar inmediatamente»; 150 ms sólo contra el temblor)');
 await p.waitForTimeout(500);
 a = await mano3d(); await pellizcar('Mano 3D', 0, 1, 0, 1100);
