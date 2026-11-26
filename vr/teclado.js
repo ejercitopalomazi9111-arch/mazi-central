@@ -80,6 +80,7 @@ export function montarTeclado(V){
   });
   v.escribir = (s) => { for(const ch of s){ if(ch === ' ') tecla('Espacio'); else if(/[a-zñ]/i.test(ch) && ch.length === 1){ const m0 = mayus; mayus = ch !== ch.toLowerCase(); tecla(ch.toUpperCase()); mayus = m0; } else { texto += ch; pintarCaja(); } } };
   v.elegibles = () => teclas.filter((m) => m.visible);
+  v.texto = () => texto;   /* lo escrito (la persona simulada lo revisa) */
   v.capa = () => capa;
   v.control = (c) => {
     if(c.oprimido[B.R1]) tecla('Espacio');

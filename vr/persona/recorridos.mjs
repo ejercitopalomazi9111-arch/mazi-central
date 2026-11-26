@@ -124,6 +124,17 @@ if(CUAL === 'menus'){
     await mano('apunta', null); await dormir(300);
   }
 }
+/* ── 2c. ESCRIBIR con el teclado del visor pellizcando cada tecla ── */
+if(CUAL === 'teclado'){
+  await p.evaluate(() => { window.__elegibles = () => __vr.elegiblesAhora(); });
+  await elegir('Internet'); sí(await vista() === 'teclado', `«Internet» abre el teclado (está en «${await vista()}»)`);
+  const palabra = 'hola';
+  for(const letra of palabra){ const t = await p.evaluate((l) => __teclado.elegibles().map((m) => m.userData.panel?.titulo).find((x) => x === l || x === l.toUpperCase()), letra); await elegir(t || letra); await mano('apunta', null); await dormir(250); }
+  const escrito = await p.evaluate(() => window.__teclado?.texto?.() ?? '');
+  console.log('  escrito:', JSON.stringify(escrito));
+  sí(String(escrito).toLowerCase().includes(palabra), `escribió «${palabra}» pellizcando tecla por tecla (quedó «${escrito}»)`);
+  await foto('teclado');
+}
 /* ── 3. MONARCH: como un alumno con el visor puesto (el operador elige el idioma y toca Listo con su mano) ── */
 if(CUAL === 'monarca' || CUAL === 'todo'){
   await mano('apunta', null);
