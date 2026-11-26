@@ -47,8 +47,9 @@ export function montarFisica(V){
   const prm = () => ({ ...F.p, g: LUGARES[F.lugar].g, rho: densidad(), objeto: OBJETOS[F.objeto], rebote: F.rebote });
 
   /* ═══ EL CAMPO, enfrente y un poco a la derecha (la izquierda es del menú) ═══ */
-  const campo = new THREE.Group(); campo.position.set(.45, -.6, -2.3); F.grupo.add(campo);
-  const ANCHO = 3.0, ORIGEN = -1.5, ALTO_MAX = 1.3;
+  /* (26 nov) el campo va más a la derecha y un poco más angosto: el menú de la izquierda se comía el arranque del tiro */
+  const campo = new THREE.Group(); campo.position.set(.72, -.6, -2.3); F.grupo.add(campo);
+  const ANCHO = 2.6, ORIGEN = -1.3, ALTO_MAX = 1.3;
   let escala = 1;   /* metros de la simulación → metros en el visor */
   const M = { minX: 0, minY: 0, dx: 0 };   /* dx: los temas se centran en el campo; los tiros salen de la orilla */   /* lo más a la izquierda y lo más abajo que hay que enseñar (los tiros salen de 0, 0) */
   const lab = crearLab({ V, THREE, campo }); for(const [k, t] of Object.entries(lab.TEMAS)) PARAMS[k] = t.params;
@@ -150,7 +151,7 @@ export function montarFisica(V){
   }
 
   /* ═══ LA GRÁFICA, a la derecha: cada tiro con su color ═══ */
-  const graf = new V.Panel(1.05, .8, 460); graf.malla.position.set(1.75, .02, -1.45); graf.malla.lookAt(0, 0, 0); F.grupo.add(graf.malla);
+  const graf = new V.Panel(1.05, .8, 460); graf.malla.position.set(2.05, .05, -1.05); graf.malla.lookAt(0, 0, 0); F.grupo.add(graf.malla);
   function pintarGrafica(){
     const { x, cv } = graf, w = cv.width, h = cv.height; x.clearRect(0, 0, w, h);
     V.redondo(x, 4, 4, w - 8, h - 8, 26); x.fillStyle = 'rgba(23,10,38,.88)'; x.fill();
@@ -182,7 +183,7 @@ export function montarFisica(V){
 
   /* ═══ EL MENÚ DE LA IZQUIERDA: botones grandes, a un brazo ═══ */
   const menu = new THREE.Group(); F.grupo.add(menu);
-  menu.position.set(-.46, -.2, -.6); menu.lookAt(0, -.2, 0);   /* un Object3D mira con +z: queda de frente a ti */
+  menu.position.set(-.56, -.2, -.54); menu.lookAt(0, -.2, 0);   /* un Object3D mira con +z: queda de frente a ti */
   const botones = [];
   /* el menú va en CURVA, como el tablero de un coche: cada renglón a la misma distancia de tu cabeza y de frente a ti,
      así los de abajo no quedan lejos (en plano, el último quedaba a 1.1 m) */
@@ -203,7 +204,7 @@ export function montarFisica(V){
       else { ajusta(valor, d.tam || H * .5); x.fillStyle = d.color || TEXTO; x.fillText(valor, W / 2, H / 2 + 2); }
       p.listo();
     };
-    p.poner = (d) => { const a = JSON.stringify(d); if(a === p._llave) return; p._llave = a; p.dice = d; p.pintar(); };
+    p.poner = (d) => { const a = JSON.stringify(d); if(a === p._llave) return; p._llave = a; p.dice = d; p.titulo = d.valor; p.pintar(); };   /* titulo: lo que dice (lectores y la persona simulada) */
     p.foco = (f) => { if(p._f === f) return; p._f = f; p.pintar(); };
     p.malla.userData.accion = accion; if(repetir) p.malla.userData.repetir = true;
     botones.push(p.malla); menu.add(p.malla); return p;
@@ -213,7 +214,7 @@ export function montarFisica(V){
   function Renglon(menos, mas, centro, { flechas = ['‹', '›'] } = {}){
     const r = { a: Boton(FLECHA, ALTO_R, menos, { repetir: true }), c: Boton(ANCHO_M - 2 * FLECHA - 2 * HUECO, ALTO_R, centro || mas), b: Boton(FLECHA, ALTO_R, mas, { repetir: true }) };
     r.a.poner({ valor: flechas[0], tam: 64 }); r.b.poner({ valor: flechas[1], tam: 64 });
-    r.poner = (arriba, valor, color) => r.c.poner({ arriba, valor, color });
+    r.poner = (arriba, valor, color) => { r.c.poner({ arriba, valor, color }); r.c.titulo = `${arriba}: ${valor}`; r.a.titulo = `${arriba} ${r.a.dice.valor}`; r.b.titulo = `${arriba} ${r.b.dice.valor}`; };
     r.mostrar = (si) => { [r.a, r.b, r.c].forEach((p) => { p.malla.visible = si; }); };
     r.en = (y) => { enCurva(r.a.malla, -ANCHO_M / 2 + FLECHA / 2, y); enCurva(r.c.malla, 0, y); enCurva(r.b.malla, ANCHO_M / 2 - FLECHA / 2, y); };
     r.alto = ALTO_R; return r;
@@ -358,7 +359,13 @@ export function montarFisica(V){
     return { flechas: true };
   };
   function reiniciar(){ F.corriendo = false; vuelo = null; ponerObjeto(); preparar(); pintarMenu(); }
-  F.entrar = () => { V.cuarto.visible = !V.AJ.mixta; acomodar(); reiniciar(); };   /* respeta la realidad mixta (antes la tapaba con el cuarto) */
+  /* la mano fantasma enseña a pellizcar «Lanzar» hasta el primer tiro */
+  let maestro = null, tiros = 0; import('../maestro.js').then(({ crearMaestro }) => crearMaestro(V, F.grupo)).then((m) => { maestro = m; }).catch(() => {});
+  const cuadroAntes = F.cuadro; let entroEn = 0;
+  F.cuadro = () => { cuadroAntes(); if(!maestro) return; if(F.rastros.length) tiros = 1;
+    if(!tiros && performance.now() - entroEn > 4000){ const p = F.grupo.worldToLocal(lanzarB.malla.getWorldPosition(new THREE.Vector3())); if(maestro.activo !== 'pellizcar') maestro.mostrar('pellizcar', p, { base: p.clone().add(new THREE.Vector3(.22, -.05, .1)) }); maestro.cuadro(); }
+    else if(maestro.activo) maestro.ocultar(); };
+  F.entrar = () => { entroEn = performance.now(); V.cuarto.visible = !V.AJ.mixta; acomodar(); reiniciar(); };   /* respeta la realidad mixta (antes la tapaba con el cuarto) */
   F.salir = () => { if(F.corriendo) terminar(); };
   F.elegibles = () => botones.filter((b) => b.visible); F.F_todos = () => botones;
   F.atras = () => V.ir('juegos');
