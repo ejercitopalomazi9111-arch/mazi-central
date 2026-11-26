@@ -117,7 +117,10 @@ export async function iniciarManos(V){
        imagen se adelantaba a los puntos. Con una mano a la vista en la mixta, la cámara sólo se repinta cuando hubo
        rastreo (vr.js), así lo que ves y lo que se dibuja encima son la misma foto. */
     V.extra.camFresco = true; V.extra.camSinc = !!V.AJ.mixta && r.landmarks.length > 0;
-    const asp = video.videoWidth / video.videoHeight, tx = Math.tan(V.campoCamara() * Math.PI / 360), ty = tx / asp;
+    /* ACOSTADO (vr.js): la vista va acostada y la cámara da la imagen en vertical; las marcas se giran a la vista:
+       (x, y) → (y, 1 − x), y el campo de la cámara se cambia de eje */
+    const asp0 = video.videoWidth / video.videoHeight, tx0 = Math.tan(V.campoCamara() * Math.PI / 360), giraM = !!V.estaAcostado?.() && asp0 < 1;
+    const asp = giraM ? 1 / asp0 : asp0, tx = giraM ? tx0 / asp0 : tx0, ty = tx / asp;
     const voltear = V.AJ.camVoltear;
     estado.manos = r.landmarks.length; estado.gesto = '';
     const botones = []; const visibles = [];
@@ -125,8 +128,9 @@ export async function iniciarManos(V){
        hasta 4 y se quedan las dos que son tuyas: las más grandes (más cerca de la cámara) y las que entran por abajo
        de la imagen (de tu cuerpo). Cada una sigue en su lugar mientras se mueva poco entre cuadros */
     const hd = r.handedness || r.handednesses || [];
-    const cand = r.landmarks.map((l, i) => { const L = voltear ? l.map((p) => ({ x: 1 - p.x, y: 1 - p.y, z: p.z })) : l;
-      return { L, W: r.worldLandmarks?.[i], s: tamano(L, asp), wx: L[0].x, wy: L[0].y, etiqueta: hd[i]?.[0]?.categoryName || '', seguro: hd[i]?.[0]?.score ?? 0 }; });
+    const cand = r.landmarks.map((l, i) => { const L0 = voltear ? l.map((p) => ({ x: 1 - p.x, y: 1 - p.y, z: p.z })) : l, L = giraM ? L0.map((p) => ({ x: p.y, y: 1 - p.x, z: p.z })) : L0;
+      const Wr = r.worldLandmarks?.[i];   /* (como antes: sin voltear; sólo se gira si va acostado) */
+      return { L, W: Wr && giraM ? Wr.map((p) => ({ x: p.y, y: -p.x, z: p.z })) : Wr, s: tamano(L, asp), wx: L[0].x, wy: L[0].y, etiqueta: hd[i]?.[0]?.categoryName || '', seguro: hd[i]?.[0]?.score ?? 0 }; });
     cand.forEach((c) => { c.nota = c.s * 4 + c.wy * .8; });
     /* CON LAS MANOS JUNTAS (Carlos, 18 nov: «si mis dos manos se acercan mucho, se rompe»): MediaPipe a veces ve la MISMA mano
        dos veces; si dos detecciones comparten muñeca y palma, se queda la mejor */

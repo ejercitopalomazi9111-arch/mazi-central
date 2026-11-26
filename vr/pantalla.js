@@ -21,7 +21,7 @@ export const esVideo = (u) => /\.(mp4|webm|m4v|mov|m3u8)(\?|#|$)/i.test(String(u
 export function crearPantallaWeb(V){
   const { THREE } = V;
   const capa = document.createElement('div');
-  capa.style.cssText = 'position:fixed; inset:0; z-index:3; pointer-events:none; display:none';
+  capa.className = 'capa-giro'; capa.style.cssText = 'position:fixed; inset:0; z-index:3; pointer-events:none; display:none';
   const ojos = [0, 1].map((i) => { const o = document.createElement('div'); o.style.cssText = `position:absolute; top:0; bottom:0; ${i ? 'right:0' : 'left:0'}; width:50%; overflow:hidden`; capa.appendChild(o); return o; });
   document.body.appendChild(capa);
   /* los dos videos se crean desde el principio para «desbloquearlos» con el toque de Entrar: el iPhone sólo deja sonar

@@ -41,7 +41,8 @@
   #version{ margin-top:-10px; font-size:14px; font-weight:700; color:var(--suave) }
   #version.nueva{ color:#fff }
   #gira{ position:fixed; inset:0; z-index:6; display:none; place-items:center; background:#0B0513; font-size:22px; font-weight:800; text-align:center; padding:30px }
-  @media (orientation: portrait){ body.dentro #gira{ display:grid } }
+  /* (27 nov) ya no se pide girar: en vertical la vista se dibuja acostada (vr.js, «ACOSTADO») y las capas de la página giran con ella */
+  html.acostado .capa-giro{ inset:auto !important; left:0; top:0; width:var(--alto-real) !important; height:var(--ancho-real) !important; transform-origin:0 0; transform:translateX(var(--ancho-real)) rotate(90deg) }
   /* con ARCore la página va de capa encima (dom-overlay): fondo transparente para que se vea lo pintado */
   html.en-ar, html.en-ar body{ background: transparent !important; }
 </style>
@@ -100,7 +101,7 @@ try{ const L = JSON.parse(localStorage.getItem('mazivr.errores') || '[]'), u = L
 /* LA VERSIÓN (Carlos, 19 nov: «un mensajito que diga la versión en la que estás y que se actualizó»). Va igual que la
    de sw.js (pruebas-sinred.mjs lo revisa). La primera vez que se abre una versión nueva dice «actualizada»; y si el
    trabajador de fondo ya trae una más nueva que esta página, recarga sola (sólo en la entrada, una vez) */
-const VERSION = 54;
+const VERSION = 55;
 { let antes = 0; try{ antes = +localStorage.getItem('mazivr.version') || 0; if(antes !== VERSION) localStorage.setItem('mazivr.version', VERSION); }catch{}
   const el = $('#version'); el.textContent = antes < VERSION ? `v${VERSION} · actualizada` : `v${VERSION}`; el.classList.toggle('nueva', antes < VERSION); }
 const versionSW = (n) => { if(!(n > VERSION) || document.body.classList.contains('dentro')) return;

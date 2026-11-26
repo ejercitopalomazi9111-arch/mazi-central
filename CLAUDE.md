@@ -668,6 +668,9 @@ dependemos.
    | el reloj de mirar fijo empieza cuando el botón toma el foco | el foco SE QUEDA aunque dejes de verlo: quitar la vista y volver lo elegía al instante; y al bajar la mano, la mira caía en el botón que el dedo apuntaba y el reloj ya llevaba segundos | el reloj vuelve a cero cuando no lo ves, al cambiar de mano a mirada y durante 3 s después de ver una mano |
    | una vista que contesta `{ x: true }` en su `control` sólo se queda con la X del control | `ctl.oprimido` trae TAMBIÉN el pellizco: Objetos, el cine y el lector se comían todos los pellizcos y el de «Atrás» nunca llegaba | Carlos: «estoy tratando de pulsar atrás en objetos y no funciona». La X de una vista es `ctl.oprimidoPad`, y sólo dice `x: true` cuando la usó |
 
+   | el script de Variant Launch con `redirect=true` «prepara» el iPhone para AR | en cuanto carga, SE LLEVA la página a launchar.app, y esa página sólo espera la barra de Apple con «Abrir», que no sale si se entró desde el ícono de la pantalla de inicio | Carlos se quedaba en «Tap Open App Clip to launch AR» sin botones. Va con `redirect=false`, el botón «AR» abre `directAppClipUrl` (appclip.apple.com, viene en la respuesta de su `/sdk/init`) y desde el ícono con `window.open` |
+   | dentro del App Clip de AR el teléfono gira como en Safari | se queda en VERTICAL: el aviso «Gira el teléfono» tapaba todo y no se podía hacer nada | ahora en vertical con visor la vista se dibuja acostada (`acostado` en `vr/vr.js`: el pase del lente gira 90°, la cabeza y la pose de ARKit se giran, las marcas de las manos y la cámara también) |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 13. **CERO PARPADEO. Nunca, jamás, de los jamases** (Carlos, 14 nov, por el ajedrez de CARYMO). Tocar algo o que
