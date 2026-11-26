@@ -379,6 +379,102 @@ html[data-up-vt="izq"]::view-transition-new(root){ animation:upVtEntraIzq .24s c
   .up-cambia{ animation:upMsj .2s cubic-bezier(.2,.8,.2,1) both } @keyframes upMsj{ from{ transform:translateY(8px) } }
   .up-precio b.up-cambia{ animation:upPrecio .22s cubic-bezier(.2,.8,.2,1) both } @keyframes upPrecio{ from{ transform:translateY(35%) scale(.92) } }
 }
+
+/* ══ LOS RECORRIDOS (26 nov; Carlos: «hablo del FLUJO… hazlo muy bonito»). Cada paso es el MISMO elemento que se
+   transforma: el botón blanco crece y se vuelve un panel marino con su pregunta; el formulario se encoge y se vuelve la
+   tarjeta. Marino de fondo, naranja para lo que hay que tocar, amarillo para lo que hay que leer (la hora, el dinero). ══ */
+/* la tarjeta de un servicio: la hora en su cuadrito marino, el cliente, y su acción */
+.item.up-cita{ padding:0; gap:0; overflow:hidden }
+.up-cita__cab{ width:100%; min-height:80px; display:grid; grid-template-columns:auto minmax(0,1fr) 26px; grid-template-areas:"hora quien flecha"; align-items:center; gap:14px; padding:14px 14px 12px; text-align:left; color:inherit; border-radius:18px }
+.up-cita__quien{ grid-area:quien; display:grid; gap:2px; min-width:0 } .up-cita__quien b{ font:700 19px/1.25 var(--up-titulo); color:var(--tinta) } .up-cita__quien small{ color:var(--tenue); font-size:16px; line-height:1.35 }
+.up-cita__hora{ grid-area:hora; display:grid; justify-items:center; align-content:center; gap:4px; min-width:66px; min-height:58px; padding:6px 8px; border-radius:14px; background:#143361; color:#fff; line-height:1 }
+.up-cita__hora b{ font:800 20px/1 var(--up-titulo); color:#FFC66B; font-variant-numeric:tabular-nums } .up-cita__hora small{ font-size:15px; color:#CFE0F5 }
+.up-cita__flecha{ grid-area:flecha; color:var(--tenue); display:grid; place-items:center; transition:transform .28s cubic-bezier(.2,.8,.2,1) } .up-cita.abierta .up-cita__flecha{ transform:rotate(180deg) }
+.up-cita__det{ display:grid; gap:12px; padding:0 16px 6px }
+.up-datos{ list-style:none; margin:0; padding:12px 0 0; border-top:1.5px dashed var(--linea); display:grid; gap:8px }
+.up-datos li{ display:flex; gap:10px; align-items:flex-start; font-size:17px; line-height:1.4 } .up-datos .ic{ color:var(--acento); margin-top:2px }
+.up-ir .btn{ flex:1 1 auto; padding:0 14px }
+.up-accion{ display:grid; grid-template-columns:minmax(0,1fr); gap:10px; padding:10px 16px 16px } .up-paso{ min-width:0 } .up-paso > *{ min-width:0 }
+.up-dinero input, .up-contador input{ width:100% }
+.btn.up-grande{ width:100%; min-height:58px; font-size:18px; border-radius:16px }
+.btn.up-cobrar{ background:#F29923; color:#143361; background-image:none; box-shadow:0 12px 22px -14px #F29923, inset 0 -2px 0 rgba(0,0,0,.12) }
+.btn.up-chico{ min-height:48px; font-size:16px }
+.up-sello{ display:inline-flex; align-items:center; gap:8px; margin:0; padding:10px 14px; border-radius:12px; background:var(--acento-suave); color:var(--acento-texto); font-weight:700; justify-self:start }
+.up-sello.gris{ background:var(--sup2); color:var(--tenue) }
+.up-sigue .up-cita{ border:2px solid #F29923; box-shadow:0 22px 44px -26px rgba(242,153,35,.75), var(--elev1) }
+/* el paso: un panel marino con UNA pregunta, una acción naranja y «Atrás» */
+.up-paso{ display:grid; gap:12px; margin:0 -6px -6px; padding:16px; border-radius:18px; background:linear-gradient(160deg, #143361 0%, #1A4A84 75%, #165D9B 100%); color:#fff; box-shadow:0 18px 36px -22px rgba(8,22,48,.8) }
+.up-paso__t{ margin:0; font:800 21px/1.25 var(--up-titulo); color:#fff !important } .up-paso__t b{ color:#FFC66B }
+.up-dinero{ display:flex; align-items:center; gap:6px; min-height:66px; padding:0 16px; border-radius:16px; background:#fff; color:#143361; font-weight:600 }
+.up-dinero span{ font:800 28px var(--up-titulo); color:#165D9B } .up-dinero input{ flex:1; min-width:0; border:0; background:none; font:800 32px var(--up-titulo); color:#143361; outline:none; padding:0 }
+.up-dinero:focus-within{ box-shadow:0 0 0 3px #FFC66B }
+.f label.up-dinero{ display:flex; gap:6px; color:#143361 } .f .up-dinero input{ min-height:0; border:0; padding:0; background:none; font:800 32px var(--up-titulo); color:#143361 }
+/* la tarjeta recién llegada se marca un momento con un anillo naranja */
+.up-recien{ animation:upRecien 1.4s ease-out both } @keyframes upRecien{ 0%, 40%{ box-shadow:0 0 0 4px #F29923, var(--elev1) } }
+.up-paso .btn.up-grande, .up-asist .btn.up-grande{ background:#F29923; color:#143361; background-image:none; box-shadow:0 12px 24px -14px #F29923, inset 0 -2px 0 rgba(0,0,0,.12) }
+.up-paso .btn.b2{ background:rgba(255,255,255,.1); color:#fff; border-color:rgba(255,255,255,.28) }
+.up-atras{ justify-self:start; display:inline-flex; align-items:center; gap:4px; min-height:48px; padding:0 12px 0 4px; border-radius:12px; font-weight:700; font-size:17px; color:#CFE0F5 }
+.up-hojita .up-atras{ color:var(--acento-texto) }
+.up-paso :focus-visible, .up-asist :focus-visible{ outline-color:#FFC66B }
+/* inventario: «Salió / Entró» y su paso corto */
+.up-accion.up-dos{ grid-template-columns:1fr 1fr; padding:0 } .up-accion.up-dos.en-paso{ grid-template-columns:minmax(0,1fr) }
+.btn.up-mitad{ min-height:58px; font-size:18px }
+.up-cant b{ font:800 22px var(--up-titulo); color:var(--acento-texto); font-variant-numeric:tabular-nums }
+.up-contador{ display:grid; grid-template-columns:64px minmax(0,1fr) 64px; gap:10px }
+.up-contador button{ min-height:64px; border-radius:16px; background:rgba(255,255,255,.14); color:#fff; display:grid; place-items:center } .up-contador .ic{ width:28px; height:28px }
+.up-contador input{ min-height:64px; width:100%; min-width:0; border:0; border-radius:16px; background:#fff; color:#143361; text-align:center; font:800 32px var(--up-titulo) }
+.up-rapidos{ display:flex; gap:8px } .up-rapidos button{ flex:1; min-height:48px; border-radius:12px; background:rgba(255,255,255,.1); border:1.5px solid rgba(255,255,255,.28); color:#fff; font-weight:800; font-size:18px }
+.up-motivo{ display:grid; gap:6px; color:#DCE8F7; font-weight:600; font-size:16px } .up-motivo input{ min-height:52px; border:0; border-radius:12px; padding:0 12px; font-size:17px; color:#0E1E3A; background:#fff }
+/* «Hoy» en frases: lo que toca, dicho como se dice */
+.up-frase__t{ display:flex; gap:12px; align-items:flex-start; margin:0; font-size:18px !important; line-height:1.35; color:var(--tinta) !important }
+.up-frase__t .ic{ width:26px; height:26px; flex:none; color:var(--acento) } .up-frase > p:not(.up-frase__t){ padding-left:38px }
+/* agendar: el botón naranja que se vuelve el formulario paso a paso */
+.up-nuevo{ width:100%; display:flex; align-items:center; gap:12px; min-height:64px; margin:6px 0 16px; padding:0 18px; border-radius:18px; background:#F29923; color:#143361; font:800 19px var(--up-titulo); box-shadow:0 14px 26px -16px #F29923, inset 0 -2px 0 rgba(0,0,0,.12) }
+.up-nuevo .ic{ width:34px; height:34px; padding:5px; border-radius:11px; background:#143361; color:#FFC66B }
+.up-asist{ position:relative; isolation:isolate; overflow:hidden; margin:6px 0 16px; padding:16px; border-radius:22px; background:linear-gradient(160deg, #143361 0%, #1A4A84 70%, #165D9B 100%); color:#fff; box-shadow:var(--elev2) }
+.up-asist::before{ content:""; position:absolute; z-index:-1; right:-80px; top:-70px; width:230px; height:180px; background:url(marca/sol.webp) center / contain no-repeat; opacity:.22; transform:rotate(18deg) }
+.up-asist__cab{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px }
+.up-asist__paso{ font-weight:800; font-size:15px; letter-spacing:.06em; text-transform:uppercase; color:#FFC66B }
+.up-asist__puntos{ display:flex; gap:6px } .up-asist__puntos i{ width:24px; height:7px; border-radius:4px; background:rgba(255,255,255,.22); transition:background-color .3s }
+.up-asist__puntos i.hecho{ background:#F29923 }
+.up-asist .f{ padding:0; gap:14px } .up-asist .f label{ color:#DCE8F7 } .up-asist .f input{ background:#fff; color:#0E1E3A; border-color:transparent }
+.up-asist .up-paso__t{ font-size:25px }
+.up-asist .msj{ color:#DCE8F7 } .up-asist .msj.mal{ color:#FFC2BA }
+.up-opciones{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px } .up-opciones.tres{ grid-template-columns:repeat(3, minmax(0, 1fr)) }
+.up-opcion{ display:grid; place-items:center; align-content:center; gap:2px; min-height:60px; padding:8px; border-radius:14px; background:rgba(255,255,255,.1); border:1.5px solid rgba(255,255,255,.26); color:#fff; font-weight:700; font-size:17px; line-height:1.2; text-align:center; transition:background-color .2s, transform .14s }
+.up-opcion small{ font-weight:500; font-size:15px; color:#CFE0F5 } .up-opcion:active{ transform:scale(.96) }
+.up-opcion[aria-pressed="true"]{ background:#F29923; border-color:#F29923; color:#143361 } .up-opcion[aria-pressed="true"] small{ color:#143361 }
+.up-resumen{ display:flex; gap:10px; margin:0; padding:12px 14px; border-radius:14px; background:rgba(255,255,255,.1); font-size:17px; line-height:1.4 } .up-resumen .ic{ flex:none; color:#FFC66B; margin-top:2px }
+.filtro button .n{ font-weight:800 }
+/* «Mandar al cliente»: el cuadro del precio se vuelve la hoja */
+.up-total.es-hoja{ background:none; box-shadow:none; padding:0 }
+.up-hojita{ display:grid; gap:12px }
+.up-hojita__papel{ display:grid; gap:6px; padding:20px; border-radius:16px; border-top:6px solid #F29923; background:#fff; color:#14213A; box-shadow:0 22px 44px -24px rgba(20,51,97,.5) }
+.up-hojita__papel img{ height:34px; width:auto; max-width:100%; object-fit:contain; object-position:left; margin-bottom:6px } .up-hojita__papel small{ color:#5C6879; font-size:15px } .up-hojita__papel p{ margin:0; font-size:17px }
+.up-hojita__para{ font:800 22px/1.2 var(--up-titulo) }
+.up-hojita__total{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:6px 0 4px; padding:14px 16px; border-radius:12px; background:#143361; color:#fff; font-weight:700 } .up-hojita__total b{ font:800 30px var(--up-titulo); color:#FFC66B }
+.btn.up-wa{ background:#1F8F4E; background-image:none; box-shadow:none }
+@media (max-width:300px){ .up-opciones, .up-opciones.tres, .up-accion.up-dos{ grid-template-columns:minmax(0,1fr) } .up-contador{ grid-template-columns:52px minmax(0,1fr) 52px } }
+
+/* la transformación: el elemento crece o se encoge a su forma nueva (recortado a su borde redondo); lo de antes se
+   va en 0.14 s y lo nuevo ya está ahí, adentro, desde el primer cuadro. No es un desvanecido: es el mismo que cambia. */
+::view-transition-group(*.up-morfo){ animation-duration:.34s; animation-timing-function:cubic-bezier(.22,.9,.24,1) }
+::view-transition-image-pair(*.up-morfo){ overflow:clip; border-radius:18px }
+::view-transition-old(*.up-morfo){ animation:upMorfoSale .14s ease-out both }
+::view-transition-new(*.up-morfo){ animation:none }
+@keyframes upMorfoSale{ to{ opacity:0 } }
+::view-transition-group(up-asist), ::view-transition-group(up-hoja){ animation-duration:.34s; animation-timing-function:cubic-bezier(.22,.9,.24,1) }
+::view-transition-image-pair(up-asist){ overflow:clip; border-radius:22px } ::view-transition-image-pair(up-hoja){ overflow:clip; border-radius:16px }
+/* los pasos del formulario se deslizan hacia el lado del paso, dentro del panel que se queda */
+/* el paso de antes sale primero y el nuevo entra detrás de él, recortados al panel: nunca se enciman dos preguntas */
+::view-transition-image-pair(up-paso){ overflow:clip }
+html[data-up-vt="paso-der"]::view-transition-old(up-paso){ animation:upPasoSaleIzq .15s cubic-bezier(.4,0,1,1) both }
+html[data-up-vt="paso-der"]::view-transition-new(up-paso){ animation:upPasoEntraDer .26s cubic-bezier(.2,.8,.2,1) .08s both }
+html[data-up-vt="paso-izq"]::view-transition-old(up-paso){ animation:upPasoSaleDer .15s cubic-bezier(.4,0,1,1) both }
+html[data-up-vt="paso-izq"]::view-transition-new(up-paso){ animation:upPasoEntraIzq .26s cubic-bezier(.2,.8,.2,1) .08s both }
+@keyframes upPasoSaleIzq{ to{ transform:translateX(-48px); opacity:0 } } @keyframes upPasoSaleDer{ to{ transform:translateX(48px); opacity:0 } }
+@keyframes upPasoEntraDer{ from{ transform:translateX(56px); opacity:0 } 40%{ opacity:1 } } @keyframes upPasoEntraIzq{ from{ transform:translateX(-56px); opacity:0 } 40%{ opacity:1 } }
+::view-transition-group(up-paso){ animation-duration:.34s }
 </style>
 </head>
 <body>
@@ -545,10 +641,11 @@ function claves(raiz){
   raiz.querySelectorAll('details.nuevo').forEach((e, i) => poner(e, 'up-d-' + i));
   raiz.querySelectorAll('.vacio').forEach((e, i) => poner(e, 'up-v-' + i));
   raiz.querySelectorAll('.filtro, .atajos').forEach((e, i) => poner(e, 'up-b-' + i));
+  raiz.querySelectorAll('.up-nuevo:not([hidden])').forEach(e => poner(e, 'up-nuevo'));
   return m;
 }
-const nombrar = (raiz) => { for(const [k, e] of claves(raiz)) e.style.viewTransitionName = k; };
-const desnombrar = (raiz) => raiz.querySelectorAll('[style*="view-transition-name"]').forEach(e => { e.style.viewTransitionName = ''; });
+const nombrar = (raiz) => { for(const [k, e] of claves(raiz)){ e.style.viewTransitionName = k; if(e.matches('.item, .up-nuevo, .up-asist')) e.style.viewTransitionClass = 'up-morfo'; } };
+const desnombrar = (raiz) => raiz.querySelectorAll('[style*="view-transition-name"]').forEach(e => { e.style.viewTransitionName = ''; e.style.viewTransitionClass = ''; });
 let vtTurno = 0;
 async function transicion(hacer, lado = ''){
   if(!puedeVT()){ hacer(); return null; }
@@ -574,7 +671,8 @@ function fotografia(raiz){
   const rects = new Map(); for(const [k, e] of claves(raiz)) rects.set(k, e.getBoundingClientRect());
   const cifras = [...raiz.querySelectorAll('.cifra b')].map(b => b.dataset.final || b.textContent);
   const niveles = new Map([...raiz.querySelectorAll('.item[data-id] .up-nivel span')].map(s => [s.closest('[data-id]').dataset.id, parseFloat(s.style.getPropertyValue('--n')) || 0]));
-  return { rects, cifras, niveles };
+  const cuentas = new Map([...raiz.querySelectorAll('[data-cuenta]')].map(e => [e.dataset.cuenta, Number(e.textContent) || 0]));
+  return { rects, cifras, niveles, cuentas };
 }
 
 function acabado(el, foto, conVT){
@@ -585,6 +683,8 @@ function acabado(el, foto, conVT){
   /* el nivel de cada insumo baja o sube desde donde estaba, no desde cero */
   if(foto && !QUIETO.matches) el.querySelectorAll('.item[data-id] .up-nivel span').forEach(s => { const n0 = foto.niveles.get(s.closest('[data-id]').dataset.id), n1 = parseFloat(s.style.getPropertyValue('--n')) || 0;
     if(n0 != null && n0 !== n1) s.animate([{ transform: `scaleX(${n0})` }, { transform: `scaleX(${n1})` }], { duration: 420, easing: 'cubic-bezier(.2,.8,.2,1)' }); });
+  if(foto && !QUIETO.matches) el.querySelectorAll('[data-cuenta]').forEach(e => { const n0 = foto.cuentas.get(e.dataset.cuenta), n1 = Number(e.textContent); if(n0 == null || n0 === n1 || !Number.isFinite(n1)) return;
+    const t0 = performance.now(), dec = String(n1).includes('.') || String(n0).includes('.') ? 1 : 0; (function paso(t){ const k = Math.min(1, (t - t0) / 420); e.textContent = k < 1 ? (n0 + (n1 - n0) * (1 - Math.pow(1 - k, 3))).toFixed(dec) : String(n1); if(k < 1) requestAnimationFrame(paso); })(t0); });
   /* las cifras suben contando: desde cero al entrar, y desde lo que decían cuando algo cambió */
   el.querySelectorAll('.cifra b').forEach((b, i) => { const m = /^(\$?)([\d,]+)$/.exec(b.textContent.trim()); if(!m) return; const n = Number(m[2].replace(/,/g, ''));
     const previo = foto ? /^(\$?)([\d,]+)$/.exec(String(foto.cifras[i] || '').trim()) : null, desde = previo ? Number(previo[2].replace(/,/g, '')) : 0;
@@ -609,9 +709,15 @@ async function ir(p){
   await PANTALLAS[p](nuevo);
   if(mio !== turno){ nuevo.remove(); return; }
   pintaIconos(nuevo); pintaIconos(barra);
-  const viejo = raiz(), conVT = !primera && puedeVT(), foto = mismo ? fotografia(viejo) : null;
-  if(conVT && mismo) nombrar(viejo);
-  const cambiar = () => { viejo.remove(); nuevo.hidden = false; window.__app = nuevo; if(!mismo && !primera) scrollTo(0, 0); if(conVT && mismo) nombrar(nuevo); pintaRed(); };
+  const viejo = raiz(), conVT = !primera && puedeVT(), foto = mismo ? fotografia(viejo) : null, pu = mismo ? puente : null; puente = null;
+  /* el puente: lo que se guardó (el formulario, la tarjeta) se convierte en su lugar nuevo (la tarjeta, el filtro) */
+  const ponerPuente = (raizP, el) => { if(!el) return; raizP.querySelectorAll('[style*="view-transition-name"]').forEach(x => { if(x.style.viewTransitionName === pu.nombre) x.style.viewTransitionName = ''; }); el.style.viewTransitionName = pu.nombre; el.style.viewTransitionClass = 'up-morfo'; };
+  if(pu?.de?.isConnected && foto) foto.rects.set(pu.nombre, pu.de.getBoundingClientRect());
+  if(conVT && mismo){ nombrar(viejo); if(pu?.de?.isConnected) ponerPuente(viejo, pu.de); }
+  /* a donde llegó lo que se guardó queda a la vista, y se marca un momento */
+  const llegada = () => { if(!pu) return; const e = pu.a ? pu.a(nuevo) : [...claves(nuevo)].find(([k]) => k === pu.nombre)?.[1]; if(!e) return;
+    const r = e.getBoundingClientRect(); if(r.top < 80 || r.bottom > innerHeight - 110) e.scrollIntoView({ block: 'center' }); if(!QUIETO.matches) e.classList.add('up-recien'); };
+  const cambiar = () => { viejo.remove(); nuevo.hidden = false; window.__app = nuevo; if(!mismo && !primera) scrollTo(0, 0); if(conVT && mismo){ nombrar(nuevo); if(pu?.a) ponerPuente(nuevo, pu.a(nuevo)); } llegada(); pintaRed(); };
   if(conVT){ const t = await transicion(cambiar, mismo ? '' : ORDEN.indexOf(p) > ORDEN.indexOf(antes) ? 'der' : 'izq'); t?.finished.catch(() => {}).finally(() => desnombrar(nuevo)); }
   else cambiar();
   acabado(nuevo, foto, conVT);
@@ -637,28 +743,46 @@ document.addEventListener('click', (e) => {
   e.preventDefault(); d.classList.add('up-cierra'); setTimeout(() => { d.classList.remove('up-cierra'); d.open = false; }, 180);
 });
 
+/* ══ LOS RECORRIDOS (26 nov; Carlos: «hablo del FLUJO… y hazlo muy bonito»). Cada cosa que se toca se convierte en
+   su siguiente paso, en el mismo lugar: la tarjeta se abre en su detalle, «Ya lo hice» se vuelve «¿Cuánto te pagó?»,
+   «Agendar» se vuelve el formulario paso a paso y, al guardar, el formulario se encoge y se vuelve la tarjeta. Siempre
+   UNA acción principal por paso y «Atrás» que regresa por el mismo camino. ══ */
+const tel10 = (t) => String(t || '').replace(/\D/g, '').slice(-10);
+const mapa = (c) => { const d = [c.direccion, c.zona, 'Querétaro'].filter(Boolean).join(', '); return c.direccion || c.zona ? 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(d) : ''; };
+const cuando = (c) => c.fecha === hoyISO() ? 'hoy' : c.fecha === masDiasISO(1) ? 'mañana' : dia(c.fecha);
+const masDiasISO = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
 const ESTADO = { pendiente: 'Pendiente', hecho: 'Hecho · por cobrar', cerrado: 'Cobrado', cancelado: 'Cancelado' };
-const citaItem = (c, acciones = true) => `<li class="item" data-id="${c.id}">
-  <div class="t"><b>${esc(c.cliente)}</b><span>${dia(c.fecha)}${c.hora ? ' · ' + esc(c.hora) : ''}</span></div>
-  <p>${[c.plaga && esc(c.plaga), c.zona && esc(c.zona), c.direccion && esc(c.direccion), c.tecnico && 'Técnico: ' + esc(c.tecnico)].filter(Boolean).join(' · ') || 'Sin detalles'}</p>
-  <div class="acc">${c.precio != null ? `<span class="chip">${c.precio === 0 ? 'Garantía · sin costo' : pesos(c.precio)}</span>` : ''}<span class="chip ${c.estado === 'pendiente' ? 'aviso' : c.estado === 'cerrado' ? 'ok' : ''}">${ESTADO[c.estado] || esc(c.estado)}</span>
-    ${c.telefono ? `<a class="chip" href="https://wa.me/52${esc(String(c.telefono).replace(/\D/g, '').slice(-10))}">WhatsApp</a>` : ''}</div>
-  ${acciones ? `<div class="acc">${c.estado === 'pendiente' ? `<button class="btn" data-est="hecho">Ya se hizo</button><button class="btn b2" data-est="cancelado">Cancelar servicio</button>` : ''}${c.estado === 'hecho' ? `<button class="btn" data-est="cerrado">Ya se cobró</button>` : ''}</div>` : ''}</li>`;
-/* cancelar no tiene vuelta: antes se pregunta. El botón se convierte en «Sí, cancelarlo» y el de al lado en «No» */
+/* la acción principal de cada tarjeta, según en qué fase va */
+const accionDe = (c) => c.estado === 'pendiente' ? `<button class="btn up-grande" type="button" data-hice data-est="hecho"><span data-ic="circle-check"></span>Ya lo hice</button>`
+  : c.estado === 'hecho' ? `<button class="btn up-grande up-cobrar" type="button" data-cobrar="pagado"><span data-ic="banknote"></span>${c.precio ? `Ya me pagó ${pesos(c.precio)}` : 'Ya me pagó'}</button>`
+  : c.estado === 'cerrado' ? `<p class="up-sello"><span data-ic="circle-check"></span>Cobrado${c.precio ? ' ' + pesos(c.precio) : ''}</p>` : `<p class="up-sello gris">${ESTADO[c.estado] || esc(c.estado)}</p>`;
+const citaItem = (c, abierta = false) => { const t = tel10(c.telefono), m = mapa(c);
+  return `<li class="item up-cita${abierta ? ' abierta' : ''}" data-id="${c.id}" data-cliente="${esc(c.cliente)}" data-precio="${c.precio ?? ''}" data-estado="${c.estado}">
+  <button class="up-cita__cab" type="button" data-abre aria-expanded="${abierta}" aria-controls="det-${c.id}">
+    <span class="up-cita__quien"><b>${esc(c.cliente)}</b><small>${[c.plaga && esc(c.plaga), c.zona && esc(c.zona)].filter(Boolean).join(' · ') || 'Sin detalles'}</small></span>
+    <span class="up-cita__hora"><b>${c.hora ? esc(c.hora) : '—'}</b><small>${cuando(c)}</small></span>
+    <span class="up-cita__flecha" data-ic="chevron-down"></span></button>
+  <div class="up-cita__det" id="det-${c.id}"${abierta ? '' : ' hidden'}>
+    <ul class="up-datos">${c.direccion || c.zona ? `<li><span data-ic="map-pin"></span>${esc([c.direccion, c.zona].filter(Boolean).join(', '))}</li>` : ''}${c.tecnico ? `<li><span data-ic="user-round"></span>Va ${esc(c.tecnico)}</li>` : ''}
+      <li><span data-ic="wallet"></span>${c.precio === 0 ? 'Garantía: sin costo' : c.precio != null ? pesos(c.precio) : 'Sin precio'} · ${ESTADO[c.estado] || esc(c.estado)}</li>${c.nota ? `<li><span data-ic="file-text"></span>${esc(c.nota)}</li>` : ''}</ul>
+    ${t || m ? `<div class="acc up-ir">${t ? `<a class="btn b2" href="tel:${t}"><span data-ic="phone"></span>Llamar</a><a class="btn b2" href="https://wa.me/52${t}"><span data-ic="message-circle"></span>WhatsApp</a>` : ''}${m ? `<a class="btn b2" href="${esc(m)}" target="_blank" rel="noopener"><span data-ic="navigation"></span>Cómo llegar</a>` : ''}</div>` : ''}
+    ${c.estado === 'pendiente' ? `<div class="acc"><button class="btn b2 up-chico" type="button" data-est="cancelado">Cancelar servicio</button></div>` : ''}
+  </div>
+  <div class="up-accion">${accionDe(c)}</div></li>`; };
+/* cancelar no tiene vuelta: antes se pregunta. El botón se convierte en «Sí, cancelarlo» y aparece «No» a su lado */
 function preguntar(tarjeta, b){
-  const acc = b.closest('.acc'), otro = [...acc.querySelectorAll('.btn')].find(x => x !== b);
-  b.style.viewTransitionName = 'up-si'; if(otro) otro.style.viewTransitionName = 'up-no'; tarjeta.style.viewTransitionName = 'up-tarjeta';
+  const acc = b.closest('.acc');
+  b.style.viewTransitionName = 'up-si'; tarjeta.style.viewTransitionName = 'up-tarjeta';
   transicion(() => {
-    if(otro) otro.hidden = true; b.dataset.seguro = '1'; b.dataset.texto = b.textContent; b.textContent = 'Sí, cancelarlo'; b.classList.replace('b2', 'up-peligro');
-    acc.insertAdjacentHTML('beforebegin', `<p class="up-pregunta" style="view-transition-name:up-preg">¿Seguro que quieres cancelar el servicio de ${esc(tarjeta.querySelector('.t b')?.textContent || 'este cliente')}?</p>`);
+    b.dataset.seguro = '1'; b.dataset.texto = b.textContent; b.textContent = 'Sí, cancelarlo'; b.classList.replace('b2', 'up-peligro');
+    acc.insertAdjacentHTML('beforebegin', `<p class="up-pregunta" style="view-transition-name:up-preg">¿Seguro que quieres cancelar el servicio de ${esc(tarjeta.dataset.cliente || 'este cliente')}?</p>`);
     acc.insertAdjacentHTML('beforeend', '<button class="btn b2" type="button" data-no style="view-transition-name:up-no">No, déjalo así</button>');
   }).then(t => (t?.finished || Promise.resolve()).catch(() => {}).finally(() => desnombrar(tarjeta.parentElement || tarjeta)));
 }
 function noPreguntar(tarjeta){
-  const b = tarjeta.querySelector('[data-seguro]'), no = tarjeta.querySelector('[data-no]'), otro = tarjeta.querySelector('.acc .btn[hidden]');
-  if(b) b.style.viewTransitionName = 'up-si'; if(no) no.style.viewTransitionName = 'up-no'; tarjeta.style.viewTransitionName = 'up-tarjeta';
-  transicion(() => {
-    tarjeta.querySelector('.up-pregunta')?.remove(); no?.remove(); if(otro){ otro.hidden = false; otro.style.viewTransitionName = 'up-no'; }
+  const b = tarjeta.querySelector('[data-seguro]'), no = tarjeta.querySelector('[data-no]');
+  if(b) b.style.viewTransitionName = 'up-si'; tarjeta.style.viewTransitionName = 'up-tarjeta';
+  transicion(() => { tarjeta.querySelector('.up-pregunta')?.remove(); no?.remove();
     if(b){ delete b.dataset.seguro; b.textContent = b.dataset.texto || 'Cancelar servicio'; b.classList.replace('up-peligro', 'b2'); }
   }).then(t => (t?.finished || Promise.resolve()).catch(() => {}).finally(() => desnombrar(tarjeta.parentElement || tarjeta)));
 }
@@ -668,72 +792,194 @@ function errorEn(tarjeta, texto){
   let p = tarjeta.querySelector('.up-error'); if(!p){ p = document.createElement('p'); p.className = 'up-error'; p.setAttribute('role', 'alert'); tarjeta.append(p); }
   p.textContent = 'No se pudo: ' + (texto || 'intenta otra vez.');
 }
+/* «¿Cuánto te pagó?»: el botón «Ya lo hice» se convierte en este paso */
+const pasoCobro = (tarjeta) => { const p = tarjeta.dataset.precio;
+  return `<div class="up-paso up-cobro"><p class="up-paso__t">¿Cuánto te pagó <b>${esc(tarjeta.dataset.cliente)}</b>?</p>
+    <label class="up-dinero"><span aria-hidden="true">$</span><input name="cobro" inputmode="decimal" value="${esc(p)}" placeholder="0" aria-label="Cuánto te pagó, en pesos"></label>
+    <button class="btn up-grande" type="button" data-cobrar="pagado"><span data-ic="banknote"></span><span data-etq>${p ? 'Ya me pagó ' + pesos(p) : 'Ya me pagó'}</span></button>
+    <button class="btn b2" type="button" data-cobrar="despues"><span data-ic="clock"></span>Me paga después</button>
+    <button class="up-atras" type="button" data-atras><span data-ic="chevron-left"></span>Atrás</button></div>`; };
+/* un cambio DENTRO de la pantalla (abrir una tarjeta, pasar al siguiente paso): lo de alrededor se recorre, no brinca */
+async function transformar(hacer, raizT = raiz()){
+  if(QUIETO.matches){ hacer(); return; }
+  if(!puedeVT()){ const f = fotografia(raizT); hacer(); flip(f.rects, raizT); return; }
+  nombrar(raizT);
+  const t = await transicion(() => { hacer(); nombrar(raizT); });
+  t?.finished.catch(() => {}).finally(() => desnombrar(raizT));
+}
+/* el paso nuevo ocupa el lugar del botón que lo abrió: el MISMO contenedor crece y lo de adentro se reemplaza */
+const cambiarAccion = (tarjeta, html, foco) => transformar(() => { const a = tarjeta.querySelector('.up-accion'); a.innerHTML = html; pintaIconos(a); a.classList.toggle('en-paso', /up-paso/.test(html)); if(foco) a.querySelector(foco)?.focus({ preventScroll: true });
+  /* sin View Transitions (Safari 17) el paso se despliega desde el botón, sólo con transform y recorte */
+  if(!puedeVT() && !QUIETO.matches) a.firstElementChild?.animate([{ clipPath: 'inset(0 0 85% 0 round 18px)', transform: 'translateY(-6px)' }, { clipPath: 'inset(0 0 0 0 round 18px)', transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.2,.8,.2,1)' }); });
+/* cuando algo se guarda, la pantalla se vuelve a pintar: «puente» dice qué elemento de antes se convierte en cuál de después */
+let puente = null;
 const conAcciones = (el) => el.addEventListener('click', async (e) => {
-  const b = e.target.closest('[data-est],[data-seg],[data-no]'); if(!b) return;
+  const b = e.target.closest('[data-abre],[data-hice],[data-cobrar],[data-atras],[data-est],[data-seg],[data-no],[data-ir]'); if(!b || b.disabled) return;
   const tarjeta = b.closest('.item');
+  if(b.matches('[data-ir]')){ e.preventDefault(); if(b.dataset.agendar) abrirAgendar = true; return ir(b.dataset.ir); }
+  if(b.matches('[data-abre]')){ const d = tarjeta.querySelector('.up-cita__det'), abre = d.hidden;
+    return transformar(() => { d.hidden = !abre; tarjeta.classList.toggle('abierta', abre); b.setAttribute('aria-expanded', abre); }); }
   if(b.matches('[data-no]')) return noPreguntar(tarjeta);
   if(b.dataset.est === 'cancelado' && !b.dataset.seguro) return preguntar(tarjeta, b);
-  const id = b.closest('[data-id]').dataset.id; b.disabled = true;
-  const j = b.dataset.est ? await api('POST', '/api/citas/estado', { id, estado: b.dataset.est }) : await api('POST', '/api/citas/seguimiento', { id, sigue_plaga: b.dataset.seg === 'sigue' });
-  if(!j.bien){ b.disabled = false; errorEn(tarjeta, j.error); return; }
-  avisa((b.dataset.est === 'hecho' ? `Hecho. Seguimiento el ${dia(j.cita?.seguimiento?.fecha)}.` : b.dataset.est === 'cerrado' ? 'Cobrado.' : b.dataset.est === 'cancelado' ? 'Cancelado.'
-    : j.garantia ? `Garantía agendada para el ${dia(j.garantia.fecha)}.` : 'Seguimiento cerrado.') + (j.pendiente ? ' Se envía al volver la señal.' : ''));
-  /* con View Transitions la tarjeta misma viaja a su lugar nuevo (o sale de lado); sin ellas, sale de lado y lo demás sube */
+  if(b.matches('[data-hice]')) return cambiarAccion(tarjeta, pasoCobro(tarjeta), '[name=cobro]');
+  if(b.matches('[data-atras]')) return cambiarAccion(tarjeta, accionDe({ estado: tarjeta.dataset.estado, precio: tarjeta.dataset.precio === '' ? null : +tarjeta.dataset.precio }));
+  const id = tarjeta.dataset.id; b.disabled = true;
+  let j, aviso;
+  if(b.dataset.cobrar){
+    /* «Ya me pagó»: queda hecho (con su revisión a 15 días) y cobrado; «Me paga después»: queda por cobrar */
+    const monto = tarjeta.querySelector('[name=cobro]') ? Number(String(tarjeta.querySelector('[name=cobro]').value).replace(/[^\d.]/g, '')) : null;
+    if(monto != null && String(monto) !== tarjeta.dataset.precio && tarjeta.querySelector('[name=cobro]').value.trim()){ const r = await api('POST', '/api/citas', { id, precio: monto }); if(!r.bien){ b.disabled = false; return errorEn(tarjeta, r.error); } }
+    if(tarjeta.dataset.estado === 'pendiente'){ j = await api('POST', '/api/citas/estado', { id, estado: 'hecho' }); if(!j.bien){ b.disabled = false; return errorEn(tarjeta, j.error); } }
+    const revision = j?.cita?.seguimiento?.fecha;
+    if(b.dataset.cobrar === 'pagado'){ j = await api('POST', '/api/citas/estado', { id, estado: 'cerrado' }); aviso = `Cobrado${monto || tarjeta.dataset.precio ? ' ' + pesos(monto || tarjeta.dataset.precio) : ''}.${revision ? ` Su revisión quedó el ${dia(revision)}.` : ''}`; }
+    else aviso = `Quedó por cobrar.${revision ? ` Su revisión quedó el ${dia(revision)}.` : ''}`;
+  } else if(b.dataset.est){ j = await api('POST', '/api/citas/estado', { id, estado: b.dataset.est }); aviso = b.dataset.est === 'cancelado' ? 'Cancelado.' : b.dataset.est === 'hecho' ? `Hecho. Su revisión: ${dia(j.cita?.seguimiento?.fecha)}.` : 'Listo.'; }
+  else { j = await api('POST', '/api/citas/seguimiento', { id, sigue_plaga: b.dataset.seg === 'sigue' }); aviso = j.garantia ? `Garantía agendada para el ${dia(j.garantia.fecha)}.` : 'Revisión cerrada.'; }
+  if(!j?.bien){ b.disabled = false; errorEn(tarjeta, j?.error); return; }
+  avisa(aviso + (j.pendiente ? ' Se envía al volver la señal.' : ''));
+  /* en «Servicios», la tarjeta que deja la lista se encoge en el filtro al que se va («Por cobrar», «Cobrados») */
+  const destino = j.cita?.estado; if(actual === 'servicios' && destino && destino !== (guarda.leer('up_filtro') || 'pendiente')) puente = { de: tarjeta, nombre: 'up-al-filtro', a: (n) => n.querySelector(`.filtro [data-f="${destino}"]`) };
   if(tarjeta && !puedeVT() && !QUIETO.matches){ tarjeta.classList.add('up-sale'); await new Promise(r => setTimeout(r, 230)); }
   ir(actual);
 });
+/* en el paso de cobro, el botón dice lo que va a pasar: «Ya me pagó $650» */
+document.addEventListener('input', (e) => { if(e.target.name !== 'cobro') return; const v = Number(String(e.target.value).replace(/[^\d.]/g, '')), etq = e.target.closest('.up-cobro')?.querySelector('[data-etq]'); if(etq) etq.textContent = v ? 'Ya me pagó ' + pesos(v) : 'Ya me pagó'; });
+
+/* ── AGENDAR, PASO A PASO: quién → qué plaga → dónde → cuándo → cuánto ── */
+/* sin dibujos de bichos (Carlos, 11 nov): las plagas van con su nombre, en botones grandes */
+const PLAGAS = ['Cucarachas', 'Hormigas', 'Ratas y ratones', 'Chinches', 'Alacranes', 'Arañas', 'Moscas y mosquitos', 'Termitas'].map(p => [p]);
+let abrirAgendar = false;
+function asistente(el, inicial = {}){
+  const caja = el.querySelector('#asist'), boton = el.querySelector('#bAgendar');
+  let n = 1, d = { fecha: hoyISO(), ...inicial };
+  const fechas = [[hoyISO(), 'Hoy'], [masDiasISO(1), 'Mañana'], [masDiasISO(2), DIAS_L[new Date(masDiasISO(2) + 'T12:00').getDay()]]];
+  const campo = (k, t, extra = '') => `<label>${t}<input name="${k}" value="${esc(d[k] || '')}" autocomplete="off" ${extra}></label>`;
+  const pie = (principal, atras = 'Atrás') => `<button class="btn up-grande" type="submit">${principal}</button><button class="up-atras" type="button" data-atras-paso><span data-ic="chevron-left"></span>${atras}</button>`;
+  const PASOS = [null,
+    () => `<h3 class="up-paso__t">¿Para quién es?</h3>${campo('cliente', 'Nombre del cliente o del lugar', 'required placeholder="Señora Ana, Planta Norte…"')}${campo('telefono', 'Teléfono (si lo tienes)', 'inputmode="tel" placeholder="442 …"')}${pie('Siguiente', 'Cancelar')}`,
+    () => `<h3 class="up-paso__t">¿Qué plaga tiene?</h3><div class="up-opciones">${PLAGAS.map(([p]) => `<button type="button" class="up-opcion" data-plaga="${p}" aria-pressed="${d.plaga === p}">${p}</button>`).join('')}</div>
+      ${campo('plaga_otra', 'Otra plaga', `placeholder="Escríbela aquí" ${d.plaga && !PLAGAS.some(([p]) => p === d.plaga) ? `value="${esc(d.plaga)}"` : ''}`)}${pie('Siguiente')}`,
+    () => `<h3 class="up-paso__t">¿Dónde es?</h3>${campo('direccion', 'Calle y número', 'placeholder="Av. Universidad 100"')}${campo('zona', 'Colonia o zona', 'placeholder="Juriquilla, Centro…"')}${pie('Siguiente')}`,
+    () => `<h3 class="up-paso__t">¿Cuándo vas?</h3><div class="up-opciones tres">${fechas.map(([f, t]) => `<button type="button" class="up-opcion" data-fecha="${f}" aria-pressed="${d.fecha === f}"><b>${t[0].toUpperCase() + t.slice(1)}</b><small>${dia(f)}</small></button>`).join('')}</div>
+      <div class="dos"><label>Otro día<input name="fecha" type="date" value="${esc(d.fecha)}"></label><label>A qué hora<input name="hora" type="time" value="${esc(d.hora || '')}"></label></div>${pie('Siguiente')}`,
+    () => `<h3 class="up-paso__t">¿Cuánto vas a cobrar?</h3><label class="up-dinero"><span aria-hidden="true">$</span><input name="precio" inputmode="decimal" value="${esc(d.precio ?? '')}" placeholder="0" aria-label="Precio, en pesos"></label>
+      ${campo('tecnico', 'Quién va (si no vas tú)')}${campo('nota', 'Algo que haya que saber', 'placeholder="Tocar en la puerta de atrás…"')}
+      <p class="up-resumen"><span data-ic="calendar-days"></span><span><b>${esc(d.cliente || '')}</b> · ${esc(d.plaga || 'sin plaga')}${d.zona ? ' · ' + esc(d.zona) : ''}<br>${dia(d.fecha)}${d.hora ? ' a las ' + esc(d.hora) : ''}</span></p>${pie('<span data-ic="calendar-days"></span>Agendar')}`];
+  const leer = () => { const f = caja.querySelector('form'); if(!f) return; for(const [k, v] of new FormData(f)) if(k === 'plaga_otra'){ if(v.trim()) d.plaga = v.trim(); } else d[k] = v; };
+  const pintar = () => { caja.querySelector('.up-asist__paso').textContent = `Paso ${n} de 5`;
+    caja.querySelectorAll('.up-asist__puntos i').forEach((i, k) => i.classList.toggle('hecho', k < n));
+    const cuerpo = caja.querySelector('.up-asist__cuerpo'); cuerpo.innerHTML = `<form class="f" novalidate>${PASOS[n]()}<p class="msj" role="status"></p></form>`; pintaIconos(cuerpo); };
+  /* pasar de paso: el panel se queda y el contenido se desliza hacia el lado del paso */
+  const irPaso = async (m) => { leer(); const lado = m > n ? 'der' : 'izq'; n = m;
+    if(QUIETO.matches || !puedeVT()){ pintar(); caja.querySelector('.up-asist__cuerpo').animate?.(QUIETO.matches ? [] : [{ transform: `translateX(${lado === 'der' ? 24 : -24}px)` }, { transform: 'none' }], { duration: 200, easing: 'cubic-bezier(.2,.8,.2,1)' }); }
+    else { caja.style.viewTransitionName = 'up-asist'; caja.querySelector('.up-asist__cuerpo').style.viewTransitionName = 'up-paso';
+      const t = await transicion(pintar, 'paso-' + lado); t?.finished.catch(() => {}).finally(() => { caja.style.viewTransitionName = ''; caja.querySelector('.up-asist__cuerpo').style.viewTransitionName = ''; }); }
+    caja.querySelector('input:not([type=date]):not([type=time])')?.focus({ preventScroll: true }); };
+  const abrir = async () => { boton.style.viewTransitionName = 'up-asist';
+    await transformar(() => { boton.hidden = true; caja.hidden = false; caja.style.viewTransitionName = 'up-asist'; pintar(); });
+    caja.style.viewTransitionName = ''; caja.querySelector('input')?.focus({ preventScroll: true }); caja.scrollIntoView({ block: 'nearest', behavior: QUIETO.matches ? 'auto' : 'smooth' }); };
+  const cerrar = async () => { caja.style.viewTransitionName = 'up-asist';
+    await transformar(() => { caja.hidden = true; boton.hidden = false; caja.style.viewTransitionName = ''; boton.style.viewTransitionName = 'up-asist'; });
+    boton.style.viewTransitionName = ''; boton.focus({ preventScroll: true }); n = 1; d = { fecha: hoyISO(), ...inicial }; };
+  boton.addEventListener('click', abrir);
+  caja.addEventListener('click', (e) => {
+    if(e.target.closest('[data-atras-paso]')) return n === 1 ? cerrar() : irPaso(n - 1);
+    const p = e.target.closest('[data-plaga]'); if(p){ d.plaga = p.dataset.plaga; caja.querySelector('[name=plaga_otra]').value = ''; return irPaso(3); }
+    const f = e.target.closest('[data-fecha]'); if(f){ d.fecha = f.dataset.fecha; caja.querySelector('[name=fecha]').value = f.dataset.fecha; caja.querySelectorAll('[data-fecha]').forEach(x => x.setAttribute('aria-pressed', x === f)); }
+  });
+  caja.addEventListener('submit', async (e) => { e.preventDefault(); leer(); const msj = caja.querySelector('.msj');
+    if(n === 1 && !String(d.cliente || '').trim()){ msj.className = 'msj mal'; msj.textContent = 'Escribe el nombre del cliente para seguir.'; caja.querySelector('[name=cliente]').focus(); return; }
+    if(n === 4 && !d.fecha){ msj.className = 'msj mal'; msj.textContent = 'Escoge el día.'; return; }
+    if(n < 5) return irPaso(n + 1);
+    const b = caja.querySelector('[type=submit]'); b.disabled = true; msj.className = 'msj'; msj.textContent = 'Agendando…';
+    const { plaga_otra, ...cuerpo } = d, j = await api('POST', '/api/citas', cuerpo);
+    b.disabled = false; if(!j.bien){ msj.className = 'msj mal'; msj.textContent = (j.error || 'No se pudo agendar.') + ' Revisa y vuelve a tocar «Agendar».'; return; }
+    avisa(`Agendado: ${d.cliente}, ${dia(d.fecha)}${d.hora ? ' a las ' + d.hora : ''}.` + (j.pendiente ? ' Se envía al volver la señal.' : ''));
+    /* el formulario se encoge y se vuelve la tarjeta del servicio en su lugar de la lista */
+    guarda.poner('up_filtro', 'pendiente'); puente = { de: caja, nombre: nombreVT('i-' + j.cita.id) }; ir('servicios'); });
+  if(abrirAgendar || inicial.cliente){ abrirAgendar = false; caja.hidden = false; boton.hidden = true; pintar(); }
+}
+
+/* ── INVENTARIO: «Salió» y «Entró» como un paso corto, dentro de la misma tarjeta ── */
+const accionInsumo = () => `<button class="btn b2 up-mitad" type="button" data-mov="-1"><span data-ic="minus"></span>Salió</button><button class="btn b2 up-mitad" type="button" data-mov="1"><span data-ic="plus"></span>Entró</button>`;
+const pasoMov = (tarjeta, s) => `<div class="up-paso up-mov" data-sentido="${s}"><p class="up-paso__t">¿Cuántos ${s < 0 ? 'salieron' : 'entraron'}?</p>
+  <div class="up-contador"><button type="button" data-mas="-1" aria-label="Uno menos"><span data-ic="minus"></span></button><input name="n" inputmode="decimal" value="1" aria-label="Cuántos"><button type="button" data-mas="1" aria-label="Uno más"><span data-ic="plus"></span></button></div>
+  <div class="up-rapidos">${[1, 2, 5, 10].map(x => `<button type="button" data-rapido="${x}">${x}</button>`).join('')}</div>
+  <label class="up-motivo">${s < 0 ? '¿Para qué? (si quieres)' : '¿De dónde? (si quieres)'}<input name="motivo" placeholder="${s < 0 ? 'Servicio de Ana…' : 'Compra…'}"></label>
+  <button class="btn up-grande" type="button" data-mover><span data-etq>${s < 0 ? 'Listo: salió 1' : 'Listo: entró 1'}</span></button>
+  <button class="up-atras" type="button" data-atras-mov><span data-ic="chevron-left"></span>Atrás</button></div>`;
+const conInsumos = (el) => {
+  const etiqueta = (paso) => { const v = Number(String(paso.querySelector('[name=n]').value).replace(/[^\d.]/g, '')) || 0, s = +paso.dataset.sentido;
+    paso.querySelector('[data-etq]').textContent = `Listo: ${s < 0 ? (v === 1 ? 'salió' : 'salieron') : (v === 1 ? 'entró' : 'entraron')} ${v}`; };
+  el.addEventListener('input', (e) => { const p = e.target.closest('.up-mov'); if(p) etiqueta(p); });
+  el.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-mov],[data-mas],[data-rapido],[data-atras-mov],[data-mover]'); if(!b || b.disabled) return;
+    const tarjeta = b.closest('.item'), paso = b.closest('.up-mov');
+    if(b.dataset.mov) return cambiarAccion(tarjeta, pasoMov(tarjeta, +b.dataset.mov), '[name=n]');
+    if(b.matches('[data-atras-mov]')) return cambiarAccion(tarjeta, accionInsumo());
+    const input = paso.querySelector('[name=n]'), v = Number(String(input.value).replace(/[^\d.]/g, '')) || 0;
+    if(b.dataset.mas){ input.value = Math.max(0, v + +b.dataset.mas); return etiqueta(paso); }
+    if(b.dataset.rapido){ input.value = b.dataset.rapido; return etiqueta(paso); }
+    if(!v){ return errorEn(tarjeta, 'pon cuántos.'); }
+    b.disabled = true;
+    const j = await api('POST', '/api/insumos/mover', { id: tarjeta.dataset.id, delta: v * +paso.dataset.sentido, motivo: paso.querySelector('[name=motivo]').value });
+    b.disabled = false; if(!j.bien) return errorEn(tarjeta, j.error);
+    avisa(`Listo: ${paso.dataset.sentido < 0 ? 'salieron' : 'entraron'} ${v}.` + (j.pendiente ? ' Se envía al volver la señal.' : ''));
+    ir('inventario');
+  });
+};
 
 const PANTALLAS = {
   async hoy(el){
-    const t = await api('GET', '/api/tablero'); if(!t.bien) return falla(el, t);
+    const [t, cs] = await Promise.all([api('GET', '/api/tablero'), api('GET', '/api/citas')]); if(!t.bien) return falla(el, t);
     const pend = t.servicios_hoy.length + t.atrasados.length + t.seguimientos.length;
     marca('nHoy', pend); marca('nInv', t.insumos_bajos.length); marca('nVeh', t.vehiculo.length);
+    /* lo cobrado hoy: el último paso del recorrido, para que la tarjeta tenga a dónde llegar */
+    const hoy = hoyISO(), deHoy = (ms) => { const d = new Date(ms); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10) === hoy; };
+    const cobradas = (cs.citas || []).filter(c => c.estado === 'cerrado' && deHoy([...(c.historial || [])].reverse().find(h => h.estado === 'cerrado')?.cuando || 0));
+    const cobradoHoy = cobradas.reduce((s, c) => s + (Number(c.precio) || 0), 0);
+    const siguen = [...t.servicios_hoy].sort((a, b) => (a.hora || '99').localeCompare(b.hora || '99')), [sigue, ...demas] = siguen;
     el.innerHTML = heroHoy(t) + `
+      <h2>Lo que sigue</h2>
+      ${sigue ? `<ul class="lista-c up-sigue" id="lHoy">${citaItem(sigue, true)}</ul>` : `<p class="vacio">Hoy ya no hay servicios. <button class="btn b2" type="button" data-ir="servicios" data-agendar="1"><span data-ic="plus"></span>Agendar uno</button></p>`}
+      ${demas.length ? `<h2>Más tarde <span class="n">${demas.length}</span></h2><ul class="lista-c" id="lTarde">${demas.map(c => citaItem(c)).join('')}</ul>` : ''}
+      ${t.atrasados.length ? `<h2>Se quedaron pendientes <span class="n">${t.atrasados.length}</span></h2><ul class="lista-c" id="lAtr">${t.atrasados.map(c => citaItem(c)).join('')}</ul>` : ''}
+      ${t.seguimientos.length ? `<h2>Revisar cómo quedó <span class="n">${t.seguimientos.length}</span></h2><ul class="lista-c" id="lSeg">${t.seguimientos.map(c => `<li class="item up-frase" data-id="${c.id}" data-cliente="${esc(c.cliente)}">
+        <p class="up-frase__t"><span data-ic="rotate-ccw"></span><span>Pregúntale a <b>${esc(c.cliente)}</b> si ya no ha visto ${esc((c.plaga || 'la plaga').toLowerCase())}.</span></p>
+        <p>Le tocaba el ${dia(c.seguimiento.fecha)}. Si sigue, regresas sin costo: es la garantía de tu página.</p>
+        <div class="acc"><button class="btn" data-seg="bien"><span data-ic="circle-check"></span>Ya no hay plaga</button><button class="btn b2" data-seg="sigue">Sigue: regreso gratis</button>${tel10(c.telefono) ? `<a class="btn b2" href="https://wa.me/52${tel10(c.telefono)}"><span data-ic="message-circle"></span>WhatsApp</a>` : ''}</div></li>`).join('')}</ul>` : ''}
+      <h2>Por cobrar <span class="n">${t.por_cobrar.length}</span></h2>
+      ${t.por_cobrar.length ? `<ul class="lista-c" id="lCob">${t.por_cobrar.map(c => citaItem(c)).join('')}</ul>` : '<p class="vacio">Nadie te debe.</p>'}
+      ${cobradas.length ? `<h2>Cobrado hoy <span class="n">${pesos(cobradoHoy)}</span></h2><ul class="lista-c" id="lCobrado">${cobradas.map(c => citaItem(c)).join('')}</ul>` : ''}
+      ${t.insumos_bajos.length ? `<h2>Hay que comprar <span class="n">${t.insumos_bajos.length}</span></h2><ul class="lista-c">${t.insumos_bajos.map(i => `<li class="item up-frase up-ojo" data-id="${i.id}"><p class="up-frase__t"><span data-ic="shopping-cart"></span><span><b>${esc(i.nombre)}</b>: quedan ${i.cantidad} ${esc(unidad(i.unidad))}</span></p><p>Tu mínimo es ${i.minimo} ${esc(unidad(i.unidad))}.</p></li>`).join('')}</ul>` : ''}
+      ${t.vehiculo.length ? `<h2>La camioneta <span class="n">${t.vehiculo.length}</span></h2><ul class="lista-c">${t.vehiculo.map(v => `<li class="item up-frase"><p class="up-frase__t"><span data-ic="truck"></span><span><b>${esc(v.tipo[0].toUpperCase() + v.tipo.slice(1))}</b>: ${v.dias != null ? (v.dias < 0 ? `se pasó hace ${cuenta(-v.dias, 'día', 'días')}` : v.dias === 0 ? 'toca hoy' : `toca en ${cuenta(v.dias, 'día', 'días')}`) : `faltan ${v.faltanKm} km`}</span></p></li>`).join('')}</ul>` : ''}
+      <h2>Cómo va el día</h2>
       <div class="cifras">
+        <div class="cifra"><span class="up-ico" data-ic="banknote"></span><b>${pesos(cobradoHoy)}</b><small>cobrado hoy</small></div>
         <div class="cifra"><span class="up-ico" data-ic="calendar-days"></span><b>${t.servicios_hoy.length}</b><small>servicios hoy</small></div>
-        <div class="cifra ${t.seguimientos.length ? 'alerta' : ''}"><span class="up-ico" data-ic="rotate-ccw"></span><b>${t.seguimientos.length}</b><small>seguimientos</small></div>
+        <div class="cifra ${t.seguimientos.length ? 'alerta' : ''}"><span class="up-ico" data-ic="rotate-ccw"></span><b>${t.seguimientos.length}</b><small>revisiones</small></div>
         <div class="cifra"><span class="up-ico" data-ic="message-circle"></span><b>${t.bot.chats}</b><small>chats hoy</small></div>
         <div class="cifra"><span class="up-ico" data-ic="bot"></span><b>${t.bot.reflejo + t.bot.ia}</b><small>contestó el bot</small></div>
-        <div class="cifra"><span class="up-ico" data-ic="file-text"></span><b>${t.bot.cotizaciones}</b><small>cotizaciones</small></div>
         <div class="cifra ${t.avisos ? 'alerta' : ''}"><span class="up-ico" data-ic="bell"></span><b>${t.avisos}</b><small>avisos para ti</small></div>
       </div>
-      ${atajos}
-      <h2>Servicios de hoy <span class="n">${t.servicios_hoy.length}</span></h2>
-      ${t.servicios_hoy.length ? `<ul class="lista-c" id="lHoy">${t.servicios_hoy.map(c => citaItem(c)).join('')}</ul>` : '<p class="vacio">No hay servicios para hoy. Se agendan en «Servicios».</p>'}
-      ${t.atrasados.length ? `<h2>Se quedaron pendientes <span class="n">${t.atrasados.length}</span></h2><ul class="lista-c" id="lAtr">${t.atrasados.map(c => citaItem(c)).join('')}</ul>` : ''}
-      <h2>Visitas de seguimiento <span class="n">${t.seguimientos.length}</span></h2>
-      ${t.seguimientos.length ? `<ul class="lista-c" id="lSeg">${t.seguimientos.map(c => `<li class="item" data-id="${c.id}"><div class="t"><b>${esc(c.cliente)}</b><span>tocaba el ${dia(c.seguimiento.fecha)}</span></div>
-        <p>Pregúntale si ya no ha visto ${esc(c.plaga || 'la plaga')}. Si sigue, la garantía de tu página: regresas sin costo.</p>
-        <div class="acc"><button class="btn" data-seg="bien">Ya no hay plaga</button><button class="btn b2" data-seg="sigue">Sigue: agendar garantía</button>${c.telefono ? `<a class="btn b2" href="https://wa.me/52${esc(String(c.telefono).replace(/\D/g, '').slice(-10))}">WhatsApp</a>` : ''}</div></li>`).join('')}</ul>` : '<p class="vacio">Ninguna toca hoy. Se agendan solas 15 días después de cada servicio.</p>'}
-      ${t.insumos_bajos.length ? `<h2>Se está acabando <span class="n">${t.insumos_bajos.length}</span></h2><ul class="lista-c">${t.insumos_bajos.map(i => `<li class="item up-ojo"><div class="t"><b>${esc(i.nombre)}</b><span>quedan ${i.cantidad} ${esc(unidad(i.unidad))}</span></div><p>Hay que comprar: tu mínimo es ${i.minimo} ${esc(unidad(i.unidad))}.</p></li>`).join('')}</ul>` : ''}
-      ${t.vehiculo.length ? `<h2>Vehículo <span class="n">${t.vehiculo.length}</span></h2><ul class="lista-c">${t.vehiculo.map(v => `<li class="item"><div class="t"><b>${esc(v.vehiculo)} · ${esc(v.tipo)}</b><span>${v.dias != null ? (v.dias < 0 ? `se pasó hace ${cuenta(-v.dias, 'día', 'días')}` : v.dias === 0 ? 'hoy' : `en ${cuenta(v.dias, 'día', 'días')}`) : `faltan ${v.faltanKm} km`}</span></div></li>`).join('')}</ul>` : ''}
-      ${t.por_cobrar.length ? `<h2>Por cobrar <span class="n">${t.por_cobrar.length}</span></h2><ul class="lista-c" id="lCob">${t.por_cobrar.map(c => citaItem(c)).join('')}</ul>` : ''}`;
+      ${atajos}`;
     conAcciones(el);
   },
   async servicios(el){
     const j = await api('GET', '/api/citas'); if(!j.bien) return falla(el, j);
-    const filtro = guarda.leer('up_filtro') || 'pendiente';
+    const filtro = guarda.leer('up_filtro') || 'pendiente', cuantos = (e) => j.citas.filter(c => c.estado === e).length;
     const lista = j.citas.filter(c => c.estado === filtro);
     if(filtro !== 'pendiente') lista.reverse();
-    el.innerHTML = cab('Servicios', ((n) => `${n} pendiente${n === 1 ? '' : 's'}`)(j.citas.filter(c => c.estado === 'pendiente').length)) + `
-      <details class="nuevo"><summary><span data-ic="plus"></span>Agendar un servicio</summary>
-        <form class="f" id="fCita">
-          <div class="dos"><label>Cliente<input name="cliente" required autocomplete="off"></label><label>Teléfono<input name="telefono" inputmode="tel" autocomplete="off"></label></div>
-          <label>Dirección<input name="direccion" autocomplete="off"></label>
-          <div class="dos"><label>Zona<input name="zona" placeholder="Juriquilla, Centro…"></label><label>Plaga<input name="plaga" placeholder="cucarachas, ratones…"></label></div>
-          <div class="dos"><label>Fecha<input name="fecha" type="date" required value="${hoyISO()}"></label><label>Hora<input name="hora" type="time"></label></div>
-          <div class="dos"><label>Técnico<input name="tecnico"></label><label>Precio<input name="precio" inputmode="decimal" placeholder="$"></label></div>
-          <label>Nota<textarea name="nota"></textarea></label>
-          <button class="btn" type="submit">Agendar</button><p class="msj" role="status"></p>
-        </form></details>
-      <div class="filtro" role="group" aria-label="Qué servicios ver">${[['pendiente', 'Pendientes'], ['hecho', 'Por cobrar'], ['cerrado', 'Cobrados'], ['cancelado', 'Cancelados']].map(([v, t]) => `<button type="button" data-f="${v}" aria-pressed="${v === filtro}">${t}</button>`).join('')}</div>
+    el.innerHTML = cab('Servicios', ((n) => `${n} pendiente${n === 1 ? '' : 's'}`)(cuantos('pendiente'))) + `
+      <button class="up-nuevo" id="bAgendar" type="button"><span data-ic="plus"></span>Agendar un servicio</button>
+      <section class="up-asist" id="asist" hidden aria-label="Agendar un servicio"><div class="up-asist__cab"><span class="up-asist__paso">Paso 1 de 5</span><span class="up-asist__puntos" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span></div><div class="up-asist__cuerpo"></div></section>
+      <div class="filtro" role="group" aria-label="Qué servicios ver">${[['pendiente', 'Pendientes'], ['hecho', 'Por cobrar'], ['cerrado', 'Cobrados'], ['cancelado', 'Cancelados']].map(([v, t]) => `<button type="button" data-f="${v}" aria-pressed="${v === filtro}">${t} <span class="n">${cuantos(v)}</span></button>`).join('')}</div>
       ${lista.length ? `<ul class="lista-c">${lista.map(c => citaItem(c)).join('')}</ul>` : '<p class="vacio">Nada aquí.</p>'}`;
+    let inicial = {};
     const desde = q.get('agendar'); if(desde){ q.delete('agendar');
       const n = await api('GET', '/api/numeros'), c = n.cotizaciones?.find(x => x.codigo === desde);
-      if(c){ const f = el.querySelector('#fCita'); el.querySelector('details.nuevo').open = true;
-        f.cliente.value = c.cliente || ''; f.zona.value = c.zona || ''; f.plaga.value = c.interno?.plaga || c.concepto.replace(/^Control de /, ''); f.precio.value = c.precio;
-        f.insertAdjacentHTML('beforeend', `<input type="hidden" name="cotizacion" value="${esc(c.codigo)}">`); } }
-    formEnvio(el.querySelector('#fCita'), (d) => api('POST', '/api/citas', d));
+      if(c) inicial = { cliente: c.cliente || '', zona: c.zona || '', plaga: c.interno?.plaga || c.concepto.replace(/^Control de /, ''), precio: c.precio, cotizacion: c.codigo }; }
+    asistente(el, inicial);
     el.querySelector('.filtro').addEventListener('click', (e) => { const b = e.target.closest('[data-f]'); if(b){ guarda.poner('up_filtro', b.dataset.f); ir('servicios'); } });
     conAcciones(el);
   },
@@ -746,19 +992,13 @@ const PANTALLAS = {
           <label>Avísame cuando queden<input name="minimo" inputmode="decimal" placeholder="10"></label>
           <button class="btn" type="submit">Agregar</button><p class="msj" role="status"></p></form></details>
       ${j.insumos.length ? `<ul class="lista-c">${j.insumos.map(i => `<li class="item${i.bajo ? ' up-ojo' : ''}" data-id="${i.id}">
-        <div class="t"><b>${esc(i.nombre)}</b><span>${i.cantidad} ${esc(unidad(i.unidad))}</span></div>
+        <div class="t"><b>${esc(i.nombre)}</b><span class="up-cant"><b data-cuenta="${i.id}">${i.cantidad}</b> ${esc(unidad(i.unidad))}</span></div>
         ${i.minimo ? `<div class="up-nivel ${i.bajo ? 'bajo' : ''}" aria-hidden="true"><span style="--n:${Math.min(1, i.cantidad / (i.minimo * 3)).toFixed(3)}"></span></div>` : ''}
         <div class="acc">${i.bajo ? '<span class="chip aviso">Se está acabando</span>' : ''}${i.registro ? `<span class="chip">${esc(i.registro)}</span>` : '<span class="chip aviso">Falta su registro</span>'}${i.minimo != null ? `<span class="chip">mínimo ${i.minimo}</span>` : ''}</div>
-        <form class="f mov" style="padding:0"><label>Motivo<input name="motivo" placeholder="Compra, servicio de Ana…"></label><label>Cantidad<input name="delta" inputmode="decimal" placeholder="¿Cuántos?" required></label>
-          <div class="acc" style="grid-column:1/-1"><button class="btn b2" type="submit" name="sentido" value="1">+ Entró</button><button class="btn b2" type="submit" name="sentido" value="-1">− Salió</button></div><p class="msj" role="status" style="grid-column:1/-1"></p></form>
+        <div class="up-accion up-dos">${accionInsumo()}</div>
         ${i.movimientos.length ? `<p>Lo último: ${((m) => `${m.delta > 0 ? 'entraron' : 'salieron'} ${Math.abs(m.delta)}${m.motivo ? ' · ' + esc(m.motivo) : ''}`)(i.movimientos.at(-1))}</p>` : ''}</li>`).join('')}</ul>` : '<p class="vacio">Todavía no hay insumos. Agrega los productos que usas, con su registro: la carpeta de las plantas los pide.</p>'}`;
     formEnvio(el.querySelector('#fIns'), (d) => api('POST', '/api/insumos', d));
-    el.querySelectorAll('form.mov').forEach(f => f.addEventListener('submit', async (e) => {
-      e.preventDefault(); const msj = f.querySelector('.msj'), d = Object.fromEntries(new FormData(f));
-      const n = Math.abs(Number(String(d.delta).replace(/[^\d.]/g, ''))); if(!n){ msj.className = 'msj mal'; msj.textContent = 'Pon una cantidad.'; return; }
-      const j2 = await api('POST', '/api/insumos/mover', { id: f.closest('[data-id]').dataset.id, delta: n * Number(e.submitter?.value || 1), motivo: d.motivo });
-      if(!j2.bien){ msj.className = 'msj mal'; msj.textContent = j2.error; return; } ir('inventario');
-    }));
+    conInsumos(el);
   },
   async numeros(el){
     const j = await api('GET', '/api/numeros'); if(!j.bien) return falla(el, j);
@@ -819,7 +1059,7 @@ const PANTALLAS = {
         <div class="dos"><button class="btn b2" type="button" id="masR"><span data-ic="plus"></span>Agregar producto</button><label>Otro material, en pesos<input name="extra" inputmode="decimal" value="${esc(borrador.extra || '')}" placeholder="monitoreo, trampas…"></label></div>
       </form>
       <section class="up-total" id="total" aria-live="polite"></section>
-      <div class="acc up-cot-acc"><button class="btn" type="button" id="hoja"><span data-ic="file-text"></span>Hacer la hoja para el cliente</button><button class="btn b2" type="button" id="otra">Empezar otra</button></div>
+      <div class="acc up-cot-acc"><button class="btn up-grande" type="button" id="hoja"><span data-ic="send"></span>Mandar al cliente</button><button class="btn b2" type="button" id="otra">Empezar otra</button></div>
       <p class="msj" id="msjHoja" role="status"></p>
       <details class="nuevo"><summary><span data-ic="package"></span>Tus productos (${ex.catalogo.length})</summary>
         <ul class="up-catalogo">${[...ex.catalogo].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map(p => `<li><b>${esc(p.nombre)}</b><span>${pesos(Math.round(p.por_unidad * 100) / 100)} · ${esc(unidadDe(p).replace(/s$/, '').replace('L de mezcla', 'L de mezcla'))}</span></li>`).join('')}</ul></details>
@@ -847,15 +1087,29 @@ const PANTALLAS = {
     const numero = (s) => Number(String(s ?? '').replace(/[^\d.]/g, '')) || 0;
     const calcula = () => corrida({ horas: numero(borrador.horas), km: numero(borrador.km),
       renglones: [...borrador.renglones.map(g => ({ ...g, cantidad: numero(g.cantidad) })), { extra: numero(borrador.extra) }] }, ex);
+    /* el precio se arma a la vista: cuenta desde lo que decía hasta lo nuevo, en vez de cambiar de golpe */
+    let precioPrevio = null;
     const pintaTotal = () => {
-      const c = calcula(), fila = (t, x, k = '') => `<dt>${t}</dt><dd class="${k}">${x}</dd>`;
+      const c = calcula(), fila = (t, x, k = '') => `<dt>${t}</dt><dd class="${k}">${x}</dd>`; total.classList.remove('es-hoja');
       [...lista.children].forEach((li, i) => { li.querySelector('[data-imp]').textContent = pesos(c.lineas[i]?.importe || 0); });
       total.innerHTML = `<div class="up-precio"><small>Cotización</small><b>${pesos(c.cotizacion)}</b><span>${c.cotizacion ? 'Lo mismo que da tu Excel con estos datos, al centavo. El bot cotiza con esta misma cuenta.' : 'Pon horas, kilómetros y lo que se va a aplicar.'}</span></div>
         <dl class="desg">${fila('Químicos', pesos(c.quimicos))}${fila(`Técnico · ${c.horas} h × ${pesos(v.mano_hora)}`, pesos(c.mano))}${fila(`Camioneta · ${c.km} km × ${pesos(v.km)}`, pesos(c.traslado))}
           <span class="sep"></span>${fila('Lo que te cuesta hacerlo', pesos(c.directo))}${c.costos != null ? fila(`Costos (${pct(v.costos)})`, pesos(c.costos)) + fila(`Utilidad (${pct(1 - v.costos)})`, pesos(c.utilidad), 'gana') : ''}</dl>
         ${c.jadp ? `<p class="up-jadp">Con tu hoja JADP saldría <b>${pesos(c.jadp.cotizacion)}</b> (utilidad ${pesos(c.jadp.utilidad)}).</p>` : ''}`;
+      const b = total.querySelector('.up-precio b'), desde = precioPrevio, hasta = c.cotizacion; precioPrevio = hasta;
+      if(desde != null && desde !== hasta && !QUIETO.matches){ const t0 = performance.now(); b.textContent = pesos(desde);
+        (function paso(t){ if(!b.isConnected) return; const k = Math.min(1, (t - t0) / 260); b.textContent = k < 1 ? pesos(Math.round((desde + (hasta - desde) * (1 - Math.pow(1 - k, 3))) * 100) / 100) : pesos(hasta); if(k < 1) requestAnimationFrame(paso); })(t0); }
       return c;
     };
+    /* «Mandar al cliente»: el cuadro del precio se convierte en la hoja que va a ver el cliente */
+    const hojita = (c, url, folio) => `<div class="up-hojita"><div class="up-hojita__papel"><img src="../web/img/logo.webp" alt="Urban Pest Control" width="190" height="40">
+        <small>${folio ? 'Cotización ' + String(folio).padStart(4, '0') : 'Cotización'} · ${dia(hoyISO())}</small><b class="up-hojita__para">Para ${esc(borrador.cliente.trim())}</b>
+        <p>${esc(concepto(borrador, ex))}</p><div class="up-hojita__total"><span>Total</span><b>${pesos(c.precio)}</b></div><small>Válida 15 días · Incluye material, mano de obra y traslado.</small></div>
+      ${url ? `<div class="acc"><a class="btn up-grande up-wa" href="https://wa.me/?text=${encodeURIComponent('Te comparto tu cotización de Urban Pest Control: ' + url)}"><span data-ic="message-circle"></span>Mandar por WhatsApp</a><a class="btn b2" href="${esc(url)}"><span data-ic="file-text"></span>Ver la hoja</a></div>`
+        : '<p class="msj">Es la muestra: no se guarda ni se manda. Con tu cuenta, aquí sale el link para mandársela por WhatsApp.</p>'}
+      <button class="up-atras" type="button" data-cambios><span data-ic="chevron-left"></span>Hacer cambios</button></div>`;
+    const volverAlPrecio = () => { total.style.viewTransitionName = 'up-hoja'; total.style.viewTransitionClass = 'up-morfo'; transformar(() => { pintaTotal(); pintaIconos(total); }); };
+    total.addEventListener('click', (e) => { if(e.target.closest('[data-cambios]')) volverAlPrecio(); });
     pintaRenglones(); pintaTotal();
     f.addEventListener('input', () => { leer(); pintaTotal(); });
     /* «Calcular»: la zona del cliente → GET /api/distancia → los km de ida por carretera desde la bodega (como su Excel) */
@@ -899,14 +1153,15 @@ const PANTALLAS = {
       leer(); const c = pintaTotal(), msj = el.querySelector('#msjHoja'), b = e.currentTarget;
       if(!(c.precio > 0)){ msj.className = 'msj mal'; msj.textContent = 'Todavía no hay precio: pon horas y lo que se va a aplicar.'; return; }
       if(!String(borrador.cliente || '').trim()){ msj.className = 'msj mal'; msj.textContent = 'Pon a nombre de quién va (cliente o lugar).'; f.cliente.focus(); return; }
-      if(DE_MUESTRA || ex.muestra){ msj.className = 'msj'; msj.textContent = `En la muestra no se hace la hoja. Con tu cuenta, aquí sale el link para mandársela al cliente por ${pesos(c.precio)}.`; return; }
+      const aHoja = (url, folio) => { msj.textContent = ''; total.style.viewTransitionName = 'up-hoja'; total.style.viewTransitionClass = 'up-morfo';
+        transformar(() => { total.innerHTML = hojita(c, url, folio); total.classList.add('es-hoja'); pintaIconos(total); }).then(() => total.scrollIntoView({ block: 'nearest', behavior: QUIETO.matches ? 'auto' : 'smooth' })); };
+      if(DE_MUESTRA || ex.muestra) return aHoja(null, null);
       b.disabled = true; msj.className = 'msj'; msj.textContent = 'Haciendo la hoja…';
       const j = await apiRed('POST', '/api/cotizaciones', { cliente: borrador.cliente.trim(), zona: borrador.zona || undefined,
         renglones: [{ concepto: concepto(borrador, ex), cantidad: 1, precio: c.precio }], nota: 'Incluye material, mano de obra y traslado.' });
       b.disabled = false;
       if(!j.bien){ msj.className = 'msj mal'; msj.textContent = j.error || 'No se pudo hacer la hoja.'; return; }
-      const url = new URL('../cotizacion/?c=' + encodeURIComponent(j.cotizacion.codigo), location.href).href;
-      msj.className = 'msj bien'; msj.innerHTML = `Lista. <a href="${esc(url)}">Ver la hoja</a> · <a href="https://wa.me/?text=${encodeURIComponent('Te comparto tu cotización de Urban Pest Control: ' + url)}">Mandarla por WhatsApp</a>`;
+      aHoja(new URL('../cotizacion/?c=' + encodeURIComponent(j.cotizacion.codigo), location.href).href, j.cotizacion.folio);
     });
     engancharCarga(el, r.t);
   },

@@ -55,6 +55,54 @@ td.n, th.n{ text-align:right; font-variant-numeric:tabular-nums; white-space:now
 .ren{ display:grid; grid-template-columns:minmax(0,1fr) 72px 110px 44px; gap:8px; align-items:end }
 .ren button{ min-height:48px; border:0; border-radius:8px; background:var(--gris); cursor:pointer; font-size:20px; color:var(--suave) }
 .dos{ display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px }
+/* ══ FÁCIL DE LEER, y nada aparece de golpe (26 nov; Luis: «que lo use perfectamente un señor de 45 hasta 90 años, e
+   incluso un niño»). La hoja la abre EL CLIENTE en su teléfono, casi siempre desde WhatsApp. Medido a 360, 390, 768 px y con
+   la letra al 200 %: antes, 23 textos abajo de 16 px (13 px el folio, «Cant.», «MXN» y el pie) y al 200 % la hoja se salía
+   124 px de lado. Todo esto va SÓLO en pantalla: el PDF impreso queda como estaba. ══ */
+@media screen{
+  body{ font-size:17px }
+  .cab{ flex-wrap:wrap } .cab img{ max-width:100%; object-fit:contain; object-position:left center } .cab .folio{ font-size:15px; line-height:1.45 } .cab .folio b{ font-size:17px }
+  h1{ overflow-wrap:anywhere; hyphens:auto } .sub{ font-size:17px }
+  .datos{ grid-template-columns:repeat(auto-fit, minmax(min(150px, 100%), 1fr)) } .datos small{ font-size:15px } .datos b{ font-size:17px }
+  table{ font-size:17px } th{ font-size:15px }
+  .total{ flex-wrap:wrap } .total span{ font-size:17px } .total small{ font-size:15px }
+  .notas{ font-size:17px; gap:12px } .notas li::before{ top:.65em }
+  .ejemplo{ font-size:16px } .pie{ font-size:15px } .ayuda{ font-size:15px; margin-top:12px }
+  .acc{ gap:12px } .btn{ min-height:52px; padding:0 22px; font-size:17px } .btn svg{ width:22px; height:22px; flex:none }
+  .acc .btn.wa{ flex:1 1 220px }
+  .msj{ font-size:16px } .msj .acc{ margin-top:12px }
+  .f{ gap:16px } .f label{ font-size:16px; gap:8px }
+  .f input, .f textarea, .f select{ min-height:52px; font-size:17px; min-width:0 }
+  .dos{ grid-template-columns:repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap:16px } .dos > *{ min-width:0 }
+  /* el renglón: el concepto arriba a lo ancho; cantidad, precio y «Quitar» abajo */
+  .ren{ grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto; gap:10px 12px; padding:14px 0; border-bottom:1px solid var(--linea) }
+  .ren > label:first-child{ grid-column:1 / -1 }
+  .ren button{ min-height:52px; min-width:52px; padding:0 14px; font-size:16px; font-weight:600; color:var(--tinta) }
+  .ren button.seguro{ background:var(--mal); color:#fff }
+  /* la tabla en el teléfono: cada renglón se lee de arriba abajo, con su nombre a la izquierda y la cifra a la derecha */
+  @media (max-width:520px){
+    .cab{ flex-direction:column; align-items:flex-start } .cab .folio{ text-align:left }
+    thead{ display:none }
+    table, tbody, tr, td{ display:block } tr{ padding:12px 0; border-bottom:1px solid var(--linea) }
+    td{ padding:2px 0; border:0 } td:first-child{ font-weight:600; padding-bottom:6px }
+    td.n{ display:flex; flex-wrap:wrap; justify-content:space-between; gap:0 12px; text-align:right; white-space:normal } td.n::before{ content:attr(data-t); color:var(--suave); font-weight:400; text-align:left }
+  }
+  @media (max-width:300px){ .ren{ grid-template-columns:minmax(0,1fr) } }
+  /* mientras llega: la silueta de la hoja, que se convierte en la hoja */
+  .esqueleto{ display:grid; gap:14px } .esqueleto i{ display:block; height:16px; border-radius:6px; background:var(--gris) }
+  .esqueleto i:nth-child(1){ height:40px; width:46% } .esqueleto i:nth-child(2){ height:30px; width:80%; margin-top:14px } .esqueleto i:nth-child(5){ height:64px; background:#E3E9F1 }
+  .oculto{ position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); top:0; left:0 }
+  .hoja{ view-transition-name:hoja }
+  ::view-transition-group(hoja){ animation-duration:.26s; animation-timing-function:cubic-bezier(.2,.8,.2,1) }
+  ::view-transition-new(hoja){ animation:upHojaNueva .26s cubic-bezier(.2,.8,.2,1) both } ::view-transition-old(hoja){ animation:upHojaVieja .14s ease-in both }
+  @keyframes upHojaNueva{ from{ opacity:0 } 50%{ opacity:1 } } @keyframes upHojaVieja{ to{ opacity:0 } }
+}
+@media screen and (prefers-reduced-motion: no-preference){
+  .llega{ animation:upLlega .24s cubic-bezier(.2,.8,.2,1) both } @keyframes upLlega{ from{ transform:translateY(12px) } }
+  .ren.nueva{ animation:upFila .22s cubic-bezier(.2,.8,.2,1) both } @keyframes upFila{ from{ clip-path:inset(0 0 100% 0); transform:translateY(-10px) } to{ clip-path:inset(0 0 -20px 0) } }
+  .ren.se-va{ animation:upSeVa .18s cubic-bezier(.4,0,1,1) both } @keyframes upSeVa{ to{ transform:translateX(40%); clip-path:inset(0 0 0 100%) } }
+  .msj.cambia{ animation:upLlega .2s cubic-bezier(.2,.8,.2,1) both }
+}
 @media print{
   body{ background:#fff; font-size:12px } .env{ padding:0; max-width:none } .hoja{ box-shadow:none; padding:0; border-radius:0 }
   .no-imp{ display:none!important } .total{ -webkit-print-color-adjust:exact; print-color-adjust:exact }
@@ -63,7 +111,7 @@ td.n, th.n{ text-align:right; font-variant-numeric:tabular-nums; white-space:now
 </style>
 </head>
 <body>
-<main class="env" id="app"><p class="sub" style="padding:40px 0">Cargando…</p></main>
+<main class="env" id="app"><div class="hoja esqueleto" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div><p class="oculto" role="status">Cargando tu cotización…</p></main>
 <script>
 const q = new URLSearchParams(location.search);
 const guarda = { leer: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, poner: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
@@ -85,6 +133,17 @@ async function api(metodo, ruta, cuerpo){
   } catch { return { bien: false, error: 'No hay conexión. Revisa tu internet y vuelve a abrir el link.' }; }
 }
 
+/* ── nada aparece de golpe: lo nuevo sale de lo que había (la silueta de la hoja se vuelve la hoja). Con «reducir
+   movimiento» se cambia y ya; donde no hay View Transitions, la hoja sube 12 px al llegar (sólo transform). ── */
+const QUIETO = matchMedia('(prefers-reduced-motion: reduce)');
+function pintar(html){
+  const poner = () => { app.innerHTML = html; if(!document.startViewTransition && !QUIETO.matches) app.firstElementChild?.classList.add('llega'); };
+  if(!document.startViewTransition || QUIETO.matches || document.hidden){ poner(); return Promise.resolve(); }
+  const t = document.startViewTransition(poner); t.ready.catch(() => {}); return t.updateCallbackDone.catch(() => {});
+}
+const ICONO_WA = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>';
+const ICONO_PDF = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3m0 12-4-4m4 4 4-4M2 17l.6 2.4A2 2 0 0 0 4.5 21h15a2 2 0 0 0 1.9-1.6L22 17"/></svg>';
+
 /* la del chat de pruebas no lleva folio: no gasta uno de los de verdad */
 const nombreHoja = (c) => c.prueba ? 'Cotización de prueba' : `Cotización ${String(c.folio).padStart(4, '0')}`;
 function hoja(c, n){
@@ -101,39 +160,39 @@ function hoja(c, n){
   const contacto = [n.telefono && `WhatsApp ${esc(n.telefono)}`, n.correo && esc(n.correo)].filter(Boolean).join(' · ');
   const wa = n.telefono ? `https://wa.me/52${String(n.telefono).replace(/\D/g, '').slice(-10)}?text=${encodeURIComponent(c.prueba ? 'Hola, quiero agendar un servicio.' : `Hola, quiero agendar con la cotización ${c.folio}.`)}` : null;
   return `<article class="hoja">
-    <header class="cab"><img src="../web/img/logo.webp" alt="${esc(n.nombre)}" width="190" height="40"><div class="folio"><b>${nombreHoja(c)}</b>${corta(c.fecha)}<br>Válida al ${corta(c.vence)}</div></header>
+    <header class="cab"><img src="../web/img/logo.webp" alt="${esc(n.nombre)}" width="190" height="40"><div class="folio"><b>${nombreHoja(c)}</b>${corta(c.fecha)}<br>Válida hasta el ${corta(c.vence)}</div></header>
     <h1>${esc(c.concepto)}</h1>
     <p class="sub">${c.cliente ? 'Para ' + esc(c.cliente) : 'Control profesional de plagas en Querétaro'}</p>
     ${c.ejemplo ? '<p class="ejemplo">Esta es una cotización de PRUEBA, con precios de ejemplo. Todavía no son los de Urban Pest.</p>' : ''}
     <div class="datos">
       ${c.lugar ? `<div><small>Lugar</small><b>${esc(c.lugar)}</b></div>` : ''}
       ${c.zona ? `<div><small>Zona</small><b>${esc(c.zona)}</b></div>` : ''}
-      ${c.m2 ? `<div><small>Superficie</small><b>${c.m2Estimado ? '≈ ' : ''}${esc(c.m2)} m²</b></div>` : ''}
+      ${c.m2 ? `<div><small>Tamaño del lugar</small><b>${c.m2Estimado ? '≈ ' : ''}${esc(c.m2)} m²</b></div>` : ''}
     </div>
-    <table><thead><tr><th>Concepto</th><th class="n">Cant.</th><th class="n">Precio</th><th class="n">Importe</th></tr></thead>
-      <tbody>${renglones.map(r => `<tr><td>${esc(r.concepto)}</td><td class="n">${esc(r.cantidad)}</td><td class="n">${pesos(r.precio)}</td><td class="n">${pesos(r.cantidad * r.precio)}</td></tr>`).join('')}</tbody></table>
-    <div class="total"><span>${aprox ? 'Precio aproximado' : 'Total'}<small>${c.iva === 'incluido' ? 'IVA incluido' : c.iva === 'mas' ? 'más IVA' : 'MXN'}</small></span><b>${pesos(c.precio)}</b></div>
+    <table><thead><tr><th>Concepto</th><th class="n">Cantidad</th><th class="n">Precio</th><th class="n">Importe</th></tr></thead>
+      <tbody>${renglones.map(r => `<tr><td>${esc(r.concepto)}</td><td class="n" data-t="Cantidad">${esc(r.cantidad)}</td><td class="n" data-t="Precio">${pesos(r.precio)}</td><td class="n" data-t="Importe">${pesos(r.cantidad * r.precio)}</td></tr>`).join('')}</tbody></table>
+    <div class="total"><span>${aprox ? 'Precio aproximado' : 'Total'}<small>${c.iva === 'incluido' ? 'IVA incluido' : c.iva === 'mas' ? 'más IVA' : 'en pesos mexicanos'}</small></span><b>${pesos(c.precio)}</b></div>
     <ul class="notas">${notas.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
     <footer class="pie"><b style="color:var(--tinta)">${esc(n.nombre)}</b>${contacto ? `<span>${contacto}</span>` : ''}
       ${n.licencia_sanitaria ? `<span>Licencia sanitaria ${esc(n.licencia_sanitaria)}${n.repse ? ' · REPSE ' + esc(n.repse) : ''}</span>` : ''}</footer>
   </article>
   <div class="acc no-imp">
-    <button class="btn" type="button" onclick="print()">Guardar como PDF</button>
-    ${wa ? `<a class="btn wa" href="${wa}">Agendar por WhatsApp</a>` : ''}
+    ${wa ? `<a class="btn wa" href="${wa}">${ICONO_WA}Agendar por WhatsApp</a>` : ''}
+    <button class="btn ${wa ? 'b2' : ''}" type="button" onclick="print()">${ICONO_PDF}Guardar como PDF</button>
   </div>
-  <p class="sub no-imp" style="font-size:13px;margin-top:10px">En el iPhone: «Guardar como PDF» → Compartir → Guardar en Archivos.</p>`;
+  <p class="sub ayuda no-imp">En el iPhone: toca «Guardar como PDF», luego Compartir y «Guardar en Archivos».</p>`;
 }
 
 async function verUna(codigo){
   const j = await api('GET', '/api/cotizacion?c=' + encodeURIComponent(codigo));
-  if(!j.bien){ app.innerHTML = `<div class="hoja"><h1>No encontramos esa cotización</h1><p class="sub">${esc(j.error)}</p></div>`; return; }
+  if(!j.bien){ pintar(`<div class="hoja"><h1>No encontramos esa cotización</h1><p class="sub">${esc(j.error)}</p></div>`); return; }
   document.title = `${nombreHoja(j.cotizacion)} · ${j.negocio.nombre}`;
-  app.innerHTML = hoja(j.cotizacion, j.negocio);
+  pintar(hoja(j.cotizacion, j.negocio));
 }
 
-function nueva(){
-  const fila = () => `<div class="ren"><label>Concepto<input name="concepto" required placeholder="Servicio mensual de control de plagas"></label><label>Cant.<input name="cantidad" inputmode="numeric" value="1"></label><label>Precio<input name="precio" inputmode="decimal" placeholder="0"></label><button type="button" aria-label="Quitar renglón" data-quitar>×</button></div>`;
-  app.innerHTML = `<div class="hoja"><h1>Cotización a mano</h1><p class="sub">Para una planta, una casa especial o lo que el bot no cotiza solo. Sale con tu logo y un link para mandar.</p>
+async function nueva(){
+  const fila = () => `<div class="ren"><label>Concepto<input name="concepto" required placeholder="Servicio mensual de control de plagas"></label><label>Cantidad<input name="cantidad" inputmode="numeric" value="1"></label><label>Precio, en pesos<input name="precio" inputmode="decimal" placeholder="0"></label><button type="button" data-quitar>Quitar</button></div>`;
+  await pintar(`<div class="hoja"><h1>Cotización a mano</h1><p class="sub">Para una planta, una casa especial o lo que el bot no cotiza solo. Sale con tu logo y un link para mandar.</p>
     <form class="f" id="f" style="margin-top:22px">
       <div class="dos"><label>Para quién<input name="cliente" required autocomplete="off" placeholder="Nombre o empresa"></label><label>Lugar<input name="lugar" placeholder="Planta, bodega, casa…"></label></div>
       <div class="dos"><label>Zona<input name="zona" placeholder="Colonia o parque industrial"></label><label>Válida por<select name="vigencia"><option value="15">15 días</option><option value="30">30 días</option><option value="7">7 días</option></select></label></div>
@@ -142,27 +201,33 @@ function nueva(){
       <button class="btn b2" type="button" id="mas">Agregar renglón</button>
       <div class="dos"><label>IVA<select name="iva"><option value="">No mostrar</option><option value="mas">Más IVA</option><option value="incluido">IVA incluido</option></select></label></div>
       <label>Nota (opcional)<textarea name="nota" placeholder="Frecuencia, condiciones, lo que incluye…"></textarea></label>
-      <button class="btn" type="submit">Crear cotización</button><p class="msj" id="msj" role="status"></p>
-    </form></div>`;
+      <button class="btn" type="submit">Crear cotización</button><div class="msj" id="msj" role="status"></div>
+    </form></div>`);
   const f = document.getElementById('f'), rens = document.getElementById('rens');
-  document.getElementById('mas').onclick = () => rens.insertAdjacentHTML('beforeend', fila());
-  rens.addEventListener('click', (e) => { const b = e.target.closest('[data-quitar]'); if(b && rens.children.length > 1) b.closest('.ren').remove(); });
+  /* el renglón nuevo se despliega desde el de arriba; el que se quita sale de lado (si ya traía algo escrito, se pregunta) */
+  document.getElementById('mas').onclick = () => { rens.insertAdjacentHTML('beforeend', fila()); const r = rens.lastElementChild; r.classList.add('nueva'); r.querySelector('input').focus({ preventScroll: true }); };
+  rens.addEventListener('click', (e) => { const b = e.target.closest('[data-quitar]'); if(!b) return; const r = b.closest('.ren');
+    if(rens.children.length < 2){ b.textContent = 'Es el único renglón'; setTimeout(() => { b.textContent = 'Quitar'; }, 1800); return; }
+    const escrito = [...r.querySelectorAll('input')].some(i => i.value.trim() && i.value !== i.defaultValue);
+    if(escrito && !b.classList.contains('seguro')){ b.classList.add('seguro'); b.textContent = 'Sí, quitar'; setTimeout(() => { if(b.isConnected){ b.classList.remove('seguro'); b.textContent = 'Quitar'; } }, 4000); return; }
+    if(QUIETO.matches) return r.remove();
+    r.classList.add('se-va'); setTimeout(() => r.remove(), 180); });
   f.onsubmit = async (e) => {
     e.preventDefault(); const d = Object.fromEntries(new FormData(f)), msj = document.getElementById('msj');
     const renglones = [...rens.children].map(r => ({ concepto: r.querySelector('[name=concepto]').value, cantidad: Number(r.querySelector('[name=cantidad]').value) || 1, precio: Number(String(r.querySelector('[name=precio]').value).replace(/[$,\s]/g, '')) }));
-    const boton = f.querySelector('[type=submit]'); boton.disabled = true; msj.className = 'msj'; msj.textContent = 'Creando…';
+    const boton = f.querySelector('[type=submit]'); boton.disabled = true; msj.className = 'msj cambia'; msj.textContent = 'Creando…';
     const j = await api('POST', '/api/cotizaciones', { ...d, concepto: d.titulo, renglones });
     boton.disabled = false;
-    if(!j.bien){ msj.className = 'msj mal'; msj.textContent = j.error; return; }
+    if(!j.bien){ msj.className = 'msj mal'; void msj.offsetWidth; msj.classList.add('cambia'); msj.textContent = (j.error || 'No se pudo crear.') + (j.estado === 401 || /acceso/i.test(j.error || '') ? '' : ' Revisa los datos y vuelve a tocar «Crear cotización».'); return; }
     const link = location.origin + location.pathname + '?c=' + j.cotizacion.codigo;
-    msj.className = 'msj bien'; msj.innerHTML = `Lista: <a href="${esc(link)}">${esc(link)}</a>`;
-    if(navigator.share) navigator.share({ title: 'Cotización', url: link }).catch(() => {});
+    msj.className = 'msj bien'; void msj.offsetWidth; msj.classList.add('cambia');
+    msj.innerHTML = `Lista. Ahora mándasela a tu cliente:<div class="acc"><a class="btn wa" href="https://wa.me/?text=${encodeURIComponent('Te comparto tu cotización de Urban Pest Control: ' + link)}">${ICONO_WA}Mandarla por WhatsApp</a><a class="btn b2" href="${esc(link)}">Ver cómo la ve</a></div>`;
   };
 }
 
 if(q.get('c')) verUna(q.get('c'));
 else if(q.has('nueva')) nueva();
-else app.innerHTML = '<div class="hoja"><h1>Cotización</h1><p class="sub">Abre el link que te mandamos por WhatsApp para ver tu cotización.</p></div>';
+else pintar('<div class="hoja"><h1>Cotización</h1><p class="sub">Abre el link que te mandamos por WhatsApp para ver tu cotización.</p></div>');
 </script>
 </body>
 </html>
