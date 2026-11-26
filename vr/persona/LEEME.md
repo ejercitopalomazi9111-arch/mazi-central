@@ -17,7 +17,7 @@ Una persona con el visor puesto, hecha de código, que usa Mazi VR **por el mism
 ## Cómo se corre
 
 ```bash
-node vr/persona/recorridos.mjs todo        # o: inicio · fisica · monarca · maceta · mariposas
+node vr/persona/recorridos.mjs todo        # o: inicio · fisica · monarca · maceta · mariposas · menus · atras · fantasma · teclado
 ```
 
 Deja una foto de cada paso en `$FOTOS` (de fábrica `/tmp/claude-0/persona`) y al final dice **qué no le salió**.
@@ -33,6 +33,14 @@ Deja una foto de cada paso en `$FOTOS` (de fábrica `/tmp/claude-0/persona`) y a
 | «Me saca a cada rato» | la palma abierta quieta era «Atrás» | `manos.js` (apagado) |
 | La maceta «no sirve» | sus cajas para elegir estaban **detrás y arriba** de ti; y todo estaba en el piso, fuera de la vista de la cámara | `monarca/maceta.js` |
 | Las mariposas no se dejan | huían de cualquier mano a 35 cm | `monarca/ecosistema.js` |
+
+## Lo que encontró la segunda noche (27 nov)
+
+| Lo que le pasaba a la gente | Por qué | Dónde |
+|---|---|---|
+| Clic en el botón por el que sólo pasó el dedo | el pellizco elegía lo que se vio en los últimos 700 ms | `vr.js` (`seguirObjeto`), `manos.js` |
+| Bajar la mano y que se meta solo a lo de enfrente | la mirada heredaba el reloj del dedo | `vr.js` |
+| «Atrás» no se podía pellizcar en Objetos | Objetos se quedaba con todos los pellizcos | `objetos.js`, `cine.js`, `lector.js` |
 
 ## Lo que NO prueba
 

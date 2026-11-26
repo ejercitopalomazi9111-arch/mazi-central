@@ -55,32 +55,46 @@ export function crearRotulos({ THREE, V, grupo }){
       nuevo('clave', 1.2, .46, (x, w, h) => { escribir(x, c.grande, w / 2, h * .36, 128, 900, NARANJA, w - 30); if(c.chico) escribir(x, c.chico, w / 2, h * .8, 52, 700, '#FFFFFF', w - 30); },
         { en: c.en ?? k / Math.max(1, lista.length), base: new THREE.Vector3(px, py, -2.25 + Math.abs(px) * .3), k }); });
   };
-  /* un mensaje (respuesta, pregunta, consecuencia): líneas una tras otra, al centro */
-  R.mensaje = (titulo, lineas = [], { chico = false } = {}) => {
+  /* un mensaje (respuesta, pregunta, consecuencia): líneas una tras otra, al centro.
+     QUE NO LO TAPEN LOS BOTONES (27 nov, Carlos: «donde decimos lo de materia se está cubriendo con los botones y no se alcanza
+     a leer»): los renglones bajaban sin fijarse dónde empiezan los botones. Ahora nada baja de `hasta` (la orilla de arriba de
+     los botones); lo que no cabe se parte en PÁGINAS que cambian solas cada 9 s (y con mensaje(…, { pagina }) a mano), con
+     «1/3» junto al título. Devuelve cuántas páginas salieron. */
+  R.mensaje = (titulo, lineas = [], { chico = false, hasta = -.26, pagina = 0 } = {}) => {
     R.items.filter((i) => i.tipo === 'mensaje' || i.tipo === 'clave').forEach((i) => { i.salir = ahora(); });
+    R.paginas = null;
     const t = ahora();
     const digito = /^\d$/.test(String(titulo || ''));
-    if(titulo) nuevo('mensaje', 2.4, .42, (x, w, h) => escribir(x, titulo, w / 2, h / 2, digito ? 240 : 150, 900, NARANJA, w - 40), { t0: t, base: new THREE.Vector3(0, .72, -2.2) });
-    let y = titulo ? .46 : .62;
-    lineas.forEach((l, k) => {
-      const tam = chico ? 46 : 66, x0 = document.createElement('canvas').getContext('2d'); x0.font = `700 ${tam}px system-ui, -apple-system, sans-serif`;
-      const rs = partir(x0, l, 2.3 * 620 - 80), alto = .04 + rs.length * tam * 1.3 / 620;
+    const tam = chico ? 46 : 66, x0 = document.createElement('canvas').getContext('2d'); x0.font = `700 ${tam}px system-ui, -apple-system, sans-serif`;
+    const piezas = lineas.map((l) => { const rs = partir(x0, l, 2.3 * 620 - 80); return { rs, alto: .04 + rs.length * tam * 1.3 / 620 }; });
+    const y0 = titulo ? .46 : .62, cabe = y0 - hasta;
+    const paginas = [[]]; let usado = 0;
+    for(const pz of piezas){ if(usado + pz.alto > cabe && paginas.at(-1).length){ paginas.push([]); usado = 0; } paginas.at(-1).push(pz); usado += pz.alto + .03; }
+    const n = paginas.length, pg = ((pagina % n) + n) % n;
+    const tit = titulo && n > 1 ? `${titulo}  ${pg + 1}/${n}` : titulo;
+    if(tit) nuevo('mensaje', 2.4, .42, (x, w, h) => escribir(x, tit, w / 2, h / 2, digito ? 240 : 150, 900, NARANJA, w - 40), { t0: t, base: new THREE.Vector3(0, .72, -2.2) });
+    let y = y0;
+    paginas[pg].forEach(({ rs, alto }, k) => {
       nuevo('mensaje', 2.4, alto, (x, w, h) => { rs.forEach((r, j) => escribir(x, r, w / 2, (j + .5) * (h / rs.length), tam, 700, '#FFFFFF', w - 40)); },
         { t0: t + .35 * (k + 1), base: new THREE.Vector3(0, y - alto / 2, -2.2) });
       y -= alto + .03;
     });
+    if(n > 1) R.paginas = { titulo, lineas, op: { chico, hasta }, pg, n, t };
+    return n;
   };
   R.fuente = (texto) => {
     R.items.filter((i) => i.tipo === 'fuente').forEach((i) => { i.salir = ahora(); });
     if(texto) nuevo('fuente', 2.4, .1, (x, w, h) => escribir(x, texto, w / 2, h / 2, 36, 600, '#D8C8E8', w - 30), { t0: ahora() + 1, base: new THREE.Vector3(0, -.88, -2.1) });
   };
-  R.limpiar = () => { const t = ahora(); R.items.forEach((i) => { if(!i.salir) i.salir = t; }); };
+  R.limpiar = () => { R.paginas = null; const t = ahora(); R.items.forEach((i) => { if(!i.salir) i.salir = t; }); };
   R.avanzar = (f) => { R.f = f; };
   R.mostrarTodo = () => { R.f = 1; };
 
   /* cada cuadro: entradas, salidas y un flotar suave */
   const ease = (k) => 1 - Math.pow(1 - Math.min(1, Math.max(0, k)), 3);
   R.cuadro = (t) => {
+    /* las páginas de un mensaje largo cambian solas */
+    if(R.paginas && t - R.paginas.t > 9){ const P = R.paginas; R.mensaje(P.titulo, P.lineas, { ...P.op, pagina: P.pg + 1 }); }
     for(const it of R.items){
       const m = it.p.malla;
       /* las cifras esperan a que el título se haya ido para arriba (si no, se enciman) */

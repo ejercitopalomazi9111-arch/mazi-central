@@ -359,13 +359,8 @@ export function montarFisica(V){
     return { flechas: true };
   };
   function reiniciar(){ F.corriendo = false; vuelo = null; ponerObjeto(); preparar(); pintarMenu(); }
-  /* la mano fantasma enseña a pellizcar «Lanzar» hasta el primer tiro */
-  let maestro = null, tiros = 0; import('../maestro.js').then(({ crearMaestro }) => crearMaestro(V, F.grupo)).then((m) => { maestro = m; }).catch(() => {});
-  const cuadroAntes = F.cuadro; let entroEn = 0;
-  F.cuadro = () => { cuadroAntes(); if(!maestro) return; if(F.rastros.length) tiros = 1;
-    if(!tiros && performance.now() - entroEn > 4000){ const p = F.grupo.worldToLocal(lanzarB.malla.getWorldPosition(new THREE.Vector3())); if(maestro.activo !== 'pellizcar') maestro.mostrar('pellizcar', p, { base: p.clone().add(new THREE.Vector3(.22, -.05, .1)) }); maestro.cuadro(); }
-    else if(maestro.activo) maestro.ocultar(); };
-  F.entrar = () => { entroEn = performance.now(); V.cuarto.visible = !V.AJ.mixta; acomodar(); reiniciar(); };   /* respeta la realidad mixta (antes la tapaba con el cuarto) */
+  /* (27 nov, Carlos) la mano fantasma ya no sale en el simulador: sólo en el tutorial de Monarch */
+  F.entrar = () => { V.cuarto.visible = !V.AJ.mixta; acomodar(); reiniciar(); };   /* respeta la realidad mixta (antes la tapaba con el cuarto) */
   F.salir = () => { if(F.corriendo) terminar(); };
   F.elegibles = () => botones.filter((b) => b.visible); F.F_todos = () => botones;
   F.atras = () => V.ir('juegos');

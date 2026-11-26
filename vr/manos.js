@@ -199,7 +199,7 @@ export async function iniciarManos(V){
       /* SOLTAR (26 nov, lo cazó la persona simulada): pedía separar los dedos MÁS de 5.8 cm en 3D Y en la imagen; al regresar a
          apuntar con el pulgar recogido (lo normal) quedan a 4-5 cm y el pellizco no se soltaba nunca: el rayo se quedaba
          congelado en el botón de antes y ya no se podía elegir otro. Ahora basta con separarlos (4.6 cm, o en la imagen) */
-      if(W){ const p3 = d3(W[4], W[8]); G.pellizca = !G.puno && (p3 < .035 || G.pinza < .28); G.suelta = G.puno || p3 > .046 || G.pinza > .42; G.pinza3 = p3; }
+      if(W){ const p3 = d3(W[4], W[8]); G.pellizca = !G.puno && (p3 < .035 || (G.pinza < .2 && p3 < .055));   /* (27 nov) en la imagen plana, al mover la mano el pulgar «tapa» al índice: ya no basta con eso solo */ G.suelta = G.puno || p3 > .046 || G.pinza > .42; G.pinza3 = p3; }
       /* puño arriba y abajo 4 veces: el menú se vuelve a poner enfrente de donde miras */
       /* AGARRAR UN BOTÓN ES CLIC (Carlos, 19 nov: «casi casi trato de agarrar el botón para que salga y aún así no quiere»):
          cerrar la mano encima de un botón se leía como puño y no hacía nada. Ahora, si la mano apuntaba a un botón hace un
@@ -210,7 +210,7 @@ export async function iniciarManos(V){
       if(G.puno){ m.punoDesde ||= ahora; } else m.punoDesde = 0;
       const punoFirme = G.puno && ahora - m.punoDesde >= 200 && ahora - (m.soltoEn || 0) > 800;
       const cierra = punoFirme && !m.punoAntes; m.punoAntes = punoFirme;
-      if(cierra && m.objetoAntes && ahora - (m.objetoEn || 0) < 650 && !V.extra.gestosVideo){ m.agarro = ahora; botones[V.B.X] = true; estado.gesto = 'agarrar'; }
+      if(false && cierra && m.objetoAntes && ahora - (m.objetoEn || 0) < 650 && !V.extra.gestosVideo){   /* (27 nov) APAGADO: con el dedo apuntando, MediaPipe a veces lee «puño» y eso daba clics que nadie hizo. Sólo el pellizco elige */ m.agarro = ahora; botones[V.B.X] = true; estado.gesto = 'agarrar'; }
       if(m.puno(G.puno, L[0].y, ahora)){ V.recentrar(); V.hud('Centrado', 1.2); V.sonar('ding', .3); }
       if(!m.pellizco && G.pellizca){ m.pellizco = true; m.pellizcoBoton = !!(V.extra.sobreBoton || V.brilloHace?.(300)); } else if(m.pellizco && (G.suelta || G.puno)){ m.pellizco = false; m.soltoEn = ahora; }
       /* donde la vista usa el pellizco para otra cosa (el video, leer), sólo es clic si apuntas a un botón */
@@ -278,11 +278,15 @@ export async function iniciarManos(V){
       const H = m.hist || (m.hist = []);
       H.push({ t: ahora, o: o.clone(), d: d.clone(), w: I.mundo.muneca.clone() }); while(H.length > 2 && ahora - H[0].t > 700) H.shift();
       if(m.pellizco){
-        if(!m.fijo){ const e = H.filter((x) => ahora - x.t >= 200).pop() || H[0]; m.fijo = { o: e.o.clone(), d: e.d.clone(), w: e.w.clone(), desde: ahora,
-          /* lo que tenías iluminado al cerrar los dedos: ESO es lo que se elige, aunque la muñeca se mueva al pellizcar (26 nov) */
-          /* (26 nov) primero LO QUE BRILLA, si esta mano lo estaba apuntando hace poco (en Ajustes el rayo tocaba de pasada la fila
-             de junto y el pellizco se iba a «Espera» con «Atrás» brillando); si no, lo último que apuntó */
-          objeto: (() => { const f = V.focoHace?.(260) || V.focoObjeto?.(); if(f && m.objetoAntes === f && ahora - (m.objetoEn || 0) < 700) return f; if(f && (m.vistos || []).some(([o, t]) => o === f && ahora - t < 700)) return f; return m.objetoAntes && ahora - (m.objetoEn || 0) < 400 ? m.objetoAntes : null; })() }; m.dirSuave = e.d.clone(); }
+        if(!m.fijo){
+          /* QUÉ SE ELIGE AL PELLIZCAR (27 nov, clic fantasma): lo que la mano lleva apuntando DE CORRIDO al menos 250 ms; o, si
+             al juntar los dedos se resbaló, aquello en lo que estuvo quieta 300 ms justo antes. Lo que sólo cruzó, nada */
+          const elegido = (() => { if(m.objAhora && ahora - m.objDesde >= 250) return m.objAhora; const pv = m.previo;
+            if(pv && ahora - pv.hasta < 350 && pv.hasta - pv.desde >= 300) return pv.o; return null; })();
+          /* el rayo se congela donde estaba hace 200 ms SÓLO si es para no perder ese botón; si no, donde está ahora (si no, al
+             cruzar de un botón a otro se congelaba sobre el de en medio) */
+          const e = elegido && elegido !== m.objAhora ? (H.filter((x) => ahora - x.t >= 200).pop() || H[0]) : H[H.length - 1];
+          m.fijo = { o: e.o.clone(), d: e.d.clone(), w: e.w.clone(), desde: ahora, objeto: elegido }; m.dirSuave = e.d.clone(); }
         /* congelado: lo que se mueve la MANO (la muñeca vista desde tu cabeza) gira el rayo, para poder arrastrar */
         const w0 = m.fijo.w.clone().sub(o).normalize(), w1 = I.mundo.muneca.clone().sub(o).normalize();
         d.copy(m.fijo.d).applyQuaternion(new THREE.Quaternion().setFromUnitVectors(w0, w1));

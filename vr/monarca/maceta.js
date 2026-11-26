@@ -12,7 +12,6 @@
    crearMaceta({ THREE, V, grupo, cargar(gltf), aqui, decir(id), alTerminar, eco, flor() }) */
 export const PASOS = ['tierra', 'hoyo', 'semilla', 'cubrir', 'regar', 'crece', 'lista'];
 const HERRAMIENTA = { tierra: 'bolsa', hoyo: 'pala', semilla: 'semillero', cubrir: 'pala', regar: 'regadera' };
-import { crearMaestro } from '../maestro.js';
 export function crearMaceta({ THREE, V, grupo, cargar, aqui, decir = () => {}, alTerminar = () => {}, eco, flor = () => null, idioma = () => 'es' }){
   const M = { paso: null, mano: null, activo: false, listo: false, errores: 0 };
   const capa = new THREE.Group(); capa.visible = false; grupo.add(capa);
@@ -34,7 +33,7 @@ export function crearMaceta({ THREE, V, grupo, cargar, aqui, decir = () => {}, a
     const esc = 1.05 / Math.max(t.x, t.z); m.scale.setScalar(esc); m.position.set(-c.x * esc, MESA - b.max.y * esc, -.56 - c.z * esc);
     m.traverse((o) => { if(o.isMesh){ const v = o.material; o.material = new THREE.MeshBasicMaterial({ map: v.map || null, color: v.map ? 0xffffff : v.color }); } }); capa.add(m); }).catch(() => {});
   /* la mano fantasma enseña a qué pellizcar si te quedas atorado */
-  let maestro = null; crearMaestro(V, capa).then((m) => { maestro = m; }).catch(() => {});
+  const maestro = null;   /* (27 nov, Carlos) la mano fantasma sólo en el tutorial; aquí guía la mariposa */
   /* cada cosa: el modelo + una caja invisible que es la que se elige (el motor sólo elige mallas, no grupos) */
   M.armado = Promise.all(Object.entries(ARCHIVO).map(async ([k, f]) => {
     const g = await cargar(aqui(`medios/maceta/${f}.glb`)).catch(() => null);
