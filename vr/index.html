@@ -33,6 +33,7 @@
   #entrada img{ width:96px; height:96px }
   #entrada h1{ font-size:40px; font-weight:900; letter-spacing:-.03em }
   #entrada h1 em{ font-style:normal; color:var(--rosa) }
+  a.boton{ display:inline-flex; align-items:center; justify-content:center; text-decoration:none; box-sizing:border-box }   /* el «AR» del iPhone es un enlace de verdad */
   .boton{ appearance:none; border:0; border-radius:99px; font:inherit; font-weight:800; font-size:20px; min-height:56px; padding:0 34px; cursor:pointer; color:#fff; background:var(--acento) }
   .boton.sec{ background:var(--sup); box-shadow:inset 0 0 0 2px #4A2A6E; font-size:17px; min-height:48px }
   .estado{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center }
@@ -101,7 +102,7 @@ try{ const L = JSON.parse(localStorage.getItem('mazivr.errores') || '[]'), u = L
 /* LA VERSIÓN (Carlos, 19 nov: «un mensajito que diga la versión en la que estás y que se actualizó»). Va igual que la
    de sw.js (pruebas-sinred.mjs lo revisa). La primera vez que se abre una versión nueva dice «actualizada»; y si el
    trabajador de fondo ya trae una más nueva que esta página, recarga sola (sólo en la entrada, una vez) */
-const VERSION = 57;
+const VERSION = 58;
 { let antes = 0; try{ antes = +localStorage.getItem('mazivr.version') || 0; if(antes !== VERSION) localStorage.setItem('mazivr.version', VERSION); }catch{}
   const el = $('#version'); el.textContent = antes < VERSION ? `v${VERSION} · actualizada` : `v${VERSION}`; el.classList.toggle('nueva', antes < VERSION); }
 const versionSW = (n) => { if(!(n > VERSION) || document.body.classList.contains('dentro')) return;
@@ -133,8 +134,13 @@ const botonAR = (d) => { if(!d.launchRequired) return; const b = $('#bAR'); b.st
      sólo espera la barra de Apple con «Abrir» arriba en Safari, y esa barra NO sale si Mazi VR se abrió desde el ícono de la
      pantalla de inicio (ni si alguna vez se cerró). Ahora se usa el enlace directo del App Clip de Apple (appclip.apple.com,
      que manda la propia Variant) y, desde el ícono, se abre en Safari con window.open */
-  b.onclick = () => { const u = d.directAppClipUrl || d.launchUrl; if(!u){ try{ window.VLaunch?.launch(location.href); }catch{} return; }
-    if(navigator.standalone){ const w = window.open(u, '_blank'); if(!w) location.href = u; } else location.href = u; }; };
+  /* (27 nov, Carlos: «la primera vez me manda una página en blanco; cierro todo, vuelvo a picar AR y ya sale la tarjetita») el
+     iPhone abre la tarjeta del App Clip cuando se TOCA un enlace a appclip.apple.com; si la página cambia de dirección por
+     código, carga en blanco. Ahora «AR» es un enlace de verdad (<a href>) que el dedo toca; desde el ícono, en Safari */
+  const u = d.directAppClipUrl || d.launchUrl; if(!u){ b.onclick = () => { try{ window.VLaunch?.launch(location.href); }catch{} }; return; }
+  const a = document.createElement('a'); a.id = 'bAR'; a.className = b.className; a.textContent = b.textContent; a.href = u; a.rel = 'noopener';
+  if(navigator.standalone) a.target = '_blank';
+  b.replaceWith(a); };
 window.addEventListener('vlaunch-initialized', (e) => botonAR(e.detail || {}));
 if(window.VLaunch?.initialized) botonAR({ launchRequired: window.VLaunch.webXRStatus === 'launch-required' });   /* por si ya terminó antes de llegar aquí */
 if(window.__variantLaunch){ let n = 0; const otra = () => arPosible().then((s) => { if(s){ conAR = true; $('#eAR')?.classList.add('si'); if($('#eAR')) $('#eAR').textContent = 'ARKit'; } else if(++n < 20) setTimeout(otra, 1000); }).catch(() => {}); setTimeout(otra, 500); }

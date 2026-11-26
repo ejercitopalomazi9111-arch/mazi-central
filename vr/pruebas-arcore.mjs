@@ -13,8 +13,16 @@ async function abrir(conXR){
   await ctx.addInitScript((conXR) => { navigator.getGamepads = () => []; try{ localStorage.setItem('mazivr.ajustes', JSON.stringify({ fondo: 1, manos: true })); }catch{}
     if(!conXR) return;
     /* el App Clip de Variant: su objeto VLaunch y la cámara cuadro por cuadro (un JPEG naranja en base64, como lo manda ARKit) */
-    if(conXR === 'variant') window.VLaunch = { appleBrowser: 'launch-viewer', cuadros: 0, requestVideoFrame(cb){ setTimeout(() => { const c = document.createElement('canvas'); c.width = 64; c.height = 48;
-      const x = c.getContext('2d'); x.fillStyle = 'rgb(200,120,40)'; x.fillRect(0, 0, 64, 48); this.cuadros++; cb({ width: 64, height: 48, data: c.toDataURL('image/jpeg').split(',')[1], format: 'base64Jpeg' }); }, 30); } };
+    if(conXR === 'variant'){
+      /* como el de verdad: cada pedido manda UN cuadro (un JPEG en base64) por el evento 'cv_data'; y, como el caso feo que vio
+         Carlos (27 nov: «actualiza una vez la imagen y así se queda»), uno de cada tres pedidos SE PIERDE y no manda solo */
+      const W = new EventTarget(); let n = 0; window.__cam = { pedidos: 0, mandados: 0 };
+      W._requestComputerVisionData = () => { __cam.pedidos++; (__cam.t ||= []).push(Math.round(performance.now())); if(++n % 3 === 0) return;
+        setTimeout(() => { const c = document.createElement('canvas'); c.width = 64; c.height = 48; const x = c.getContext('2d'); x.fillStyle = `rgb(200,${100 + (__cam.mandados % 50)},40)`; x.fillRect(0, 0, 64, 48);
+          __cam.mandados++; const ev = new Event('cv_data'); ev.detail = { _buffers: [{ size: { width: 64, height: 48 }, _buffer: c.toDataURL('image/jpeg').split(',')[1] }] }; W.dispatchEvent(ev); }, 30); };
+      W._startSendingComputerVisionData = () => {};
+      window.VLaunch = { appleBrowser: 'launch-viewer', webXR: { _arKitWrapper: W }, requestVideoFrame(cb){ W._requestComputerVisionData(); W.addEventListener('cv_data', (r) => { const b = r.detail._buffers[0]; cb({ width: b.size.width, height: b.size.height, data: b._buffer, format: 'base64Jpeg' }); }, { once: true }); } };
+    }
     window.__xr = { pedidos: 0, pos: [0, 1.5, 0], q: [0, 0, 0, 1], fin: null };
     WebGL2RenderingContext.prototype.makeXRCompatible = async function(){};   /* el de verdad truena sin aparato XR */
     /* Chrome de Android: la capa trae SU búfer (opaco); el App Clip de Variant en el iPhone: null (= el lienzo de la página) */
@@ -76,8 +84,12 @@ async function abrir(conXR){
     g.bindFramebuffer(g.FRAMEBUFFER, null); g.readPixels(c.width >> 2, c.height >> 1, 1, 1, g.RGBA, g.UNSIGNED_BYTE, b); ok([...b]); }; }));
   sí(px[3] > 0 && px[0] + px[1] + px[2] > 0, `y Mazi VR se pinta en el lienzo (pixel ${px})`);
   await p.waitForTimeout(800);
-  const cam = await p.evaluate(() => ({ vista: __vr.ar.camaraVista, n: __vr.ar.camaraVariant?.(), manos: __vr.fuenteManos.activa && __vr.fuenteManos.videoWidth, tex: __vr.ar.texVariant?.image?.width, pedidos: window.VLaunch.cuadros }));
+  const cam = await p.evaluate(() => ({ vista: __vr.ar.camaraVista, n: __vr.ar.camaraVariant?.(), manos: __vr.fuenteManos.activa && __vr.fuenteManos.videoWidth, tex: __vr.ar.texVariant?.image?.width }));
   sí(cam.vista && cam.n?.pintados >= 3 && cam.manos === 320 && cam.tex === 64, `la cámara del App Clip llega cuadro por cuadro a la realidad mixta y a las manos (${JSON.stringify(cam)})`);
+  await p.waitForFunction(() => window.__manos?.listo, null, { timeout: 60000 }).catch(() => {}); await p.waitForTimeout(1500);   /* MediaPipe tarda en cargar y frena todo mientras */
+  const p0 = await p.evaluate(() => __vr.ar.camaraVariant().pintados); await p.waitForTimeout(5000); const p1 = await p.evaluate(() => __vr.ar.camaraVariant().pintados);
+  /* (este navegador sin tarjeta gráfica, con MediaPipe corriendo, va lentísimo: se pide poco, pero que NO se quede quieto) */
+  sí(p1 - p0 >= 3, `y SIGUE llegando aunque el App Clip pierda pedidos (${p1 - p0} cuadros nuevos en 5 s; ${JSON.stringify(await p.evaluate(() => [__vr.ar.camaraVariant(), __cam]))})`);
   await p.evaluate(() => { __vr.ponerMixta(true); }); await p.waitForTimeout(300);
   sí(await p.evaluate(() => !__vr.cuarto.visible), 'y la realidad mixta se prende con esa cámara');
   sí(errores.length === 0, 'sin errores' + (errores.length ? ': ' + errores.slice(0, 3).join(' | ') : '')); }
