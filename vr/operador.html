@@ -87,6 +87,9 @@
     $('donde').innerHTML = '';
     const t = document.createElement('span'); t.textContent = f === 'escenas' ? `${(est.escena ?? 0) + 1}. ${est.titulo || ''}` : (FASES[f] || '');
     const s = document.createElement('small'); s.textContent = est.habla ? 'Hablando' : ''; $('donde').append(t, s);
+    /* el diagnóstico del visor (monarca.js): cuadros, cámara, retraso y manos */
+    const d = est.diag; if(d){ const g = document.createElement('small'); g.className = 'diag';
+      g.textContent = `${d.fps} cps${d.cam != null ? ` · cámara ${d.cam}/s · ${d.retraso ?? '?'} ms` : ''} · manos ${d.manos}${typeof d.mp === 'number' ? ` (${d.mp} ms)` : ` (${d.mp})`}${d.ar ? ' · AR' : ''}`; $('donde').append(g); }
     $('cIdioma').hidden = f !== 'idioma'; $('cListo').hidden = f !== 'listo'; $('cTutorial').hidden = f !== 'tutorial'; $('cEscenas').hidden = f !== 'escenas';
     /* la lista de escenas se arma una vez; después sólo cambia cuál está marcada (cero parpadeo) */
     const k = (est.escenas || []).join('|');
