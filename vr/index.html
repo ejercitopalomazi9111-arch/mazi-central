@@ -100,7 +100,7 @@ try{ const L = JSON.parse(localStorage.getItem('mazivr.errores') || '[]'), u = L
 /* LA VERSIÓN (Carlos, 19 nov: «un mensajito que diga la versión en la que estás y que se actualizó»). Va igual que la
    de sw.js (pruebas-sinred.mjs lo revisa). La primera vez que se abre una versión nueva dice «actualizada»; y si el
    trabajador de fondo ya trae una más nueva que esta página, recarga sola (sólo en la entrada, una vez) */
-const VERSION = 53;
+const VERSION = 54;
 { let antes = 0; try{ antes = +localStorage.getItem('mazivr.version') || 0; if(antes !== VERSION) localStorage.setItem('mazivr.version', VERSION); }catch{}
   const el = $('#version'); el.textContent = antes < VERSION ? `v${VERSION} · actualizada` : `v${VERSION}`; el.classList.toggle('nueva', antes < VERSION); }
 const versionSW = (n) => { if(!(n > VERSION) || document.body.classList.contains('dentro')) return;
@@ -128,7 +128,12 @@ $('#bPantalla').addEventListener('click', () => { V.ponerPantalla(true); $('#bEn
 /* el botón «AR» del iPhone: sólo si Variant dice que hace falta abrir su App Clip (en Safari normal). Dentro del App Clip ya
    hay navigator.xr con ARKit y se entra como en Android */
 const botonAR = (d) => { if(!d.launchRequired) return; const b = $('#bAR'); b.style.display = '';
-  b.onclick = () => { try{ window.VLaunch?.launch ? window.VLaunch.launch(location.href) : (location.href = d.launchUrl); }catch{ if(d.launchUrl) location.href = d.launchUrl; } }; };
+  /* (27 nov, Carlos: «me redirige a launchar.app… se queda en Tap Open App Clip to launch AR y no pasa nada») la página de Variant
+     sólo espera la barra de Apple con «Abrir» arriba en Safari, y esa barra NO sale si Mazi VR se abrió desde el ícono de la
+     pantalla de inicio (ni si alguna vez se cerró). Ahora se usa el enlace directo del App Clip de Apple (appclip.apple.com,
+     que manda la propia Variant) y, desde el ícono, se abre en Safari con window.open */
+  b.onclick = () => { const u = d.directAppClipUrl || d.launchUrl; if(!u){ try{ window.VLaunch?.launch(location.href); }catch{} return; }
+    if(navigator.standalone){ const w = window.open(u, '_blank'); if(!w) location.href = u; } else location.href = u; }; };
 window.addEventListener('vlaunch-initialized', (e) => botonAR(e.detail || {}));
 if(window.VLaunch?.initialized) botonAR({ launchRequired: window.VLaunch.webXRStatus === 'launch-required' });   /* por si ya terminó antes de llegar aquí */
 if(window.__variantLaunch){ let n = 0; const otra = () => arPosible().then((s) => { if(s){ conAR = true; $('#eAR')?.classList.add('si'); if($('#eAR')) $('#eAR').textContent = 'ARKit'; } else if(++n < 20) setTimeout(otra, 1000); }).catch(() => {}); setTimeout(otra, 500); }
