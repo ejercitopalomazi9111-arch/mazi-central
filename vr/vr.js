@@ -760,7 +760,11 @@ function cuadro(t){
     const dePellizco = (extra.rayos || []).some((R) => R.pellizco && (R.objeto === o || R.mano?.fijo?.objeto === o)), deAgarre = !!quien?.objeto && !dePellizco;
     const porToque = (extra.rayos || []).some((R) => R.toque && R.objeto === o);   /* tocándolo con el dedo: al instante */
     const deFijo = (extra.rayos || []).some((R) => R.pellizco && R.mano?.fijo?.objeto === o);   /* lo que brillaba al cerrar los dedos: al instante */
-    const estable = o && (deAgarre || porToque || deFijo || (o === foco ? ahoraMs - focoDesde >= est : historialMira.filter(([t]) => ahoraMs - t <= est + 90 && ahoraMs - t >= 90).every(([, x]) => x === o)));
+    /* ESPERA PROPIA (27 nov, Carlos en la maceta: «con sólo rozar otro elemento lo toma como si quisiera usarlo… activa la
+       espera antes de pulsar»): un objeto con userData.espera (ms) no se elige al instante por tocarlo ni por pellizcarlo de
+       pasada: hay que llevar ese tiempo apuntándole; si no, el clic queda pendiente y sale en cuanto se cumple */
+    const espera = o?.userData?.espera || 0, yaEspero = !espera || (o === foco && ahoraMs - focoDesde >= espera);
+    const estable = o && yaEspero && (deAgarre || porToque || deFijo || (o === foco ? ahoraMs - focoDesde >= est : historialMira.filter(([t]) => ahoraMs - t <= est + 90 && ahoraMs - t >= 90).every(([, x]) => x === o)));
     if(o && estable && ahoraMs - ultimaEleccion > 350){ darFoco(o); activar(o); }
     /* PELLIZCO TEMPRANO (Carlos, 26 nov: «que se seleccione inmediatamente, pero que sí te dé un pequeño tiempo de espera»):
        no se tira: si sigues apuntando a lo mismo, se elige en cuanto se cumple la espera. Si te mueves a otra cosa, se olvida. */
@@ -772,8 +776,9 @@ function cuadro(t){
   /* con L2 apretado estás moviendo o agrandando algo: mirar fijo no elige (si no, al acomodar el menú se metía a lo que veías) */
   if(control.apretado(B.L2)) focoDesde = performance.now();
   if(clicPendiente){ const ahoraP = performance.now();
-    if(viendo !== clicPendiente.o || foco !== clicPendiente.o || ahoraP - clicPendiente.desde > 1500) clicPendiente = null;   /* hay que SEGUIR apuntándole */
-    else if(ahoraP - focoDesde >= (AJ.estable ?? 720) && ahoraP - ultimaEleccion > 350){ const o = clicPendiente.o; clicPendiente = null; activar(o); } }
+    const esp = Math.max(AJ.estable ?? 720, clicPendiente.o.userData?.espera || 0);
+    if(viendo !== clicPendiente.o || foco !== clicPendiente.o || ahoraP - clicPendiente.desde > Math.max(1500, esp + 900)) clicPendiente = null;   /* hay que SEGUIR apuntándole */
+    else if(ahoraP - focoDesde >= esp && ahoraP - ultimaEleccion > 350){ const o = clicPendiente.o; clicPendiente = null; activar(o); } }
   if(!viendo && primerFoco && primerFoco !== 'pendiente') primerFoco = null;   /* le quitaste la vista: ya cuenta */
   if(primerFoco && !primerEstricto && cabeza.quaternion.angleTo(giroAlBloquear) > .14) primerFoco = null;   /* giraste la cabeza: ya cuenta */
   /* CON LAS MANOS NO SE ELIGE SOLO (Carlos, 26 nov: «el asunto es que no se presionen automáticamente»): apuntar con la
@@ -878,5 +883,9 @@ export function alLente(u, v, der){
 export const focoActual = () => foco?.userData.panel?.titulo || null;
 export const focoObjeto = () => foco || null;
 /* lo que brillaba hace `ms` (al juntar los dedos la punta del índice baja y el rayo se resbala al de abajo ANTES de que se note el pellizco) */
+/* ¿brilló algún botón en los últimos `ms`? (al pellizcar la punta baja y el rayo se sale del botón ANTES de que se note el
+   pellizco; en Objetos y el lector eso hacía que el pellizco a Atrás se leyera como «agarrar» y no como clic) */
+export const brilloHace = (ms) => { const t = performance.now() - ms; return historialMira.some(([tt, o]) => o && tt >= t); };
+export const callarHud = () => { avisoHasta = 0; };
 export const focoHace = (ms) => { const t = performance.now() - ms; let r = null; for(const [tt, o] of historialMira){ if(tt <= t && o) r = o; } return r; };   /* lo que está brillando ahora (el pellizco elige ESO: es lo que ve la persona) */
 export const enfrente = (dist, alto = 0) => { const p = new THREE.Vector3(0, alto, -dist); return p; };

@@ -239,7 +239,7 @@ export async function montarCine(V, { VIDEOS, pedirTexto, web }){
     if(c.oprimido[B.R1]) brincar(10);
     if(c.oprimido[B.ARRIBA]){ dist = Math.max(1.6, dist - .4); ponerPantalla(); }
     if(c.oprimido[B.ABAJO]){ dist = Math.min(8, dist + .4); ponerPantalla(); }
-    return { x: true, flechas: true };
+    return { x: !!c.oprimidoPad[B.X], flechas: true };   /* (27 nov) el pellizco no es esta X: si no, nunca llegaba a los botones */
   };
   /* con L2 apretado los sticks son de la pantalla: ni caminas ni giras */
   Object.defineProperty(cine, 'ocupaStick', { get: () => fase === 'viendo' && V.control.apretado(B.L2) });

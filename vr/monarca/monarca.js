@@ -205,7 +205,14 @@ export function montarMonarca(V){
   /* ── la maceta: sembrar con tus manos (maceta.js) ── */
   const maceta = crearMaceta({ THREE, V, grupo: m.grupo, aqui: AQUI, eco, idioma: () => st.idioma,
     cargar: (u) => new GLTFLoader().loadAsync(u),
-    decir: (id) => { if(st.voz) { if(narr.actual && narr.actual.startsWith('e-')) narr.interrumpir(id); else narr.decir([id]); } },
+    /* LOS TIEMPOS DE LA VOZ (27 nov, Carlos: «se está saturando de audios… mide bien los tiempos»): una corrección («ésa no»,
+       «primero lo primero», «tardas») NUNCA corta lo que se está diciendo y no se repite antes de 8 s; los pasos («ahora la
+       pala») sí entran, pero esperan a que termine la frase que va (no la cortan) salvo que sea una explicación larga */
+    decir: (id) => { if(!st.voz) return; const t = performance.now(), correccion = /^(k-otra|k-primero|r-tarda)/.test(id);
+      if(correccion){ if(narr.ocupado || t - (m.ultimaCorreccion || 0) < 8000) return; m.ultimaCorreccion = t; narr.decir([id]); return; }
+      if(narr.actual && narr.actual.startsWith('e-')) narr.interrumpir(id);
+      else if(narr.ocupado && !/^(k-otra|k-primero|r-tarda)/.test(narr.actual || '')) narr.encolar ? narr.encolar(id) : narr.decir([id]);
+      else narr.decir([id]); },
     /* la planta que crece: la variedad más llena de las flores (la que tiene más vértices) */
     flor: () => { const v = [...variedades].sort((a, b) => b.geometry.attributes.position.count - a.geometry.attributes.position.count)[0]; if(!v) return null; const f = new THREE.Group(); const c = v.clone(); c.scale.setScalar(1.25); f.add(c); return f; },
     alTerminar: () => { if(ESCENAS[st.escena]?.id === 'maceta') ponerBotones([boton(L(UI.siguiente), () => mostrar(st.escena + 1)), vozBoton()], -.2); } });

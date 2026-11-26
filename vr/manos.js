@@ -58,7 +58,7 @@ export async function iniciarManos(V){
 
   let ultimoT = -1, cuadroN = 0, enfriar = 0;
   /* donde la palma NO es «Atrás»: las manos están jugando (ver abajo, «PALMA ARRIBA») */
-  const PALMA_NO = ['sables', 'monarca', 'taller'];
+  const PALMA_NO = ['monarca'];   /* (27 nov) Carlos: «en todo menos monarch» */
   const v3 = new THREE.Vector3(), origen = new THREE.Vector3(), dir = new THREE.Vector3();
   /* de un punto de la imagen (0..1) y la distancia estimada, a un punto en el espacio de la cabeza */
   /* aEspacio vive en mano3d.js (con la profundidad al derecho y su prueba) */
@@ -212,9 +212,9 @@ export async function iniciarManos(V){
       const cierra = punoFirme && !m.punoAntes; m.punoAntes = punoFirme;
       if(cierra && m.objetoAntes && ahora - (m.objetoEn || 0) < 650 && !V.extra.gestosVideo){ m.agarro = ahora; botones[V.B.X] = true; estado.gesto = 'agarrar'; }
       if(m.puno(G.puno, L[0].y, ahora)){ V.recentrar(); V.hud('Centrado', 1.2); V.sonar('ding', .3); }
-      if(!m.pellizco && G.pellizca) m.pellizco = true; else if(m.pellizco && (G.suelta || G.puno)){ m.pellizco = false; m.soltoEn = ahora; }
+      if(!m.pellizco && G.pellizca){ m.pellizco = true; m.pellizcoBoton = !!(V.extra.sobreBoton || V.brilloHace?.(300)); } else if(m.pellizco && (G.suelta || G.puno)){ m.pellizco = false; m.soltoEn = ahora; }
       /* donde la vista usa el pellizco para otra cosa (el video, leer), sólo es clic si apuntas a un botón */
-      if(m.pellizco){ if(!V.extra.gestosVideo || V.extra.sobreBoton) botones[V.B.X] = true; estado.gesto = 'pellizco'; }
+      if(m.pellizco){ if(!V.extra.gestosVideo || V.extra.sobreBoton || m.pellizcoBoton) botones[V.B.X] = true; estado.gesto = 'pellizco'; }
       const muneca = L[0], ix = L[8], tp = L[4];
       /* la mano en el espacio, aproximada (para el rayo y para los sables): palma, punta del medio y muñeca */
       const est = (q) => cabeza.localToWorld(aEspacio(q, dist, tx, ty, new THREE.Vector3()));
@@ -240,14 +240,19 @@ export async function iniciarManos(V){
            · no cuenta donde las manos se usan para jugar (Sables, MONARCH, el Taller): ahí se sale con el control o el menú;
            · hay que sostenerla 1.5 s y QUIETA (si la muñeca se mueve más de 4 % de la imagen, se vuelve a empezar);
            · a la mitad sale «Atrás…» en el HUD: si no era tu intención, bajas la mano y no pasa nada. */
-      /* (26 nov) APAGADO: de 5-6 personas que lo probaron, ninguna entendía por qué se salía. Una mano abierta quieta es lo que
-         hace cualquiera que está viendo qué pasa; «Atrás» es el botón (o Círculo). Se deja el código por si se pide de vuelta. */
-      const palmaVale = false && G.palma && !m.pellizco && !PALMA_NO.includes(V.ahora?.());
+      /* (27 nov) DE VUELTA, con Carlos: «pulsar atrás en objetos no funciona; vuelve a poner el gesto de atrás en todo menos
+         monarch, mirando abajo con palma abierta y quedándote quieto, y que se vayan poniendo los … dentro de la espera para
+         evitar regresar si no quiere el jugador». Lo apagamos el 26 porque cualquiera deja la mano abierta viendo qué pasa;
+         ahora pide TRES cosas a la vez: cabeza agachada (más de ~27°), mano abierta y quieta. Los puntos van saliendo
+         («Atrás.», «Atrás..», «Atrás...») y a los 1.6 s regresa; si levantas la vista, cierras o mueves la mano, se borra. */
+      const adelante = v3.set(0, 0, -1).applyQuaternion(cabeza.getWorldQuaternion(new THREE.Quaternion()));
+      const palmaVale = G.palma && !m.pellizco && adelante.y < -.45 && !PALMA_NO.includes(V.ahora?.());
       if(palmaVale){
-        if(!m.palmaDesde || Math.hypot(muneca.x - m.palmaEn.x, muneca.y - m.palmaEn.y) > .04){ m.palmaDesde = ahora; m.palmaEn = { x: muneca.x, y: muneca.y }; m.palmaAviso = false; }
-        if(!m.palmaAviso && ahora - m.palmaDesde > 750){ m.palmaAviso = true; V.hud('Atrás…', .9); }
-        if(ahora - m.palmaDesde > 1500 && ahora > enfriar){ botones[V.B.O] = true; enfriar = ahora + 2500; m.palmaDesde = 0; estado.gesto = 'palma'; }
-      } else m.palmaDesde = 0;
+        if(!m.palmaDesde || Math.hypot(muneca.x - m.palmaEn.x, muneca.y - m.palmaEn.y) > .04){ if(m.palmaPuntos) V.callarHud?.(); m.palmaDesde = ahora; m.palmaEn = { x: muneca.x, y: muneca.y }; m.palmaPuntos = 0; }
+        const n = Math.min(3, Math.floor((ahora - m.palmaDesde) / 400));
+        if(n > m.palmaPuntos){ m.palmaPuntos = n; V.hud('Atrás' + '.'.repeat(n), 1); }
+        if(ahora - m.palmaDesde > 1600 && ahora > enfriar){ botones[V.B.O] = true; enfriar = ahora + 2500; m.palmaDesde = 0; m.palmaPuntos = 0; estado.gesto = 'palma'; V.sonar?.('ding', .3); }
+      } else { if(m.palmaPuntos) V.callarHud?.(); m.palmaDesde = 0; m.palmaPuntos = 0; }
     });
     V.extra.botones = botones; V.extra.manos = visibles;
     /* UN RAYO POR MANO (Carlos, 18 nov: «solamente aparece un rayo a la vez; haz que sea el derecho o que los dos tengan»).
@@ -283,7 +288,9 @@ export async function iniciarManos(V){
         d.copy(m.fijo.d).applyQuaternion(new THREE.Quaternion().setFromUnitVectors(w0, w1));
       } else m.fijo = null;
       /* suavizado aparte: el rayo tiembla más que la mano porque amplifica el giro */
-      if(m.fijo) m.dirSuave.copy(d); else if(!m.dirSuave) m.dirSuave = d.clone(); else m.dirSuave.lerp(d, .45).normalize();
+      if(m.fijo) m.dirSuave.copy(d); else if(!m.dirSuave) m.dirSuave = d.clone(); else { /* (27 nov, Carlos: «dale cierta estabilidad a la mano») suavizado que se adapta: el temblor chico (menos de ~1°) casi
+           no mueve el rayo y un movimiento de verdad lo sigue al instante; antes era un .45 parejo que dejaba pasar el temblor */
+        const ang = m.dirSuave.angleTo(d), k = ang < .017 ? .1 : ang < .05 ? .25 : ang < .12 ? .45 : .7; m.dirSuave.lerp(d, k).normalize(); }
       const R = { origen: o, dir: m.dirSuave.clone(), lado: I.lado, pellizco: m.pellizco, mano: m, dedo };
       m.rayo = R; rayos.push(R);
     }

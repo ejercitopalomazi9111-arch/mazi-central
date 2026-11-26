@@ -246,6 +246,8 @@ export function crearNarrador({ actx, base, sinVoz = () => false, alFallar = () 
     if(actual && actual.startsWith('e-') && b && c && fuente) pausado = { id: actual, en: desde + (c.currentTime - inicio) - .4 };
     gen++; parar(); fila = []; const g = gen; tocar(id, 0, g);
   }
+  /* a la cola: sin cortar lo que suena (si no suena nada, se dice ya) */
+  function encolar(id){ if(sinVoz() || !linea(id)) return; pedidos.push(id); if(!actual && !fila.length){ fila = [id]; siguiente(gen); } else fila.push(id); }
   function callar(){ gen++; parar(); fila = []; pausado = null; actual = null; }
   /* lo que falta del clip que suena (en segundos); 0 si nada suena */
   function falta(){
@@ -263,5 +265,5 @@ export function crearNarrador({ actx, base, sinVoz = () => false, alFallar = () 
     else f = (performance.now() / 1000 - inicio) / Math.max(1.5, texto.length / 14);
     return { id: actual, texto, f: Math.max(0, Math.min(1, f)) };
   }
-  return { decir, interrumpir, callar, precargar, falta, progreso, get actual(){ return actual; }, dichos, pedidos, errores, get ocupado(){ return !!actual || fila.length > 0; } };
+  return { decir, interrumpir, encolar, callar, precargar, falta, progreso, get actual(){ return actual; }, dichos, pedidos, errores, get ocupado(){ return !!actual || fila.length > 0; } };
 }

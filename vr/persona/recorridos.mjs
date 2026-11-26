@@ -124,6 +124,27 @@ if(CUAL === 'menus'){
     await mano('apunta', null); await dormir(300);
   }
 }
+/* ── 2b. ATRÁS: pellizcando el botón en Objetos (donde pellizcar también agarra) y con la palma mirando abajo ── */
+if(CUAL === 'atras'){
+  await p.evaluate(() => { window.__elegibles = () => __vr.elegiblesAhora(); });
+  await p.evaluate(() => __vr.ir('objetos')); await dormir(2500);
+  await p.evaluate(() => { __vr.sim.yaw = 0; __vr.sim.pitch = 0; }); await dormir(300);
+  await elegir('Atrás'); const v1 = await vista(); await foto('atras-objetos');
+  sí(v1 !== 'objetos', `pellizcar «Atrás» en Objetos regresa (está en «${v1}»)`);
+  sí(!(await p.evaluate(() => __objetos?.estado?.().sostenidos?.length || 0)), 'y no agarró nada al pellizcar Atrás');
+  /* la palma: abierta, quieta, enfrente y abajo */
+  const palmaAbajo = async (pitch, ms) => { await p.evaluate((pi) => { __vr.sim.yaw = 0; __vr.sim.pitch = pi; }, pitch); await dormir(400);
+    const pt = await p.evaluate(() => { const V = __vr, T = V.THREE; return V.cabeza.localToWorld(new T.Vector3(0, -.05, -1)).toArray(); });
+    await mano('abierta', pt, { brazo: .38, palma: 'arriba' }); await dormir(ms); const v = await vista(); await mano('apunta', null); await dormir(400); return v; };
+  for(const [donde, ir] of [['juegos', 'juegos'], ['objetos', 'objetos'], ['fisica', 'fisica']]){
+    await p.evaluate((x) => __vr.ir(x), ir); await dormir(2500);
+    const quieta = await palmaAbajo(0, 3000); sí(quieta === donde, `palma abierta mirando AL FRENTE no saca de ${donde} (está en «${quieta}»)`);
+    await p.evaluate((x) => __vr.ir(x), ir); await dormir(1200);
+    const sale = await palmaAbajo(-.8, 3500); await foto('palma-' + donde); sí(sale !== donde, `palma abierta mirando ABAJO, quieta, saca de ${donde} (está en «${sale}»)`);
+  }
+  await p.evaluate(() => __vr.ir('monarca')); await dormir(4000);
+  const mon = await palmaAbajo(-.8, 3500); sí(mon === 'monarca', `en MONARCH la palma no saca (está en «${mon}»)`);
+}
 /* ── 2c. ESCRIBIR con el teclado del visor pellizcando cada tecla ── */
 if(CUAL === 'teclado'){
   await p.evaluate(() => { window.__elegibles = () => __vr.elegiblesAhora(); });

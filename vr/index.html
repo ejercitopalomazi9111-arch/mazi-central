@@ -2,6 +2,11 @@
 <html lang="es-MX">
 <head>
 <meta charset="utf-8">
+<!-- EL IPHONE CON ARKIT (Variant Launch; llave y etiqueta copiadas del panel de Carlos, 26 nov). Su panel pide la etiqueta
+     HASTA ARRIBA del <head> para que navigator.xr ya exista cuando corre lo nuestro. Sólo en iPhone/iPad sin WebXR: en Android
+     y en la compu no se baja nada. Es llave de CLIENTE (sólo jala en los dominios que Carlos autorice en su panel), no un secreto. -->
+<script>(function(){ var ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  if(ios && !navigator.xr){ window.__variantLaunch = true; document.write('<script src="https://launchar.app/sdk/v1?key=drXFAEN5IOtiAcoYmqWCWl987YF6t5M0&redirect=true"><\/script>'); } })();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Mazi VR</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -92,7 +97,7 @@ try{ const L = JSON.parse(localStorage.getItem('mazivr.errores') || '[]'), u = L
 /* LA VERSIÓN (Carlos, 19 nov: «un mensajito que diga la versión en la que estás y que se actualizó»). Va igual que la
    de sw.js (pruebas-sinred.mjs lo revisa). La primera vez que se abre una versión nueva dice «actualizada»; y si el
    trabajador de fondo ya trae una más nueva que esta página, recarga sola (sólo en la entrada, una vez) */
-const VERSION = 50;
+const VERSION = 51;
 { let antes = 0; try{ antes = +localStorage.getItem('mazivr.version') || 0; if(antes !== VERSION) localStorage.setItem('mazivr.version', VERSION); }catch{}
   const el = $('#version'); el.textContent = antes < VERSION ? `v${VERSION} · actualizada` : `v${VERSION}`; el.classList.toggle('nueva', antes < VERSION); }
 const versionSW = (n) => { if(!(n > VERSION) || document.body.classList.contains('dentro')) return;
@@ -115,11 +120,10 @@ setInterval(() => { if(!document.body.classList.contains('dentro') || document.f
 $('#bPantalla').addEventListener('click', () => { V.ponerPantalla(true); $('#bEntrar').click(); });
 /* ¿este teléfono abre ARCore desde la página? (Chrome de Android con ARCore). Se pregunta al cargar: al tocar «Entrar» la
    sesión se pide en el MISMO instante, sin esperar nada (el navegador sólo la abre con un gesto) */
-/* en el iPhone (sin WebXR): si hay llave de Variant Launch (config-ar.js), su script abre el App Clip con ARKit */
-import('./config-ar.js').then(({ VARIANT_LAUNCH_KEY: k }) => { if(k && !navigator.xr && /iPhone|iPad/.test(navigator.userAgent)){ const sc = document.createElement('script'); sc.src = `https://launchar.app/sdk/v1?key=${encodeURIComponent(k)}&redirect=true`; document.head.appendChild(sc);
-  /* (no se pudo leer su documentación desde aquí: en vez de esperar un evento con nombre adivinado, se pregunta cada segundo 20 s) */
-  let n = 0; const otra = () => arPosible().then((s) => { if(s){ conAR = true; $('#eAR')?.classList.add('si'); if($('#eAR')) $('#eAR').textContent = 'ARKit'; } else if(++n < 20) setTimeout(otra, 1000); }); sc.onload = otra; } }).catch(() => {});
-let conAR = false; arPosible().then((s) => { conAR = s; if(s){ $('#eAR')?.classList.add('si'); if($('#eAR')) $('#eAR').textContent = 'ARCore'; } });
+/* en el iPhone: el script de Variant Launch (hasta arriba del <head>) pone navigator.xr con ARKit; puede tardar en estar
+   listo, así que se pregunta cada segundo 20 s en vez de adivinar el nombre de un evento */
+if(window.__variantLaunch){ let n = 0; const otra = () => arPosible().then((s) => { if(s){ conAR = true; $('#eAR')?.classList.add('si'); if($('#eAR')) $('#eAR').textContent = 'ARKit'; } else if(++n < 20) setTimeout(otra, 1000); }).catch(() => {}); setTimeout(otra, 500); }
+let conAR = false; arPosible().then((s) => { conAR = conAR || s; if(s){ $('#eAR')?.classList.add('si'); if($('#eAR')) $('#eAR').textContent = window.__variantLaunch ? 'ARKit' : 'ARCore'; } });
 $('#bEntrar').addEventListener('click', async () => {
   $('#bEntrar').disabled = true;
   /* ARCORE DE FÁBRICA (Carlos, 26 nov: «pónselo ya de predefinido»): 6DoF del sistema, como Pokémon GO. Si no se puede o
