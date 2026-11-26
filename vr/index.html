@@ -3,10 +3,12 @@
 <head>
 <meta charset="utf-8">
 <!-- EL IPHONE CON ARKIT (Variant Launch; llave y etiqueta copiadas del panel de Carlos, 26 nov). Su panel pide la etiqueta
-     HASTA ARRIBA del <head> para que navigator.xr ya exista cuando corre lo nuestro. Sólo en iPhone/iPad sin WebXR: en Android
+     HASTA ARRIBA del <head> para que navigator.xr ya exista cuando corre lo nuestro. Va con redirect=false (27 nov, Carlos:
+     «en Mazi VR sólo me dice tap open app clip to launch AR»): con true, en cuanto carga se lleva al iPhone a su página del
+     App Clip y Mazi VR no se ve; ahora se queda en Mazi VR y el App Clip se abre con el botón «AR». Sólo en iPhone/iPad sin WebXR: en Android
      y en la compu no se baja nada. Es llave de CLIENTE (sólo jala en los dominios que Carlos autorice en su panel), no un secreto. -->
 <script>(function(){ var ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
-  if(ios && !navigator.xr){ window.__variantLaunch = true; document.write('<script src="https://launchar.app/sdk/v1?key=drXFAEN5IOtiAcoYmqWCWl987YF6t5M0&redirect=true"><\/script>'); } })();</script>
+  if(ios && !navigator.xr){ window.__variantLaunch = true; document.write('<script src="https://launchar.app/sdk/v1?key=drXFAEN5IOtiAcoYmqWCWl987YF6t5M0&redirect=false"><\/script>'); } })();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Mazi VR</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -54,6 +56,7 @@
     <div class="estado"><span id="eControl">Control</span><span id="eAR">Sin ARCore</span><span id="eVideos">Archivos</span><span id="eGuardado">Sin internet</span></div>
     <button class="boton" id="bEntrar" type="button">Entrar</button>
     <button class="boton sec" id="bPantalla" type="button">Sin visor</button>
+    <button class="boton sec" id="bAR" type="button" style="display:none">AR</button>
     <p id="ultimoError" hidden style="font-size:13px; color:#C9B6DA; max-width:420px; overflow-wrap:anywhere"></p>
     <label class="boton sec" style="display:inline-grid; place-items:center">Archivos<input id="iVideos" type="file" accept="video/*,audio/*" multiple hidden></label>
   </div>
@@ -97,7 +100,7 @@ try{ const L = JSON.parse(localStorage.getItem('mazivr.errores') || '[]'), u = L
 /* LA VERSIÓN (Carlos, 19 nov: «un mensajito que diga la versión en la que estás y que se actualizó»). Va igual que la
    de sw.js (pruebas-sinred.mjs lo revisa). La primera vez que se abre una versión nueva dice «actualizada»; y si el
    trabajador de fondo ya trae una más nueva que esta página, recarga sola (sólo en la entrada, una vez) */
-const VERSION = 52;
+const VERSION = 53;
 { let antes = 0; try{ antes = +localStorage.getItem('mazivr.version') || 0; if(antes !== VERSION) localStorage.setItem('mazivr.version', VERSION); }catch{}
   const el = $('#version'); el.textContent = antes < VERSION ? `v${VERSION} · actualizada` : `v${VERSION}`; el.classList.toggle('nueva', antes < VERSION); }
 const versionSW = (n) => { if(!(n > VERSION) || document.body.classList.contains('dentro')) return;
@@ -122,6 +125,12 @@ $('#bPantalla').addEventListener('click', () => { V.ponerPantalla(true); $('#bEn
    sesión se pide en el MISMO instante, sin esperar nada (el navegador sólo la abre con un gesto) */
 /* en el iPhone: el script de Variant Launch (hasta arriba del <head>) pone navigator.xr con ARKit; puede tardar en estar
    listo, así que se pregunta cada segundo 20 s en vez de adivinar el nombre de un evento */
+/* el botón «AR» del iPhone: sólo si Variant dice que hace falta abrir su App Clip (en Safari normal). Dentro del App Clip ya
+   hay navigator.xr con ARKit y se entra como en Android */
+const botonAR = (d) => { if(!d.launchRequired) return; const b = $('#bAR'); b.style.display = '';
+  b.onclick = () => { try{ window.VLaunch?.launch ? window.VLaunch.launch(location.href) : (location.href = d.launchUrl); }catch{ if(d.launchUrl) location.href = d.launchUrl; } }; };
+window.addEventListener('vlaunch-initialized', (e) => botonAR(e.detail || {}));
+if(window.VLaunch?.initialized) botonAR({ launchRequired: window.VLaunch.webXRStatus === 'launch-required' });   /* por si ya terminó antes de llegar aquí */
 if(window.__variantLaunch){ let n = 0; const otra = () => arPosible().then((s) => { if(s){ conAR = true; $('#eAR')?.classList.add('si'); if($('#eAR')) $('#eAR').textContent = 'ARKit'; } else if(++n < 20) setTimeout(otra, 1000); }).catch(() => {}); setTimeout(otra, 500); }
 let conAR = false; arPosible().then((s) => { conAR = conAR || s; if(s){ $('#eAR')?.classList.add('si'); if($('#eAR')) $('#eAR').textContent = window.__variantLaunch ? 'ARKit' : 'ARCore'; } });
 $('#bEntrar').addEventListener('click', async () => {
