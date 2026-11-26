@@ -53,6 +53,7 @@ async function elegir(titulo, { pellizcoMs = 350 } = {}){
     await dormir(350);
   }
   const brilla = await foco();
+  if(process.env.DBG2) console.log('  DBG2', await p.evaluate(() => { const T = __vr.THREE; return JSON.stringify((__vr.extra.rayos || []).map((R) => ({ toque: R.toque, obj: R.objeto?.userData.panel?.titulo, hit: R.hit?.toArray().map((v) => +v.toFixed(2)), dedo: R.dedo?.toArray().map((v) => +v.toFixed(2)), dir: R.dir.toArray().map((v) => +v.toFixed(2)) }))) + ' atras@' + JSON.stringify(__vr.elegiblesAhora().filter((m) => m.userData.panel?.titulo === 'Atrás').map((m) => m.getWorldPosition(new T.Vector3()).toArray().map((v) => +v.toFixed(2)))); }));
   await pose('pellizco');
   if(process.env.DBG) for(let i = 0; i < 6; i++){ console.log('   pinch', await p.evaluate(() => { const R = __vr.extra.rayo; return JSON.stringify({ fijo: R?.mano?.fijo?.objeto?.userData.panel?.titulo, pel: R?.pellizco, obj: R?.objeto?.userData.panel?.titulo, foco: __vr.focoActual(), gesto: __manos.gesto, p3: __manos?.p3dbg, temprano: __vr.extra.clicTemprano | 0, bot: (__vr.extra.botones || [])[0] }); })); await dormir(60); }
   await dormir(pellizcoMs); await pose('apunta'); await dormir(400);
@@ -134,6 +135,48 @@ if(CUAL === 'monarca' || CUAL === 'todo'){
   await mano('apunta', null);
   await p.waitForFunction(() => __monarca.estado.fase === 'escenas', null, { timeout: 20000 }).catch(() => {});
   sí(await p.evaluate(() => __monarca.estado.fase === 'escenas'), 'y empieza la historia'); await foto('monarca-bienvenida');
+}
+/* ── 4. LA MACETA: sembrar con la mano (tomar cada herramienta y llevarla encima de la maceta) ── */
+if(CUAL === 'maceta' || CUAL === 'todo'){
+  await mano('apunta', null);
+  if(await p.evaluate(() => __vr.ahora()) !== 'monarca') await p.evaluate(() => { window.__monarca.exposicion(true); __vr.ir('monarca'); });
+  await p.evaluate(() => { __monarca.arrancar({ idioma: 'es' }); const i = __monarca.ESCENAS.findIndex((e) => e.id === 'maceta'); __monarca.mostrar(i); window.__elegibles = () => __vr.elegiblesAhora(); });
+  await p.waitForFunction(() => __monarca.maceta?.activo, null, { timeout: 15000 }).catch(() => {});
+  await dormir(1500); await p.evaluate(() => { __vr.sim.yaw = 0; __vr.sim.pitch = -.55; }); await dormir(500); await foto('maceta-mesa');
+  const PASOS = [['Tierra', 'tierra'], ['Pala', 'hoyo'], ['Semillas', 'semilla'], ['Pala', 'cubrir'], ['Regadera', 'regar']];
+  for(const [herr, paso] of PASOS){
+    const ok1 = await p.evaluate((paso) => __monarca.maceta.paso === paso, paso); if(!ok1){ sí(false, `la maceta debía ir en «${paso}» (va en «${await p.evaluate(() => __monarca.maceta.paso)}»)`); break; }
+    const br = await elegir(herr); console.log('  DBG', herr, 'brilló', br, await p.evaluate(() => JSON.stringify({ el: __vr.elegiblesAhora().map((m) => m.userData.panel?.titulo), anim: !!__monarca.maceta.anim, activo: __monarca.maceta.activo })));
+    sí(await p.evaluate(() => !!__monarca.maceta.mano), `pellizcar «${herr}» la toma (se va a tu mano)`);
+    /* llevar la mano encima de la maceta */
+    const boca = await p.evaluate(() => { const r = __monarca.maceta.cosas?.maceta?.raiz; const v = r.getWorldPosition(new __vr.THREE.Vector3()); v.y += .32; return v.toArray(); });
+    await mirarA(boca);
+    const brazo = await p.evaluate((pt) => __vr.cabeza.getWorldPosition(new __vr.THREE.Vector3()).distanceTo(new __vr.THREE.Vector3(...pt)), boca);
+    await mano('abierta', boca, { brazo, palma: 'abajo', ms: 700 });
+    await p.waitForFunction((paso) => __monarca.maceta.paso !== paso, paso, { timeout: 9000 }).catch(() => {});
+    sí(await p.evaluate((paso) => __monarca.maceta.paso !== paso, paso), `llevar ${herr.toLowerCase()} encima de la maceta hace «${paso}» (va en «${await p.evaluate(() => __monarca.maceta.paso)}»)`);
+    await foto('maceta-' + paso); await mano('apunta', null); await dormir(300);
+  }
+  await p.waitForFunction(() => __monarca.maceta.listo, null, { timeout: 12000 }).catch(() => {});
+  sí(await p.evaluate(() => __monarca.maceta.listo), 'la planta crece hasta el final'); await foto('maceta-lista');
+}
+/* ── 5. LAS MARIPOSAS: palma arriba quieta (se posa una), cerrar la mano (la atrapas), abrirla (se va) ── */
+if(CUAL === 'mariposas' || CUAL === 'todo'){
+  await mano('apunta', null);
+  if(await p.evaluate(() => __vr.ahora()) !== 'monarca') await p.evaluate(() => { window.__monarca.exposicion(true); __vr.ir('monarca'); });
+  await p.evaluate(() => { __monarca.arrancar({ idioma: 'es' }); __monarca.mostrar(__monarca.ESCENAS.findIndex((e) => e.id === 'mariposa')); __vr.sim.yaw = 0; __vr.sim.pitch = -.25; });
+  await dormir(2500);
+  const pal = await p.evaluate(() => { const o = __vr.cabeza.getWorldPosition(new __vr.THREE.Vector3()); return o.add(new __vr.THREE.Vector3(.05, -.18, -1)).toArray(); });
+  await mano('abierta', pal, { brazo: .4, palma: 'arriba', ms: 600 });
+  const p0 = await p.evaluate(() => __monarca.eco.posadas || 0);
+  await dormir(1500); console.log('  DBGM', await p.evaluate(() => JSON.stringify({ listo: __monarca.eco.listo, capa: __monarca.eco.capa.visible, papel: __monarca.eco.papel, manos: (__vr.extra.manos || []).length, palma: __vr.extra.manos?.[0]?.mundo?.palma?.toArray().map((v) => +v.toFixed(2)), puno: __vr.extra.manos?.[0]?.puno, gesto: __manos.gesto, vis: __monarca.eco.mariposas.filter((m) => m.g.visible).length, papeles: [...new Set(__monarca.eco.mariposas.filter((m) => m.g.visible).map((m) => m.papel))] })));
+  await p.waitForFunction((p0) => (__monarca.eco.posadas || 0) > p0, p0, { timeout: 6000 }).catch(() => {});
+  sí(await p.evaluate((p0) => (__monarca.eco.posadas || 0) > p0, p0), 'con la palma arriba y quieta, se posa una mariposa');
+  await dormir(1800); await foto('mariposa-en-la-mano');
+  await pose('puno'); await dormir(900);
+  sí(await p.evaluate(() => (__monarca.eco.atrapadas || 0) > 0), 'cerrando la mano la atrapas');
+  await pose('abierta'); await dormir(900);
+  sí(await p.evaluate(() => !__monarca.eco.mariposas.some((m) => m.papel === 'atrapada')), 'y al abrirla sale volando');
 }
 await mano('apunta', null);
 sí(errores.length === 0, 'sin errores' + (errores.length ? ': ' + errores.slice(0, 3).join(' | ') : ''));

@@ -12,16 +12,25 @@
    crearMaceta({ THREE, V, grupo, cargar(gltf), aqui, decir(id), alTerminar, eco, flor() }) */
 export const PASOS = ['tierra', 'hoyo', 'semilla', 'cubrir', 'regar', 'crece', 'lista'];
 const HERRAMIENTA = { tierra: 'bolsa', hoyo: 'pala', semilla: 'semillero', cubrir: 'pala', regar: 'regadera' };
+import { crearMaestro } from '../maestro.js';
 export function crearMaceta({ THREE, V, grupo, cargar, aqui, decir = () => {}, alTerminar = () => {}, eco, flor = () => null, idioma = () => 'es' }){
   const M = { paso: null, mano: null, activo: false, listo: false, errores: 0 };
   const capa = new THREE.Group(); capa.visible = false; grupo.add(capa);
-  const SUELO = -.98;
-  /* dónde va cada cosa: la maceta enfrente, las herramientas a los lados, al alcance de la vista hacia abajo */
-  const LUGAR = { maceta: [0, SUELO, -1.25], bolsa: [-.62, SUELO, -1.05], semillero: [-.42, SUELO, -1.5], pala: [.45, SUELO, -1.5], regadera: [.66, SUELO, -1.05] };
-  const ALTO = { maceta: .32, bolsa: .42, semillero: .1, pala: .3, regadera: .34 };
+  /* SOBRE UNA MESA, AL ALCANCE (Carlos, 26 nov: «tu bolsa de tierra, tu sistema de plantado… nada de eso sirve»). Antes todo
+     estaba en el PISO a 1.2-1.5 m: para apuntarle había que bajar la mano 45° y ahí la cámara del teléfono ya no la ve (en
+     horizontal ve ±25°). Ahora una mesa enfrente, 40 cm abajo de tus ojos y a un brazo: la mano se ve y puede tocar */
+  const MESA = -.40;
+  const LUGAR = { maceta: [0, MESA, -.64], bolsa: [-.36, MESA, -.6], semillero: [-.19, MESA, -.8], pala: [.2, MESA, -.8], regadera: [.37, MESA, -.6] };
+  const ALTO = { maceta: .2, bolsa: .26, semillero: .07, pala: .2, regadera: .22 };
   const ARCHIVO = { maceta: 'planter_pot_clay', bolsa: 'compost_bag_02', semillero: 'seeding_tray_01', pala: 'trowel_01', regadera: 'watering_can_metal_01' };
   const NOMBRE = { maceta: { es: 'Maceta', en: 'Pot' }, bolsa: { es: 'Tierra', en: 'Soil' }, semillero: { es: 'Semillas', en: 'Seeds' }, pala: { es: 'Pala', en: 'Trowel' }, regadera: { es: 'Regadera', en: 'Watering can' } };
   const cosas = {};
+  /* la mesa (Poly Haven, CC0): su cubierta queda justo en MESA */
+  cargar(aqui('medios/maceta/mesa.glb')).then((g) => { const m = g.scene, b = new THREE.Box3().setFromObject(m), t = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3());
+    const esc = 1.05 / Math.max(t.x, t.z); m.scale.setScalar(esc); m.position.set(-c.x * esc, MESA - b.max.y * esc, -.68 - c.z * esc);
+    m.traverse((o) => { if(o.isMesh){ const v = o.material; o.material = new THREE.MeshBasicMaterial({ map: v.map || null, color: v.map ? 0xffffff : v.color }); } }); capa.add(m); }).catch(() => {});
+  /* la mano fantasma enseña a qué pellizcar si te quedas atorado */
+  let maestro = null; crearMaestro(V, capa).then((m) => { maestro = m; }).catch(() => {});
   /* cada cosa: el modelo + una caja invisible que es la que se elige (el motor sólo elige mallas, no grupos) */
   M.armado = Promise.all(Object.entries(ARCHIVO).map(async ([k, f]) => {
     const g = await cargar(aqui(`medios/maceta/${f}.glb`)).catch(() => null);
@@ -30,7 +39,11 @@ export function crearMaceta({ THREE, V, grupo, cargar, aqui, decir = () => {}, a
     if(g){ modelo = g.scene; const b = new THREE.Box3().setFromObject(modelo), tam = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3());
       const esc = ALTO[k] / Math.max(.001, tam.y); modelo.scale.setScalar(esc); modelo.position.set(-c.x * esc, -b.min.y * esc, -c.z * esc);
       modelo.traverse((o) => { if(o.isMesh){ const v = o.material; o.material = new THREE.MeshBasicMaterial({ map: v.map || null, color: v.map ? 0xffffff : v.color, side: THREE.DoubleSide, transparent: false }); o.material.userData.base = o.material.color.clone(); } });
-      raiz.add(modelo); caja = new THREE.Box3().setFromObject(modelo); caja.translate(raiz.position.clone().negate()); }
+      raiz.add(modelo);
+      /* LA CAJA QUE SE ELIGE, EN EL ESPACIO DE LA COSA (26 nov, lo cazó la persona simulada): se medía en el mundo ANTES de que la
+         escena supiera dónde va la cosa y luego se le restaba su lugar: quedaban al revés, detrás y arriba de ti, y apuntarle a
+         la bolsa o a la pala nunca elegía nada. «Tu bolsa de tierra, tu sistema de plantado… nada de eso sirve» */
+      raiz.updateMatrixWorld(true); caja = new THREE.Box3().setFromObject(modelo, true).applyMatrix4(raiz.matrixWorld.clone().invert()); }
     const t = caja.getSize(new THREE.Vector3()), cc = caja.getCenter(new THREE.Vector3());
     const hit = new THREE.Mesh(new THREE.BoxGeometry(Math.max(.18, t.x * 1.15), Math.max(.18, t.y * 1.2), Math.max(.18, t.z * 1.15)), new THREE.MeshBasicMaterial({ visible: false }));
     hit.position.copy(cc); raiz.add(hit);
@@ -60,7 +73,7 @@ export function crearMaceta({ THREE, V, grupo, cargar, aqui, decir = () => {}, a
     if(planta){ planta.removeFromParent(); planta = null; }
     guiar();
   };
-  M.parar = () => { M.activo = false; capa.visible = false; anim = null; gotas.visible = false; };
+  M.parar = () => { M.activo = false; capa.visible = false; anim = null; gotas.visible = false; maestro?.ocultar(); };
   /* la mariposa guía se posa sobre lo que toca usar ahora (guía de interacción, §10) */
   function guiar(){
     if(!eco) return;
@@ -100,19 +113,27 @@ export function crearMaceta({ THREE, V, grupo, cargar, aqui, decir = () => {}, a
     if(!M.activo) return;
     /* si tarda mucho en un paso, el narrador lo dice con humor (una vez por paso) */
     if(!anim && !tardoDicho && M.paso !== 'crece' && M.paso !== 'lista' && t - pasoEn > 35){ tardoDicho = true; decir('r-tarda-maceta'); }
-    /* lo que llevas en la mano te sigue: abajo a la derecha de tu vista */
+    /* si te atoras (6 s sin hacer nada), la mano fantasma te enseña a qué pellizcar */
+    const sigue = M.mano ? 'maceta' : HERRAMIENTA[M.paso];
+    if(maestro){ if(!anim && sigue && cosas[sigue] && t - pasoEn > 6 && M.paso !== 'crece' && M.paso !== 'lista'){ const p = cosas[sigue].raiz.position.clone(); p.y += ALTO[sigue] * .6; if(maestro.activo !== 'pellizcar' || maestro.objetivo.distanceTo(p) > .01) maestro.mostrar('pellizcar', p, { base: p.clone().add(new THREE.Vector3(.26, .02, .14)) }); maestro.cuadro(); }
+      else if(maestro.activo) maestro.ocultar(); }
+    /* lo que llevas EN TU MANO: va a tu mano de verdad (la palma que ve la cámara); si no se ve, abajo a la derecha */
     if(M.mano && (!anim || anim.tipo === 'tomar')){
       V.cabeza.getWorldPosition(ojo); V.cabeza.getWorldQuaternion(q);
-      tmp.set(.22, -.32, -.6).applyQuaternion(q).add(ojo); capa.worldToLocal(tmp);
+      const palma = manos.find((h) => h.mundo?.palma)?.mundo.palma;
+      if(palma) tmp.copy(palma).add(new THREE.Vector3(0, -.04, 0)); else tmp.set(.22, -.32, -.6).applyQuaternion(q).add(ojo);
+      capa.worldToLocal(tmp);
       const r = cosas[M.mano].raiz;
       if(anim?.tipo === 'tomar'){ const k = ease(Math.min(1, (t - anim.t0) / .6)); r.position.lerpVectors(anim.desde, tmp, k); if(k >= 1) anim = null; }
-      else r.position.lerp(tmp, .25);
+      else r.position.lerp(tmp, .35);
       r.rotation.set(0, Math.sin(t * 1.3) * .08, 0);
+      /* llevarla ENCIMA de la maceta la usa (como en la vida): a menos de 16 cm de la boca, por arriba */
+      if(!anim){ const boca = bocaMaceta(); if(Math.hypot(r.position.x - boca.x, r.position.z - boca.z) < .16 && r.position.y > boca.y - .05) usar(M.mano); }
     }
     if(anim?.tipo === 'usar'){
       const k = anim.k, r = cosas[k].raiz, s = t - anim.t0, boca = bocaMaceta();
       /* 1) llega arriba de la maceta, 2) hace lo suyo, 3) regresa a su lugar */
-      const arriba = boca.clone().add(new THREE.Vector3(k === 'regadera' ? -.12 : 0, k === 'bolsa' ? .28 : .16, 0));
+      const arriba = boca.clone().add(new THREE.Vector3(k === 'regadera' ? -.1 : 0, k === 'bolsa' ? .2 : .12, 0));
       if(s < .7){ r.position.lerpVectors(anim.desde, arriba, ease(s / .7)); }
       else if(s < 2.6){
         const f = (s - .7) / 1.9;

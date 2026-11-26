@@ -102,14 +102,23 @@ export function crearEcosistema({ THREE, render, grupo, cabeza, N = 48 }){
   eco.cuadro = (t, manos = []) => {
     if(!eco.listo || !capa.visible) return;
     cabeza.getWorldPosition(ojo); const ojoL = capa.worldToLocal(ojo.clone());
-    const palmas = manos.map((h) => h.mundo?.palma).filter(Boolean).map((p) => capa.worldToLocal(p.clone()));
+    const conPalma = manos.filter((h) => h.mundo?.palma), palmas = conPalma.map((h) => capa.worldToLocal(h.mundo.palma.clone())), punos = conPalma.map((h) => !!h.puno);
     /* SE POSAN EN TU MANO (las interactivas): con la mano quieta 1.2 s, la mariposa más cercana viene y se queda en tu palma,
        abriendo y cerrando las alas despacio; si mueves la mano rápido, se va volando. Hasta dos manos, una en cada una. */
-    palmas.forEach((p, k) => { const q = quietas[k] || (quietas[k] = { en: p.clone(), desde: t, m: null });
-      if(p.distanceTo(q.en) > .05){ q.en.copy(p); q.desde = t; if(q.m){ q.m.papel = 'ambiente'; q.m.huye.set(0, .6, 0); q.m = null; } }
-      else if(!q.m && t - q.desde > 1.2){ let mejor = null, md = 9; for(const m of eco.mariposas) if(m.g.visible && m.papel === 'ambiente'){ const d = m.g.position.distanceToSquared(p); if(d < md){ md = d; mejor = m; } }
+    /* (26 nov: «el agarrar a las mariposas… nada de eso sirve») la palma se mide SUAVIZADA (la cámara tiembla unos cm) y
+       «quieta» es moverse menos de 9 cm; se posan a los 0.9 s. Y si CIERRAS la mano con una mariposa en ella (o cerca de los
+       dedos), la ATRAPAS: se queda en tu puño y al abrirlo sale volando */
+    palmas.forEach((p, k) => { const q = quietas[k] || (quietas[k] = { en: p.clone(), suave: p.clone(), antes: p.clone(), tAntes: t, v: 0, desde: t, m: null, puno: false });
+      q.suave.lerp(p, .3); const dtv = Math.max(1 / 120, t - q.tAntes); q.v = q.v * .7 + .3 * (q.suave.distanceTo(q.antes) / dtv); q.antes.copy(q.suave); q.tAntes = t;
+      const cierra = punos[k] && !q.puno, abre = !punos[k] && q.puno; q.puno = punos[k];
+      if(cierra){ let cerca = q.m; if(!cerca){ let md = .015; for(const m of eco.mariposas) if(m.g.visible && m.papel === 'ambiente'){ const d = m.g.position.distanceToSquared(q.suave); if(d < md){ md = d; cerca = m; } } }
+        if(cerca){ q.m = cerca; cerca.papel = 'atrapada'; eco.atrapadas = (eco.atrapadas || 0) + 1; try{ eco.alAtrapar?.(); }catch{} } }
+      if(abre && q.m?.papel === 'atrapada'){ q.m.papel = 'ambiente'; q.m.huye.set(0, .7, -.3); q.m = null; try{ eco.alSoltar?.(); }catch{} }
+      if(q.m?.papel === 'atrapada'){ q.palma = q.suave; return; }
+      if(q.suave.distanceTo(q.en) > .09){ q.en.copy(q.suave); q.desde = t; if(q.m){ q.m.papel = 'ambiente'; q.m.huye.set(0, .6, 0); q.m = null; } }
+      else if(!q.m && t - q.desde > .9){ let mejor = null, md = 9; for(const m of eco.mariposas) if(m.g.visible && m.papel === 'ambiente'){ const d = m.g.position.distanceToSquared(p); if(d < md){ md = d; mejor = m; } }
         if(mejor){ q.m = mejor; mejor.papel = 'mano'; mejor.t0 = t; mejor.desde.copy(mejor.g.position); eco.posadas++; try{ eco.alPosar?.(); }catch{} } }
-      if(q.m) q.palma = p; });
+      if(q.m) q.palma = q.suave; });
     for(let k = palmas.length; k < quietas.length; k++){ const q = quietas[k]; if(q?.m){ q.m.papel = 'ambiente'; q.m = null; } }
     for(const m of eco.mariposas){
       if(!m.g.visible) continue;
@@ -121,6 +130,11 @@ export function crearEcosistema({ THREE, render, grupo, cabeza, N = 48 }){
         m.g.rotation.set(Math.PI / 2 - .2, m.fase, 0);
         if(!lejos || m.cuadro % 2) aletear(m, cerca ? .5 + Math.sin(t * 6 + m.fase) * .5 : 1.35 + Math.sin(t * .7 + m.fase) * .05);
         continue;
+      }
+      if(m.papel === 'atrapada'){
+        /* en tu puño: chiquita y quieta en la palma, con las alas cerradas (se asoma tantito) */
+        const q = quietas.find((x) => x?.m === m); if(!q?.palma){ m.papel = 'ambiente'; continue; }
+        m.g.position.lerp(q.palma, .4); m.g.scale.setScalar(m.esc * .55); aletear(m, 1.35 + Math.sin(t * 9) * .08); continue;
       }
       if(m.papel === 'mano'){
         const q = quietas.find((x) => x?.m === m); if(!q?.palma){ m.papel = 'ambiente'; continue; }
@@ -152,8 +166,9 @@ export function crearEcosistema({ THREE, render, grupo, cabeza, N = 48 }){
         tmp.set(Math.sin(a) * m.r, m.h + Math.sin(t * .9 + m.fase) * .18, Math.cos(a) * m.r * .7 - 1.2);
         m.alfa = 1;
       }
-      for(const p of palmas){ const d2 = p.distanceToSquared(m.g.position);
-        if(d2 < .1225){ tmp2.copy(m.g.position).sub(p).normalize().multiplyScalar(.9); tmp2.y = Math.abs(tmp2.y) + .4; m.huye.add(tmp2.multiplyScalar(.05)); }
+      for(let k = 0; k < palmas.length; k++){ const p = palmas[k], d2 = p.distanceToSquared(m.g.position), rapida = (quietas[k]?.v || 0) > .7;
+        /* huyen sólo de una mano que va RÁPIDO: de una que se acerca despacio no (si no, nunca te dejan acercarte) */
+        if(d2 < .1225 && rapida){ tmp2.copy(m.g.position).sub(p).normalize().multiplyScalar(.9); tmp2.y = Math.abs(tmp2.y) + .4; m.huye.add(tmp2.multiplyScalar(.05)); }
         if(d2 < .0144 && t - (m.tocadaEn || 0) > 3){ m.tocadaEn = t; eco.toques++; try{ eco.alTocar(); }catch{} } }
       m.huye.multiplyScalar(.97); tmp.add(m.huye);
       const antes = m.g.position.clone(); m.g.position.lerp(tmp, .08);

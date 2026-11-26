@@ -6,10 +6,16 @@ export const d = (a, b, asp = 1) => Math.hypot((a.x - b.x) * asp, a.y - b.y);
 export function tamano(l, asp = 1){ return d(l[0], l[9], asp) || 1e-6; }
 /* un dedo está estirado si su punta queda bastante más lejos de la muñeca que su nudillo */
 const estirado = (l, punta, nudillo, s, asp) => d(l[punta], l[0], asp) > d(l[nudillo], l[0], asp) + .55 * s;
-export function leer(l, asp = 1){
+/* EN 3D si hay las marcas en metros de MediaPipe (W) (26 nov, lo cazó la persona simulada): en la foto plana, un dedo que
+   apunta HACIA ADELANTE (o la palma arriba con los dedos al frente) se ve corto por el escorzo y se leía DOBLADO: la mano
+   abierta salía «puño» y el índice apuntando salía «no apunta». Eso disparaba clics de agarre y gestos que nadie hizo.
+   En 3D un dedo estirado mide lo mismo lo veas como lo veas. */
+const d3 = (a, b) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+export function leer(l, asp = 1, W = null){
   const s = tamano(l, asp);
   const pinza = d(l[4], l[8], asp) / s;
-  const dedos = [[8, 5], [12, 9], [16, 13], [20, 17]].map(([p, n]) => estirado(l, p, n, s, asp));
+  const s3 = W ? d3(W[0], W[9]) || 1e-6 : 0;
+  const dedos = [[8, 5], [12, 9], [16, 13], [20, 17]].map(([p, n]) => W ? d3(W[p], W[0]) > d3(W[n], W[0]) + .55 * s3 : estirado(l, p, n, s, asp));
   const n = dedos.filter(Boolean).length;
   return {
     s, pinza,

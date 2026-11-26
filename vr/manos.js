@@ -190,7 +190,7 @@ export async function iniciarManos(V){
         const pm = manos3d.poner(k, P3, elegirLado(m.lado3d, ladoPorForma(THREE, P3), (m.etiqueta || c.etiqueta) === 'Right' ? 'izq' : 'der'), mixta); if(pm) m.punta3d = pm.clone(); }
       else manos3d?.esconder(k);
       /* los gestos */
-      const G = leer(L, asp); m.G = G;
+      const G = leer(L, asp, m.W); m.G = G;
       /* el pellizco con la mano EN 3D (metros, de MediaPipe): de frente la punta del pulgar tapa a la del índice y en la
          imagen plana nunca «se tocaban» (por eso no jalaba pellizcar) */
       const W = m.W;

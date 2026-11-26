@@ -24,6 +24,7 @@ import { crearTutorial } from '../tutorial.js';
 import { crearCiclo } from './ciclo.js';
 import { crearMaceta } from './maceta.js';
 import { crearEspejo } from '../espejo.js';
+import { crearMaestro } from '../maestro.js';
 import { t as tr, UI, ESCENAS, PREGUNTAS, MATERIAS, NOMBRE_MATERIA, FUNCIONA, CONTAMOS, CREDITOS } from './guion.js';
 
 const AQUI = (f) => new URL(f, import.meta.url).href;
@@ -251,7 +252,12 @@ export function montarMonarca(V){
   /* ── las escenas ── */
   let t0 = 0;
   function limpiarEscena(){ rot.limpiar(); ponerEtapas(null); ciclo.parar(); maceta.parar(); quitarLugares(); flores.visible = false; objetivo = null; mapaP.malla.visible = false; mariposa.visible = colonia.visible = false; eco.guiar(null); }
+  /* la mano fantasma también enseña en la historia: «palma arriba» para que se te pose una mariposa (si nadie lo ha hecho) */
+  let maestroH = null; crearMaestro(V, m.grupo).then((x) => { maestroH = x; }).catch(() => {});
+  let escenaEn = 0, posadasAlEntrar = 0;
+  eco.alAtrapar = () => { if(!tocoEco){ tocoEco = true; reaccionar('r-tocar-mariposa'); } };
   function mostrar(i, pre = []){
+    escenaEn = ahora(); posadasAlEntrar = (eco.posadas || 0) + (eco.atrapadas || 0); maestroH?.ocultar();
     const ant = st.escena, explicando = narr.actual && narr.actual.startsWith('e-') && narr.falta() > 2.5;
     const pp = i === ant + 1 ? ev('siguiente') : i === ant - 1 ? ev('atras') : null;
     if(!pre.length && pp) pre = [pp];
@@ -346,6 +352,8 @@ export function montarMonarca(V){
   let rutaK = -1, tSub = 0;
   m.cuadro = () => {
     const t = ahora(), E = ESCENAS[st.escena];
+    if(maestroH && st.fase === 'escenas'){ const conMariposas = ['bienvenida', 'mariposa', 'flores', 'final'].includes(E?.id) && !narr.ocupado && t - escenaEn > 8 && (eco.posadas || 0) + (eco.atrapadas || 0) === posadasAlEntrar;
+      if(conMariposas){ if(maestroH.activo !== 'palma') maestroH.mostrar('palma'); maestroH.cuadro(); } else if(maestroH.activo) maestroH.ocultar(); }
     subtitulos(tSub ? Math.min(.1, t - tSub) : 1 / 60); tSub = t;
     rot.cuadro(t); eco.cuadro(t, V.extra.manos || []); V.extra.narrando = narr.ocupado;   /* los tonos bajan cuando habla */
     if(alCallar && !narr.ocupado){ const f = alCallar; alCallar = null; f(); }
