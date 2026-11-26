@@ -671,8 +671,9 @@ function moverFoco(dx, dy){
        lugar, el MISMO pellizco no lo aprieta (y el pellizco tiene que soltarse antes de volver a contar);
      · un poquito de «apachurrado» en lo que eliges, y su tono. */
 let ultimaEleccion = -1e9, pulso = null;
+export const eleccionesHechas = { n: 0 };   /* cuántas veces ha elegido algo la persona (la ayuda de la mano fantasma se calla después) */
 function activar(o){ if(!o) return;
-  const ahoraA = performance.now(); if(ahoraA - ultimaEleccion < (AJ.enfriar ?? 250)) return; ultimaEleccion = ahoraA;
+  const ahoraA = performance.now(); if(ahoraA - ultimaEleccion < (AJ.enfriar ?? 250)) return; ultimaEleccion = ahoraA; eleccionesHechas.n++;
   tono('elegir'); pulso = { o, t: ahoraA, esc: o.scale.clone() };
   /* lo que se repite mirándolo (las flechas de Ajustes): sin bloqueo, la siguiente vez a los 0.9 s */
   if(o.userData.repetir){ focoDesde = performance.now() - MIRAR_MS + 900; o.userData.accion?.(); return; }

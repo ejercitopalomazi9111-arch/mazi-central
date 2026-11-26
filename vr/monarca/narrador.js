@@ -227,7 +227,7 @@ export function crearNarrador({ actx, base, sinVoz = () => false, alFallar = () 
     /* en el iPhone el estado también puede ser «interrupted» (llamada, bloqueo): cualquier cosa que no sea «running» se reanuda */
     if(c.state !== 'running') c.resume().catch(() => {});
     const s = c.createBufferSource(); s.buffer = b; s.connect(c.destination); s.onended = fin;
-    inicio = c.currentTime; s.start(0, Math.min(offset, Math.max(0, b.duration - .05))); fuente = s;
+    inicio = c.currentTime; s.start(0, Math.max(0, Math.min(offset || 0, b.duration - .05))); fuente = s;   /* nunca negativo: al reanudar, la cuenta podía quedar en −0.3 s y el audio tronaba */
   }
   function siguiente(g){
     if(g !== gen) return;

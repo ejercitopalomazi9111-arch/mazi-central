@@ -92,7 +92,7 @@ try{ const L = JSON.parse(localStorage.getItem('mazivr.errores') || '[]'), u = L
 /* LA VERSIÓN (Carlos, 19 nov: «un mensajito que diga la versión en la que estás y que se actualizó»). Va igual que la
    de sw.js (pruebas-sinred.mjs lo revisa). La primera vez que se abre una versión nueva dice «actualizada»; y si el
    trabajador de fondo ya trae una más nueva que esta página, recarga sola (sólo en la entrada, una vez) */
-const VERSION = 47;
+const VERSION = 48;
 { let antes = 0; try{ antes = +localStorage.getItem('mazivr.version') || 0; if(antes !== VERSION) localStorage.setItem('mazivr.version', VERSION); }catch{}
   const el = $('#version'); el.textContent = antes < VERSION ? `v${VERSION} · actualizada` : `v${VERSION}`; el.classList.toggle('nueva', antes < VERSION); }
 const versionSW = (n) => { if(!(n > VERSION) || document.body.classList.contains('dentro')) return;
@@ -144,6 +144,15 @@ $('#bEntrar').addEventListener('click', async () => {
   await armado;
   $('#entrada').remove(); document.body.classList.add('dentro');
   V.arrancar(); V.ir('inicio'); V.recentrar(); V.mirarAlEntrar(); V.hud('Bienvenido', 2);
+  /* LA PRIMERA VEZ (Carlos, 26 nov: «ni una persona ha podido utilizarla»): si en 6 s no eligió nada, la mano fantasma le
+     enseña a pellizcar la primera tarjeta, hasta que elija algo */
+  import('./maestro.js').then(async ({ crearMaestro }) => { const M = await crearMaestro(V, V.hub); const t0 = performance.now();
+    V.alCuadro.push(() => { const enInicio = V.ahora() === 'inicio' && !new URLSearchParams(location.search).has('monarca');
+      if(V.eleccionesHechas.n === 0 && enInicio && performance.now() - t0 > 6000){ const c = V.elegiblesAhora().find((m) => m.userData.panel?.titulo === 'Juegos') || V.elegiblesAhora()[0];
+        const sinManos = V.AJ.manos && V.hayCamara() && !(V.extra.manos || []).length;
+        if(sinManos){ if(M.activo !== 'levantar') M.mostrar('levantar'); M.cuadro(); }
+        else if(c){ const p = V.hub.worldToLocal(c.getWorldPosition(new THREE.Vector3())); if(M.activo !== 'pellizcar') M.mostrar('pellizcar', p); M.cuadro(); } }
+      else if(M.activo) M.ocultar(); }); }).catch(() => {});
   /* el QR de MONARCH XR trae ?monarca: directo a la experiencia y en modo exposición */
   if(new URLSearchParams(location.search).has('monarca')){ window.__monarca.exposicion(true); V.ir('monarca'); }
   /* las manos cargan después (el modelo pesa ~8 MB): el visor ya se puede usar mientras */
