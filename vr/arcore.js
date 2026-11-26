@@ -21,7 +21,8 @@ export function iniciarAR(V){
   /* requestSession va primero, en el mismo instante del toque; lo demás después */
   const pedido = navigator.xr.requestSession('immersive-ar', {
     requiredFeatures: ['local'],
-    optionalFeatures: ['local-floor', 'camera-access', 'dom-overlay'],
+    /* en el App Clip de Variant (iPhone) la imagen de la cámara se pide con su propia función: 'camera-access-launch' la prende */
+    optionalFeatures: ['local-floor', 'camera-access', 'dom-overlay', ...(window.VLaunch?.appleBrowser === 'launch-viewer' ? ['camera-access-launch'] : [])],
     domOverlay: { root: document.body },
   });
   return pedido.then(async (s) => {
@@ -59,7 +60,45 @@ export function iniciarAR(V){
       x2.putImageData(img, 0, 0);
       const F = V.fuenteManos; F.canvas = lienzo; F.videoWidth = w; F.videoHeight = h; F.readyState = 4; F.currentTime += 1 / 30; F.activa = true;
     }
-    const hecho = { resolver: null }; ar.camaraLista = new Promise((r) => { hecho.resolver = r; }); if(!binding) hecho.resolver(false);
+    const hecho = { resolver: null }; ar.camaraLista = new Promise((r) => { hecho.resolver = r; });
+    /* LA CÁMARA EN EL IPHONE (27 nov, Carlos: «me pide sólo el giroscopio y no me pide acceso a la cámara para la realidad mixta
+       ni para las manos»): dentro del App Clip la cámara la tiene ARKit y getUserMedia no existe. Variant la pasa cuadro por
+       cuadro con VLaunch.requestVideoFrame (un JPEG en base64, de uno en uno). Se dibuja en un lienzo: ése es la pared de la
+       realidad mixta y, en chiquito, lo que ven las manos. La imagen de ARKit viene acostada (con la parte de arriba del
+       teléfono a la izquierda), que es justo como va en el visor. */
+    const variant = !binding && window.VLaunch?.appleBrowser === 'launch-viewer' && typeof window.VLaunch.requestVideoFrame === 'function';
+    if(!binding && !variant) hecho.resolver(false);
+    if(variant){
+      const grande = document.createElement('canvas'), xg = grande.getContext('2d'), mini = document.createElement('canvas'), xm = mini.getContext('2d', { willReadFrequently: true });
+      const texV = new THREE.CanvasTexture(grande); texV.colorSpace = THREE.SRGBColorSpace; ar.texVariant = texV;
+      let pedidos = 0, pintados = 0, ultimo = 0, ocupado = false;
+      async function pintar(f){
+        const bin = atob(f.data), bytes = new Uint8Array(bin.length); for(let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        let img, w, h;
+        if(bytes[0] === 0xFF && bytes[1] === 0xD8){ img = await createImageBitmap(new Blob([bytes], { type: 'image/jpeg' })); w = img.width; h = img.height; }
+        else { /* si no es JPEG: el plano de brillo (Y) de la imagen, en grises */
+          w = f.width; h = f.height; if(!w || !h || bytes.length < w * h) throw new Error(`cuadro de cámara raro: ${f.format} ${w}×${h}, ${bytes.length} bytes`);
+          const id = new ImageData(w, h); for(let i = 0, j = 0; i < w * h; i++, j += 4){ const v = bytes[i]; id.data[j] = id.data[j + 1] = id.data[j + 2] = v; id.data[j + 3] = 255; }
+          img = await createImageBitmap(id); }
+        const k = Math.min(1, 960 / w), gw = Math.round(w * k), gh = Math.round(h * k);
+        if(grande.width !== gw || grande.height !== gh){ grande.width = gw; grande.height = gh; }
+        xg.drawImage(img, 0, 0, gw, gh); texV.needsUpdate = true; ar.ancho = w; ar.alto = h;
+        if(V.AJ.manos){ const mw = 320, mh = Math.round(320 * h / w); if(mini.width !== mw || mini.height !== mh){ mini.width = mw; mini.height = mh; } xm.drawImage(img, 0, 0, mw, mh);
+          const F = V.fuenteManos; F.canvas = mini; F.videoWidth = mw; F.videoHeight = mh; F.readyState = 4; F.currentTime += 1 / 30; F.activa = true; }
+        img.close?.();
+        if(!ar.camaraVista){ ar.camaraVista = true; V.usarCamaraAR(texV); hecho.resolver(true); V.hud?.('Cámara lista', 1.6); }
+        pintados++;
+      }
+      const pedir = () => { if(!ar.activo) return; pedidos++; ultimo = performance.now();
+        /* el siguiente se pide en cuanto llega éste (no después de dibujarlo); si todavía se está dibujando uno, éste se tira */
+        try{ window.VLaunch.requestVideoFrame((f) => { setTimeout(pedir, Math.max(0, 40 - (performance.now() - ultimo)));
+          if(ocupado) return; ocupado = true; pintar(f).catch((e) => V.fallo?.('E-AR-CAM', 'cuadro de cámara del iPhone', e)).finally(() => { ocupado = false; }); }); }
+        catch(e){ V.fallo?.('E-AR-CAM', 'pedir la cámara al App Clip', e); hecho.resolver(false); } };
+      ar.camaraVariant = () => ({ pedidos, pintados });
+      pedir();
+      /* si en 6 s no llegó ningún cuadro, se dice (sin cámara siguen el AR y el giroscopio) */
+      setTimeout(() => { if(!pintados){ hecho.resolver(false); V.hud?.('Sin cámara en el App Clip', 2.4); } }, 6000);
+    }
     /* el ciclo: lo marca la sesión (no la ventana) */
     render.setAnimationLoop(null);
     const paso = (t, frame) => {
@@ -69,7 +108,8 @@ export function iniciarAR(V){
       if(pose){
         const v = pose.views[0];
         /* el campo de la cámara de ARCore, de su proyección (horizontal, en grados) */
-        const P = v.projectionMatrix; ar.campo = 2 * Math.atan(1 / P[0]) * 180 / Math.PI;
+        /* acostado (vertical en la pantalla, de lado en el visor): el ancho de la imagen de la cámara va a lo largo de la pantalla */
+        const P = v.projectionMatrix; ar.campo = 2 * Math.atan(1 / (V.estaAcostado?.() ? P[5] : P[0])) * 180 / Math.PI;
         if(binding && v.camera){ try{ render.state?.unbindTexture?.(); tex.sourceTexture = binding.getCameraImage(v.camera); ar.ancho = v.camera.width; ar.alto = v.camera.height;
           if(!ar.camaraVista){ ar.camaraVista = true; V.usarCamaraAR(tex); hecho.resolver(true); }
           if(V.AJ.manos && (++n % 2 === 0)) copiarParaManos(); }catch(e){ V.fallo?.('E-AR', 'cámara de ARCore', e); } }
@@ -84,7 +124,7 @@ export function iniciarAR(V){
       render.setAnimationLoop((tt) => V.cuadroExterno(tt));
       ar.alSalir?.();
     });
-    V.hud?.(binding ? 'ARCore · 6DoF' : 'ARCore sin cámara: sin manos ni mixta', 2.4);
+    V.hud?.(binding ? 'ARCore · 6DoF' : variant ? 'ARKit · 6DoF' : 'ARCore sin cámara: sin manos ni mixta', 2.4);
     return true;
   }).catch((e) => { try{ sesion?.end(); }catch{} console.warn('E-AR', e?.stack || e); V.fallo?.('E-AR', 'abrir la sesión de ARCore', e); return false; });
 }
