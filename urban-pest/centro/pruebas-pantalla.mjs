@@ -3,13 +3,16 @@
  * 1 · Con datos de muestra camina las seis pestañas a 320, 390 y 414 px y mide: cero errores de
  *     página, cero desborde horizontal, objetivos táctiles de 44 px y campos de 16 px (computados).
  * 2 · SIN INTERNET DE VERDAD: carga con señal contra un servidor de mentiras, corta la red, recarga
- *     (tiene que abrir), marca un servicio como hecho, y al volver la señal comprueba que llegó. */
+ *     (tiene que abrir), marca un servicio como hecho, y al volver la señal comprueba que llegó.
+ * 3 · COTIZAR · LA DISTANCIA: «Calcular» llena los km de la zona y «La camioneta sale de» se guarda. El servidor de
+ *     mentiras usa el mismo distancia.js del bot con un mapa de mentiras: no sale a internet. */
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import * as M from './motor.js';
-import { muestra } from './muestra.js';
+import { muestra, EXCEL_MUESTRA } from './muestra.js';
+import { ponerSalida, distanciaA, kmRecta, lugarConocido, OSM } from '../servidor/src/distancia.js';
 const { chromium } = await import(process.env.PLAYWRIGHT || 'playwright').catch(() => import('/opt/node-tools/node_modules/playwright/index.mjs'));
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -27,14 +30,21 @@ const sitio = http.createServer(async (q, r) => {
 /* el servidor de datos de mentiras: el mismo motor sobre un Map */
 const alm = new Map(Object.entries(muestra(HOY).datos));
 const A = { get: async k => structuredClone(alm.get(k)) ?? null, put: async (k, v) => { alm.set(k, structuredClone(v)); }, list: async p => [...alm.keys()].filter(k => k.startsWith(p)).sort().map(k => [k, structuredClone(alm.get(k))]) };
+/* el mapa de mentiras: OSRM da la línea recta × 1.25; Nominatim no conoce nada (lo de la tabla no lo necesita) */
+OSM.pausa_ms = 0;
+const mapa = async (url) => { const u = new URL(url);
+  if (u.hostname === 'router.project-osrm.org') { const [[a, b], [c, e]] = u.pathname.split('/').pop().split(';').map(x => x.split(',').map(Number)); return new Response(JSON.stringify({ code: 'Ok', routes: [{ distance: kmRecta({ lat: b, lon: a }, { lat: e, lon: c }) * 1250, duration: 900 }] })); }
+  return new Response('[]'); };
 const RUTAS = { 'GET /api/tablero': () => M.tablero(A, HOY), 'GET /api/citas': () => M.listarCitas(A), 'GET /api/insumos': () => M.listarInsumos(A), 'GET /api/vehiculos': () => M.listarVehiculos(A, HOY), 'GET /api/numeros': () => M.numeros(A, HOY),
-  'POST /api/citas/estado': b => M.estadoCita(A, b, 'srv', HOY), 'POST /api/insumos/mover': b => M.moverInsumo(A, b, 'srv') };
+  'POST /api/citas/estado': b => M.estadoCita(A, b, 'srv', HOY), 'POST /api/insumos/mover': b => M.moverInsumo(A, b, 'srv'),
+  'GET /api/tarifas': () => ({ bien: true, tarifas: { excel: EXCEL_MUESTRA } }), 'GET /api/salida': async () => ({ bien: true, salida: (await A.get('salida')) || null }),
+  'POST /api/salida': b => ponerSalida(A, b, mapa), 'GET /api/distancia': (b, q) => distanciaA(A, q.donde, mapa) };
 const datos = http.createServer((q, r) => {
   const cab = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'content-type': 'application/json' };
   if (q.method === 'OPTIONS') { r.writeHead(204, cab); return r.end(); }
   let cuerpo = ''; q.on('data', c => cuerpo += c); q.on('end', async () => {
-    const f = RUTAS[q.method + ' ' + new URL(q.url, 'http://x').pathname];
-    const j = f ? await f(cuerpo ? JSON.parse(cuerpo) : {}) : { bien: false, error: 'Ruta desconocida.', estado: 404 };
+    const u = new URL(q.url, 'http://x'), f = RUTAS[q.method + ' ' + u.pathname];
+    const j = f ? await f(cuerpo ? JSON.parse(cuerpo) : {}, Object.fromEntries(u.searchParams)) : { bien: false, error: 'Ruta desconocida.', estado: 404 };
     r.writeHead(j.bien ? 200 : (j.estado || 400), cab); r.end(JSON.stringify(j));
   });
 }).listen(0);
@@ -104,6 +114,29 @@ console.log('\n2 · Sin internet de verdad');
   ok('al volver la señal el cambio llega solo al servidor, con su seguimiento', alm.get('cita:' + idCita).estado === 'hecho' && !!alm.get('cita:' + idCita).seguimiento, JSON.stringify(alm.get('cita:' + idCita)).slice(0, 140));
   ok('y la franja se quita', await pg.locator('#red').isHidden(), await pg.locator('#red').innerText().catch(() => ''));
   ok('sin errores de página en todo el recorrido', !errores.length, errores.slice(0, 2).join(' | '));
+  await ctx.close();
+}
+console.log('\n3 · Cotizar: la distancia');
+{
+  const ctx = await nav.newContext({ viewport: { width: 390, height: 900 }, isMobile: true, hasTouch: true, serviceWorkers: 'block', deviceScaleFactor: 2 });
+  const pg = await ctx.newPage(); const errores = []; pg.on('pageerror', e => errores.push(e.message));
+  await pg.goto(URL_SITIO + '?servidor=' + encodeURIComponent(URL_DATOS)); await pg.waitForSelector('.barra-inf:not([hidden])');
+  await pg.click('.barra-inf [data-p="cotizar"]'); await pg.waitForSelector('#calcKm');
+  ok('sin bodega guardada lo dice: «Falta tu bodega»', /Falta tu bodega/.test(await pg.locator('#msjSalida').innerText()));
+  const kmAntes = await pg.inputValue('[name=km]');
+  await pg.fill('[name=zona]', 'por juriquilla'); await pg.click('#calcKm'); await pg.waitForFunction(() => /Juriquilla/.test(document.getElementById('msjKm').textContent));
+  const sinSalida = await pg.locator('#msjKm').innerText();
+  ok('«Calcular» sin bodega: dice la zona y el rumbo, pide la bodega y no toca los km', /Juriquilla · norte/.test(sinSalida) && /sale la camioneta/.test(sinSalida) && await pg.inputValue('[name=km]') === kmAntes, sinSalida);
+  await pg.fill('#salida', '20.5930, -100.3916'); await pg.click('#guardaSalida'); await pg.waitForFunction(() => /Guardada|No /.test(document.getElementById('msjSalida').textContent));
+  ok('«Guardar» la bodega: se guarda en el servidor y dice lo que entendió', /Guardada\. Entendí/.test(await pg.locator('#msjSalida').innerText()) && alm.get('salida')?.lat === 20.593, await pg.locator('#msjSalida').innerText());
+  await pg.click('#calcKm'); await pg.waitForFunction(() => /km por carretera/.test(document.getElementById('msjKm').textContent));
+  const km = Math.round(kmRecta({ lat: 20.593, lon: -100.3916 }, lugarConocido('juriquilla')) * 1.25 * 10) / 10;
+  const dicho = await pg.locator('#msjKm').innerText(), total = await pg.locator('#total').innerText();
+  ok('«Calcular» con bodega: llena los km de ida por carretera y lo dice («Juriquilla · norte · X km por carretera»)', await pg.inputValue('[name=km]') === String(km) && dicho === `Juriquilla · norte · ${km} km por carretera`, dicho);
+  ok('…y la cotización se recalcula con esos km', total.includes(`Camioneta · ${km} km`), total.slice(0, 200));
+  await pg.locator('#calcKm').scrollIntoViewIfNeeded(); await pg.evaluate(() => window.scrollBy(0, -170));
+  if (process.env.CAPTURA_COTIZAR) await pg.screenshot({ path: process.env.CAPTURA_COTIZAR });
+  ok('sin errores de página en Cotizar', !errores.length, errores.slice(0, 2).join(' | '));
   await ctx.close();
 }
 await nav.close(); sitio.close(); datos.close();
