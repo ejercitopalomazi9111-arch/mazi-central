@@ -271,6 +271,9 @@ let n = 0; const msj = (texto, chat = '524420000000', extra = {}) => ({ canal: '
   ok('cuando el dueño contesta, el bot se calla en ese chat', r.hecho === 'dueno-contesta' && t.salidas.length === 2);
   t.avanza(31 * 60e3); const r2 = await t.of.atender(msj('¿dan factura?'));
   ok('…y a la media hora vuelve', r2.hecho === 'reflejo'); }
+{ const t = hacer(); await t.of.atender(msj('cuánto cuesta fumigar?'));
+  await t.of.contestaDueno('whatsapp', '524420000000', 'Yo te atiendo');
+  ok('«Que conteste el bot otra vez»: el dueño le regresa el chat y el bot contesta de inmediato', (await t.of.regresaBot('whatsapp', '524420000000')).bien && (await t.of.atender(msj('¿dan factura?'))).hecho === 'reflejo' && (await t.of.regresaBot('whatsapp', 'no-existe')).estado === 404); }
 { const t = hacer(); let r;
   for(let i = 0; i < 22; i++) r = await t.of.atender(msj('pregunta ' + i + ' de algo raro'));
   ok('tope de 20 respuestas por hora en un chat', r.hecho === 'tope' && t.salidas.filter(s => s.chat === '524420000000').length === 20); }

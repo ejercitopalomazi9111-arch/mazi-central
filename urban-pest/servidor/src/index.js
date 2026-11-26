@@ -166,6 +166,7 @@ export class Despacho {
       case 'POST /api/cotizaciones': return cotizacionAMano(A, b, quien);
       case 'GET /api/motores': return { bien: true, motores: await probarMotores(this.of.env) };
       case 'POST /api/responder': return this.of.contestaDueno(b.canal, b.chat, String(b.texto || '').slice(0, 2000), quien);
+      case 'POST /api/bot/regresa': return this.of.regresaBot(b.canal, b.chat);
       case 'GET /api/accesos': return { bien: true, accesos: (await lista('acceso:')).map(({ nombre, creado }) => ({ nombre, creado })) };
       case 'POST /api/accesos': {
         /* el código sólo se ve aquí, una vez; se guarda su huella */

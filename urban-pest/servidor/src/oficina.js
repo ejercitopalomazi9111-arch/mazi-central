@@ -305,6 +305,13 @@ export class Oficina {
     conv.duenoHasta = this.reloj() + DUENO_CALLA_MS;
     await this.A.put(k, conv); return { bien: true };
   }
+
+  /** «Que conteste el bot otra vez» (26 nov): el dueño ya terminó y le regresa el chat al bot sin esperar la media hora. */
+  async regresaBot(canal, chat){
+    const k = `conv:${canal}:${chat}`, conv = await this.A.get(k);
+    if(!conv) return { bien: false, error: 'No existe esa conversación.', estado: 404 };
+    delete conv.duenoHasta; await this.A.put(k, conv); return { bien: true };
+  }
 }
 
 /** Cambia {precio} por la cantidad calculada. Regresa null si la respuesta trae un precio que no es el del sistema

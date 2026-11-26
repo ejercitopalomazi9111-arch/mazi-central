@@ -14,6 +14,29 @@ import { icono } from './iconos.js';
 import { MUESTRA } from './muestra.js';
 
 const $ = (s, r = document) => r.querySelector(s);
+/* ── nada aparece de golpe (26 nov): lo que se toca se convierte en lo siguiente (View Transitions; sin ellas, o con
+   «reducir movimiento», se cambia y ya). nombrar() marca qué es «lo mismo» antes y después: cada chat, cada tarjeta y
+   las últimas burbujas, para que viajen a su lugar en vez de desaparecer y volver a salir. ── */
+const QUIETO = matchMedia('(prefers-reduced-motion: reduce)');
+const puedeVT = () => !!document.startViewTransition && !QUIETO.matches && !document.hidden;
+const nombreVT = (s) => 'up-' + String(s).normalize('NFD').replace(/[^\w-]/g, '_').slice(0, 60);
+let vtTurno = 0;
+async function transicion(hacer, lado = ''){
+  if(!puedeVT()){ hacer(); return null; }
+  const mio = ++vtTurno, h = document.documentElement; if(lado) h.dataset.upVt = lado; else delete h.dataset.upVt;
+  const t = document.startViewTransition(hacer); t.ready.catch(() => {});
+  t.finished.catch(() => {}).finally(() => { if(mio === vtTurno) delete h.dataset.upVt; desnombrar(); });
+  await t.updateCallbackDone.catch(() => {}); return t;
+}
+function nombrar(ultimas = 6){
+  const usados = new Set(), poner = (e, k) => { if(!e || usados.has(k) || e.style.viewTransitionName) return; usados.add(k); e.style.viewTransitionName = k; };
+  document.querySelectorAll('#vistaLista .fila[data-abrir]').forEach(e => poner(e, nombreVT('f-' + e.dataset.abrir)));
+  document.querySelectorAll('#vistaLista .tarjeta[data-id]').forEach(e => poner(e, nombreVT('t-' + e.dataset.id)));
+  const bs = [...document.querySelectorAll('#burbujas .b, #iaChat .b')]; bs.slice(-ultimas).forEach(e => poner(e, nombreVT('b-' + bs.indexOf(e))));
+  poner($('.callado'), 'up-callado');
+}
+const desnombrar = () => document.querySelectorAll('[style*="view-transition-name"]').forEach(e => { e.style.viewTransitionName = ''; });
+const PESTANAS = ['chats', 'avisos', 'aprender', 'ia'];
 const esc = (t) => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const pesos = (n) => '$' + Math.round(n).toLocaleString('es-MX');
 const guarda = { leer: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, poner: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
@@ -46,6 +69,7 @@ function muestra(metodo, ruta, b){
   if(ruta === '/api/conversaciones') return { bien: true, conversaciones: M.conversaciones.map(({ mensajes, ...x }) => ({ ...x, n: mensajes.length, ultimo_texto: mensajes.at(-1)?.texto, ultima_via: mensajes.at(-1)?.via })) };
   if(ruta.startsWith('/api/conversacion?')){ const p = new URLSearchParams(ruta.split('?')[1]); return { bien: true, conversacion: c(p.get('canal'), p.get('chat')) }; }
   if(ruta === '/api/responder'){ const x = c(b.canal, b.chat); x.mensajes.push({ de: 'negocio', via: 'dueno', texto: b.texto, cuando: Date.now() }); x.ultimo = Date.now(); x.duenoHasta = Date.now() + 30 * 60e3; return { bien: true }; }
+  if(ruta === '/api/bot/regresa'){ const x = c(b.canal, b.chat); if(x) delete x.duenoHasta; return { bien: !!x }; }
   if(ruta === '/api/avisos') return { bien: true, avisos: M.avisos };
   if(ruta === '/api/aviso/visto'){ const a = M.avisos.find(x => x.id === b.id); if(a) a.estado = 'visto'; return { bien: true }; }
   if(ruta === '/api/manual') return { bien: true, manual: M.manual };
@@ -114,17 +138,17 @@ function pintarLista(){
   }
   if(E.pestana === 'avisos'){
     v.innerHTML = `<h1 class="titulo-vista">Avisos</h1><p class="explica">Lo que el bot no debe resolver solo. Te llegan también por WhatsApp.</p>
-      ${E.avisos.length ? E.avisos.map(a => `<article class="tarjeta ${a.estado === 'visto' ? 'visto' : ''}">
+      ${E.avisos.length ? E.avisos.map(a => `<article class="tarjeta ${a.estado === 'visto' ? 'visto' : ''}" data-id="${esc(a.id)}">
         <div class="arriba"><span>${esc(a.nombre || a.chat)} · ${CANAL[a.canal]?.[1] || ''}</span><span>${hace(a.cuando)}</span></div>
         <h3>${esc(a.motivo)}</h3>
-        <div class="acciones"><button class="btn" type="button" data-abrir="${esc(a.canal)}|${esc(a.chat)}">${icono('message-circle')}Abrir chat</button>
-        ${a.estado !== 'visto' ? `<button class="btn suave" type="button" data-visto="${esc(a.id)}">${icono('check')}Ya lo vi</button>` : ''}</div></article>`).join('')
+        <div class="acciones"><button class="btn${a.estado === 'visto' ? ' suave' : ''}" type="button" data-abrir="${esc(a.canal)}|${esc(a.chat)}" data-aviso="${esc(a.id)}">${icono('message-circle')}Abrir la plática</button>
+        ${a.estado !== 'visto' ? `<button class="btn suave" type="button" data-visto="${esc(a.id)}">${icono('check')}Ya lo vi</button>` : `<span class="visto-eti">${icono('check')}Ya lo viste</span>`}</div></article>`).join('')
         : `<div class="vacio-grande">${icono('bell')}<b>Sin avisos</b><p>Todo lo está resolviendo el bot.</p></div>`}`;
   }
   if(E.pestana === 'aprender'){
     const por = E.manual.filter(e => e.estado === 'por revisar');
     v.innerHTML = `<h1 class="titulo-vista">Aprender</h1><p class="explica">Preguntas que el bot no conocía y que contestó la IA. Si la respuesta está bien, apruébala: la próxima vez sale sola, al instante y sin gastar IA.</p>
-      ${por.length ? por.map(e => `<article class="tarjeta">
+      ${por.length ? por.map(e => `<article class="tarjeta" data-id="${esc(e.id)}">
         <div class="arriba"><span>${CANAL[e.canal]?.[1] || ''}</span><span>${hace(e.cuando)}</span></div>
         <p class="preg">«${esc(e.pregunta)}»</p>
         <div class="resp">${esc(e.respuesta)}</div>
@@ -144,33 +168,37 @@ function pintarIA(v){
     <div class="ia-chat" id="iaChat">${M.ia.map(m => `<div class="b ${m.de === 'yo' ? 'yo' : 'ia'}">${esc(m.texto)}</div>`).join('')}</div>
     <div class="sugerencias">${['¿Qué plaga me piden más?', '¿Quién no ha contestado?', 'Redáctame una promo para casas'].map(s => `<button type="button" data-sug="${esc(s)}">${esc(s)}</button>`).join('')}</div>
     <form class="escribir ia-forma" id="iaForm" style="border-radius:22px;border:1px solid var(--linea);padding:6px"><textarea id="iaTexto" rows="1" placeholder="Escríbele a tu IA" aria-label="Mensaje para tu IA"></textarea>
-    <button class="mandar" type="submit" aria-label="Mandar">${icono('send')}</button></form>`;
+    <button class="mandar" type="submit">${icono('send')}Mandar</button></form>`;
   const f = $('#iaForm'), t = $('#iaTexto');
-  f.onsubmit = async (e) => { e.preventDefault(); const texto = t.value.trim(); if(!texto) return; t.value = ''; await api.pedir('POST', '/api/ia', { texto }); pintarIA(v); };
+  f.onsubmit = async (e) => { e.preventDefault(); const texto = t.value.trim(); if(!texto) return; await api.pedir('POST', '/api/ia', { texto });
+    nombrar(); t.style.viewTransitionName = 'up-envio'; transicion(() => { t.style.viewTransitionName = ''; pintarIA(v); nombrar(8); const bs = v.querySelectorAll('#iaChat .b.yo'); const u = bs[bs.length - 1]; if(u) u.style.viewTransitionName = 'up-envio'; }); };
   v.querySelectorAll('[data-sug]').forEach(b => b.onclick = () => { t.value = b.dataset.sug; t.focus(); });
 }
 
-async function abrir(clave){
+async function abrir(clave, desde = null, envio = false){
+  const mismo = !desde && E.abierta === clave && $('#app').classList.contains('en-chat');
   E.abierta = clave; const [canal, chat] = clave.split('|');
   const r = await api.pedir('GET', `/api/conversacion?canal=${encodeURIComponent(canal)}&chat=${encodeURIComponent(chat)}`);
   const prueba = canal === 'prueba';
   const c = r.conversacion || (prueba ? { canal, chat, nombre: 'Prueba (tú)', datos: {}, mensajes: [] } : null); if(!c) return;
-  $('#app').classList.add('en-chat');
+  /* si se abrió desde un aviso (o el chat tiene uno sin ver), arriba va por qué y qué sigue: «Contestar yo» */
+  const aviso = (desde?.dataset.aviso ? E.avisos.find(a => a.id === desde.dataset.aviso) : null) || E.avisos.find(a => a.canal === canal && a.chat === chat && a.estado === 'nuevo');
   const d = c.datos || {}, cot = c.cotizacion;
   const dato = (ic, v, falta) => `<span class="dato ${v == null ? 'falta' : ''}">${icono(ic)}${v == null ? falta : esc(v)}</span>`;
-  const callado = c.duenoHasta > Date.now();
+  const callado = c.duenoHasta > Date.now(), vuelve = !callado && E.vuelve === clave; E.vuelve = null;
   const tarjetaCot = cot ? `<div class="cotiza"><div class="tit">${icono('calculator')}Cotización del sistema${cot.ejemplo ? ' · <b>precios de ejemplo</b>' : ''}</div>
         <div class="monto"><small>aprox.</small>${pesos(cot.desde)}</div>
         <dl><dt>Producto</dt><dd>${pesos(cot.desglose?.producto || 0)}</dd><dt>Mano de obra</dt><dd>${pesos(cot.desglose?.mano_de_obra || 0)}</dd><dt>Traslado</dt><dd>${pesos(cot.desglose?.traslado || 0)}</dd></dl>
         ${cot.visita ? `<span class="marca-chica m-aviso etq">${icono('truck')}Pide visita antes del precio final</span>` : ''}
         ${cot.fueraDeRadio ? `<span class="marca-chica m-aviso etq">${icono('map-pin')}${cot.atiende === 'no' ? 'Fuera de zona: casa, no se cubre' : cot.atiende === 'caso-por-caso' ? 'Fuera de zona: tú decides' : 'Fuera de zona: con visita'}</span>` : ''}</div>` : '';
-  $('#conv').innerHTML = `
+  const html = `
     <header class="cab">
-      <button class="redondo volver" type="button" id="bVolver" aria-label="Volver a los chats">${icono('chevron-left')}</button>
+      <button class="redondo volver" type="button" id="bVolver" aria-label="Volver a ${E.pestana === 'avisos' ? 'los avisos' : 'los chats'}">${icono('chevron-left')}${E.pestana === 'avisos' ? 'Avisos' : 'Chats'}</button>
       ${avatar(c)}
       <div class="info"><b>${esc(c.nombre || c.chat)}</b><small>${CANAL[c.canal]?.[1] || ''}</small></div>
       <button class="pensar" type="button" id="bPensar" aria-pressed="${E.pensar}">${icono(E.pensar ? 'eye' : 'eye-off')}Cómo pensó</button>
     </header>
+    ${aviso && !callado ? `<div class="del-aviso"><p>Te avisó el bot: <b>${esc(aviso.motivo)}</b></p><button class="btn" type="button" data-contestar>${icono('message-circle')}Contestar yo</button></div>` : ''}
     <div class="ficha" aria-label="Lo que se sabe del cliente">
       ${dato('spray-can', d.plaga, 'Plaga')}${dato('ruler', d.m2 != null ? d.m2 + ' m²' : null, 'Metros')}${dato('map-pin', d.zona, 'Zona')}
       ${dato(d.tipo === 'industria' ? 'factory' : d.tipo === 'negocio' ? 'store' : 'house', d.tipo, 'Tipo')}
@@ -179,36 +207,57 @@ async function abrir(clave){
       ${(() => { const ms = c.mensajes || [], i = ms.map(m => m.via).lastIndexOf('cerebro');
         return ms.map((m, k) => burbuja(m) + (k === (i < 0 ? ms.length - 1 : i) ? tarjetaCot : '')).join(''); })()}
     </div>
-    ${callado ? `<div class="callado">${icono('clock')}Estás contestando tú: el bot se queda callado en este chat hasta las ${new Date(c.duenoHasta).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}</div>` : ''}
+    ${callado ? `<div class="callado">${icono('clock')}<span>Estás contestando tú: el bot se queda callado en este chat hasta las ${new Date(c.duenoHasta).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}.</span><button type="button" data-regresa>${icono('bot')}Que conteste el bot otra vez</button></div>`
+      : vuelve ? `<div class="callado vuelve">${icono('bot')}<span>Listo: el bot vuelve a contestar en este chat.</span></div>` : ''}
     ${prueba ? `<div class="como" role="radiogroup" aria-label="Escribo como">
       <span>Escribo como</span>
       <button type="button" role="radio" data-como="cliente" aria-checked="${E.como !== 'dueno'}">Cliente</button>
       <button type="button" role="radio" data-como="dueno" aria-checked="${E.como === 'dueno'}">Dueño</button>
       <button type="button" class="borrar" id="bOtraVez">Borrar chat</button></div>` : ''}
     <form class="escribir" id="forma"><textarea id="texto" rows="1" placeholder="${prueba && E.como !== 'dueno' ? 'Escribe como cliente' : 'Contesta como dueño'}" aria-label="Tu mensaje"></textarea>
-      <button class="mandar" type="submit" id="bMandar" aria-label="Mandar" disabled>${icono('send')}</button></form>`;
-  const bb = $('#burbujas'); bb.scrollTop = bb.scrollHeight;
-  if($('#bOtraVez')) $('#bOtraVez').onclick = async () => { if($('#bOtraVez').dataset.seguro !== '1'){ $('#bOtraVez').dataset.seguro = '1'; $('#bOtraVez').textContent = '¿Seguro? Toca otra vez'; return; }
-    await api.pedir('POST', '/api/probar/borrar', { chat }); await cargar(); $('#app').classList.remove('en-chat'); E.abierta = null; pintarLista(); };
-  document.querySelectorAll('[data-como]').forEach(b => b.onclick = () => { E.como = b.dataset.como; guarda.poner('up_como', E.como); abrir(clave); });
-  $('#bVolver').onclick = () => { $('#app').classList.remove('en-chat'); E.abierta = null; pintarLista(); };
-  $('#bPensar').onclick = () => { E.pensar = !E.pensar; guarda.poner('up_pensar', E.pensar ? '1' : '0'); abrir(clave); };
-  const t = $('#texto'), bm = $('#bMandar');
-  t.oninput = () => { bm.disabled = !t.value.trim(); t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 140) + 'px'; };
-  $('#forma').onsubmit = async (e) => {
-    e.preventDefault(); const texto = t.value.trim(); if(!texto) return; bm.disabled = true;
-    const comoCliente = prueba && E.como !== 'dueno';
-    if(comoCliente){
-      /* lo del cliente sale de una vez y el bot «escribe» mientras piensa */
-      t.value = ''; t.style.height = 'auto';
-      $('#burbujas').insertAdjacentHTML('beforeend', `<div class="b cliente">${esc(texto)}<div class="pie">ahora</div></div><div class="b negocio escribiendo" id="escribiendo"><span></span><span></span><span></span></div>`);
-      $('#burbujas').scrollTop = $('#burbujas').scrollHeight;
-    }
-    const r = await api.pedir('POST', comoCliente ? '/api/probar' : '/api/responder', comoCliente ? { chat, texto, nombre: c.nombre !== 'Prueba (tú)' && c.mensajes.length ? c.nombre : `Prueba de ${YO} · ${new Date().toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}` } : { canal, chat, texto });
-    if(!r.bien){ alert(r.error || 'No se pudo mandar.'); bm.disabled = false; return; }
-    await cargar(); abrir(clave);
+      <button class="mandar" type="submit" id="bMandar" disabled>${icono('send')}Mandar</button></form>`;
+  const enganchar = () => {
+    const bb = $('#burbujas'); bb.scrollTop = bb.scrollHeight;
+    if($('#bOtraVez')) $('#bOtraVez').onclick = async () => { if($('#bOtraVez').dataset.seguro !== '1'){ $('#bOtraVez').dataset.seguro = '1'; $('#bOtraVez').textContent = '¿Seguro? Toca otra vez'; return; }
+      await api.pedir('POST', '/api/probar/borrar', { chat }); await cargar(); $('#app').classList.remove('en-chat'); E.abierta = null; pintarLista(); };
+    document.querySelectorAll('[data-como]').forEach(b => b.onclick = () => { E.como = b.dataset.como; guarda.poner('up_como', E.como); abrir(clave); });
+    /* «Chats» / «Avisos»: la plática se encoge y regresa a la tarjeta de la que salió */
+    $('#bVolver').onclick = () => { $('#conv').style.viewTransitionName = 'up-conv';
+      transicion(() => { $('#conv').style.viewTransitionName = ''; $('#app').classList.remove('en-chat'); E.abierta = null; pintarLista();
+        const de = [...document.querySelectorAll('#vistaLista [data-abrir]')].find(x => x.dataset.abrir === clave); const t = de?.closest('.tarjeta') || de; if(t) t.style.viewTransitionName = 'up-conv'; }); };
+    $('#bPensar').onclick = () => { E.pensar = !E.pensar; guarda.poner('up_pensar', E.pensar ? '1' : '0'); abrir(clave); };
+    const t = $('#texto'), bm = $('#bMandar');
+    if($('[data-contestar]')) $('[data-contestar]').onclick = () => { t.focus(); t.scrollIntoView?.({ block: 'nearest' }); };
+    if($('[data-regresa]')) $('[data-regresa]').onclick = async (e) => { e.currentTarget.disabled = true;
+      const j = await api.pedir('POST', '/api/bot/regresa', { canal, chat }); if(!j.bien){ alert(j.error || 'No se pudo.'); e.currentTarget.disabled = false; return; }
+      E.vuelve = clave; await cargar(); abrir(clave); };
+    t.oninput = () => { bm.disabled = !t.value.trim(); t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 140) + 'px'; };
+    $('#forma').onsubmit = async (e) => {
+      e.preventDefault(); const texto = t.value.trim(); if(!texto) return; bm.disabled = true;
+      const comoCliente = prueba && E.como !== 'dueno';
+      if(comoCliente){
+        /* lo del cliente sale de una vez y el bot «escribe» mientras piensa */
+        t.value = ''; t.style.height = 'auto';
+        $('#burbujas').insertAdjacentHTML('beforeend', `<div class="b cliente">${esc(texto)}<div class="pie">ahora</div></div><div class="b negocio escribiendo" id="escribiendo"><span></span><span></span><span></span></div>`);
+        $('#burbujas').scrollTop = $('#burbujas').scrollHeight;
+      }
+      const r = await api.pedir('POST', comoCliente ? '/api/probar' : '/api/responder', comoCliente ? { chat, texto, nombre: c.nombre !== 'Prueba (tú)' && c.mensajes.length ? c.nombre : `Prueba de ${YO} · ${new Date().toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}` } : { canal, chat, texto });
+      if(!r.bien){ alert(r.error || 'No se pudo mandar.'); bm.disabled = false; return; }
+      /* contestó el dueño: el aviso de este chat queda visto */
+      if(!comoCliente && aviso?.estado === 'nuevo') await api.pedir('POST', '/api/aviso/visto', { id: aviso.id });
+      await cargar(); abrir(clave, null, !comoCliente);
+    };
   };
-  pintarLista();
+  const pintar = () => { $('#app').classList.add('en-chat'); $('#conv').innerHTML = html; enganchar(); pintarLista(); };
+  if(!puedeVT()) return pintar();
+  if(mismo){
+    /* la misma plática con algo nuevo: lo que ya estaba se queda, lo nuevo crece desde abajo y lo que escribiste vuela a su burbuja */
+    nombrar(); if(envio) $('#texto').style.viewTransitionName = 'up-envio';
+    return transicion(() => { pintar(); nombrar(8); if(envio){ const bs = document.querySelectorAll('#burbujas .b.negocio'); const u = bs[bs.length - 1]; if(u) u.style.viewTransitionName = 'up-envio'; } });
+  }
+  /* la tarjeta del aviso (o el renglón del chat) se convierte en la plática */
+  const de = desde?.closest('.tarjeta') || desde; if(de) de.style.viewTransitionName = 'up-conv';
+  return transicion(() => { if(de) de.style.viewTransitionName = ''; pintar(); $('#conv').style.viewTransitionName = 'up-conv'; });
 }
 
 function burbuja(m){
@@ -238,12 +287,14 @@ async function cargar(){
 document.addEventListener('click', async (e) => {
   const t = e.target.closest('.pestanas button, .fila[data-abrir], .btn[data-abrir], .btn[data-visto], .btn[data-aprobar], .btn[data-descartar]');
   if(!t) return;
-  if(t.dataset.p){ E.pestana = t.dataset.p; document.querySelectorAll('.pestanas button').forEach(b => b.setAttribute('aria-current', b === t ? 'page' : 'false')); $('#app').classList.remove('en-chat'); pintarLista(); return; }
-  if(t.dataset.abrir){ return abrir(t.dataset.abrir); }
+  if(t.dataset.p){ const antes = E.pestana; E.pestana = t.dataset.p; document.querySelectorAll('.pestanas button').forEach(b => b.setAttribute('aria-current', b === t ? 'page' : 'false'));
+    return transicion(() => { $('#app').classList.remove('en-chat'); pintarLista(); }, PESTANAS.indexOf(E.pestana) > PESTANAS.indexOf(antes) ? 'der' : PESTANAS.indexOf(E.pestana) < PESTANAS.indexOf(antes) ? 'izq' : ''); }
+  if(t.dataset.abrir){ return abrir(t.dataset.abrir, t); }
   if(t.dataset.visto){ await api.pedir('POST', '/api/aviso/visto', { id: t.dataset.visto }); }
   if(t.dataset.aprobar){ await api.pedir('POST', '/api/manual/aprobar', { id: t.dataset.aprobar }); }
   if(t.dataset.descartar){ await api.pedir('POST', '/api/manual/descartar', { id: t.dataset.descartar }); }
-  await cargar(); pintarLista();
+  /* la tarjeta vista cambia en su lugar; la aprobada o descartada sale de lado y las demás suben */
+  await cargar(); nombrar(); transicion(() => { pintarLista(); nombrar(); });
 });
 $('#bTema').onclick = () => tema(true);
 tema(false); pintarIconos();
