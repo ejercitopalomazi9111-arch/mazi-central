@@ -41,7 +41,7 @@ async function mano(pose, pt, { brazo = .42, ms = 450, palma = 'abajo', mano: la
 }
 const foco = () => p.evaluate(() => __vr.focoActual());
 /* apuntar a un botón, esperar a que brille y pellizcar (lo que se le explica a una persona) */
-async function elegir(titulo, { pellizcoMs = 350 } = {}){
+async function elegir(titulo, { pellizcoMs = 600 } = {}){   /* 0.6 s: este navegador de pruebas va a 7-10 cuadros por segundo (un teléfono, a 30-60) */
   const pt = await dondeEsta(titulo); if(!pt){ sí(false, `«${titulo}» no está a la vista`); return false; }
   await mirarA(pt); await mano('apunta', pt); await dormir(500);
   /* como una persona: si lo que brilla no es lo que quería, mueve el dedo hacia allá (lo que ve: dónde cae su cursor) */
