@@ -43,7 +43,7 @@ export function iniciarAR(V){
        la página) y lo que se ve encima de la cámara es ese lienzo. Esconderlo dejaba la cámara sola con Mazi VR corriendo atrás */
     ar.enLienzo = capa.framebuffer == null;
     if(!ar.enLienzo) render.domElement.style.visibility = 'hidden';
-    document.documentElement.classList.add('en-ar'); if(ar.enLienzo) document.documentElement.classList.add('en-ar-lienzo');
+    document.documentElement.classList.add('en-ar'); if(ar.enLienzo){ document.documentElement.classList.add('en-ar-lienzo'); V.modoLigero?.(true); }
     /* la imagen de la cámara: una textura externa (la de ARCore, válida sólo dentro del cuadro) */
     const tex = new THREE.ExternalTexture(); tex.colorSpace = THREE.SRGBColorSpace; ar.tex = tex;
     /* para las manos: la cámara en chiquito (320 px) a un lienzo, cada 2 cuadros */
@@ -87,7 +87,7 @@ export function iniciarAR(V){
       }
       async function pintar(f){
         const img = await decodificar(f.data, f), w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
-        const k = Math.min(1, 960 / w), gw = Math.round(w * k), gh = Math.round(h * k);
+        const k = Math.min(1, 640 / w), gw = Math.round(w * k), gh = Math.round(h * k);   /* 640: subir la textura cuesta en el mismo hilo que dibuja */
         if(grande.width !== gw || grande.height !== gh){ grande.width = gw; grande.height = gh; }
         xg.drawImage(img, 0, 0, gw, gh); texV.needsUpdate = true; ar.ancho = w; ar.alto = h;
         if(V.AJ.manos){ const mw = 320, mh = Math.round(320 * h / w); if(mini.width !== mw || mini.height !== mh){ mini.width = mw; mini.height = mh; } xm.drawImage(img, 0, 0, mw, mh);
@@ -119,9 +119,8 @@ export function iniciarAR(V){
         W.addEventListener('cv_data', (r) => { const b = r.detail?._buffers?.[0]; if(!b) return;
           llego({ width: b.size?.width, height: b.size?.height, data: b._buffer ?? b.buffer, ts: r.detail._timestamp ?? r.detail.timestamp });
           try{ r.detail.release?.(); }catch{}
-          setTimeout(pedir, Math.max(0, 33 - (performance.now() - ultimo))); });
-        try{ W._startSendingComputerVisionData?.(); }catch{}
-        setTimeout(pedir, 15);   /* dos pedidos en camino: mientras uno viaja del lado del teléfono, el otro ya viene */
+          setTimeout(pedir, Math.max(0, 50 - (performance.now() - ultimo))); });
+        /* (sin «manda sin parar»: medido 15 cuadros por segundo con el canal lleno; se pide uno tras otro, máximo 20 por segundo) */
       }
       const vigia = setInterval(() => { if(!ar.activo){ clearInterval(vigia); return; } if(performance.now() - Math.max(llegoEn, ultimo) > 500) pedir(); }, 250);
       ar.camaraVariant = () => ({ directo: !!directo, pedidos, llegados, pintados, tirados, retraso: ar.retraso });
@@ -149,7 +148,7 @@ export function iniciarAR(V){
     s.requestAnimationFrame(paso);
     s.addEventListener('end', () => {
       ar.activo = false; ar.pose = null; ar.frame = null; V.fuenteManos.activa = false;
-      render.domElement.style.visibility = ''; document.documentElement.classList.remove('en-ar', 'en-ar-lienzo');
+      render.domElement.style.visibility = ''; document.documentElement.classList.remove('en-ar', 'en-ar-lienzo'); V.modoLigero?.(false);
       V.dejarCamaraAR(); V.hud?.('Salió de AR', 2);
       render.setAnimationLoop((tt) => V.cuadroExterno(tt));
       ar.alSalir?.();

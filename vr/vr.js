@@ -281,6 +281,10 @@ paseEsc.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), pase));
    Se pone el teléfono con la parte de arriba hacia la IZQUIERDA (como para ver un video). */
 let acostado = false;
 export const estaAcostado = () => acostado;
+/* MODO LIGERO (27 nov, medido en el iPhone con el App Clip: 15 cuadros por segundo): ahí el mismo hilo dibuja, decodifica la
+   cámara y corre MediaPipe. Se dibuja a menos resolución (1.2 en vez de 1.6) y sin el suavizado de bordes de 4 muestras */
+let ligero = false;
+export function modoLigero(si){ if(ligero === !!si) return; ligero = !!si; render.setPixelRatio(ligero ? 1.2 : Math.min(devicePixelRatio, 1.6)); medir(); }
 function medir(){
   const rw = innerWidth, rh = innerHeight;
   acostado = !modo.mono && rh > rw && AJ.acostar !== false;
@@ -290,7 +294,7 @@ function medir(){
   document.documentElement.style.setProperty('--ancho-real', rw + 'px'); document.documentElement.style.setProperty('--alto-real', rh + 'px');
   const pr = render.getPixelRatio(), ew = Math.round(W / 2 * pr), eh = Math.round(H * pr);
   rtI?.dispose(); rtD?.dispose();
-  const op = { colorSpace: THREE.SRGBColorSpace, samples: 4 };
+  const op = { colorSpace: THREE.SRGBColorSpace, samples: ligero ? 0 : 4 };
   rtI = new THREE.WebGLRenderTarget(ew, eh, op); rtD = new THREE.WebGLRenderTarget(ew, eh, op);
   pase.uniforms.tI.value = rtI.texture; pase.uniforms.tD.value = rtD.texture;
   cabeza.aspect = modo.mono ? W / H : (W / 2) / H; aplicarAjustes();

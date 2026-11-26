@@ -673,6 +673,8 @@ dependemos.
 
    | en una sesión `immersive-ar` el lienzo de la página se esconde porque se pinta en el búfer de la capa | eso es Chrome de Android; el App Clip de Variant (polyfill sobre ARKit) da `capa.framebuffer = null`: el búfer ES el lienzo, y lo que se ve encima de la cámara es la página | en el iPhone sólo se veía la cámara, con Mazi VR corriendo atrás (sonaba al mirar). `ar.enLienzo` en `vr/arcore.js`; la prueba falsa de AR traía `framebuffer = null` y por eso imitaba al iPhone sin que nadie lo notara |
 
+   | si Monarch corre fluido en la computadora, en el teléfono también | en el App Clip del iPhone, con ARKit usando la cámara, «Flores» iba a **2 cuadros por segundo**: los cinco cielos 360° eran de 4096×2048 (~43 MB cada uno en la tarjeta gráfica) y ninguno se soltaba al cambiar de escena; los triángulos (27 mil) no eran el problema | se midió con el diagnóstico del espejo del docente (cps, cámara/s, retraso, ms de MediaPipe), no a ojo. En pantallas de dedo van cielos de 2048 (`-2k.webp`) y se suelta el anterior; en el App Clip, modo ligero (resolución 1.2, sin MSAA, cámara a 640, MediaPipe máximo 10/s) |
+
    Cuando una de éstas aparezca otra vez, se agrega el renglón antes de cerrar el commit.
 
 13. **CERO PARPADEO. Nunca, jamás, de los jamases** (Carlos, 14 nov, por el ajedrez de CARYMO). Tocar algo o que

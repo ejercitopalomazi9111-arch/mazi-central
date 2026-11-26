@@ -108,6 +108,9 @@ export async function iniciarManos(V){
        en cada cuadro; si tarda más, uno sí y uno no; si pasa de 28 ms, uno de cada tres */
     /* (26 nov) nunca uno de cada TRES: con el teléfono ocupado, un pellizco rápido cabía entero en el hueco y se perdía */
     if(++cuadroN % (estado.ms > 14 ? 2 : 1) || (video.currentTime === ultimoT && !window.__detectorFalso)) return;
+    /* con la cámara del App Clip (modo ligero) MediaPipe corre máximo 10 veces por segundo: tarda ~27 ms y comparte hilo con el dibujo */
+    if(V.ar?.enLienzo && performance.now() - (estado.ultimaDeteccion || 0) < 100 && !window.__detectorFalso) return;
+    estado.ultimaDeteccion = performance.now();
     ultimoT = video.currentTime;
     const t0 = performance.now(); let r;
     try{ r = window.__detectorFalso ? window.__detectorFalso(ahora) : lm.detectForVideo(video.canvas || video, ahora); }   /* la persona simulada (vr/persona/) mete sus manos aquí */catch(e){ estado.error = String(e?.message || e); V.extra.camSinc = false; return; }
