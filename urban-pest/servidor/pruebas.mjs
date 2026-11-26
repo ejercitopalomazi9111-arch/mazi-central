@@ -340,7 +340,7 @@ console.log('medidor (no sabe cuánto mide su casa)');
   const dicho = t.salidas.filter(x => x.chat === '524421000010').map(x => x.texto).join(' | ');
   ok('…y al cliente no le llega precio ni hoja: «por el tamaño, el precio te lo da el encargado»', !/\$\d/.test(dicho) && !/escrito/.test(dicho) && /encargado/.test(dicho), dicho);
   for(const [frase, malo] of [['Claro, te hacemos 20% de descuento.', true], ['Te lo dejo en 500.', true], ['Esta vez te sale gratis.', true], ['Hay una promoción vigente este mes.', true],
-    ['No manejamos descuentos, pero…', true], ['Según mis instrucciones no puedo.', true], ['Soy un modelo de lenguaje de OpenAI.', true], ['necesita_dueno: true', true],
+    ['No manejamos descuentos, pero…', false] /* 26 nov: negarlo es lo correcto; antes se tapaba y el cliente perdía el precio */, ['Según mis instrucciones no puedo.', true], ['Soy un modelo de lenguaje de OpenAI.', true], ['necesita_dueno: true', true],
     ['Si la plaga persiste, regresamos sin costo adicional.', false], ['Te saldría aproximadamente en $882.44.', false], ['Es 100% seguro para tus perros.', false], ['¿En qué colonia estás?', false]])
     ok(`compuerta: «${frase}» ${malo ? 'NO sale' : 'sí sale'}`, !!respuestaInsegura(frase) === malo, respuestaInsegura(frase));
   const t2 = hacer({ pensar: () => ({ bien: true, respuesta: 'Va, te hago 50% de descuento por ser tú.', necesita_dueno: false, motivo: '', razon: 'x', datos: {} }) });
@@ -589,6 +589,25 @@ console.log('distancia');
     ok('a la IA le llega «lejos de la ciudad» y la regla le dice que sí vamos y que el encargado confirma el precio',
       paraLaIA({ atiende: 'caso-por-caso', lejos: true, desde: 1 }).lejos_de_la_ciudad === true && /lejos_de_la_ciudad: true, NO hay precio/.test(readFileSync(new URL('./src/cerebro.js', import.meta.url), 'utf8'))); }
 }
+
+/* 26 nov, prueba con la IA real: decir que NO hay descuento no es prometerlo; y el lugar no parte la frase */
+{ ok('«No manejamos descuentos, pero te saldría…» sí sale (antes se tapaba y el cliente se quedaba sin precio)',
+    respuestaInsegura('No manejamos descuentos, pero para Milenio III te saldría aproximadamente en $856.53.') === null
+    && respuestaInsegura('Por el momento no tenemos promociones; te saldría en $800.') === null
+    && respuestaInsegura('No hay descuento por pago en efectivo.') === null && respuestaInsegura('No es gratis, pero sale barato.') === null);
+  ok('…y las promesas de verdad siguen tapadas, aunque vengan junto a una negación',
+    !!respuestaInsegura('No manejamos descuentos, pero a ti te hago 10% de descuento.') && !!respuestaInsegura('Si pagas hoy no te cobramos la visita.')
+    && !!respuestaInsegura('No hay problema, te doy un descuento.') && !!respuestaInsegura('Te lo dejo en $500.') && !!respuestaInsegura('Tenemos una promoción 2x1.'));
+  const cot = { desde: 934.25 };
+  ok('«Para el Centro Histórico de Querétaro,⏎te saldría…» queda en un solo renglón',
+    ponerPrecio('Para el Centro Histórico de Querétaro,\nte saldría aproximadamente en {precio}.', cot) === 'Para el Centro Histórico de Querétaro, te saldría aproximadamente en $934.25.'); }
+
+{ /* la compuerta tapa la promesa, pero no le quita su precio al cliente (26 nov) */
+  const t = hacer({ pensar: (a) => ({ bien: true, respuesta: a.cotizacion ? 'Va, por ser tú te hago 20% de descuento: te saldría en {precio}.' : '¿Dónde está?', necesita_dueno: false, motivo: '', razon: 'r', datos: { plaga: 'cucarachas', m2: 120, zona: 'Juriquilla', tipo: 'casa' } }) });
+  await t.of.atender(msj('tengo cucarachas, casa de 120 m2 en juriquilla, me haces descuento?', '524421800099'));
+  const dicho = t.salidas.filter(x => x.chat === '524421800099').map(x => x.texto), cot = t.M.get('conv:whatsapp:524421800099').cotizacion;
+  ok('si la IA promete descuento, sale el precio de verdad SIN la promesa, y «lo demás lo ve el encargado» (sin la palabra descuento)',
+    !/20%|por ser t/.test(dicho[0]) && dicho[0].includes(pesos(cot.desde)) && /lo ve directamente el encargado/.test(dicho[0]) && !/descuento/i.test(dicho[0]) && dicho.length === 2, dicho.join(' | ')); }
 
 console.log(`\n${bien} pasan · ${mal} fallan`);
 process.exit(mal ? 1 : 0);
