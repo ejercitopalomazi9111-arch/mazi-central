@@ -8,9 +8,9 @@ const require = createRequire('/opt/node22/lib/node_modules/'); const { chromium
 const BASE = process.env.BASE || 'http://localhost:8765';
 let ok = 0, mal = 0; const sí = (c, t) => { c ? ok++ : mal++; console.log(c ? '✓' : '✗', t); };
 const b = await chromium.launch({ args: ['--enable-unsafe-swiftshader'] });
-async function abrir(conXR){
+async function abrir(conXR, conArcore = true){
   const ctx = await b.newContext({ viewport: { width: 844, height: 390 } });
-  await ctx.addInitScript((conXR) => { navigator.getGamepads = () => []; try{ localStorage.setItem('mazivr.ajustes', JSON.stringify({ fondo: 1, manos: true })); }catch{}
+  await ctx.addInitScript(([conXR, conArcore]) => { navigator.getGamepads = () => []; try{ localStorage.setItem('mazivr.ajustes', JSON.stringify({ fondo: 1, manos: true, aj: 4, ...(conArcore ? { arcore: true } : {}) })); }catch{}
     if(!conXR) return;
     /* el App Clip de Variant: su objeto VLaunch y la cámara cuadro por cuadro (un JPEG naranja en base64, como lo manda ARKit) */
     if(conXR === 'variant'){
@@ -42,7 +42,7 @@ async function abrir(conXR){
       addEventListener(e, f){ this.oyentes[e] = f; }, end(){ this.oyentes.end?.(); } };
     window.__xr.sesion = sesion;
     Object.defineProperty(navigator, 'xr', { value: { isSessionSupported: async (m) => m === 'immersive-ar', requestSession: async () => { __xr.pedidos++; return sesion; } } });
-  }, conXR);
+  }, [conXR, conArcore]);
   const p = await ctx.newPage(); const errores = []; p.on('pageerror', (e) => errores.push(e.message));
   p.on('console', (m) => { if(m.type() === 'error' && !/favicon|getUserMedia|Requested device|NotFound|Permission|404/i.test(m.text())) errores.push(m.text()); });
   await p.goto(BASE + '/vr/', { waitUntil: 'networkidle' }); await p.waitForTimeout(300);
@@ -53,7 +53,7 @@ async function abrir(conXR){
   sí(await p.evaluate(() => document.getElementById('eAR').textContent === 'ARCore'), 'en la entrada se ve que el teléfono tiene ARCore');
   await p.click('#bEntrar'); await p.waitForFunction(() => window.__vr?.ahora() === 'inicio', null, { timeout: 20000 });
   await p.waitForTimeout(800);
-  sí(await p.evaluate(() => __xr.pedidos === 1 && __vr.ar.activo), 'al tocar Entrar se abre la sesión de ARCore (de fábrica)');
+  sí(await p.evaluate(() => __xr.pedidos === 1 && __vr.ar.activo), 'con ARCore prendido en Ajustes, al tocar Entrar se abre la sesión');
   const c0 = await p.evaluate(() => __vr.cabeza.position.toArray());
   await p.evaluate(() => { __xr.pos = [.4, 1.5, -1]; }); await p.waitForTimeout(400);
   const c1 = await p.evaluate(() => __vr.cabeza.position.toArray());
@@ -92,6 +92,11 @@ async function abrir(conXR){
   sí(p1 - p0 >= 3, `y SIGUE llegando aunque el App Clip pierda pedidos (${p1 - p0} cuadros nuevos en 5 s; ${JSON.stringify(await p.evaluate(() => [__vr.ar.camaraVariant(), __cam]))})`);
   await p.evaluate(() => { __vr.ponerMixta(true); }); await p.waitForTimeout(300);
   sí(await p.evaluate(() => !__vr.cuarto.visible), 'y la realidad mixta se prende con esa cámara');
+  sí(errores.length === 0, 'sin errores' + (errores.length ? ': ' + errores.slice(0, 3).join(' | ') : '')); }
+/* (27 nov, Carlos) DE FÁBRICA «Entrar» es el modo normal aunque el teléfono tenga ARCore: el AR se prende en Ajustes */
+{ const { p, errores } = await abrir(true, false);
+  await p.click('#bEntrar'); await p.waitForFunction(() => window.__vr?.ahora() === 'inicio', null, { timeout: 20000 }); await p.waitForTimeout(600);
+  sí(await p.evaluate(() => __xr.pedidos === 0 && !__vr.ar.activo && __vr.AJ.arcore === false), 'de fábrica, «Entrar» NO abre ARCore (modo normal, con las manos de siempre)');
   sí(errores.length === 0, 'sin errores' + (errores.length ? ': ' + errores.slice(0, 3).join(' | ') : '')); }
 /* sin ARCore: como siempre */
 { const { p, errores } = await abrir(false);
