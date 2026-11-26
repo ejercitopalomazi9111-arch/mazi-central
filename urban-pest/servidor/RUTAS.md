@@ -213,3 +213,20 @@ escribe la gente contra el reflejo (cero equivocados) y, en privado, el bot ente
 **El número para avisarle al dueño:** la variable `DUENO_WA` o, sin desplegar, `POST /api/negocio
 { negocio: { dueno_wa: '524421394023' } }`. Es el 442 139 4023 que dio el cliente (el mismo de su página).
 Sirve hasta que se conecte WhatsApp (falta su acceso a Meta).
+
+## Por tipo de cliente · 23 nov
+
+`pruebas-tipos.mjs` cotiza miles de casos por tipo (casa, depa, condominio, restaurante, oficina, bodega, nave, hospital,
+escuela, hotel; de 20 a 50,000 m²) y corre cientos de pláticas con la IA de mentiras, que a propósito a veces se porta mal.
+Con tarifas de MUESTRA; contra su Excel de verdad se corre en privado, con la misma revisión. Lo que quedó:
+
+- **El precio no depende del tipo** (su hoja no lo multiplica): el tipo sólo decide la visita y cuándo lo ve el encargado.
+- **La industria se confirma con visita** aunque las tarifas no traigan `tipos` (las que salen de su Excel no los traen).
+  `tipos.industria.visita: false` en las tarifas lo apaga.
+- **Qué es el lugar** sale de la IA y, si no lo apuntó, de lo que dijo el cliente (restaurante, hotel, escuela, bodega… →
+  negocio; nave, fábrica, planta de alimentos → industria). A un negocio no se le pregunta por «tu casa» ni sus recámaras
+  (ni el reflejo ni la pregunta de respaldo: se le piden los metros del lugar), y «hotel de 33 cuartos» no se mide como casa.
+- **Varias casas o departamentos** (administra un condominio o un fraccionamiento, «40 casas», «12 departamentos»): no hay
+  precio automático, lo da el encargado y le llega «son varias casas». Se calibra con el dueño.
+- **Los metros como los escribe la gente:** «24.100 m²» son 24,100 (antes 24.1) y «3 mil metros» son 3,000.
+- Al dueño le llega el motivo de verdad: «lugar muy grande», «varias casas» o «casa grande fuera de la zona».
