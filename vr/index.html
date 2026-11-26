@@ -115,6 +115,9 @@ setInterval(() => { if(!document.body.classList.contains('dentro') || document.f
 $('#bPantalla').addEventListener('click', () => { V.ponerPantalla(true); $('#bEntrar').click(); });
 /* ¿este teléfono abre ARCore desde la página? (Chrome de Android con ARCore). Se pregunta al cargar: al tocar «Entrar» la
    sesión se pide en el MISMO instante, sin esperar nada (el navegador sólo la abre con un gesto) */
+/* en el iPhone (sin WebXR): si hay llave de Variant Launch (config-ar.js), su script abre el App Clip con ARKit */
+import('./config-ar.js').then(({ VARIANT_LAUNCH_KEY: k }) => { if(k && !navigator.xr && /iPhone|iPad/.test(navigator.userAgent)){ const sc = document.createElement('script'); sc.src = `https://launchar.app/sdk/v1?key=${encodeURIComponent(k)}&redirect=true`; document.head.appendChild(sc);
+  addEventListener('vlaunch-initialized', () => arPosible().then((s) => { conAR = s; if(s){ $('#eAR')?.classList.add('si'); if($('#eAR')) $('#eAR').textContent = 'ARKit'; } })); } }).catch(() => {});
 let conAR = false; arPosible().then((s) => { conAR = s; if(s){ $('#eAR')?.classList.add('si'); if($('#eAR')) $('#eAR').textContent = 'ARCore'; } });
 $('#bEntrar').addEventListener('click', async () => {
   $('#bEntrar').disabled = true;

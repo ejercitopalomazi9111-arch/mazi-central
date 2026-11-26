@@ -45,12 +45,12 @@ async function elegir(titulo, { pellizcoMs = 350 } = {}){
   const pt = await dondeEsta(titulo); if(!pt){ sí(false, `«${titulo}» no está a la vista`); return false; }
   await mirarA(pt); await mano('apunta', pt); await dormir(500);
   /* como una persona: si lo que brilla no es lo que quería, mueve el dedo hacia allá (lo que ve: dónde cae su cursor) */
-  for(let i = 0; i < 6; i++){
-    const f = await foco(); if(f && (f === titulo || String(f).startsWith(titulo))) break;
+  for(let i = 0; i < 12; i++){
+    const f = await foco(); if(f && (f === titulo || String(f).startsWith(titulo))){ await dormir(300); if(String(await foco() || '').startsWith(titulo)) break; }
     const ajuste = await p.evaluate(([pt]) => { const T = __vr.THREE, R = __vr.extra.rayo; if(!R) return null; const o = R.origen, quiero = new T.Vector3(...pt).sub(o).normalize();
       const ahora = R.dir.clone(), corr = quiero.clone().sub(ahora); const S = __persona.estado.der; const punta = new T.Vector3(...S.punta), dist = punta.distanceTo(o);
       const nueva = o.clone().add(punta.clone().sub(o).normalize().add(corr).normalize().multiplyScalar(dist)); __persona.poner('der', { ...S, punta: nueva }); return corr.length(); }, [pt]);
-    await dormir(350);
+    await dormir(650);
   }
   const brilla = await foco();
   if(process.env.DBG2) console.log('  DBG2', await p.evaluate(() => { const T = __vr.THREE; return JSON.stringify((__vr.extra.rayos || []).map((R) => ({ toque: R.toque, obj: R.objeto?.userData.panel?.titulo, hit: R.hit?.toArray().map((v) => +v.toFixed(2)), dedo: R.dedo?.toArray().map((v) => +v.toFixed(2)), dir: R.dir.toArray().map((v) => +v.toFixed(2)) }))) + ' atras@' + JSON.stringify(__vr.elegiblesAhora().filter((m) => m.userData.panel?.titulo === 'Atrás').map((m) => m.getWorldPosition(new T.Vector3()).toArray().map((v) => +v.toFixed(2)))); }));
@@ -147,7 +147,8 @@ if(CUAL === 'maceta' || CUAL === 'todo'){
   for(const [herr, paso] of PASOS){
     const ok1 = await p.evaluate((paso) => __monarca.maceta.paso === paso, paso); if(!ok1){ sí(false, `la maceta debía ir en «${paso}» (va en «${await p.evaluate(() => __monarca.maceta.paso)}»)`); break; }
     const br = await elegir(herr); console.log('  DBG', herr, 'brilló', br, await p.evaluate(() => JSON.stringify({ el: __vr.elegiblesAhora().map((m) => m.userData.panel?.titulo), anim: !!__monarca.maceta.anim, activo: __monarca.maceta.activo })));
-    sí(await p.evaluate(() => !!__monarca.maceta.mano), `pellizcar «${herr}» la toma (se va a tu mano)`);
+    const tomo = await p.evaluate(() => !!__monarca.maceta.mano); if(!tomo) console.log('  EVENTOS', await p.evaluate(() => __monarca.maceta.eventos.slice(-8).join(' | ')));
+    sí(tomo, `pellizcar «${herr}» la toma (se va a tu mano)`);
     /* llevar la mano encima de la maceta */
     const boca = await p.evaluate(() => { const r = __monarca.maceta.cosas?.maceta?.raiz; const v = r.getWorldPosition(new __vr.THREE.Vector3()); v.y += .32; return v.toArray(); });
     await mirarA(boca);
