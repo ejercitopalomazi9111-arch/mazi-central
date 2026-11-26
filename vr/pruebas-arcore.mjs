@@ -12,6 +12,9 @@ async function abrir(conXR){
   const ctx = await b.newContext({ viewport: { width: 844, height: 390 } });
   await ctx.addInitScript((conXR) => { navigator.getGamepads = () => []; try{ localStorage.setItem('mazivr.ajustes', JSON.stringify({ fondo: 1, manos: true })); }catch{}
     if(!conXR) return;
+    /* el App Clip de Variant: su objeto VLaunch y la cámara cuadro por cuadro (un JPEG naranja en base64, como lo manda ARKit) */
+    if(conXR === 'variant') window.VLaunch = { appleBrowser: 'launch-viewer', cuadros: 0, requestVideoFrame(cb){ setTimeout(() => { const c = document.createElement('canvas'); c.width = 64; c.height = 48;
+      const x = c.getContext('2d'); x.fillStyle = 'rgb(200,120,40)'; x.fillRect(0, 0, 64, 48); this.cuadros++; cb({ width: 64, height: 48, data: c.toDataURL('image/jpeg').split(',')[1], format: 'base64Jpeg' }); }, 30); } };
     window.__xr = { pedidos: 0, pos: [0, 1.5, 0], q: [0, 0, 0, 1], fin: null };
     WebGL2RenderingContext.prototype.makeXRCompatible = async function(){};   /* el de verdad truena sin aparato XR */
     /* Chrome de Android: la capa trae SU búfer (opaco); el App Clip de Variant en el iPhone: null (= el lienzo de la página) */
@@ -24,7 +27,7 @@ async function abrir(conXR){
       const px = new Uint8Array(64 * 48 * 4); for(let i = 0; i < px.length; i += 4){ px[i] = 200; px[i + 1] = 120; px[i + 2] = 40; px[i + 3] = 255; }
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 64, 48, 0, gl.RGBA, gl.UNSIGNED_BYTE, px); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); } return this.t; } };
     const P = new Float32Array([1.2, 0, 0, 0, 0, 2.6, 0, 0, 0, 0, -1, -1, 0, 0, -.1, 0]);
-    const sesion = { enabledFeatures: ['local', 'local-floor', 'camera-access'], oyentes: {},
+    const sesion = { enabledFeatures: conXR === 'variant' ? ['local', 'local-floor'] : ['local', 'local-floor', 'camera-access'], oyentes: {},   /* el App Clip no da camera-access */
       updateRenderState(){}, async requestReferenceSpace(t){ return { tipo: t }; },
       requestAnimationFrame(f){ return requestAnimationFrame((t) => f(t, { getViewerPose: () => ({ transform: { position: { x: __xr.pos[0], y: __xr.pos[1], z: __xr.pos[2] }, orientation: { x: __xr.q[0], y: __xr.q[1], z: __xr.q[2], w: __xr.q[3] } },
         views: [{ projectionMatrix: P, camera: { width: 640, height: 480 } }] }) }) || window.__trasCuadroXR?.()); },
@@ -72,6 +75,11 @@ async function abrir(conXR){
   const px = await p.evaluate(() => new Promise((ok) => { window.__trasCuadroXR = () => { window.__trasCuadroXR = null; const c = __vr.render.domElement, g = __vr.render.getContext(); const b = new Uint8Array(4);
     g.bindFramebuffer(g.FRAMEBUFFER, null); g.readPixels(c.width >> 2, c.height >> 1, 1, 1, g.RGBA, g.UNSIGNED_BYTE, b); ok([...b]); }; }));
   sí(px[3] > 0 && px[0] + px[1] + px[2] > 0, `y Mazi VR se pinta en el lienzo (pixel ${px})`);
+  await p.waitForTimeout(800);
+  const cam = await p.evaluate(() => ({ vista: __vr.ar.camaraVista, n: __vr.ar.camaraVariant?.(), manos: __vr.fuenteManos.activa && __vr.fuenteManos.videoWidth, tex: __vr.ar.texVariant?.image?.width, pedidos: window.VLaunch.cuadros }));
+  sí(cam.vista && cam.n?.pintados >= 3 && cam.manos === 320 && cam.tex === 64, `la cámara del App Clip llega cuadro por cuadro a la realidad mixta y a las manos (${JSON.stringify(cam)})`);
+  await p.evaluate(() => { __vr.ponerMixta(true); }); await p.waitForTimeout(300);
+  sí(await p.evaluate(() => !__vr.cuarto.visible), 'y la realidad mixta se prende con esa cámara');
   sí(errores.length === 0, 'sin errores' + (errores.length ? ': ' + errores.slice(0, 3).join(' | ') : '')); }
 /* sin ARCore: como siempre */
 { const { p, errores } = await abrir(false);
