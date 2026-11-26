@@ -1,6 +1,6 @@
 /* El motor del simulador de física contra las fórmulas del libro (y casos que se resuelven a mano).
      node vr/pruebas-fisica.mjs */
-import { estado, resumen, tiempoVuelo, trayectoria, GRAVEDADES, simular, enInstante, OBJETOS, LUGARES, kArrastre, vTerminal } from './fisica/motor.js';
+import { estado, resumen, tiempoVuelo, trayectoria, GRAVEDADES, simular, enInstante, OBJETOS, LUGARES, kArrastre, vTerminal, circular, plano, pendulo, resorte, choque, enTiempo } from './fisica/motor.js';
 let ok = 0, mal = 0; const sí = (c, t) => { c ? ok++ : mal++; console.log(c ? '✓' : '✗', t); };
 const cerca = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
 /* MRU: 3 m/s durante 4 s = 12 m */
@@ -67,4 +67,30 @@ const picos = []; let subiendo = false; rB.puntos.forEach((q, i) => { const n = 
 sí(picos.length >= 3 && cerca(picos[1] / picos[0], B.e ** 2, .02), `cada bote sube e² del anterior (${(picos[1] / picos[0]).toFixed(3)} contra ${(B.e ** 2).toFixed(3)})`);
 sí(rB.puntos.every((q) => q.y >= -1e-9) && rB.puntos.every((q, i) => !i || q.t >= rB.puntos[i - 1].t), 'con rebote nunca atraviesa el piso y el tiempo siempre avanza');
 const mitad = enInstante(rB, rB.tPrimero + .01); sí(mitad.vy > 0, 'justo después del primer bote va de subida');
+
+/* ── los temas de 3.er semestre ── */
+const c = circular({ r: 2, T: 4 });
+sí(cerca(c.v, Math.PI) && cerca(c.ac, Math.PI ** 2 / 2) && cerca(c.f, .25) && cerca(enTiempo(c, 1).th, Math.PI / 2, 1e-6), 'MCU r = 2 m, T = 4 s: v = π m/s, a = v²/r, f = 0.25 Hz, a 1 s va un cuarto de vuelta');
+const pl = plano({ angulo: 30, mu: .2, m: 2 });
+sí(pl.semueve && cerca(pl.a, g * (.5 - .2 * Math.cos(Math.PI / 6))) && cerca(pl.N, 2 * g * Math.cos(Math.PI / 6)) && cerca(pl.vFin, Math.sqrt(2 * pl.a * 5)), `plano 30° con μ = 0.2: a = g(senθ − μcosθ) = ${pl.a.toFixed(2)} m/s², y v² = 2aL`);
+const quieto = plano({ angulo: 10, mu: .5, m: 2 });
+sí(!quieto.semueve && quieto.a === 0 && cerca(quieto.fr, quieto.Px), 'si tanθ < μ no se mueve: la fricción iguala al peso a lo largo del plano');
+const piso = plano({ angulo: 0, mu: .1, m: 4, F: 20 });
+sí(cerca(piso.a, (20 - .1 * 4 * g) / 4), `en el piso con empuje: a = (F − μmg) / m = ${piso.a.toFixed(2)} m/s² (segunda ley de Newton)`);
+sí(cerca(pl.Ec, pl.trabajoNeto, 1e-9), 'el trabajo neto es la energía cinética que gana (teorema trabajo-energía)');
+const pe = pendulo({ L: 1, angulo: 10, m: .5 });
+sí(cerca(pe.T, pe.T0, pe.T0 * .005), `péndulo de 1 m a 10°: T = ${pe.T.toFixed(3)} s ≈ 2π√(L/g) = ${pe.T0.toFixed(3)} s`);
+const peG = pendulo({ L: 1, angulo: 60, m: .5 });
+sí(peG.T > peG.T0 * 1.05, `a 60° el periodo es más largo que el de la fórmula (${peG.T.toFixed(3)} contra ${peG.T0.toFixed(3)} s)`);
+const deriva = Math.max(...peG.puntos.map((q) => Math.abs(q.Ec + q.Ep - peG.Etotal))) / peG.Etotal;
+sí(deriva < 1e-5, `la energía total se conserva (se desvía ${(deriva * 100).toExponential(1)} %)`);
+const maxEc = Math.max(...peG.puntos.map((q) => q.Ec));
+sí(cerca(maxEc, peG.Etotal, peG.Etotal * 1e-3) && cerca(Math.sqrt(2 * maxEc / .5), peG.vMax, 1e-2), 'abajo toda la energía es cinética: v máx = √(2gL(1 − cosθ))');
+const rs = resorte({ k: 20, m: .5, x0: .3 });
+sí(cerca(rs.T, 2 * Math.PI * Math.sqrt(.5 / 20)) && cerca(rs.F0, 6) && cerca(rs.Ep, .9) && cerca(enTiempo(rs, rs.T / 2).x, -.3, 1e-4), 'resorte k = 20 N/m, m = 0.5 kg, 0.3 m: F = kx = 6 N, Ep = 0.9 J, T = 2π√(m/k), a medio periodo está del otro lado');
+const el = choque({ m1: 1, m2: 1, v1: 2, v2: 0 });
+sí(cerca(el.u1, 0) && cerca(el.u2, 2) && cerca(el.pAntes, el.pDespues) && cerca(el.EcAntes, el.EcDespues), 'choque elástico de masas iguales: se intercambian la velocidad (como en el billar)');
+const pg = choque({ m1: 2, m2: 1, v1: 3, v2: 0, pegan: true });
+sí(cerca(pg.u1, 2) && cerca(pg.pAntes, pg.pDespues) && pg.EcDespues < pg.EcAntes, 'si se pegan: v = (m₁v₁ + m₂v₂)/(m₁ + m₂), se conserva p y se pierde energía');
+const ch = enTiempo(el, el.tChoque + .5); sí(cerca(ch.x2 - ch.x1, 1, 1e-6), 'después del choque se separan como dicen las velocidades');
 console.log(`${ok} bien · ${mal} mal`); process.exit(mal ? 1 : 0);
