@@ -229,7 +229,9 @@ export async function reabrirCamara(){ flujo?.getTracks().forEach((t) => t.stop(
 function medirPared(){
   const d = -pared.position.z, ancho = 2 * d * Math.tan(campoCamara() * Math.PI / 360);
   const asp = ar.activo && ar.camaraVista ? ar.ancho / Math.max(1, ar.alto) : video.videoWidth && video.videoHeight ? video.videoWidth / video.videoHeight : 16 / 9;
-  pared.scale.set(ancho, ancho / asp, 1); pared.rotation.z = AJ.camVoltear ? Math.PI : 0;
+  /* acostado con la cámara en vertical: la imagen de la cámara se gira con la vista (su «arriba» queda a tu izquierda) */
+  const giraCam = acostado && asp < 1;
+  pared.scale.set(ancho, ancho / asp, 1); pared.rotation.z = (AJ.camVoltear ? Math.PI : 0) + (giraCam ? Math.PI / 2 : 0);
 }
 function ponerMixta(si){
   AJ.mixta = si; guardar();
@@ -243,11 +245,13 @@ function ponerMixta(si){
 /* ── ojos a la textura y la deformación del lente ── */
 let rtI, rtD, W = 1, H = 1;
 const pase = new THREE.ShaderMaterial({
-  uniforms: { tI: { value: null }, tD: { value: null }, k1: { value: AJ.k1 }, k2: { value: AJ.k2 }, off: { value: 0 }, asp: { value: 1 }, esc: { value: 1 } },
+  uniforms: { tI: { value: null }, tD: { value: null }, k1: { value: AJ.k1 }, k2: { value: AJ.k2 }, off: { value: 0 }, asp: { value: 1 }, esc: { value: 1 }, gira: { value: 0 } },
   vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }',
-  fragmentShader: `uniform sampler2D tI, tD; uniform float k1, k2, off, asp, esc; varying vec2 vUv;
+  fragmentShader: `uniform sampler2D tI, tD; uniform float k1, k2, off, asp, esc, gira; varying vec2 vUv;
     void main(){
-      bool der = vUv.x > .5; vec2 e = vec2(der ? (vUv.x - .5) * 2. : vUv.x * 2., vUv.y);
+      /* acostado: la pantalla está en vertical y la vista va girada 90° (lo de arriba de la vista, a la derecha de la pantalla) */
+      vec2 u = gira > .5 ? vec2(1. - vUv.y, vUv.x) : vUv;
+      bool der = u.x > .5; vec2 e = vec2(der ? (u.x - .5) * 2. : u.x * 2., u.y);
       vec2 c = vec2(.5 + (der ? -off : off), .5);
       vec2 d = e - c; d.x *= asp; float r2 = dot(d, d); d *= (1. + k1 * r2 + k2 * r2 * r2) / esc; d.x /= asp;
       vec2 s = d + vec2(.5);
@@ -256,8 +260,21 @@ const pase = new THREE.ShaderMaterial({
     }` });
 const paseEsc = new THREE.Scene(), paseCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 paseEsc.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), pase));
+/* ACOSTADO (27 nov, Carlos: «el teléfono no se gira y no puedo hacer nada por la pantalla de gira el teléfono; haz que aunque
+   esté en vertical se muestre la vista como si estuviese en horizontal»): el App Clip de AR del iPhone se queda en vertical, y
+   muchos teléfonos tienen el giro bloqueado. Con el visor (no en «Sin visor») y la pantalla en vertical, los ojos se dibujan
+   como si estuviera acostado (W y H son los de la vista, no los de la pantalla), el pase del lente gira la imagen 90° al
+   pintarla, la cabeza (giroscopio o ARKit) se toma como acostada, y las capas de la página giran con la clase .capa-giro.
+   Se pone el teléfono con la parte de arriba hacia la IZQUIERDA (como para ver un video). */
+let acostado = false;
+export const estaAcostado = () => acostado;
 function medir(){
-  W = innerWidth; H = innerHeight; render.setSize(W, H, false);
+  const rw = innerWidth, rh = innerHeight;
+  acostado = !modo.mono && rh > rw && AJ.acostar !== false;
+  W = acostado ? rh : rw; H = acostado ? rw : rh; render.setSize(rw, rh, false);
+  pase.uniforms.gira.value = acostado ? 1 : 0;
+  document.documentElement.classList.toggle('acostado', acostado);
+  document.documentElement.style.setProperty('--ancho-real', rw + 'px'); document.documentElement.style.setProperty('--alto-real', rh + 'px');
   const pr = render.getPixelRatio(), ew = Math.round(W / 2 * pr), eh = Math.round(H * pr);
   rtI?.dispose(); rtD?.dispose();
   const op = { colorSpace: THREE.SRGBColorSpace, samples: 4 };
@@ -282,7 +299,7 @@ const ori = { a: 0, b: 90, g: 0, hay: false, t: 0, nuevo: false };
 const pred = crearPredictor(), conPred = !new URLSearchParams(location.search).has('nopred');
 const zee = new THREE.Vector3(0, 0, 1), eul = new THREE.Euler(), q0 = new THREE.Quaternion(), q1 = new THREE.Quaternion(-Math.SQRT1_2, 0, 0, Math.SQRT1_2);
 addEventListener('deviceorientation', (e) => { if(e.alpha == null) return; ori.a = e.alpha; ori.b = e.beta; ori.g = e.gamma; ori.hay = true; ori.t = performance.now(); ori.nuevo = true; });
-const angPantalla = () => (screen.orientation?.angle ?? window.orientation ?? 0) * Math.PI / 180;
+const angPantalla = () => acostado ? Math.PI / 2 : (screen.orientation?.angle ?? window.orientation ?? 0) * Math.PI / 180;
 let guinada = 0;                                             // el giro extra: stick derecho y «recentrar»
 const qCab = new THREE.Quaternion(), qG = new THREE.Quaternion(), yUp = new THREE.Vector3(0, 1, 0);
 export const sim = { yaw: 0, pitch: 0 };                            // sin giroscopio (pruebas y computadora): ratón y flechas
@@ -292,7 +309,8 @@ function leerCabeza(){
   if(ar.activo && ar.pose){
     const t = ar.pose.transform, o = t.orientation, p = t.position;
     if(!ar.origen) ar.origen = new THREE.Vector3(p.x, p.y, p.z);
-    cabeza.quaternion.set(o.x, o.y, o.z, o.w); cabeza.position.set(p.x - ar.origen.x, p.y - ar.origen.y, p.z - ar.origen.z);
+    cabeza.quaternion.set(o.x, o.y, o.z, o.w); if(acostado) cabeza.quaternion.multiply(q0.setFromAxisAngle(zee, -Math.PI / 2));   /* la sesión viene en vertical */
+    cabeza.position.set(p.x - ar.origen.x, p.y - ar.origen.y, p.z - ar.origen.z);
     rig.quaternion.copy(qG.setFromAxisAngle(yUp, guinada));
     return;
   }
@@ -854,7 +872,7 @@ function cuadro(t){
    mientras está puesta, la mira y el aviso se dibujan también en la página, uno por ojo, con la curva del lente ── */
 let fijoAhora = 0;
 export const encima = { activa: false };
-const capaEncima = document.createElement('div'); capaEncima.style.cssText = 'position:fixed; inset:0; z-index:4; pointer-events:none; display:none';
+const capaEncima = document.createElement('div'); capaEncima.className = 'capa-giro'; capaEncima.style.cssText = 'position:fixed; inset:0; z-index:4; pointer-events:none; display:none';
 const ojosEncima = [0, 1].map((i) => { const o = document.createElement('div'); o.style.cssText = `position:absolute; top:0; ${i ? 'left:50%' : 'left:0'}; width:50%; height:100%; overflow:hidden`;
   const m = document.createElement('div'); m.style.cssText = 'position:absolute; width:16px; height:16px; margin:-8px 0 0 -8px; border-radius:50%; box-shadow:0 0 0 2px #fff, 0 0 0 4px rgba(0,0,0,.45)';
   const a = document.createElement('div'); a.style.cssText = 'position:absolute; width:30px; height:30px; margin:-15px 0 0 -15px; border-radius:50%; -webkit-mask:radial-gradient(circle, transparent 10px, #000 11px); mask:radial-gradient(circle, transparent 10px, #000 11px)';
