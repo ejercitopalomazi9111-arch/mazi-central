@@ -99,7 +99,8 @@ export async function iniciarManos(V){
   function filtrarW(m, W){ if(!W) return W; if(!m.fW){ m.fW = W.map((q) => ({ x: q.x, y: q.y, z: q.z })); return m.fW.map((q) => ({ ...q })); }
     m.fW.forEach((P, i) => { P.x += (W[i].x - P.x) * .6; P.y += (W[i].y - P.y) * .6; P.z += (W[i].z - P.z) * .6; }); return m.fW.map((q) => ({ ...q })); }
   estado.cuadro = (t) => {
-    const video = V.video, ahora = performance.now();
+    /* con ARCore la cámara la tiene la sesión: llega en chiquito por V.fuenteManos (arcore.js) */
+    const video = V.fuenteManos?.activa ? V.fuenteManos : V.video, ahora = performance.now();
     if(!V.hayCamara() || !V.AJ.manos || video.readyState < 2){ manos.forEach((m) => { m.g.visible = false; }); rayosVis.forEach((x) => { x.linea.visible = x.cursor.visible = false; }); V.extra.rayo = null; V.extra.rayos = []; V.extra.manos = []; V.extra.camSinc = false; manos3d?.esconder(0); manos3d?.esconder(1); return; }
     /* un cuadro sí y uno no: en el iPhone el rastreo cuesta y la pantalla va a 60 */
     /* y si el teléfono va lento (el rastreo tarda más de 28 ms), uno de cada tres: que el visor no se trabe por las manos */
@@ -108,7 +109,7 @@ export async function iniciarManos(V){
     if(++cuadroN % (estado.ms > 28 ? 3 : estado.ms > 14 ? 2 : 1) || video.currentTime === ultimoT) return;
     ultimoT = video.currentTime;
     const t0 = performance.now(); let r;
-    try{ r = lm.detectForVideo(video, ahora); }catch(e){ estado.error = String(e?.message || e); V.extra.camSinc = false; return; }
+    try{ r = lm.detectForVideo(video.canvas || video, ahora); }catch(e){ estado.error = String(e?.message || e); V.extra.camSinc = false; return; }
     estado.ms = Math.round(performance.now() - t0);
     /* LA IMAGEN Y LOS PUNTOS, DEL MISMO CUADRO (fotos de Carlos, 19 nov en la noche: los puntos iban un paso atrás de su mano
        y los dedos salían cortos). El rastreo corre uno de cada dos o tres cuadros y la cámara se pintaba en TODOS: la
