@@ -7,7 +7,7 @@ export const t = (x, l = 'es') => (x && typeof x === 'object' && !Array.isArray(
 
 export const UI = {
   idioma: { es: 'Idioma · Language', en: 'Idioma · Language' },
-  entrega: { es: 'Entrega el visor', en: 'Hand over the headset' },
+  entrega: { es: 'Entrega el visor', en: 'Hand over the headset' }, listoOperador: { es: 'Listo', en: 'Ready' }, ponte: { es: 'Ponle el visor y toca «Listo»', en: 'Put the headset on them and tap «Ready»' },
   empezar: { es: 'Empezar', en: 'Start' }, siguiente: { es: 'Siguiente', en: 'Next' }, atras: { es: 'Atrás', en: 'Back' },
   vozSi: { es: 'Voz: Sí', en: 'Voice: On' }, vozNo: { es: 'Voz: No', en: 'Voice: Off' },
   plantar: { es: 'Plantar', en: 'Plant' }, listo: { es: '¡Listo!', en: 'Done!' },

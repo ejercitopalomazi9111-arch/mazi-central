@@ -22,9 +22,13 @@ import { crearLimites, toparCabeza } from './limites.js';
 import { crearPredictor } from './prediccion.js';
 
 /* ── ajustes: se guardan en el teléfono (sólo comodidad; si se borran, salen los de fábrica) ── */
-const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true, menuTam: 1, menuDist: 1, fondo: 0, seis: false, puntos: true, limites: true, zona: 1, tonos: true, estable: 200, enfriar: 250 };
+const FABRICA = { sep: 62, ancho: 140, k1: .22, k2: .06, campo: 88, camCampo: 0, camVoltear: false, mixta: false, escala: 1, manos: true, menuTam: 1, menuDist: 1, fondo: 0, seis: false, puntos: true, limites: true, zona: 1, tonos: true, estable: 720, enfriar: 250 };
 const AJ = { ...FABRICA };
 try{ Object.assign(AJ, JSON.parse(localStorage.getItem('mazivr.ajustes') || '{}')); }catch{}
+/* LO GUARDADO NO TAPA UN VALOR NUEVO DE FÁBRICA (Carlos, 26 nov: «ninguno de los cambios de 200 ms está activo»): los Ajustes
+   se guardan ENTEROS, así que un teléfono que ya había guardado algo conservaba el valor viejo para siempre. Cada que cambia
+   un valor de fábrica que importa, sube `aj` y aquí se pone el nuevo a quien traía el viejo. */
+if((AJ.aj || 0) < 2){ AJ.estable = FABRICA.estable; AJ.aj = 2; }
 const guardar = () => { try{ localStorage.setItem('mazivr.ajustes', JSON.stringify(AJ)); }catch{} };
 
 /* ── ERRORES QUE DICEN QUÉ, DÓNDE Y CUÁNDO (Carlos, 19 nov: «que el código de error sea tan claro que sepas exactamente
@@ -544,6 +548,17 @@ export function tono(tipo = 'foco'){
     o.connect(g).connect(f).connect(actx.destination); o.start(t); o.stop(t + dur + .02);
   }catch{}
 }
+/* TIC DE RELOJ (Carlos, 26 nov: la cuenta de MONARCH «con un sonidito como de tic de reloj cada vez»): un golpecito de
+   ruido por un filtro estrecho, como la madera de un reloj de pared; tic y tac alternan un poco de tono. Hecho aquí, no es
+   una grabación de nadie. No depende de «Sonidos» (es parte de la experiencia, no del menú). */
+let ticN = 0;
+export function tic(vol = .35){
+  if(!actx) return; if(actx.state !== 'running') actx.resume?.();
+  try{ const t = actx.currentTime + .01, largo = Math.floor(actx.sampleRate * .03), b = actx.createBuffer(1, largo, actx.sampleRate), d = b.getChannelData(0);
+    for(let i = 0; i < largo; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / largo, 6);
+    const s = actx.createBufferSource(); s.buffer = b; const f = actx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = ticN++ % 2 ? 2300 : 2900; f.Q.value = 9;
+    const g = actx.createGain(); g.gain.value = vol * 6; s.connect(f).connect(g).connect(actx.destination); s.start(t); }catch{}
+}
 export function sonar(n, vol = .5, aviso = false){ if(!aviso || !actx || !sonidos[n]) return; const s = actx.createBufferSource(), g = actx.createGain(); g.gain.value = vol; s.buffer = sonidos[n]; s.connect(g).connect(actx.destination); s.start(); }
 
 /* ── las vistas: el inicio (hub), el cine, los ajustes y las que vienen ── */
@@ -581,7 +596,7 @@ export const ahora = () => vista;
 const ray = new THREE.Raycaster(); const centro = new THREE.Vector2(0, 0);
 let foco = null, focoDesde = 0, focoPorFlechas = -1e9, ultimoGiro = new THREE.Quaternion();
 function elegibles(){ const L = vistas[vista]?.elegibles?.() || []; return atras.visible ? [...L, atras] : L; }
-const historialMira = []; let xManoAntes = false;
+const historialMira = []; let xManoAntes = false, clicPendiente = null;
 let mirarBloqueado = true;                                   // al abrir una vista, lo que ya tenías enfrente no se elige solo
 /* …hasta que la cabeza se mueva. Antes sólo se soltaba al pasar de un botón a OTRO: si llegabas a «Atrás» desde el vacío,
    seguía bloqueado y sin control no había salida (Carlos, 18 nov) */
@@ -707,16 +722,25 @@ function cuadro(t){
        El pellizco y lo que se veía un instante antes sí tienen que llevar AJ.estable ms apuntando a eso */
     const dePellizco = (extra.rayos || []).some((R) => R.pellizco && R.objeto === o), deAgarre = !!quien?.objeto && !dePellizco;
     const estable = o && (deAgarre || (o === foco ? ahoraMs - focoDesde >= est : historialMira.filter(([t]) => ahoraMs - t <= est + 90 && ahoraMs - t >= 90).every(([, x]) => x === o)));
-    if(o && estable && ahoraMs - ultimaEleccion > 350){ darFoco(o); activar(o); } else if(o) extra.clicTemprano = ahoraMs;
+    if(o && estable && ahoraMs - ultimaEleccion > 350){ darFoco(o); activar(o); }
+    /* PELLIZCO TEMPRANO (Carlos, 26 nov: «que se seleccione inmediatamente, pero que sí te dé un pequeño tiempo de espera»):
+       no se tira: si sigues apuntando a lo mismo, se elige en cuanto se cumple la espera. Si te mueves a otra cosa, se olvida. */
+    else if(o){ extra.clicTemprano = ahoraMs; clicPendiente = { o, desde: ahoraMs }; }
     usado.x = true; }
   /* MIRAR O APUNTAR FIJO 1.6 s ELIGE, SIEMPRE (Carlos, 18 nov: «si apunto hacia un elemento unos segundos, que se clique, además
      del pellizcar; y que se pueda seguir pulsando sólo quedándote viendo»): antes se apagaba con el control conectado o con
      las manos a la vista. Con las manos cuenta a lo que apunta el rayo principal; sin manos, a lo que ve la mira. */
   /* con L2 apretado estás moviendo o agrandando algo: mirar fijo no elige (si no, al acomodar el menú se metía a lo que veías) */
   if(control.apretado(B.L2)) focoDesde = performance.now();
+  if(clicPendiente){ const ahoraP = performance.now();
+    if(viendo !== clicPendiente.o || foco !== clicPendiente.o || ahoraP - clicPendiente.desde > 1500) clicPendiente = null;   /* hay que SEGUIR apuntándole */
+    else if(ahoraP - focoDesde >= (AJ.estable ?? 720) && ahoraP - ultimaEleccion > 350){ const o = clicPendiente.o; clicPendiente = null; activar(o); } }
   if(!viendo && primerFoco && primerFoco !== 'pendiente') primerFoco = null;   /* le quitaste la vista: ya cuenta */
   if(primerFoco && !primerEstricto && cabeza.quaternion.angleTo(giroAlBloquear) > .14) primerFoco = null;   /* giraste la cabeza: ya cuenta */
-  const fijo = !mirarBloqueado && viendo && viendo === foco && viendo !== primerFoco && !(extra.rayo && extra.rayo.pellizco) ? Math.max(0, (performance.now() - focoDesde) / MIRAR_MS) : 0;
+  /* CON LAS MANOS NO SE ELIGE SOLO (Carlos, 26 nov: «el asunto es que no se presionen automáticamente»): apuntar con la
+     mano mientras decides ya no elige a los 2.5 s; con la mano se elige pellizcando. Mirar fijo (sin manos) sigue igual,
+     porque sin manos ni control es la única forma de elegir. */
+  const fijo = !mirarBloqueado && !extra.rayo && viendo && viendo === foco && viendo !== primerFoco ? Math.max(0, (performance.now() - focoDesde) / MIRAR_MS) : 0;
   anillo.visible = fijo > .05;
   /* el anillo se llena donde estás apuntando: en el cursor del rayo, o en la mira */
   if(anillo.visible && extra.rayo?.hit){ const pl = cabeza.worldToLocal(extra.rayo.hit.clone()); const k = Math.max(.3, -pl.z); anillo.position.copy(pl).multiplyScalar(.98); anillo.scale.setScalar(k); }

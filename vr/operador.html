@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#170A26">
+<title>Mazi VR · Docente</title>
+<!-- LA PANTALLA DEL DOCENTE (Carlos, 26 nov: «compartir mi pantalla para que se vea en tiempo real lo que se está viendo
+     dentro de las gafas y yo pueda controlar un poco la explicación»). Se escribe el código que enseña el visor y se ve en
+     vivo lo que ve el alumno; abajo, los botones para guiar MONARCH. El relevo es sala/servidor/espejo.js. -->
+<style>
+  :root{ --fondo:#170A26; --sup:#24123A; --sup2:#2F1A4A; --borde:#3C2652; --texto:#F4EEF2; --suave:#C9B6DA; --acento:#AC27FF; --vino:#7E1735; --naranja:#F7A23B; --verde:#9BE564; }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; background:var(--fondo); color:var(--texto); font:16px/1.35 system-ui,-apple-system,"Segoe UI",sans-serif; -webkit-tap-highlight-color:transparent; }
+  body{ min-height:100dvh; padding:max(14px, env(safe-area-inset-top)) 16px max(18px, env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:14px; max-width:720px; margin:0 auto; }
+  header{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  h1{ font-size:20px; margin:0; letter-spacing:-.01em; }
+  .chip{ font-size:13px; font-weight:700; padding:6px 10px; border-radius:999px; background:var(--sup); color:var(--suave); border:1px solid var(--borde); white-space:nowrap; }
+  .chip.vivo{ color:#170A26; background:var(--verde); border-color:var(--verde); }
+  .entrar{ display:flex; gap:10px; }
+  .entrar input{ flex:1; min-width:0; font:800 28px/1 system-ui,-apple-system,sans-serif; letter-spacing:.3em; text-align:center; padding:14px 10px; border-radius:16px; border:2px solid var(--borde); background:var(--sup); color:var(--texto); }
+  .entrar input:focus{ outline:none; border-color:var(--acento); }
+  button{ font:700 17px/1.1 system-ui,-apple-system,sans-serif; color:var(--texto); background:var(--sup2); border:2px solid var(--borde); border-radius:16px; padding:0 16px; min-height:56px; cursor:pointer; touch-action:manipulation; }
+  button:active{ transform:scale(.97); }
+  button:focus-visible{ outline:3px solid var(--acento); outline-offset:2px; }
+  button.fuerte{ background:var(--vino); border-color:#A3214A; }
+  button.acento{ background:#4A1F73; border-color:var(--acento); }
+  button[disabled]{ opacity:.4; }
+  .vista{ position:relative; width:100%; aspect-ratio:16/10; background:#0C0514; border-radius:18px; overflow:hidden; border:1px solid var(--borde); }
+  .vista img{ width:100%; height:100%; object-fit:contain; display:block; }
+  .vista .vacio{ position:absolute; inset:0; display:grid; place-items:center; color:var(--suave); font-weight:700; text-align:center; padding:20px; }
+  .donde{ font-weight:800; font-size:19px; min-height:1.4em; }
+  .donde small{ display:block; font-weight:600; font-size:14px; color:var(--suave); }
+  .fila{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; }
+  .fila.dos{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
+  .escenas{ display:flex; flex-wrap:wrap; gap:8px; }
+  .escenas button{ min-height:44px; font-size:15px; padding:0 12px; border-radius:12px; }
+  .escenas button.ahora{ border-color:var(--acento); background:#4A1F73; }
+  [hidden]{ display:none !important; }
+  .oculto{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); top:0; left:0; }
+</style>
+</head>
+<body>
+<header><h1>Mazi VR · Docente</h1><span class="chip" id="chip">Sin conectar</span></header>
+<form class="entrar" id="forma"><label class="oculto" for="codigo">Código del visor</label>
+  <input id="codigo" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" placeholder="0000" aria-label="Código del visor"><button class="acento" id="bConectar">Conectar</button></form>
+<div class="vista"><img id="img" alt="Lo que ve el visor"><div class="vacio" id="vacio">Escribe el código que sale en el visor</div></div>
+<div class="donde" id="donde" aria-live="polite"></div>
+<section id="cIdioma" hidden><div class="fila dos"><button class="fuerte" data-o="idioma" data-l="es">Español</button><button class="fuerte" data-o="idioma" data-l="en">English</button></div></section>
+<section id="cListo" hidden><div class="fila dos"><button class="fuerte" data-o="listo" style="grid-column:1/-1">Listo</button></div></section>
+<section id="cTutorial" hidden><div class="fila dos"><button data-o="saltarTutorial" style="grid-column:1/-1">Saltar tutorial</button></div></section>
+<section id="cEscenas" hidden>
+  <div class="fila"><button data-o="atras">Atrás</button><button data-o="repetir">Repetir</button><button class="fuerte" data-o="siguiente">Siguiente</button></div>
+  <div class="fila dos" style="margin-top:10px"><button data-o="callar">Callar voz</button><button id="bReiniciar">Reiniciar</button></div>
+  <h2 style="font-size:15px;color:var(--suave);margin:16px 0 8px">Ir a</h2>
+  <div class="escenas" id="escenas"></div>
+</section>
+<script>
+  const $ = (id) => document.getElementById(id);
+  let ws = null, codigo = '', url0 = null, est = {}, ultimoCuadro = 0, reintento = null;
+  try{ $('codigo').value = localStorage.getItem('mazivr.docente') || ''; }catch{}
+  const chip = (t, vivo) => { $('chip').textContent = t; $('chip').classList.toggle('vivo', !!vivo); };
+  function conectar(){
+    clearTimeout(reintento); try{ ws?.close(); }catch{}
+    codigo = $('codigo').value.replace(/\D/g, '').slice(0, 4); if(codigo.length !== 4){ chip('Faltan números'); return; }
+    try{ localStorage.setItem('mazivr.docente', codigo); }catch{}
+    const u = new URL(`/api/sala/vr/espejo/${codigo}?rol=operador`, location.href); u.protocol = u.protocol === 'https:' ? 'wss:' : 'ws:';
+    chip('Conectando'); ws = new WebSocket(u.href); ws.binaryType = 'arraybuffer';
+    ws.onopen = () => chip('Esperando al visor');
+    ws.onmessage = (ev) => {
+      if(typeof ev.data !== 'string'){ const b = new Blob([ev.data], { type: 'image/jpeg' }), nuevo = URL.createObjectURL(b);
+        $('img').src = nuevo; if(url0) URL.revokeObjectURL(url0); url0 = nuevo; ultimoCuadro = Date.now(); $('vacio').hidden = true; chip('En vivo', true); return; }
+      let m; try{ m = JSON.parse(ev.data); }catch{ return; }
+      if(m.tipo === 'gente'){ if(!m.visores){ chip('El visor no está'); $('vacio').hidden = false; $('vacio').textContent = 'El visor no está conectado con ese código'; } }
+      if(m.tipo === 'estado'){ est = m; pintar(); }
+    };
+    ws.onclose = () => { chip('Sin conexión'); reintento = setTimeout(conectar, 3000); };
+  }
+  $('forma').addEventListener('submit', (e) => { e.preventDefault(); conectar(); });
+  $('codigo').addEventListener('input', () => { if($('codigo').value.replace(/\D/g, '').length === 4) conectar(); });
+  setInterval(() => { if(ultimoCuadro && Date.now() - ultimoCuadro > 4000 && $('chip').classList.contains('vivo')) chip('Sin imagen'); }, 1000);
+  /* lo que se puede hacer depende de dónde va el visor */
+  const FASES = { idioma: 'Eligiendo idioma', listo: 'Esperando «Listo»', cuenta: 'Cuenta regresiva', tutorial: 'Tutorial' };
+  let escenasHechas = '';
+  function pintar(){
+    const f = est.fase;
+    $('donde').innerHTML = '';
+    const t = document.createElement('span'); t.textContent = f === 'escenas' ? `${(est.escena ?? 0) + 1}. ${est.titulo || ''}` : (FASES[f] || '');
+    const s = document.createElement('small'); s.textContent = est.habla ? 'Hablando' : ''; $('donde').append(t, s);
+    $('cIdioma').hidden = f !== 'idioma'; $('cListo').hidden = f !== 'listo'; $('cTutorial').hidden = f !== 'tutorial'; $('cEscenas').hidden = f !== 'escenas';
+    /* la lista de escenas se arma una vez; después sólo cambia cuál está marcada (cero parpadeo) */
+    const k = (est.escenas || []).join('|');
+    if(k !== escenasHechas){ escenasHechas = k; $('escenas').replaceChildren(...(est.escenas || []).map((n, i) => { const b = document.createElement('button'); b.textContent = `${i + 1}. ${n}`; b.dataset.o = 'escena'; b.dataset.n = i; return b; })); }
+    [...$('escenas').children].forEach((b, i) => b.classList.toggle('ahora', i === est.escena));
+  }
+  const mandar = (o) => { if(ws?.readyState === 1) ws.send(JSON.stringify({ tipo: 'orden', ...o })); };
+  document.addEventListener('click', (e) => { const b = e.target.closest('button[data-o]'); if(!b) return; mandar({ accion: b.dataset.o, l: b.dataset.l, n: b.dataset.n != null ? +b.dataset.n : undefined }); });
+  /* reiniciar pide un segundo toque */
+  let armado = 0; $('bReiniciar').addEventListener('click', () => { const b = $('bReiniciar');
+    if(Date.now() - armado < 3000){ armado = 0; b.textContent = 'Reiniciar'; mandar({ accion: 'reiniciar' }); }
+    else { armado = Date.now(); b.textContent = 'Otra vez para confirmar'; setTimeout(() => { if(armado && Date.now() - armado >= 3000){ armado = 0; b.textContent = 'Reiniciar'; } }, 3100); } });
+  if(/^\d{4}$/.test($('codigo').value)) conectar();
+</script>
+</body>
+</html>

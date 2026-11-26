@@ -5,7 +5,7 @@
    Uso: node vr/pruebas-mano3d.mjs */
 import fs from 'node:fs';
 import * as THREE from './vendor/three.module.min.js';
-import { NOMBRES, prepararReposo, pose, puntosDeReposo, ladoPorForma, elegirLado, aEspacio } from './mano3d.js';
+import { NOMBRES, prepararReposo, pose, puntosDeReposo, ladoPorForma, elegirLado, aEspacio, rigidos, DEDOS } from './mano3d.js';
 let ok = 0, mal = 0; const sí = (c, t) => { c ? ok++ : mal++; console.log(c ? '✓' : '✗', t); };
 /* los huesos del GLB sin cargador: JSON del archivo */
 function huesosDe(archivo){
@@ -70,4 +70,27 @@ for(const [lado, archivo] of [['derecha', './modelos/manos/derecha.glb'], ['izqu
   sí(Math.max(...vuelta.map((q, i) => q.distanceTo(real[i]))) < 1e-9, 'MediaPipe → espacio regresa cada punto donde estaba (la profundidad al derecho)');
   sí(t > .12 && palma.y > .9, `palma hacia arriba sale hacia arriba (palma.y ${palma.y.toFixed(2)}) y con el modelo derecho (${t.toFixed(2)})`);
   sí(mp[12].z > mp[0].z, 'la punta del medio, más lejos de la cámara que la muñeca, trae z más grande (como MediaPipe)'); }
+
+/* DEDOS RÍGIDOS (Carlos, 26 nov: «ninguna mano tiene una Z en cada dedo»): con un índice en zigzag y otro con ruido de lado,
+   la pose sale con el dedo en un solo plano y las dos bisagras dobladas al mismo lado */
+{
+  const H = huesosDe('./modelos/manos/derecha.glb'), rep = prepararReposo(THREE, H), P = puntosDeReposo(H).map((p) => p.clone());
+  const lado = P[17].clone().sub(P[5]).normalize(), u = P[6].clone().sub(P[5]).normalize(), n = new THREE.Vector3().crossVectors(u, lado).normalize();
+  const L1 = P[7].distanceTo(P[6]), L2 = P[8].distanceTo(P[7]);
+  /* zigzag: la de en medio 40° hacia un lado del plano de flexión y la punta 40° al otro, más 25° de lado */
+  P[7] = P[6].clone().addScaledVector(u.clone().applyAxisAngle(lado, .7).applyAxisAngle(n, .44), L1);
+  P[8] = P[7].clone().addScaledVector(u.clone().applyAxisAngle(lado, -.7).applyAxisAngle(n, -.44), L2);
+  const r = pose(THREE, P, rep), h = r.huesos;
+  const dI = h['index-finger-phalanx-distal'].p.clone().sub(h['index-finger-phalanx-intermediate'].p).normalize(), dP = h['index-finger-phalanx-intermediate'].p.clone().sub(h['index-finger-phalanx-proximal'].p).normalize(), dT = h['index-finger-tip'].p.clone().sub(h['index-finger-phalanx-distal'].p).normalize();
+  const a = lado.clone().addScaledVector(dP, -lado.dot(dP)).normalize();
+  const t1 = Math.atan2(a.dot(new THREE.Vector3().crossVectors(dP, dI)), dP.dot(dI)), t2 = Math.atan2(a.dot(new THREE.Vector3().crossVectors(dI, dT)), dI.dot(dT));
+  sí(Math.min(t1 * Math.sign(t1 + t2), t2 * Math.sign(t1 + t2)) > -10.5 * Math.PI / 180, `un dedo en Z sale doblado a un solo lado (bisagras ${(t1 * 57.3).toFixed(0)}° y ${(t2 * 57.3).toFixed(0)}°; antes iban de signo contrario)`);
+  sí(Math.abs(dI.dot(a)) < Math.sin(8.5 * Math.PI / 180) && Math.abs(dT.dot(a)) < Math.sin(8.5 * Math.PI / 180), `y casi nada de lado (${(Math.asin(Math.abs(dI.dot(a))) * 57.3).toFixed(1)}° y ${(Math.asin(Math.abs(dT.dot(a))) * 57.3).toFixed(1)}°; entraron con 25°)`);
+  /* los largos no cambian: cada falange mide lo del modelo a la escala de la mano */
+  const largoModelo = rep.largos['index-finger-phalanx-intermediate'] * r.escala, largoSale = h['index-finger-phalanx-distal'].p.distanceTo(h['index-finger-phalanx-intermediate'].p);
+  sí(Math.abs(largoModelo - largoSale) < 1e-9, 'las falanges conservan su largo (no se estiran)');
+  /* con la escala fija, un cuadro en que la mano «se ve» 30 % más grande no la agranda */
+  const P2 = puntosDeReposo(H).map((p) => p.clone().multiplyScalar(1.3)); P2.escalaFija = rep.largo;
+  sí(Math.abs(pose(THREE, P2, rep).escala - 1) < 1e-9, 'con la escala fija, un cuadro con la mano «más grande» no la estira');
+}
 console.log(`${ok} bien · ${mal} mal`); process.exit(mal ? 1 : 0);

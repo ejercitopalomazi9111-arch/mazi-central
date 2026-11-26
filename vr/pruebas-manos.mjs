@@ -25,7 +25,8 @@ sí(vistas >= 1, 've la mano de la cámara');
 sí(await p.evaluate(() => !!__vr.extra.rayo), 'el índice hace de puntero');
 /* A TRAVÉS DEL DEDO (18 nov): el rayo sale de la cabeza y pasa justo por la punta del índice (así no se desdobla entre
    ojos y sirve aunque el dedo apunte de frente) */
-const r = await p.evaluate(() => { const R = __vr.extra.rayo, P = __manos.punta, T = __vr.THREE; if(!R || !P) return null;
+/* (26 nov) …con la profundidad de la punta como estaba antes del 20 nov: Carlos pidió el puntero «en la posición previa» */
+const r = await p.evaluate(() => { const R = __vr.extra.rayo, P = __manos.puntaRayo, T = __vr.THREE; if(!R || !P) return null;
   const ojo = __vr.cabeza.getWorldPosition(new T.Vector3()), haciaPunta = new T.Vector3(...P).sub(ojo).normalize();
   return { desdeCabeza: R.origen.distanceTo(ojo), grados: R.dir.angleTo(haciaPunta) * 180 / Math.PI }; });
 sí(r && r.desdeCabeza < .01, `el rayo sale de tu cabeza (a ${r && (r.desdeCabeza * 100).toFixed(1)} cm)`);
