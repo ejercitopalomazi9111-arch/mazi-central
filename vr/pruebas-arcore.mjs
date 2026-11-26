@@ -14,7 +14,11 @@ async function abrir(conXR){
     if(!conXR) return;
     window.__xr = { pedidos: 0, pos: [0, 1.5, 0], q: [0, 0, 0, 1], fin: null };
     WebGL2RenderingContext.prototype.makeXRCompatible = async function(){};   /* el de verdad truena sin aparato XR */
-    window.XRWebGLLayer = class { constructor(s, gl){ this.framebuffer = null; this.framebufferWidth = 844; this.framebufferHeight = 390; } };
+    /* Chrome de Android: la capa trae SU búfer (opaco); el App Clip de Variant en el iPhone: null (= el lienzo de la página) */
+    window.XRWebGLLayer = class { constructor(s, gl){ this.framebufferWidth = 844; this.framebufferHeight = 390;
+      if(conXR === 'variant'){ this.framebuffer = null; return; }
+      const fb = gl.createFramebuffer(), rb = gl.createRenderbuffer(); gl.bindRenderbuffer(gl.RENDERBUFFER, rb); gl.renderbufferStorage(gl.RENDERBUFFER, gl.RGBA8, 844, 390);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fb); gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.RENDERBUFFER, rb); gl.bindFramebuffer(gl.FRAMEBUFFER, null); this.framebuffer = fb; } };
     /* la «cámara de ARCore»: una textura de 64×48 llena de un color, en el mismo contexto */
     window.XRWebGLBinding = class { constructor(s, gl){ this.gl = gl; } getCameraImage(){ const gl = this.gl; if(!this.t){ this.t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, this.t);
       const px = new Uint8Array(64 * 48 * 4); for(let i = 0; i < px.length; i += 4){ px[i] = 200; px[i + 1] = 120; px[i + 2] = 40; px[i + 3] = 255; }
@@ -23,7 +27,7 @@ async function abrir(conXR){
     const sesion = { enabledFeatures: ['local', 'local-floor', 'camera-access'], oyentes: {},
       updateRenderState(){}, async requestReferenceSpace(t){ return { tipo: t }; },
       requestAnimationFrame(f){ return requestAnimationFrame((t) => f(t, { getViewerPose: () => ({ transform: { position: { x: __xr.pos[0], y: __xr.pos[1], z: __xr.pos[2] }, orientation: { x: __xr.q[0], y: __xr.q[1], z: __xr.q[2], w: __xr.q[3] } },
-        views: [{ projectionMatrix: P, camera: { width: 640, height: 480 } }] }) })); },
+        views: [{ projectionMatrix: P, camera: { width: 640, height: 480 } }] }) }) || window.__trasCuadroXR?.()); },
       addEventListener(e, f){ this.oyentes[e] = f; }, end(){ this.oyentes.end?.(); } };
     window.__xr.sesion = sesion;
     Object.defineProperty(navigator, 'xr', { value: { isSessionSupported: async (m) => m === 'immersive-ar', requestSession: async () => { __xr.pedidos++; return sesion; } } });
@@ -59,6 +63,15 @@ async function abrir(conXR){
   sí(await p.evaluate(() => !__vr.ar.activo && getComputedStyle(__vr.render.domElement).visibility !== 'hidden' && !__vr.fuenteManos.activa), 'al salir de AR el visor sigue con su modo de siempre');
   const f0 = await p.evaluate(() => { window.__cuadros = 0; __vr.alCuadro.push(() => window.__cuadros++); return 0; }); await p.waitForTimeout(800);
   sí(await p.evaluate(() => window.__cuadros > 2), 'y el ciclo sigue corriendo (lo marca otra vez la ventana)');
+  sí(errores.length === 0, 'sin errores' + (errores.length ? ': ' + errores.slice(0, 3).join(' | ') : '')); }
+/* el iPhone con el App Clip de Variant (27 nov): la capa no tiene búfer propio; lo que se ve encima de la cámara es el LIENZO */
+{ const { p, errores } = await abrir('variant');
+  await p.click('#bEntrar'); await p.waitForFunction(() => window.__vr?.ahora() === 'inicio', null, { timeout: 20000 }); await p.waitForTimeout(800);
+  sí(await p.evaluate(() => __vr.ar.activo && __vr.ar.enLienzo && getComputedStyle(__vr.render.domElement).visibility !== 'hidden'), 'con el App Clip del iPhone el lienzo NO se esconde (es lo que se ve encima de la cámara)');
+  /* se lee el lienzo justo después de pintar el cuadro (antes de que el navegador lo presente y lo borre) */
+  const px = await p.evaluate(() => new Promise((ok) => { window.__trasCuadroXR = () => { window.__trasCuadroXR = null; const c = __vr.render.domElement, g = __vr.render.getContext(); const b = new Uint8Array(4);
+    g.bindFramebuffer(g.FRAMEBUFFER, null); g.readPixels(c.width >> 2, c.height >> 1, 1, 1, g.RGBA, g.UNSIGNED_BYTE, b); ok([...b]); }; }));
+  sí(px[3] > 0 && px[0] + px[1] + px[2] > 0, `y Mazi VR se pinta en el lienzo (pixel ${px})`);
   sí(errores.length === 0, 'sin errores' + (errores.length ? ': ' + errores.slice(0, 3).join(' | ') : '')); }
 /* sin ARCore: como siempre */
 { const { p, errores } = await abrir(false);
