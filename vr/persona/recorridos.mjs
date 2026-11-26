@@ -41,7 +41,7 @@ async function mano(pose, pt, { brazo = .42, ms = 450, palma = 'abajo', mano: la
 }
 const foco = () => p.evaluate(() => __vr.focoActual());
 /* apuntar a un botón, esperar a que brille y pellizcar (lo que se le explica a una persona) */
-async function elegir(titulo, { pellizcoMs = 350 } = {}){
+async function elegir(titulo, { pellizcoMs = 600 } = {}){   /* 0.6 s: este navegador de pruebas va a 7-10 cuadros por segundo (un teléfono, a 30-60) */
   const pt = await dondeEsta(titulo); if(!pt){ sí(false, `«${titulo}» no está a la vista`); return false; }
   await mirarA(pt); await mano('apunta', pt); await dormir(500);
   /* como una persona: si lo que brilla no es lo que quería, mueve el dedo hacia allá (lo que ve: dónde cae su cursor) */
@@ -93,7 +93,17 @@ if((CUAL === 'fisica' || CUAL === 'todo') && await vista() === 'fisica'){
   await p.evaluate(() => { const L = __vr.elegiblesAhora(); window.__llamadas = {}; L.forEach((m) => { const a = m.userData.accion; if(!a || m.userData.__envuelta) return; m.userData.__envuelta = true; m.userData.accion = (...x) => { const t = m.userData.panel?.titulo; window.__llamadas[t] = (window.__llamadas[t] || 0) + 1; return a(...x); }; }); });
   console.log('  DBG flecha', o0, 'brilló', await elegir('Objeto ›'), await p.evaluate(() => __fisica.objeto), await p.evaluate(() => JSON.stringify(window.__llamadas)));
   sí(await p.evaluate((o0) => __fisica.objeto !== o0, o0), 'la flecha › cambia el objeto');
+  /* los 10 temas: «Movimiento ›» y lanzar cada uno */
+  if(process.env.TEMAS !== '0') for(let i = 0; i < 9; i++){
+    const m0 = await p.evaluate(() => __fisica.modo); await elegir('Movimiento ›'); const m1 = await p.evaluate(() => __fisica.modo);
+    if(m1 === m0){ sí(false, `«Movimiento ›» no cambió de tema (se quedó en ${m0})`); continue; }
+    const r0 = await p.evaluate(() => __fisica.rastros.length);
+    await elegir(await p.evaluate(() => __fisica.botones.lanzarB.dice.valor)); await dormir(600);
+    sí(await p.evaluate((r0) => __fisica.rastros.length > r0 || __fisica.corriendo, r0), `en «${m1}» se lanza con la mano`); await foto('tema-' + m1);
+    await p.evaluate(() => { if(__fisica.corriendo) __fisica.terminar(); });
+  }
   /* tocar con el dedo un botón cercano (el menú está a ~0.75 m: con el brazo estirado) */
+  await p.evaluate(() => { while(__fisica.modo !== 'parabolico') __fisica.botones.rModo.b.malla.userData.accion(); });
   const pt = await dondeEsta('Lanzar'); await mirarA(pt);
   await mano('apunta', pt, { brazo: await p.evaluate((pt) => __vr.cabeza.getWorldPosition(new __vr.THREE.Vector3()).distanceTo(new __vr.THREE.Vector3(...pt)), pt) }); await dormir(500);
   console.log('  DBG toque', await p.evaluate((pt) => { const T = __vr.THREE, R = (__vr.extra.rayos || [])[0]; if(!R) return 'sin rayo'; const dd = R.dedo; return JSON.stringify({ dedo: dd?.toArray().map((v) => +v.toFixed(3)), pt: pt.map((v) => +v.toFixed(3)), dist: dd ? dd.distanceTo(new T.Vector3(...pt)).toFixed(3) : null, punta: __persona.estado.der.punta.map((v) => +v.toFixed(3)) }); }, pt));
@@ -147,6 +157,28 @@ if(CUAL === 'monarca' || CUAL === 'todo'){
   await mano('apunta', null);
   await p.waitForFunction(() => __monarca.estado.fase === 'escenas', null, { timeout: 20000 }).catch(() => {});
   sí(await p.evaluate(() => __monarca.estado.fase === 'escenas'), 'y empieza la historia'); await foto('monarca-bienvenida');
+}
+/* ── 3b. LA HISTORIA ENTERA con las manos: siguiente, opciones, cuestionario, hasta el final. Donde la persona no sepa qué
+   hacer (o no le salga en 3 intentos), lo apunta como ATORADO y el docente la pasa (como pasaría en clase) ── */
+if(CUAL === 'historia'){
+  await mano('apunta', null);
+  await p.evaluate(() => { window.__monarca.exposicion(true); __vr.ir('monarca'); __monarca.arrancar({ idioma: 'es' }); window.__elegibles = () => __vr.elegiblesAhora(); });
+  await dormir(2000);
+  const atorados = []; let antes = '', intentos = 0;
+  for(let paso = 0; paso < 70; paso++){
+    const e = await p.evaluate(() => ({ id: __monarca.ESCENAS[__monarca.estado.escena].id, fase: __monarca.estado.fase, botones: __vr.elegiblesAhora().map((m) => m.userData.panel?.titulo).filter(Boolean), maceta: __monarca.maceta?.activo && !__monarca.maceta?.listo }));
+    if(e.id === 'final'){ break; }
+    const clave = e.id + '|' + e.botones.join(','); if(clave === antes) intentos++; else { intentos = 0; antes = clave; }
+    if(intentos >= 3){ atorados.push(e.id); await p.evaluate(() => __monarca.ordenes.siguiente()); await dormir(1200); continue; }
+    if(e.maceta){ atorados.push('maceta (se probó aparte)'); await p.evaluate(() => __monarca.ordenes.siguiente()); await dormir(1200); continue; }
+    const quiero = e.botones.find((t) => /^(Siguiente|Empezar|¡Listo!|Continuar)/.test(t)) || e.botones.find((t) => !/^(Atrás|Voz|Aquí)/.test(t));
+    if(!quiero){ await dormir(1500); continue; }
+    await p.evaluate(() => { __vr.sim.yaw = 0; __vr.sim.pitch = 0; }); await dormir(200);
+    await elegir(quiero); await mano('apunta', null); await dormir(900);
+  }
+  sí(await p.evaluate(() => __monarca.ESCENAS[__monarca.estado.escena].id === 'final'), `la persona llega al final de la historia${atorados.length ? ' (el docente la pasó en: ' + atorados.join(', ') + ')' : ' sin ayuda'}`);
+  sí(atorados.filter((x) => !/maceta/.test(x)).length === 0, `sin atorarse en ninguna escena${atorados.length ? ': ' + atorados.join(', ') : ''}`);
+  await foto('historia-final');
 }
 /* ── 4. LA MACETA: sembrar con la mano (tomar cada herramienta y llevarla encima de la maceta) ── */
 if(CUAL === 'maceta' || CUAL === 'todo'){

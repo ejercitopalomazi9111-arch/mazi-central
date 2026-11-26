@@ -106,7 +106,8 @@ export async function iniciarManos(V){
     /* y si el teléfono va lento (el rastreo tarda más de 28 ms), uno de cada tres: que el visor no se trabe por las manos */
     /* MÁS SEGUIDO SI SE PUEDE (guía de Carlos: «aumentar la frecuencia del tracking»): si el rastreo tarda menos de 14 ms,
        en cada cuadro; si tarda más, uno sí y uno no; si pasa de 28 ms, uno de cada tres */
-    if(++cuadroN % (estado.ms > 28 ? 3 : estado.ms > 14 ? 2 : 1) || (video.currentTime === ultimoT && !window.__detectorFalso)) return;
+    /* (26 nov) nunca uno de cada TRES: con el teléfono ocupado, un pellizco rápido cabía entero en el hueco y se perdía */
+    if(++cuadroN % (estado.ms > 14 ? 2 : 1) || (video.currentTime === ultimoT && !window.__detectorFalso)) return;
     ultimoT = video.currentTime;
     const t0 = performance.now(); let r;
     try{ r = window.__detectorFalso ? window.__detectorFalso(ahora) : lm.detectForVideo(video.canvas || video, ahora); }   /* la persona simulada (vr/persona/) mete sus manos aquí */catch(e){ estado.error = String(e?.message || e); V.extra.camSinc = false; return; }

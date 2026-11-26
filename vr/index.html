@@ -92,7 +92,7 @@ try{ const L = JSON.parse(localStorage.getItem('mazivr.errores') || '[]'), u = L
 /* LA VERSIÓN (Carlos, 19 nov: «un mensajito que diga la versión en la que estás y que se actualizó»). Va igual que la
    de sw.js (pruebas-sinred.mjs lo revisa). La primera vez que se abre una versión nueva dice «actualizada»; y si el
    trabajador de fondo ya trae una más nueva que esta página, recarga sola (sólo en la entrada, una vez) */
-const VERSION = 49;
+const VERSION = 50;
 { let antes = 0; try{ antes = +localStorage.getItem('mazivr.version') || 0; if(antes !== VERSION) localStorage.setItem('mazivr.version', VERSION); }catch{}
   const el = $('#version'); el.textContent = antes < VERSION ? `v${VERSION} · actualizada` : `v${VERSION}`; el.classList.toggle('nueva', antes < VERSION); }
 const versionSW = (n) => { if(!(n > VERSION) || document.body.classList.contains('dentro')) return;
@@ -117,7 +117,8 @@ $('#bPantalla').addEventListener('click', () => { V.ponerPantalla(true); $('#bEn
    sesión se pide en el MISMO instante, sin esperar nada (el navegador sólo la abre con un gesto) */
 /* en el iPhone (sin WebXR): si hay llave de Variant Launch (config-ar.js), su script abre el App Clip con ARKit */
 import('./config-ar.js').then(({ VARIANT_LAUNCH_KEY: k }) => { if(k && !navigator.xr && /iPhone|iPad/.test(navigator.userAgent)){ const sc = document.createElement('script'); sc.src = `https://launchar.app/sdk/v1?key=${encodeURIComponent(k)}&redirect=true`; document.head.appendChild(sc);
-  addEventListener('vlaunch-initialized', () => arPosible().then((s) => { conAR = s; if(s){ $('#eAR')?.classList.add('si'); if($('#eAR')) $('#eAR').textContent = 'ARKit'; } })); } }).catch(() => {});
+  /* (no se pudo leer su documentación desde aquí: en vez de esperar un evento con nombre adivinado, se pregunta cada segundo 20 s) */
+  let n = 0; const otra = () => arPosible().then((s) => { if(s){ conAR = true; $('#eAR')?.classList.add('si'); if($('#eAR')) $('#eAR').textContent = 'ARKit'; } else if(++n < 20) setTimeout(otra, 1000); }); sc.onload = otra; } }).catch(() => {});
 let conAR = false; arPosible().then((s) => { conAR = s; if(s){ $('#eAR')?.classList.add('si'); if($('#eAR')) $('#eAR').textContent = 'ARCore'; } });
 $('#bEntrar').addEventListener('click', async () => {
   $('#bEntrar').disabled = true;
