@@ -209,7 +209,7 @@ export function montarFisica(V){
     p.malla.userData.accion = accion; if(repetir) p.malla.userData.repetir = true;
     botones.push(p.malla); menu.add(p.malla); return p;
   }
-  const ANCHO_M = .56, ALTO_R = .095, HUECO = .014, FLECHA = .1;
+  const ANCHO_M = .6, ALTO_R = .105, HUECO = .016, FLECHA = .13;   /* (26 nov) flechas más anchas: con la mano la de 10 cm fallaba seguido */
   /* renglón [‹][ qué = cuánto ][›] */
   function Renglon(menos, mas, centro, { flechas = ['‹', '›'] } = {}){
     const r = { a: Boton(FLECHA, ALTO_R, menos, { repetir: true }), c: Boton(ANCHO_M - 2 * FLECHA - 2 * HUECO, ALTO_R, centro || mas), b: Boton(FLECHA, ALTO_R, mas, { repetir: true }) };

@@ -2,7 +2,8 @@
    Safari del iPhone NO trae WebXR (ni immersive-ar ni ARKit desde una página; revisado el 26 nov 2026). La salida sin hacer
    una app es Variant Launch: un script que, en el iPhone, abre la experiencia dentro de un App Clip con ARKit y le da a la
    página el mismo `navigator.xr` que Chrome da con ARCore; así vr/arcore.js funciona igual. Plan de desarrollador gratis
-   (5 mil vistas al mes, con su marca de agua; a confirmar en su página).
+   (5 mil vistas al mes, con su marca de agua, según un listado de terceros). OJO: su documentación no se pudo abrir desde
+   aquí (26 nov): la dirección del script es la que circula en foros, NO verificada; se comprueba al pegar la llave.
    Para prenderlo: Carlos crea su cuenta en launch.variant3d.com, saca su «SDK key» para la dirección de la Central y la
    pega aquí. Es una llave de CLIENTE (va en la página y se limita por dominio), no un secreto. Vacía = apagado. */
 export const VARIANT_LAUNCH_KEY = '';
