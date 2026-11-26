@@ -724,7 +724,7 @@ function cuadro(t){
       ray.set(R.origen, R.dir); let hh = ray.intersectObjects(L, false)[0];
       /* (el imán de 5° se quitó el 19 nov: Carlos, «estaba mejor antes del imán») */
       R.hit = hh ? hh.point.clone() : null; R.objeto = hh?.object || null;
-      if(R.objeto && R.mano){ R.mano.objetoAntes = R.objeto; R.mano.objetoEn = performance.now(); } }
+      if(R.objeto && R.mano){ R.mano.objetoAntes = R.objeto; R.mano.objetoEn = performance.now(); const V2 = R.mano.vistos || (R.mano.vistos = []); V2.push([R.objeto, performance.now()]); if(V2.length > 30) V2.shift(); } }
     let h;
     if(extra.rayo){ h = extra.rayo.objeto !== undefined ? (extra.rayo.objeto ? { object: extra.rayo.objeto } : null) : (ray.set(extra.rayo.origen, extra.rayo.dir), ray.intersectObjects(L, false)[0]);
       if(h && !extra.rayo.hit && h.point) extra.rayo.hit = h.point.clone(); }
@@ -759,7 +759,8 @@ function cuadro(t){
        El pellizco y lo que se veía un instante antes sí tienen que llevar AJ.estable ms apuntando a eso */
     const dePellizco = (extra.rayos || []).some((R) => R.pellizco && (R.objeto === o || R.mano?.fijo?.objeto === o)), deAgarre = !!quien?.objeto && !dePellizco;
     const porToque = (extra.rayos || []).some((R) => R.toque && R.objeto === o);   /* tocándolo con el dedo: al instante */
-    const estable = o && (deAgarre || porToque || (o === foco ? ahoraMs - focoDesde >= est : historialMira.filter(([t]) => ahoraMs - t <= est + 90 && ahoraMs - t >= 90).every(([, x]) => x === o)));
+    const deFijo = (extra.rayos || []).some((R) => R.pellizco && R.mano?.fijo?.objeto === o);   /* lo que brillaba al cerrar los dedos: al instante */
+    const estable = o && (deAgarre || porToque || deFijo || (o === foco ? ahoraMs - focoDesde >= est : historialMira.filter(([t]) => ahoraMs - t <= est + 90 && ahoraMs - t >= 90).every(([, x]) => x === o)));
     if(o && estable && ahoraMs - ultimaEleccion > 350){ darFoco(o); activar(o); }
     /* PELLIZCO TEMPRANO (Carlos, 26 nov: «que se seleccione inmediatamente, pero que sí te dé un pequeño tiempo de espera»):
        no se tira: si sigues apuntando a lo mismo, se elige en cuanto se cumple la espera. Si te mueves a otra cosa, se olvida. */
@@ -875,4 +876,7 @@ export function alLente(u, v, der){
   return [cx + ex / asp, .5 + ey];
 }
 export const focoActual = () => foco?.userData.panel?.titulo || null;
+export const focoObjeto = () => foco || null;
+/* lo que brillaba hace `ms` (al juntar los dedos la punta del índice baja y el rayo se resbala al de abajo ANTES de que se note el pellizco) */
+export const focoHace = (ms) => { const t = performance.now() - ms; let r = null; for(const [tt, o] of historialMira){ if(tt <= t && o) r = o; } return r; };   /* lo que está brillando ahora (el pellizco elige ESO: es lo que ve la persona) */
 export const enfrente = (dist, alto = 0) => { const p = new THREE.Vector3(0, alto, -dist); return p; };

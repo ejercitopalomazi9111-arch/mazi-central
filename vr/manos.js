@@ -274,7 +274,9 @@ export async function iniciarManos(V){
       if(m.pellizco){
         if(!m.fijo){ const e = H.filter((x) => ahora - x.t >= 200).pop() || H[0]; m.fijo = { o: e.o.clone(), d: e.d.clone(), w: e.w.clone(), desde: ahora,
           /* lo que tenías iluminado al cerrar los dedos: ESO es lo que se elige, aunque la muñeca se mueva al pellizcar (26 nov) */
-          objeto: m.objetoAntes && ahora - (m.objetoEn || 0) < 400 ? m.objetoAntes : null }; m.dirSuave = e.d.clone(); }
+          /* (26 nov) primero LO QUE BRILLA, si esta mano lo estaba apuntando hace poco (en Ajustes el rayo tocaba de pasada la fila
+             de junto y el pellizco se iba a «Espera» con «Atrás» brillando); si no, lo último que apuntó */
+          objeto: (() => { const f = V.focoHace?.(260) || V.focoObjeto?.(); if(f && m.objetoAntes === f && ahora - (m.objetoEn || 0) < 700) return f; if(f && (m.vistos || []).some(([o, t]) => o === f && ahora - t < 700)) return f; return m.objetoAntes && ahora - (m.objetoEn || 0) < 400 ? m.objetoAntes : null; })() }; m.dirSuave = e.d.clone(); }
         /* congelado: lo que se mueve la MANO (la muñeca vista desde tu cabeza) gira el rayo, para poder arrastrar */
         const w0 = m.fijo.w.clone().sub(o).normalize(), w1 = I.mundo.muneca.clone().sub(o).normalize();
         d.copy(m.fijo.d).applyQuaternion(new THREE.Quaternion().setFromUnitVectors(w0, w1));

@@ -102,6 +102,18 @@ if((CUAL === 'fisica' || CUAL === 'todo') && await vista() === 'fisica'){
   await foto('fisica-toque');
   await mano('apunta', null); await dormir(300);
 }
+/* ── 2b. LOS MENÚS: entrar a cada tarjeta del inicio y regresar con «Atrás» ── */
+if(CUAL === 'menus'){
+  await p.evaluate(() => { window.__elegibles = () => __vr.elegiblesAhora(); });
+  for(const t of (process.env.MENUS ? process.env.MENUS.split(',') : ['Música', 'Cine', 'Leer', 'Internet', 'Ajustes', 'Juegos'])){
+    if(await vista() !== 'inicio'){ await p.evaluate(() => __vr.ir('inicio')); await dormir(800); }
+    await p.evaluate(() => { __vr.sim.yaw = 0; __vr.sim.pitch = 0; }); await dormir(300);
+    await elegir(t); const v = await vista();
+    sí(v !== 'inicio', `pellizcar «${t}» entra (está en «${v}»)`); await foto('menu-' + t);
+    if(v !== 'inicio'){ await mano('apunta', null); await dormir(300); const bA = await elegir('Atrás'); const v2 = await vista(); console.log('  DBG Atrás brilló', bA, 'en', v, await p.evaluate(() => { const a = __vr.elegiblesAhora().find((m) => m.userData.panel?.titulo === 'Atrás'); return a ? JSON.stringify({ pos: a.getWorldPosition(new __vr.THREE.Vector3()).toArray().map((x) => +x.toFixed(2)), vis: a.visible, rayo: __vr.extra.rayo?.objeto?.userData.panel?.titulo, hit: __vr.extra.rayo?.hit?.toArray().map((x) => +x.toFixed(2)) }) : 'no está'; })); sí(v2 === 'inicio' || v2 !== v, `y «Atrás» regresa (está en «${v2}»)`); }
+    await mano('apunta', null); await dormir(300);
+  }
+}
 /* ── 3. MONARCH: como un alumno con el visor puesto (el operador elige el idioma y toca Listo con su mano) ── */
 if(CUAL === 'monarca' || CUAL === 'todo'){
   await mano('apunta', null);
