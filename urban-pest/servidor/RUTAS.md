@@ -43,6 +43,7 @@ Si `noSalio` viene puesto, Meta no lo entregó.
 | Ruta | Cuerpo | Qué pasa |
 |---|---|---|
 | `POST /api/responder` | `{ canal, chat, texto }` | El dueño contesta desde el chat central. Sale por el mismo canal y el bot se calla 30 minutos en ese chat |
+| `POST /api/bot/regresa` | `{ canal, chat }` | El dueño le regresa el chat al bot sin esperar los 30 minutos («Que conteste el bot otra vez», en el chat central) |
 | `POST /api/aviso/visto` | `{ id }` | Marca un aviso como visto |
 | `POST /api/manual/aprobar` | `{ id, caso?, respuesta?, frases? }` | Lo que contestó la IA se vuelve respuesta ya hecha |
 | `POST /api/manual/descartar` | `{ id }` | Lo que contestó la IA no se aprende |

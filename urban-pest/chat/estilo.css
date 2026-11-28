@@ -215,3 +215,113 @@ button{ cursor:pointer; background:none; border:0; }
 }
 @keyframes upChatAparece{ from{ opacity:0; } to{ opacity:1; } }
 @keyframes upChatLatido{ 0%,100%{ opacity:.3; } 50%{ opacity:1; } }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FÁCIL DE USAR, CON LA CARA DE URBAN PEST, Y NADA APARECE DE GOLPE (26 nov)
+   Luis: «que lo use un señor de 90 años o un niño»; Carlos: «el FLUJO… y muy bonito».
+   Medido con Playwright: el distintivo WA/IG/FB iba a 9 px y 4.15:1, «Avisos» a 2.6:1
+   (la tarjeta vista se hacía transparente), sugerencias de 36 px, «Volver» y «Mandar»
+   sólo con ícono. Los colores y letras son los del centro (marino, azul, naranja;
+   Archivo e Inter). El centro carga esta hoja y redefine lo suyo después: aquí sólo se
+   tocan clases del chat y los tokens, que el centro vuelve a poner.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@font-face{ font-family:"Archivo UP"; src:url(../centro/fuentes/archivo-400-900-normal.woff2) format("woff2"); font-weight:400 900; font-display:swap }
+@font-face{ font-family:"Inter UP"; src:url(../centro/fuentes/inter-400-800-normal.woff2) format("woff2"); font-weight:400 800; font-display:swap }
+:root{
+  --fondo:#F2F5FA; --sup:#FFFFFF; --sup2:#E8EEF6; --tinta:#0E1E3A; --tenue:#56657E; --linea:#DAE2EE;
+  --acento:#165D9B; --acento-tinta:#FFFFFF; --acento-suave:#E2EDF8; --acento-texto:#143361;
+  --aviso:#A35A00; --aviso-suave:#FDEFD9;
+  --letra:"Inter UP", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --titulo:"Archivo UP", "Inter UP", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-tema="claro"]){
+  --fondo:#09152B; --sup:#0F2141; --sup2:#16294D; --tinta:#E6EDF8; --tenue:#9DB0CC; --linea:#21375C;
+  --acento:#4F9BE3; --acento-tinta:#06142B; --acento-suave:#163560; --acento-texto:#9CCBFF; --aviso:#F6AE48; --aviso-suave:#3A2A12;
+}}
+:root[data-tema="oscuro"]{
+  --fondo:#09152B; --sup:#0F2141; --sup2:#16294D; --tinta:#E6EDF8; --tenue:#9DB0CC; --linea:#21375C;
+  --acento:#4F9BE3; --acento-tinta:#06142B; --acento-suave:#163560; --acento-texto:#9CCBFF; --aviso:#F6AE48; --aviso-suave:#3A2A12;
+}
+.app{ font-size:17px }
+.app :focus-visible{ outline:3px solid var(--acento-texto); outline-offset:3px }
+.lista > .barra :focus-visible{ outline-color:#FFC66B }
+/* arriba, la marca: marino con su sello */
+.lista > .barra{ background:linear-gradient(135deg, #143361 0%, #1A4A84 60%, #165D9B 100%); color:#fff; border-radius:0 0 24px 24px; margin-bottom:12px; padding-bottom:16px }
+.marca img{ width:44px; height:auto } .marca b{ font-family:var(--titulo); font-size:21px } .marca small{ display:block; color:#CFE0F5; font-size:15px } .marca small.es-muestra{ color:#FFC66B }
+.lista > .barra .redondo{ color:#fff; width:48px; height:48px } .lista > .barra .redondo:hover{ background:rgba(255,255,255,.12); color:#fff }
+.titulo-vista{ font-family:var(--titulo); font-size:30px }
+.explica{ font-size:16px; line-height:1.45 }
+.app .btn{ min-height:52px; padding:0 18px; font-size:17px; border-radius:14px; font-weight:700 } .app .btn .ic{ width:22px; height:22px }
+.app .btn.suave{ border:1px solid var(--linea) }
+.buscar input{ height:52px; font-size:17px }
+/* la lista de chats */
+.fila{ padding:14px 12px; gap:14px; grid-template-columns:48px minmax(0,1fr) auto }
+.avatar{ width:48px; height:48px; font-size:17px }
+.fila .quien{ font-size:18px } .fila .ultimo{ font-size:16px } .fila .hora{ font-size:15px }
+.canal{ height:22px; padding:0 6px; font:800 12px/18px var(--letra); right:-6px; bottom:-6px; color:#fff }
+.canal.whatsapp{ background:#157A49 } .canal.instagram{ background:#A3305F } .canal.facebook{ background:#2A54B0 }
+.marca-chica{ font-size:15px; padding:3px 10px } .marca-chica .ic{ width:15px; height:15px }
+/* las pestañas de abajo */
+.pestanas button{ min-height:62px; font-size:15px; font-weight:600 } .pestanas .ic{ width:26px; height:26px }
+.pestanas button[aria-current="page"]{ background:var(--acento-suave) }
+.globo{ min-width:20px; height:20px; font:700 12.5px/20px var(--letra); background:#F29923; color:#143361; left:calc(50% + 8px) }
+/* la plática */
+.cab{ padding:calc(8px + env(safe-area-inset-top)) 12px 8px 6px; gap:10px }
+.volver{ display:inline-flex; align-items:center; gap:2px; width:auto; height:48px; padding:0 12px 0 4px; border-radius:14px; font-weight:700; font-size:17px; color:var(--acento-texto) }
+.cab .info small{ font-size:15px }
+.pensar{ height:48px; padding:0 14px; font-size:15px }
+.ficha{ padding:12px 16px 8px } .dato{ height:38px; font-size:15px; padding:0 14px } .dato .ic{ width:16px; height:16px }
+.dia{ font-size:14px }
+.b{ font-size:17px; line-height:1.45; padding:12px 15px }
+.pie{ font-size:14px } .razon{ font-size:15px }
+.cotiza .tit, .cotiza dl{ font-size:15px }
+.callado{ font-size:16px; padding:12px 14px; flex-wrap:wrap; background:var(--aviso-suave); color:var(--tinta) }
+.callado .ic{ width:20px; height:20px; color:var(--aviso) }
+.callado button{ min-height:48px; padding:0 14px; border-radius:12px; background:var(--sup); color:var(--acento-texto); font-weight:700; font-size:16px; border:1px solid var(--linea) }
+.callado.vuelve{ background:var(--acento-suave) } .callado.vuelve .ic{ color:var(--acento) }
+.como{ font-size:15px } .como [role="radio"], .como .borrar{ min-height:48px; font-size:16px }
+.escribir{ gap:10px; padding:10px 12px calc(10px + env(safe-area-inset-bottom)) }
+.escribir textarea{ min-height:52px; font-size:17px; padding:13px 16px; border-radius:26px }
+.mandar{ width:auto; height:52px; padding:0 18px; border-radius:26px; display:inline-flex; gap:8px; font-weight:800; font-size:17px }
+.mandar .ic{ width:20px; height:20px }
+/* el aviso que trajo hasta aquí: dice por qué y qué sigue */
+.del-aviso{ display:grid; gap:10px; margin:8px 16px 4px; padding:14px 16px; border-radius:16px; background:linear-gradient(160deg, #143361, #1A4A84); color:#fff; box-shadow:0 16px 30px -22px rgba(8,22,48,.8) }
+.del-aviso p{ margin:0; font-size:17px; line-height:1.4 } .del-aviso b{ color:#FFC66B; font-family:var(--titulo) }
+.del-aviso .btn{ justify-self:start; background:#F29923; color:#143361 }
+/* tarjetas de avisos y de aprender: la vista ya no se vuelve transparente (bajaba el contraste a 2.6:1) */
+.tarjeta{ padding:18px; border:1px solid var(--linea) }
+.tarjeta.visto{ opacity:1; background:var(--sup2); box-shadow:none }
+.tarjeta .arriba{ font-size:15px } .tarjeta h3{ font-size:19px; font-family:var(--titulo) } .tarjeta p{ font-size:16px } .tarjeta .resp{ font-size:16px }
+.tarjeta .visto-eti{ display:inline-flex; align-items:center; gap:6px; font-size:15px; font-weight:700; color:var(--tenue) } .tarjeta .visto-eti .ic{ width:16px; height:16px }
+.acciones{ gap:10px }
+.sugerencias button{ min-height:48px; padding:0 16px; font-size:16px }
+.ia-forma textarea{ min-height:48px }
+.vacio-grande b{ font-family:var(--titulo) }
+
+/* ── nada aparece de golpe: la tarjeta del aviso se convierte en la plática, el mensaje que escribes vuela a su
+   burbuja, lo nuevo crece desde abajo y lo que se va sale de lado. Con «reducir movimiento», nada de esto. ── */
+::view-transition-group(*){ animation-duration:.3s; animation-timing-function:cubic-bezier(.22,.9,.24,1) }
+::view-transition-old(root), ::view-transition-new(root){ animation-duration:.16s }
+::view-transition-image-pair(up-conv){ overflow:clip; border-radius:18px }
+::view-transition-old(up-conv){ animation:upChatSuelta .14s ease-out both } ::view-transition-new(up-conv){ animation:none }
+::view-transition-group(up-conv){ animation-duration:.36s }
+@keyframes upChatSuelta{ to{ opacity:0 } }
+::view-transition-old(*):only-child{ animation:upChatFuera .2s cubic-bezier(.4,0,1,1) both }
+::view-transition-new(*):only-child{ animation:upChatDentro .26s cubic-bezier(.2,.8,.2,1) both }
+@keyframes upChatFuera{ to{ transform:translateX(40%) scale(.96); opacity:0 } }
+@keyframes upChatDentro{ from{ transform:translateY(14px) scale(.96); opacity:0 } 50%{ opacity:1 } }
+html[data-up-vt="der"]::view-transition-old(root){ animation:upChatSaleIzq .2s cubic-bezier(.4,0,.6,1) both }
+html[data-up-vt="der"]::view-transition-new(root){ animation:upChatEntraDer .26s cubic-bezier(.2,.8,.2,1) both }
+html[data-up-vt="izq"]::view-transition-old(root){ animation:upChatSaleDer .2s cubic-bezier(.4,0,.6,1) both }
+html[data-up-vt="izq"]::view-transition-new(root){ animation:upChatEntraIzq .26s cubic-bezier(.2,.8,.2,1) both }
+@keyframes upChatSaleIzq{ to{ transform:translateX(-28px); opacity:0 } } @keyframes upChatSaleDer{ to{ transform:translateX(28px); opacity:0 } }
+@keyframes upChatEntraDer{ from{ transform:translateX(36px); opacity:0 } 45%{ opacity:1 } } @keyframes upChatEntraIzq{ from{ transform:translateX(-36px); opacity:0 } 45%{ opacity:1 } }
+@media (prefers-reduced-motion: reduce){ ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*){ animation:none !important } }
+/* en el teléfono, la cabeza de la plática deja todo el ancho al nombre (sin el circulito) y el nombre puede ir en dos renglones */
+@media (max-width:480px){ .cab .avatar{ display:none } .cab .info b{ white-space:normal; line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical } }
+.lista > .barra .redondo{ width:50px; height:50px; flex:none } .fila{ margin-bottom:4px } .pie{ font-size:15px }
+/* con la letra al 200 % (un teléfono de 390 queda de 195): las pestañas se deslizan de lado y «Mandar» va abajo del texto */
+@media (max-width:300px){
+  .pestanas{ display:flex; overflow-x:auto; scrollbar-width:none } .pestanas button{ flex:1 0 auto; min-width:72px; padding:0 6px }
+  .escribir{ flex-wrap:wrap } .escribir textarea{ flex:1 1 100% } .mandar{ flex:1 1 100%; justify-content:center }
+  .cab{ flex-wrap:wrap } .pensar{ margin-left:auto }
+}
